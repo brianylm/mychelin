@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { MobileNav } from "@/components/MobileNav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,7 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-amber-50 min-h-screen`}>
-        <nav className="bg-white shadow-sm border-b border-amber-200">
+        {/* Desktop Nav */}
+        <nav className="hidden md:block bg-white shadow-sm border-b border-amber-200">
           <div className="max-w-5xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <a href="/" className="flex items-center gap-2">
@@ -32,7 +34,11 @@ export default function RootLayout({
             </div>
           </div>
         </nav>
-        <main className="max-w-5xl mx-auto px-4 py-8">
+
+        {/* Mobile Nav */}
+        <MobileNav />
+
+        <main className="max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-8">
           {children}
         </main>
       </body>
