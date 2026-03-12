@@ -25,47 +25,57 @@ export function MobileNav() {
 
       {/* Mobile Bottom Tab Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-amber-200 z-50 safe-area-pb">
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-5 gap-1">
           <Link
             href="/"
-            className={`flex flex-col items-center py-3 px-2 ${
-              isActive("/") && !isActive("/recipes") && !isActive("/fridge") && !isActive("/discover")
+            className={`flex flex-col items-center py-2 px-1 ${
+              isActive("/") && !isActive("/recipes") && !isActive("/fridge") && !isActive("/discover") && !isActive("/capture") && !isActive("/planner")
                 ? "text-amber-600"
                 : "text-amber-400"
             }`}
           >
-            <span className="text-2xl">🏠</span>
+            <span className="text-xl">🏠</span>
             <span className="text-xs mt-1 font-medium">Home</span>
           </Link>
 
           <Link
+            href="/capture"
+            className={`flex flex-col items-center py-2 px-1 ${
+              isActive("/capture") ? "text-amber-600" : "text-amber-400"
+            }`}
+          >
+            <span className="text-xl">🤖</span>
+            <span className="text-xs mt-1 font-medium">AI Capture</span>
+          </Link>
+
+          <Link
             href="/recipes"
-            className={`flex flex-col items-center py-3 px-2 ${
+            className={`flex flex-col items-center py-2 px-1 ${
               isActive("/recipes") ? "text-amber-600" : "text-amber-400"
             }`}
           >
-            <span className="text-2xl">📖</span>
+            <span className="text-xl">📖</span>
             <span className="text-xs mt-1 font-medium">Recipes</span>
           </Link>
 
           <Link
-            href="/fridge"
-            className={`flex flex-col items-center py-3 px-2 ${
-              isActive("/fridge") ? "text-amber-600" : "text-amber-400"
+            href="/planner"
+            className={`flex flex-col items-center py-2 px-1 ${
+              isActive("/planner") ? "text-amber-600" : "text-amber-400"
             }`}
           >
-            <span className="text-2xl">🧊</span>
-            <span className="text-xs mt-1 font-medium">Fridge</span>
+            <span className="text-xl">📅</span>
+            <span className="text-xs mt-1 font-medium">Planner</span>
           </Link>
 
           <Link
-            href="/discover"
-            className={`flex flex-col items-center py-3 px-2 ${
-              isActive("/discover") ? "text-amber-600" : "text-amber-400"
+            href="/fridge"
+            className={`flex flex-col items-center py-2 px-1 ${
+              isActive("/fridge") ? "text-amber-600" : "text-amber-400"
             }`}
           >
-            <span className="text-2xl">🎲</span>
-            <span className="text-xs mt-1 font-medium">Surprise</span>
+            <span className="text-xl">🧊</span>
+            <span className="text-xs mt-1 font-medium">Fridge</span>
           </Link>
         </div>
       </nav>

@@ -27,6 +27,7 @@ export default function RootLayout({
                 <span className="text-2xl font-bold text-amber-800">Mychelin</span>
               </a>
               <div className="flex items-center gap-6">
+                <a href="/capture" className="text-lg text-amber-700 hover:text-amber-900">🤖 AI Capture</a>
                 <a href="/recipes" className="text-lg text-amber-700 hover:text-amber-900">Recipes</a>
                 <a href="/fridge" className="text-lg text-amber-700 hover:text-amber-900">My Fridge</a>
                 <a href="/planner" className="text-lg text-amber-700 hover:text-amber-900">Meal Planner</a>

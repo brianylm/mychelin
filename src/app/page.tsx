@@ -28,6 +28,13 @@ export default async function Home() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
+            href="/capture"
+            className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-xl text-xl font-semibold hover:bg-purple-700 transition-colors"
+          >
+            <span className="text-2xl">🤖</span>
+            AI Recipe Capture
+          </Link>
+          <Link
             href="/recipes/new"
             className="inline-flex items-center justify-center gap-2 bg-amber-600 text-white px-8 py-4 rounded-xl text-xl font-semibold hover:bg-amber-700 transition-colors"
           >
@@ -47,7 +54,16 @@ export default async function Home() {
       {/* Quick Actions */}
       <section>
         <h2 className="text-2xl font-bold text-amber-800 mb-6">What would you like to do?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Link
+            href="/capture"
+            className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl p-6 shadow-sm border border-purple-200 hover:shadow-md transition-shadow"
+          >
+            <div className="text-4xl mb-3">🤖</div>
+            <h3 className="text-xl font-semibold text-purple-900 mb-2">AI Recipe Capture</h3>
+            <p className="text-purple-600">Turn family conversations into structured recipes</p>
+          </Link>
+
           <Link
             href="/recipes/new"
             className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 hover:shadow-md transition-shadow"
@@ -58,12 +74,12 @@ export default async function Home() {
           </Link>
 
           <Link
-            href="/fridge"
+            href="/planner"
             className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 hover:shadow-md transition-shadow"
           >
-            <div className="text-4xl mb-3">🧊</div>
-            <h3 className="text-xl font-semibold text-amber-900 mb-2">Check My Fridge</h3>
-            <p className="text-amber-600">See what ingredients you have</p>
+            <div className="text-4xl mb-3">📅</div>
+            <h3 className="text-xl font-semibold text-amber-900 mb-2">Plan My Meals</h3>
+            <p className="text-amber-600">Organize your weekly menu</p>
           </Link>
 
           <Link
