@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { RecipeSearchInput } from "@/components/RecipeSearchInput";
+import { SaveMealPlanModal } from "@/components/SaveMealPlanModal";
 
 interface MealEntry {
   id: string;
@@ -63,16 +65,60 @@ export default function PlannerPage() {
   const [mealInput, setMealInput] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [shuffling, setShuffling] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [lastSavedMeals, setLastSavedMeals] = useState<MealEntry[]>([]);
 
   const today = useMemo(() => new Date(), []);
 
-  // Fetch recipes for surprise me
+  // Fetch recipes and saved meal plans
   useEffect(() => {
+    // Fetch recipes
     fetch("/api/recipes")
       .then((r) => r.json())
       .then((data) => setRecipes(Array.isArray(data) ? data : []))
       .catch(() => {});
+
+    // Fetch saved meal plans
+    fetch("/api/meal-plans")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const mealEntries: MealEntry[] = data.map((plan) => ({
+            id: plan.id,
+            date: new Date(plan.date).toISOString().split("T")[0],
+            meal: plan.mealType,
+            title: plan.notes || "",
+            recipeId: plan.recipeId,
+          }));
+          setMeals(mealEntries);
+          setLastSavedMeals([...mealEntries]);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  // Track unsaved changes
+  useEffect(() => {
+    const mealsJson = JSON.stringify(meals.sort((a, b) => a.date.localeCompare(b.date) || a.meal.localeCompare(b.meal)));
+    const savedJson = JSON.stringify(lastSavedMeals.sort((a, b) => a.date.localeCompare(b.date) || a.meal.localeCompare(b.meal)));
+    setHasUnsavedChanges(mealsJson !== savedJson);
+  }, [meals, lastSavedMeals]);
+
+  // Browser navigation warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const pickRandomRecipe = useCallback((): Recipe | null => {
     if (recipes.length === 0) return null;
@@ -202,16 +248,65 @@ export default function PlannerPage() {
   const getMealForSlot = (dateKey: string, meal: "breakfast" | "lunch" | "dinner") =>
     meals.find((m) => m.date === dateKey && m.meal === meal);
 
-  const saveMeal = () => {
+  const saveMeal = (recipeId?: string) => {
     if (!editingMeal || !mealInput.trim()) return;
     const existing = getMealForSlot(editingMeal.date, editingMeal.meal);
     if (existing) {
-      setMeals(meals.map((m) => (m.id === existing.id ? { ...m, title: mealInput.trim() } : m)));
+      setMeals(meals.map((m) => (m.id === existing.id ? { ...m, title: mealInput.trim(), recipeId } : m)));
     } else {
-      setMeals([...meals, { id: crypto.randomUUID(), date: editingMeal.date, meal: editingMeal.meal, title: mealInput.trim() }]);
+      setMeals([...meals, { id: crypto.randomUUID(), date: editingMeal.date, meal: editingMeal.meal, title: mealInput.trim(), recipeId }]);
     }
     setEditingMeal(null);
     setMealInput("");
+  };
+
+  const saveMealPlans = useCallback(async () => {
+    setSaving(true);
+    try {
+      const response = await fetch("/api/meal-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plans: meals }),
+      });
+
+      if (response.ok) {
+        setLastSavedMeals([...meals]);
+        setHasUnsavedChanges(false);
+        return true;
+      }
+    } catch (error) {
+      console.error("Failed to save meal plans:", error);
+    } finally {
+      setSaving(false);
+    }
+    return false;
+  }, [meals]);
+
+  const handleSaveAndNavigate = async () => {
+    const success = await saveMealPlans();
+    if (success && pendingNavigation) {
+      window.location.href = pendingNavigation;
+    }
+    setShowSaveModal(false);
+    setPendingNavigation(null);
+  };
+
+  const handleDiscardAndNavigate = () => {
+    setMeals([...lastSavedMeals]);
+    setHasUnsavedChanges(false);
+    if (pendingNavigation) {
+      window.location.href = pendingNavigation;
+    }
+    setShowSaveModal(false);
+    setPendingNavigation(null);
+  };
+
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+      setPendingNavigation(href);
+      setShowSaveModal(true);
+    }
   };
 
   const removeMeal = (id: string) => setMeals(meals.filter((m) => m.id !== id));
@@ -438,16 +533,16 @@ export default function PlannerPage() {
 
                   {isEditing ? (
                     <div className="flex gap-2">
-                      <input
-                        type="text"
+                      <RecipeSearchInput
                         value={mealInput}
-                        onChange={(e) => setMealInput(e.target.value)}
+                        onChange={setMealInput}
+                        onSelectRecipe={(recipe) => saveMeal(recipe.id)}
                         onKeyDown={(e) => e.key === "Enter" && saveMeal()}
-                        placeholder="What are you having?"
+                        placeholder="Search recipes or type meal..."
                         autoFocus
                         className="flex-1 min-w-0 px-4 py-2 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
                       />
-                      <button onClick={saveMeal} className="px-4 py-2 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 flex-shrink-0">
+                      <button onClick={() => saveMeal()} className="px-4 py-2 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 flex-shrink-0">
                         Save
                       </button>
                       <button
@@ -476,8 +571,13 @@ export default function PlannerPage() {
 
           {/* Quick links */}
           <div className="mt-6 pt-4 border-t border-amber-200 flex flex-wrap gap-3">
-            <Link href="/recipes" className="text-amber-600 hover:text-amber-800 text-sm font-medium">📖 Browse recipes for ideas →</Link>
-            <Link href="/discover" className="text-amber-600 hover:text-amber-800 text-sm font-medium">🎲 Get a random suggestion →</Link>
+            <Link 
+              href="/discover" 
+              onClick={(e) => handleLinkClick(e, "/discover")}
+              className="text-amber-600 hover:text-amber-800 text-sm font-medium"
+            >
+              🎲 Get a random suggestion →
+            </Link>
           </div>
         </div>
       )}
@@ -491,14 +591,55 @@ export default function PlannerPage() {
         </div>
       )}
 
+      {/* Save CTA */}
+      {hasUnsavedChanges && (
+        <div className="mt-6 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-amber-900 mb-1">
+                💾 You have unsaved changes
+              </h3>
+              <p className="text-amber-600">
+                {meals.length} meal{meals.length !== 1 ? "s" : ""} planned • Save your meal plan to keep your progress
+              </p>
+            </div>
+            <button
+              onClick={saveMealPlans}
+              disabled={saving}
+              className="px-6 py-3 bg-amber-600 text-white rounded-xl text-lg font-semibold hover:bg-amber-700 disabled:bg-amber-400 transition-colors flex-shrink-0"
+            >
+              {saving ? "Saving..." : "Save Meal Plan"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* No recipes warning */}
       {noRecipes && (
         <div className="mt-4 bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
           <p className="text-amber-700 text-sm">
-            💡 <Link href="/recipes/new" className="font-semibold underline">Add some recipes</Link> to unlock the &quot;Surprise Me&quot; feature!
+            💡 <Link 
+              href="/recipes/new"
+              onClick={(e) => handleLinkClick(e, "/recipes/new")}
+              className="font-semibold underline"
+            >
+              Add some recipes
+            </Link> to unlock the &quot;Surprise Me&quot; feature!
           </p>
         </div>
       )}
+
+      {/* Save Modal */}
+      <SaveMealPlanModal
+        isOpen={showSaveModal}
+        onSave={handleSaveAndNavigate}
+        onDiscard={handleDiscardAndNavigate}
+        onCancel={() => {
+          setShowSaveModal(false);
+          setPendingNavigation(null);
+        }}
+        mealCount={meals.length}
+      />
     </div>
   );
 }
