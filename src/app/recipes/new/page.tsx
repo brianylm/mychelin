@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Toast } from "@/components/Toast";
 
 interface Ingredient {
   name: string;
@@ -17,8 +18,15 @@ interface Step {
 export default function NewRecipePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: "", amount: "", unit: "" }]);
   const [instructions, setInstructions] = useState<Step[]>([{ step: 1, text: "" }]);
+
+  const hideToast = useCallback(() => setToast((t) => ({ ...t, show: false })), []);
 
   const addIngredient = () => {
     setIngredients([...ingredients, { name: "", amount: "", unit: "" }]);
@@ -86,12 +94,13 @@ export default function NewRecipePage() {
 
       if (res.ok) {
         const data = await res.json();
-        router.push(`/recipes/${data.id}`);
+        setToast({ show: true, message: "Recipe saved successfully! 🎉", type: "success" });
+        setTimeout(() => router.push(`/recipes/${data.id}`), 1500);
       } else {
-        alert("Failed to save recipe. Please try again.");
+        setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
       }
     } catch {
-      alert("Failed to save recipe. Please try again.");
+      setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -99,6 +108,7 @@ export default function NewRecipePage() {
 
   return (
     <div className="max-w-3xl mx-auto">
+      <Toast message={toast.message} type={toast.type} show={toast.show} onClose={hideToast} />
       <h1 className="text-3xl font-bold text-amber-900 mb-2">Add a New Recipe</h1>
       <p className="text-amber-600 mb-8 text-lg">Write down a family recipe before it&apos;s forgotten</p>
 
@@ -225,7 +235,7 @@ export default function NewRecipePage() {
         <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
           <h2 className="text-xl font-semibold text-amber-800 mb-4">⏱️ Cooking Details</h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-lg font-medium text-amber-800 mb-2">
                 Prep Time
@@ -291,35 +301,39 @@ export default function NewRecipePage() {
           
           <div className="space-y-3">
             {ingredients.map((ing, index) => (
-              <div key={index} className="flex gap-3 items-start">
-                <input
-                  type="text"
-                  placeholder="Amount"
-                  value={ing.amount}
-                  onChange={(e) => updateIngredient(index, "amount", e.target.value)}
-                  className="w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Unit"
-                  value={ing.unit}
-                  onChange={(e) => updateIngredient(index, "unit", e.target.value)}
-                  className="w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Ingredient name"
-                  value={ing.name}
-                  onChange={(e) => updateIngredient(index, "name", e.target.value)}
-                  className="flex-1 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeIngredient(index)}
-                  className="px-3 py-3 text-red-500 hover:bg-red-50 rounded-xl"
-                >
-                  ✕
-                </button>
+              <div key={index} className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 items-start">
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <input
+                    type="text"
+                    placeholder="Amount"
+                    value={ing.amount}
+                    onChange={(e) => updateIngredient(index, "amount", e.target.value)}
+                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Unit"
+                    value={ing.unit}
+                    onChange={(e) => updateIngredient(index, "unit", e.target.value)}
+                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div className="flex gap-2 w-full sm:flex-1">
+                  <input
+                    type="text"
+                    placeholder="Ingredient name"
+                    value={ing.name}
+                    onChange={(e) => updateIngredient(index, "name", e.target.value)}
+                    className="flex-1 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(index)}
+                    className="px-3 py-3 text-red-500 hover:bg-red-50 rounded-xl flex-shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             ))}
           </div>

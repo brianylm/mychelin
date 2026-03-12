@@ -48,33 +48,35 @@ export default function FridgePage() {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 mb-8">
         <h2 className="text-xl font-semibold text-amber-800 mb-4">Add an Item</h2>
         
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="space-y-3">
           <input
             type="text"
             placeholder="What do you have?"
             value={newItem.name}
             onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-            className="flex-1 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+            className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
           />
-          <input
-            type="text"
-            placeholder="Amount"
-            value={newItem.quantity}
-            onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-            className="w-32 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-          />
-          <select
-            value={newItem.category}
-            onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-            className="px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Amount"
+              value={newItem.quantity}
+              onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
+              className="flex-1 min-w-0 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+            />
+            <select
+              value={newItem.category}
+              onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+              className="flex-1 min-w-0 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
           <button
             onClick={addItem}
-            className="px-6 py-3 bg-amber-600 text-white rounded-xl text-lg font-semibold hover:bg-amber-700"
+            className="w-full px-6 py-3 bg-amber-600 text-white rounded-xl text-lg font-semibold hover:bg-amber-700"
           >
             Add
           </button>
