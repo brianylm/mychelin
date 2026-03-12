@@ -4,12 +4,13 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Toast";
 
-interface ConversationMessage {
+interface LiveTranscription {
   id: string;
-  speaker: "giver" | "recipient";
+  speaker: "giver" | "recipient" | "unknown";
   original: string;
   translated?: string;
   timestamp: number;
+  confidence: number;
   processing?: boolean;
 }
 
@@ -20,30 +21,41 @@ interface RecipeContext {
   missingInfo: string[];
 }
 
-interface ConversationPrompt {
-  type: "clarifying" | "encouraging" | "cultural" | "fallback";
-  text: string;
+interface SpeakerProfile {
+  id: string;
+  name: string;
+  language: string;
+  voiceCharacteristics?: {
+    pitch: number;
+    rate: number;
+    timbre: string;
+  };
 }
 
-export default function LiveRecipeCapturePage() {
+export default function LiveRecipeConversationPage() {
   const router = useRouter();
-  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+  const [isLive, setIsLive] = useState(false);
+  const [transcriptions, setTranscriptions] = useState<LiveTranscription[]>([]);
+  const [currentTranscription, setCurrentTranscription] = useState<string>("");
+  const [currentSpeaker, setCurrentSpeaker] = useState<"giver" | "recipient" | "unknown">("unknown");
   const [recipeContext, setRecipeContext] = useState<RecipeContext>({
     ingredients: [],
     steps: [],
     missingInfo: [],
   });
-  const [currentSpeaker, setCurrentSpeaker] = useState<"giver" | "recipient">("giver");
-  const [isListening, setIsListening] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [currentInput, setCurrentInput] = useState("");
-  const [detectedDialect, setDetectedDialect] = useState<string>("");
-  const [conversationPrompts, setConversationPrompts] = useState<ConversationPrompt[]>([]);
-  const [showPrompts, setShowPrompts] = useState(false);
-  const [participants, setParticipants] = useState({
-    giver: { name: "Family Member", language: "Dialect" },
-    recipient: { name: "You", language: "English" },
+  
+  const [participants, setParticipants] = useState<{
+    giver: SpeakerProfile;
+    recipient: SpeakerProfile;
+  }>({
+    giver: { id: "giver", name: "Family Member", language: "Dialect" },
+    recipient: { id: "recipient", name: "You", language: "English" },
   });
+  
+  const [detectedDialect, setDetectedDialect] = useState<string>("");
+  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
+  const [silenceTimer, setSilenceTimer] = useState<number>(0);
+  
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
     show: false,
     message: "",
@@ -51,33 +63,64 @@ export default function LiveRecipeCapturePage() {
   });
 
   const recognitionRef = useRef<any>(null);
-  const promptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const processingQueueRef = useRef<string[]>([]);
+  const isProcessingRef = useRef<boolean>(false);
 
   const hideToast = useCallback(() => setToast((t) => ({ ...t, show: false })), []);
 
-  // Initialize speech recognition
+  // Initialize continuous speech recognition
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = currentSpeaker === "giver" ? "zh-CN" : "en-US"; // Default languages
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "auto"; // Auto-detect language
+      recognition.maxAlternatives = 1;
       
       recognition.onresult = (event: any) => {
-        const text = event.results[0][0].transcript;
-        setCurrentInput(text);
-        setIsListening(false);
+        let finalTranscript = "";
+        let interimTranscript = "";
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        // Update current transcription
+        setCurrentTranscription(interimTranscript);
+        
+        // Process final transcript
+        if (finalTranscript) {
+          processFinalTranscript(finalTranscript, event.results[event.resultIndex][0].confidence);
+          setCurrentTranscription(""); // Clear interim
+          resetSilenceTimer();
+        }
       };
 
-      recognition.onerror = () => {
-        setIsListening(false);
-        setToast({ show: true, message: "Speech recognition failed. Try typing instead.", type: "error" });
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === "no-speech") {
+          startSilenceTimer();
+        }
       };
 
       recognition.onend = () => {
-        setIsListening(false);
+        if (isLive) {
+          // Restart recognition if we're still live
+          setTimeout(() => {
+            if (recognitionRef.current && isLive) {
+              recognitionRef.current.start();
+            }
+          }, 100);
+        }
       };
 
       recognitionRef.current = recognition;
@@ -88,65 +131,124 @@ export default function LiveRecipeCapturePage() {
         recognitionRef.current.abort();
       }
     };
-  }, [currentSpeaker]);
+  }, [isLive]);
 
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      setIsListening(true);
-      setCurrentInput("");
-      recognitionRef.current.start();
+  // Speaker identification (simplified - could use voice biometrics)
+  const identifySpeaker = (text: string, confidence: number): "giver" | "recipient" | "unknown" => {
+    // Simple heuristic - could be enhanced with actual voice recognition
+    const dialectWords = ["lah", "lor", "meh", "sia", "炒", "煮", "切"];
+    const englishIndicators = ["please", "how much", "what", "when", "why"];
+    
+    const hasDialect = dialectWords.some(word => text.toLowerCase().includes(word));
+    const hasEnglish = englishIndicators.some(word => text.toLowerCase().includes(word));
+    
+    if (hasDialect && !hasEnglish) return "giver";
+    if (hasEnglish && !hasDialect) return "recipient";
+    if (confidence > 0.8 && text.length > 10) {
+      // Use previous speaker pattern or default to giver for longer utterances
+      return transcriptions.length > 0 ? transcriptions[transcriptions.length - 1].speaker : "giver";
     }
+    return "unknown";
   };
 
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
+  const processFinalTranscript = async (text: string, confidence: number) => {
+    if (text.trim().length < 3) return; // Ignore very short utterances
+    
+    const speaker = identifySpeaker(text, confidence);
+    setCurrentSpeaker(speaker);
+    
+    const transcription: LiveTranscription = {
+      id: crypto.randomUUID(),
+      speaker,
+      original: text.trim(),
+      timestamp: Date.now(),
+      confidence,
+      processing: true,
+    };
+    
+    setTranscriptions(prev => [...prev, transcription]);
+    
+    // Add to processing queue
+    processingQueueRef.current.push(transcription.id);
+    processTranslationQueue();
   };
 
-  // Show prompts during processing delays
-  useEffect(() => {
-    if (processing) {
-      setShowPrompts(false);
-      promptTimeoutRef.current = setTimeout(async () => {
-        try {
-          const response = await fetch("/api/conversation-translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "suggest-prompts",
-              context: {
-                participants,
-                conversationHistory: conversation,
-                recipeContext,
-                detectedDialect,
-              },
-            }),
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            setConversationPrompts(result.prompts || []);
-            setShowPrompts(true);
-          }
-        } catch (error) {
-          console.error("Failed to get prompts:", error);
-        }
-      }, 2000); // Show prompts after 2 seconds of processing
-
-      return () => {
-        if (promptTimeoutRef.current) {
-          clearTimeout(promptTimeoutRef.current);
-        }
-      };
-    } else {
-      setShowPrompts(false);
-      if (promptTimeoutRef.current) {
-        clearTimeout(promptTimeoutRef.current);
+  const processTranslationQueue = async () => {
+    if (isProcessingRef.current || processingQueueRef.current.length === 0) return;
+    
+    isProcessingRef.current = true;
+    const transcriptionId = processingQueueRef.current.shift()!;
+    
+    const transcription = transcriptions.find(t => t.id === transcriptionId);
+    if (!transcription) {
+      isProcessingRef.current = false;
+      return;
+    }
+    
+    try {
+      // Detect dialect on first few utterances
+      if (transcriptions.filter(t => t.speaker === "giver").length <= 3) {
+        await detectDialect(transcription.original);
       }
+      
+      const response = await fetch("/api/conversation-translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: transcription.original,
+          speaker: transcription.speaker,
+          context: {
+            participants,
+            topic: "Family recipe sharing",
+            conversationHistory: transcriptions.slice(-10), // Last 10 for context
+            detectedDialect,
+            recipeContext,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Update transcription with translation
+        setTranscriptions(prev =>
+          prev.map(t =>
+            t.id === transcriptionId
+              ? { ...t, translated: result.translation, processing: false }
+              : t
+          )
+        );
+
+        // Update recipe context
+        if (result.contextUpdate) {
+          setRecipeContext(prev => ({
+            dishName: result.contextUpdate.dishName || prev.dishName,
+            ingredients: [...new Set([...prev.ingredients, ...(result.contextUpdate.newIngredients || [])])],
+            steps: [...prev.steps, ...(result.contextUpdate.newSteps || [])],
+            missingInfo: result.contextUpdate.missingInfo || prev.missingInfo,
+          }));
+        }
+      } else {
+        // Mark as failed
+        setTranscriptions(prev =>
+          prev.map(t =>
+            t.id === transcriptionId ? { ...t, processing: false } : t
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Translation error:", error);
+      setTranscriptions(prev =>
+        prev.map(t =>
+          t.id === transcriptionId ? { ...t, processing: false } : t
+        )
+      );
+    } finally {
+      isProcessingRef.current = false;
+      // Process next in queue
+      setTimeout(processTranslationQueue, 100);
     }
-  }, [processing, conversation, recipeContext, detectedDialect, participants]);
+  };
 
   const detectDialect = async (text: string) => {
     try {
@@ -170,85 +272,91 @@ export default function LiveRecipeCapturePage() {
     }
   };
 
-  const addMessage = async () => {
-    if (!currentInput.trim()) return;
-
-    const newMessage: ConversationMessage = {
-      id: crypto.randomUUID(),
-      speaker: currentSpeaker,
-      original: currentInput.trim(),
-      timestamp: Date.now(),
-      processing: true,
-    };
-
-    setConversation((prev) => [...prev, newMessage]);
-    setCurrentInput("");
-    setProcessing(true);
-
-    // Detect dialect for first few messages from giver
-    if (currentSpeaker === "giver" && conversation.filter(m => m.speaker === "giver").length < 3) {
-      await detectDialect(currentInput.trim());
+  const startSilenceTimer = () => {
+    setSilenceTimer(0);
+    if (silenceTimeoutRef.current) {
+      clearInterval(silenceTimeoutRef.current);
     }
+    
+    silenceTimeoutRef.current = setInterval(() => {
+      setSilenceTimer(prev => {
+        const newTimer = prev + 1;
+        
+        // Show prompts after 3 seconds of silence
+        if (newTimer === 3) {
+          getSuggestedPrompts();
+        }
+        
+        return newTimer;
+      });
+    }, 1000);
+  };
 
+  const resetSilenceTimer = () => {
+    setSilenceTimer(0);
+    setSuggestedPrompts([]);
+    if (silenceTimeoutRef.current) {
+      clearInterval(silenceTimeoutRef.current);
+    }
+  };
+
+  const getSuggestedPrompts = async () => {
     try {
       const response = await fetch("/api/conversation-translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: currentInput.trim(),
-          speaker: currentSpeaker,
+          action: "suggest-prompts",
           context: {
             participants,
-            topic: "Family recipe sharing",
-            conversationHistory: conversation,
-            detectedDialect,
+            conversationHistory: transcriptions,
             recipeContext,
+            detectedDialect,
           },
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        
-        // Update message with translation
-        setConversation((prev) =>
-          prev.map((msg) =>
-            msg.id === newMessage.id
-              ? { ...msg, translated: result.translation, processing: false }
-              : msg
-          )
-        );
-
-        // Update recipe context
-        if (result.contextUpdate) {
-          setRecipeContext((prev) => ({
-            dishName: result.contextUpdate.dishName || prev.dishName,
-            ingredients: [...new Set([...prev.ingredients, ...(result.contextUpdate.newIngredients || [])])],
-            steps: [...prev.steps, ...(result.contextUpdate.newSteps || [])],
-            missingInfo: result.contextUpdate.missingInfo || prev.missingInfo,
-          }));
-        }
-      } else {
-        // Remove processing message if failed
-        setConversation((prev) => prev.filter((msg) => msg.id !== newMessage.id));
-        setToast({ show: true, message: "Translation failed. Please try again.", type: "error" });
+        setSuggestedPrompts(result.prompts?.map((p: any) => p.text) || []);
       }
     } catch (error) {
-      setConversation((prev) => prev.filter((msg) => msg.id !== newMessage.id));
-      setToast({ show: true, message: "Translation failed. Please try again.", type: "error" });
-    } finally {
-      setProcessing(false);
+      console.error("Failed to get prompts:", error);
     }
   };
 
-  const usePrompt = (prompt: ConversationPrompt) => {
-    setCurrentInput(prompt.text);
-    setShowPrompts(false);
+  const startLiveConversation = () => {
+    if (!recognitionRef.current) {
+      setToast({ 
+        show: true, 
+        message: "Speech recognition not supported in this browser.", 
+        type: "error" 
+      });
+      return;
+    }
+    
+    setIsLive(true);
+    setTranscriptions([]);
+    setRecipeContext({ ingredients: [], steps: [], missingInfo: [] });
+    recognitionRef.current.start();
+    setToast({ 
+      show: true, 
+      message: "🎙️ Live conversation started! Start talking...", 
+      type: "success" 
+    });
   };
 
-  const switchSpeaker = () => {
-    setCurrentSpeaker(current => current === "giver" ? "recipient" : "giver");
-    setCurrentInput("");
+  const stopLiveConversation = () => {
+    setIsLive(false);
+    resetSilenceTimer();
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setToast({ 
+      show: true, 
+      message: "📴 Live conversation stopped.", 
+      type: "success" 
+    });
   };
 
   const saveRecipe = async () => {
@@ -258,16 +366,16 @@ export default function LiveRecipeCapturePage() {
     }
 
     const recipeData = {
-      title: recipeContext.dishName || "Family Recipe from Conversation",
-      description: `Captured through live conversation with ${participants.giver.name}`,
-      story: `This recipe was shared during a live conversation on ${new Date().toLocaleDateString()}. Original language: ${detectedDialect || participants.giver.language}`,
+      title: recipeContext.dishName || "Live Conversation Recipe",
+      description: `Captured through live conversation between ${participants.giver.name} and ${participants.recipient.name}`,
+      story: `This recipe was captured during a live conversation on ${new Date().toLocaleDateString()}. Language: ${detectedDialect || participants.giver.language}`,
       familyMember: participants.giver.name,
-      origin: `Live conversation capture`,
+      origin: `Live AI-facilitated conversation`,
       ingredients: recipeContext.ingredients.map((name, i) => ({
         name,
         amount: "",
         unit: "",
-        notes: "Amount needs clarification",
+        notes: "Amount from conversation - may need clarification",
       })),
       instructions: recipeContext.steps.map((text, i) => ({
         step: i + 1,
@@ -284,10 +392,8 @@ export default function LiveRecipeCapturePage() {
 
       if (response.ok) {
         const result = await response.json();
-        setToast({ show: true, message: "Recipe captured successfully! 🎉", type: "success" });
+        setToast({ show: true, message: "Recipe captured from live conversation! 🎉", type: "success" });
         setTimeout(() => router.push(`/recipes/${result.id}`), 1500);
-      } else {
-        setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
       }
     } catch (error) {
       setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
@@ -302,14 +408,14 @@ export default function LiveRecipeCapturePage() {
       
       <h1 className="text-3xl font-bold text-amber-900 mb-2">🎙️ Live Recipe Conversation</h1>
       <p className="text-amber-600 mb-6 text-lg">
-        AI-assisted live conversation between recipe giver and learner with real-time translation
+        Real-time AI conversation with automatic speaker detection and live translation
       </p>
 
       {/* Participant Setup */}
-      {conversation.length === 0 && (
+      {!isLive && transcriptions.length === 0 && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 mb-6">
           <h3 className="text-lg font-semibold text-amber-900 mb-4">👥 Conversation Participants</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-amber-800 mb-2">Recipe Giver</label>
               <input
@@ -345,114 +451,122 @@ export default function LiveRecipeCapturePage() {
               />
             </div>
           </div>
+          
+          <div className="text-center">
+            {hasWebSpeech ? (
+              <button
+                onClick={startLiveConversation}
+                className="px-8 py-4 bg-red-600 text-white rounded-2xl text-2xl font-bold hover:bg-red-700 transition-all transform hover:scale-105"
+              >
+                🎙️ START LIVE CONVERSATION
+              </button>
+            ) : (
+              <div className="text-red-600 text-lg">
+                ⚠️ Speech recognition not supported in this browser
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Live Conversation */}
+        {/* Live Conversation Display */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Current Speaker & Input */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-amber-900">
-                🎤 {currentSpeaker === "giver" ? participants.giver.name : participants.recipient.name} is speaking...
-              </h3>
-              <button
-                onClick={switchSpeaker}
-                className="px-4 py-2 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700"
-              >
-                Switch to {currentSpeaker === "giver" ? participants.recipient.name : participants.giver.name}
-              </button>
-            </div>
-
-            {detectedDialect && (
-              <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
-                <span className="text-blue-700 font-medium">🌐 Detected: {detectedDialect}</span>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <textarea
-                  value={currentInput}
-                  onChange={(e) => setCurrentInput(e.target.value)}
-                  placeholder={`What is ${currentSpeaker === "giver" ? participants.giver.name : participants.recipient.name} saying?`}
-                  rows={3}
-                  className="flex-1 px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 resize-none"
-                />
-                {hasWebSpeech && (
-                  <button
-                    onClick={isListening ? stopListening : startListening}
-                    disabled={processing}
-                    className={`px-4 py-3 rounded-xl font-semibold ${
-                      isListening 
-                        ? "bg-red-600 text-white hover:bg-red-700" 
-                        : "bg-green-600 text-white hover:bg-green-700"
-                    } disabled:bg-gray-400`}
-                  >
-                    {isListening ? "🔴 Stop" : "🎤 Voice"}
-                  </button>
-                )}
+          {/* Live Status */}
+          {isLive && (
+            <div className="bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+                  <div>
+                    <h3 className="text-2xl font-bold">🔴 LIVE</h3>
+                    <p className="text-red-100">AI is listening and translating in real-time</p>
+                  </div>
+                </div>
+                <button
+                  onClick={stopLiveConversation}
+                  className="px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-semibold transition-colors"
+                >
+                  📴 Stop
+                </button>
               </div>
               
-              <button
-                onClick={addMessage}
-                disabled={!currentInput.trim() || processing}
-                className="w-full bg-amber-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-amber-700 disabled:bg-amber-400"
-              >
-                {processing ? "🤖 Translating..." : "💬 Add to Conversation"}
-              </button>
+              {detectedDialect && (
+                <div className="mt-4 p-3 bg-white bg-opacity-20 rounded-xl">
+                  <span className="font-medium">🌐 Detected Language: {detectedDialect}</span>
+                </div>
+              )}
+              
+              {currentTranscription && (
+                <div className="mt-4 p-3 bg-white bg-opacity-20 rounded-xl">
+                  <span className="text-red-100">Currently hearing: </span>
+                  <span className="font-medium">{currentTranscription}</span>
+                </div>
+              )}
+              
+              {currentSpeaker !== "unknown" && (
+                <div className="mt-2 text-red-100">
+                  🗣️ {currentSpeaker === "giver" ? participants.giver.name : participants.recipient.name} is speaking
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* Conversation Prompts (during delays) */}
-          {showPrompts && conversationPrompts.length > 0 && (
-            <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
-              <h4 className="font-semibold text-purple-800 mb-3">💡 While waiting, you could say:</h4>
+          {/* Silence Prompts */}
+          {silenceTimer > 2 && suggestedPrompts.length > 0 && (
+            <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200 animate-fade-in">
+              <h4 className="font-semibold text-purple-800 mb-3">
+                💡 {silenceTimer}s of silence... You could ask:
+              </h4>
               <div className="space-y-2">
-                {conversationPrompts.map((prompt, index) => (
-                  <button
-                    key={index}
-                    onClick={() => usePrompt(prompt)}
-                    className="w-full text-left p-3 bg-white hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors"
-                  >
-                    <span className="text-xs text-purple-500 uppercase font-medium">{prompt.type}</span>
-                    <div className="text-purple-700">{prompt.text}</div>
-                  </button>
+                {suggestedPrompts.slice(0, 3).map((prompt, index) => (
+                  <div key={index} className="p-3 bg-white border border-purple-200 rounded-xl text-purple-700">
+                    "{prompt}"
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Conversation History */}
+          {/* Live Transcription Feed */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-            <h3 className="text-lg font-semibold text-amber-900 mb-4">💬 Live Conversation</h3>
+            <h3 className="text-lg font-semibold text-amber-900 mb-4">💬 Live Conversation Feed</h3>
             
-            {conversation.length === 0 ? (
+            {transcriptions.length === 0 && !isLive ? (
               <div className="text-center py-8 text-amber-600">
                 <div className="text-4xl mb-3">🎙️</div>
-                <p>Start the conversation above to see live translation</p>
+                <p>Start the live conversation to see real-time transcription and translation</p>
               </div>
             ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {conversation.map((msg) => (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {transcriptions.slice(-10).map((transcription) => (
                   <div
-                    key={msg.id}
+                    key={transcription.id}
                     className={`p-4 rounded-xl ${
-                      msg.speaker === "giver"
+                      transcription.speaker === "giver"
                         ? "bg-blue-50 border-l-4 border-blue-400"
-                        : "bg-green-50 border-l-4 border-green-400"
+                        : transcription.speaker === "recipient"
+                        ? "bg-green-50 border-l-4 border-green-400"
+                        : "bg-gray-50 border-l-4 border-gray-400"
                     }`}
                   >
-                    <div className="text-xs text-gray-500 mb-2">
-                      {msg.speaker === "giver" ? `👵 ${participants.giver.name}` : `👨‍🍳 ${participants.recipient.name}`}
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                      <span>
+                        {transcription.speaker === "giver" ? `👵 ${participants.giver.name}` : 
+                         transcription.speaker === "recipient" ? `👨‍🍳 ${participants.recipient.name}` : 
+                         "🤷 Unknown Speaker"}
+                      </span>
+                      <span>
+                        {new Date(transcription.timestamp).toLocaleTimeString()} 
+                        {transcription.confidence && ` • ${Math.round(transcription.confidence * 100)}%`}
+                      </span>
                     </div>
-                    <div className="font-medium text-gray-800 mb-1">{msg.original}</div>
-                    {msg.processing ? (
-                      <div className="text-purple-600 italic">🤖 AI is translating...</div>
-                    ) : msg.translated ? (
+                    <div className="font-medium text-gray-800 mb-1">{transcription.original}</div>
+                    {transcription.processing ? (
+                      <div className="text-purple-600 italic">🤖 AI translating...</div>
+                    ) : transcription.translated ? (
                       <div className="text-gray-600 italic border-t border-gray-200 pt-2 mt-2">
-                        → {msg.translated}
+                        → {transcription.translated}
                       </div>
                     ) : null}
                   </div>
@@ -462,10 +576,10 @@ export default function LiveRecipeCapturePage() {
           </div>
         </div>
 
-        {/* Recipe Context */}
+        {/* Recipe Building Panel */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-            <h3 className="text-lg font-semibold text-amber-900 mb-4">📖 Recipe Building</h3>
+            <h3 className="text-lg font-semibold text-amber-900 mb-4">📖 Recipe Building Live</h3>
             
             {recipeContext.dishName && (
               <div className="mb-4">
@@ -506,13 +620,14 @@ export default function LiveRecipeCapturePage() {
               </div>
             )}
 
-            <button
-              onClick={saveRecipe}
-              disabled={recipeContext.ingredients.length === 0 && recipeContext.steps.length === 0}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-            >
-              💾 Save Recipe
-            </button>
+            {(recipeContext.ingredients.length > 0 || recipeContext.steps.length > 0) && (
+              <button
+                onClick={saveRecipe}
+                className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+              >
+                💾 Save Recipe from Live Conversation
+              </button>
+            )}
           </div>
         </div>
       </div>
