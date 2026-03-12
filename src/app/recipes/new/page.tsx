@@ -110,7 +110,37 @@ export default function NewRecipePage() {
     <div className="max-w-3xl mx-auto">
       <Toast message={toast.message} type={toast.type} show={toast.show} onClose={hideToast} />
       <h1 className="text-3xl font-bold text-amber-900 mb-2">Add a New Recipe</h1>
-      <p className="text-amber-600 mb-8 text-lg">Write down a family recipe before it&apos;s forgotten</p>
+      <p className="text-amber-600 mb-6 text-lg">Write down a family recipe before it&apos;s forgotten</p>
+
+      {/* AI Live Conversation CTA */}
+      <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 mb-8 border border-purple-200">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="text-5xl">🤖💬</div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="text-xl font-bold text-purple-900 mb-2">
+              Getting this recipe from a family member?
+            </h3>
+            <p className="text-purple-700 mb-4">
+              Use our AI-powered live conversation feature! It translates between dialects and English in real-time, 
+              helping you capture recipes through natural conversation.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/capture"
+                className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                <span className="text-xl">🎙️</span>
+                Start Live Conversation
+              </Link>
+              <div className="text-sm text-purple-600 flex items-center gap-2">
+                <span>✓ Real-time translation</span>
+                <span>✓ Speech recognition</span>
+                <span>✓ Cultural context</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Basic Info */}
