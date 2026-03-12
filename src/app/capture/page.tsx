@@ -1,117 +1,281 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Toast";
 
 interface ConversationMessage {
   id: string;
   speaker: "giver" | "recipient";
-  text: string;
-  timestamp: Date;
+  original: string;
+  translated?: string;
+  timestamp: number;
+  processing?: boolean;
 }
 
-interface ParsedRecipe {
-  title?: string;
-  description?: string;
-  ingredients: Array<{ name: string; amount?: string; unit?: string; notes?: string }>;
-  instructions: Array<{ step: number; text: string }>;
-  cuisine?: string;
-  category?: string;
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: "easy" | "medium" | "hard";
-  story?: string;
-  familyMember?: string;
-  origin?: string;
+interface RecipeContext {
+  dishName?: string;
+  ingredients: string[];
+  steps: string[];
   missingInfo: string[];
-  clarifyingQuestions: string[];
-  confidence: "low" | "medium" | "high";
 }
 
-export default function RecipeCapturePage() {
+interface ConversationPrompt {
+  type: "clarifying" | "encouraging" | "cultural" | "fallback";
+  text: string;
+}
+
+export default function LiveRecipeCapturePage() {
   const router = useRouter();
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
-  const [currentInput, setCurrentInput] = useState("");
-  const [parsedRecipe, setParsedRecipe] = useState<ParsedRecipe | null>(null);
+  const [recipeContext, setRecipeContext] = useState<RecipeContext>({
+    ingredients: [],
+    steps: [],
+    missingInfo: [],
+  });
+  const [currentSpeaker, setCurrentSpeaker] = useState<"giver" | "recipient">("giver");
+  const [isListening, setIsListening] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [currentInput, setCurrentInput] = useState("");
+  const [detectedDialect, setDetectedDialect] = useState<string>("");
+  const [conversationPrompts, setConversationPrompts] = useState<ConversationPrompt[]>([]);
+  const [showPrompts, setShowPrompts] = useState(false);
+  const [participants, setParticipants] = useState({
+    giver: { name: "Family Member", language: "Dialect" },
+    recipient: { name: "You", language: "English" },
+  });
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
     show: false,
     message: "",
     type: "success",
   });
 
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const promptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const hideToast = useCallback(() => setToast((t) => ({ ...t, show: false })), []);
 
-  const processRecipe = async () => {
-    if (!currentInput.trim()) return;
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = currentSpeaker === "giver" ? "zh-CN" : "en-US"; // Default languages
+      
+      recognition.onresult = (event: any) => {
+        const text = event.results[0][0].transcript;
+        setCurrentInput(text);
+        setIsListening(false);
+      };
 
-    // Add to conversation
-    const newMessage: ConversationMessage = {
-      id: crypto.randomUUID(),
-      speaker: "giver",
-      text: currentInput.trim(),
-      timestamp: new Date(),
+      recognition.onerror = () => {
+        setIsListening(false);
+        setToast({ show: true, message: "Speech recognition failed. Try typing instead.", type: "error" });
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
     };
+  }, [currentSpeaker]);
 
-    const updatedConversation = [...conversation, newMessage];
-    setConversation(updatedConversation);
-    setCurrentInput("");
-    setProcessing(true);
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      setIsListening(true);
+      setCurrentInput("");
+      recognitionRef.current.start();
+    }
+  };
 
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
+  // Show prompts during processing delays
+  useEffect(() => {
+    if (processing) {
+      setShowPrompts(false);
+      promptTimeoutRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch("/api/conversation-translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "suggest-prompts",
+              context: {
+                participants,
+                conversationHistory: conversation,
+                recipeContext,
+                detectedDialect,
+              },
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            setConversationPrompts(result.prompts || []);
+            setShowPrompts(true);
+          }
+        } catch (error) {
+          console.error("Failed to get prompts:", error);
+        }
+      }, 2000); // Show prompts after 2 seconds of processing
+
+      return () => {
+        if (promptTimeoutRef.current) {
+          clearTimeout(promptTimeoutRef.current);
+        }
+      };
+    } else {
+      setShowPrompts(false);
+      if (promptTimeoutRef.current) {
+        clearTimeout(promptTimeoutRef.current);
+      }
+    }
+  }, [processing, conversation, recipeContext, detectedDialect, participants]);
+
+  const detectDialect = async (text: string) => {
     try {
-      const response = await fetch("/api/ai-recipe-capture", {
+      const response = await fetch("/api/conversation-translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipeText: currentInput.trim(),
-          conversationHistory: updatedConversation.map((msg) => ({
-            speaker: msg.speaker,
-            text: msg.text,
-          })),
+          action: "detect-dialect",
+          text,
         }),
       });
 
       if (response.ok) {
-        const result: ParsedRecipe = await response.json();
-        setParsedRecipe(result);
-      } else {
-        setToast({ show: true, message: "Failed to process recipe. Please try again.", type: "error" });
+        const result = await response.json();
+        if (result.dialect && result.confidence !== "low") {
+          setDetectedDialect(result.dialect);
+        }
       }
     } catch (error) {
-      setToast({ show: true, message: "Failed to process recipe. Please try again.", type: "error" });
+      console.error("Dialect detection failed:", error);
+    }
+  };
+
+  const addMessage = async () => {
+    if (!currentInput.trim()) return;
+
+    const newMessage: ConversationMessage = {
+      id: crypto.randomUUID(),
+      speaker: currentSpeaker,
+      original: currentInput.trim(),
+      timestamp: Date.now(),
+      processing: true,
+    };
+
+    setConversation((prev) => [...prev, newMessage]);
+    setCurrentInput("");
+    setProcessing(true);
+
+    // Detect dialect for first few messages from giver
+    if (currentSpeaker === "giver" && conversation.filter(m => m.speaker === "giver").length < 3) {
+      await detectDialect(currentInput.trim());
+    }
+
+    try {
+      const response = await fetch("/api/conversation-translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: currentInput.trim(),
+          speaker: currentSpeaker,
+          context: {
+            participants,
+            topic: "Family recipe sharing",
+            conversationHistory: conversation,
+            detectedDialect,
+            recipeContext,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Update message with translation
+        setConversation((prev) =>
+          prev.map((msg) =>
+            msg.id === newMessage.id
+              ? { ...msg, translated: result.translation, processing: false }
+              : msg
+          )
+        );
+
+        // Update recipe context
+        if (result.contextUpdate) {
+          setRecipeContext((prev) => ({
+            dishName: result.contextUpdate.dishName || prev.dishName,
+            ingredients: [...new Set([...prev.ingredients, ...(result.contextUpdate.newIngredients || [])])],
+            steps: [...prev.steps, ...(result.contextUpdate.newSteps || [])],
+            missingInfo: result.contextUpdate.missingInfo || prev.missingInfo,
+          }));
+        }
+      } else {
+        // Remove processing message if failed
+        setConversation((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+        setToast({ show: true, message: "Translation failed. Please try again.", type: "error" });
+      }
+    } catch (error) {
+      setConversation((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+      setToast({ show: true, message: "Translation failed. Please try again.", type: "error" });
     } finally {
       setProcessing(false);
     }
   };
 
-  const askQuestion = (question: string) => {
-    setCurrentInput(question);
+  const usePrompt = (prompt: ConversationPrompt) => {
+    setCurrentInput(prompt.text);
+    setShowPrompts(false);
+  };
+
+  const switchSpeaker = () => {
+    setCurrentSpeaker(current => current === "giver" ? "recipient" : "giver");
+    setCurrentInput("");
   };
 
   const saveRecipe = async () => {
-    if (!parsedRecipe) return;
+    if (recipeContext.ingredients.length === 0 && recipeContext.steps.length === 0) {
+      setToast({ show: true, message: "Need more recipe information before saving.", type: "error" });
+      return;
+    }
 
-    setSaving(true);
+    const recipeData = {
+      title: recipeContext.dishName || "Family Recipe from Conversation",
+      description: `Captured through live conversation with ${participants.giver.name}`,
+      story: `This recipe was shared during a live conversation on ${new Date().toLocaleDateString()}. Original language: ${detectedDialect || participants.giver.language}`,
+      familyMember: participants.giver.name,
+      origin: `Live conversation capture`,
+      ingredients: recipeContext.ingredients.map((name, i) => ({
+        name,
+        amount: "",
+        unit: "",
+        notes: "Amount needs clarification",
+      })),
+      instructions: recipeContext.steps.map((text, i) => ({
+        step: i + 1,
+        text,
+      })),
+    };
+
     try {
-      const recipeData = {
-        title: parsedRecipe.title || "Untitled Family Recipe",
-        description: parsedRecipe.description || "",
-        story: parsedRecipe.story || "",
-        origin: parsedRecipe.origin || "",
-        familyMember: parsedRecipe.familyMember || "",
-        cuisine: parsedRecipe.cuisine || "",
-        category: parsedRecipe.category || "",
-        prepTime: parsedRecipe.prepTime || null,
-        cookTime: parsedRecipe.cookTime || null,
-        servings: parsedRecipe.servings || null,
-        difficulty: parsedRecipe.difficulty || null,
-        ingredients: parsedRecipe.ingredients.filter((i) => i.name.trim()),
-        instructions: parsedRecipe.instructions.filter((i) => i.text.trim()),
-      };
-
       const response = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,208 +291,229 @@ export default function RecipeCapturePage() {
       }
     } catch (error) {
       setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const confidenceColor = {
-    low: "bg-red-100 text-red-700 border-red-200",
-    medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    high: "bg-green-100 text-green-700 border-green-200",
-  };
-
-  const confidenceIcon = {
-    low: "⚠️",
-    medium: "🟡",
-    high: "✅",
-  };
+  const hasWebSpeech = typeof window !== "undefined" && "webkitSpeechRecognition" in window;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <Toast message={toast.message} type={toast.type} show={toast.show} onClose={hideToast} />
       
-      <h1 className="text-3xl font-bold text-amber-900 mb-2">🤖 AI Recipe Capture</h1>
-      <p className="text-amber-600 mb-8 text-lg">
-        Turn family recipe conversations into structured recipes with AI assistance
+      <h1 className="text-3xl font-bold text-amber-900 mb-2">🎙️ Live Recipe Conversation</h1>
+      <p className="text-amber-600 mb-6 text-lg">
+        AI-assisted live conversation between recipe giver and learner with real-time translation
       </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Section */}
-        <div className="space-y-6">
-          {/* Conversation History */}
-          {conversation.length > 0 && (
-            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
-              <h3 className="text-lg font-semibold text-amber-900 mb-4">👥 Recipe Conversation</h3>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {conversation.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`p-3 rounded-xl ${
-                      msg.speaker === "giver"
-                        ? "bg-blue-50 border-l-4 border-blue-400"
-                        : "bg-green-50 border-l-4 border-green-400"
-                    }`}
+      {/* Participant Setup */}
+      {conversation.length === 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 mb-6">
+          <h3 className="text-lg font-semibold text-amber-900 mb-4">👥 Conversation Participants</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-amber-800 mb-2">Recipe Giver</label>
+              <input
+                type="text"
+                value={participants.giver.name}
+                onChange={(e) => setParticipants(p => ({ ...p, giver: { ...p.giver, name: e.target.value } }))}
+                placeholder="e.g., Grandma, Ah Ma, Mom"
+                className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="text"
+                value={participants.giver.language}
+                onChange={(e) => setParticipants(p => ({ ...p, giver: { ...p.giver, language: e.target.value } }))}
+                placeholder="e.g., Hokkien, Cantonese, Bahasa"
+                className="w-full mt-2 px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-amber-800 mb-2">Recipe Learner</label>
+              <input
+                type="text"
+                value={participants.recipient.name}
+                onChange={(e) => setParticipants(p => ({ ...p, recipient: { ...p.recipient, name: e.target.value } }))}
+                placeholder="e.g., You, Family member name"
+                className="w-full px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+              />
+              <input
+                type="text"
+                value={participants.recipient.language}
+                onChange={(e) => setParticipants(p => ({ ...p, recipient: { ...p.recipient, language: e.target.value } }))}
+                placeholder="e.g., English, Mandarin"
+                className="w-full mt-2 px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Live Conversation */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Current Speaker & Input */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-amber-900">
+                🎤 {currentSpeaker === "giver" ? participants.giver.name : participants.recipient.name} is speaking...
+              </h3>
+              <button
+                onClick={switchSpeaker}
+                className="px-4 py-2 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700"
+              >
+                Switch to {currentSpeaker === "giver" ? participants.recipient.name : participants.giver.name}
+              </button>
+            </div>
+
+            {detectedDialect && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
+                <span className="text-blue-700 font-medium">🌐 Detected: {detectedDialect}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <textarea
+                  value={currentInput}
+                  onChange={(e) => setCurrentInput(e.target.value)}
+                  placeholder={`What is ${currentSpeaker === "giver" ? participants.giver.name : participants.recipient.name} saying?`}
+                  rows={3}
+                  className="flex-1 px-4 py-3 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 resize-none"
+                />
+                {hasWebSpeech && (
+                  <button
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={processing}
+                    className={`px-4 py-3 rounded-xl font-semibold ${
+                      isListening 
+                        ? "bg-red-600 text-white hover:bg-red-700" 
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    } disabled:bg-gray-400`}
                   >
-                    <div className="text-xs text-gray-500 mb-1">
-                      {msg.speaker === "giver" ? "👵 Recipe Giver" : "👨‍🍳 You"}
-                    </div>
-                    <div className="text-gray-800">{msg.text}</div>
-                  </div>
+                    {isListening ? "🔴 Stop" : "🎤 Voice"}
+                  </button>
+                )}
+              </div>
+              
+              <button
+                onClick={addMessage}
+                disabled={!currentInput.trim() || processing}
+                className="w-full bg-amber-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-amber-700 disabled:bg-amber-400"
+              >
+                {processing ? "🤖 Translating..." : "💬 Add to Conversation"}
+              </button>
+            </div>
+          </div>
+
+          {/* Conversation Prompts (during delays) */}
+          {showPrompts && conversationPrompts.length > 0 && (
+            <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
+              <h4 className="font-semibold text-purple-800 mb-3">💡 While waiting, you could say:</h4>
+              <div className="space-y-2">
+                {conversationPrompts.map((prompt, index) => (
+                  <button
+                    key={index}
+                    onClick={() => usePrompt(prompt)}
+                    className="w-full text-left p-3 bg-white hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors"
+                  >
+                    <span className="text-xs text-purple-500 uppercase font-medium">{prompt.type}</span>
+                    <div className="text-purple-700">{prompt.text}</div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Input Form */}
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
-            <h3 className="text-lg font-semibold text-amber-900 mb-4">
-              {conversation.length === 0 ? "📝 Start the Recipe Conversation" : "💬 Continue the Conversation"}
-            </h3>
+          {/* Conversation History */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+            <h3 className="text-lg font-semibold text-amber-900 mb-4">💬 Live Conversation</h3>
             
-            {conversation.length === 0 && (
-              <div className="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <h4 className="font-semibold text-amber-800 mb-2">💡 How to use:</h4>
-                <ul className="text-sm text-amber-600 space-y-1">
-                  <li>• Paste or type what your family member told you about the recipe</li>
-                  <li>• The AI will extract ingredients and steps, then suggest clarifying questions</li>
-                  <li>• Ask those questions to get more details</li>
-                  <li>• Keep adding information until the recipe is complete</li>
+            {conversation.length === 0 ? (
+              <div className="text-center py-8 text-amber-600">
+                <div className="text-4xl mb-3">🎙️</div>
+                <p>Start the conversation above to see live translation</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {conversation.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`p-4 rounded-xl ${
+                      msg.speaker === "giver"
+                        ? "bg-blue-50 border-l-4 border-blue-400"
+                        : "bg-green-50 border-l-4 border-green-400"
+                    }`}
+                  >
+                    <div className="text-xs text-gray-500 mb-2">
+                      {msg.speaker === "giver" ? `👵 ${participants.giver.name}` : `👨‍🍳 ${participants.recipient.name}`}
+                    </div>
+                    <div className="font-medium text-gray-800 mb-1">{msg.original}</div>
+                    {msg.processing ? (
+                      <div className="text-purple-600 italic">🤖 AI is translating...</div>
+                    ) : msg.translated ? (
+                      <div className="text-gray-600 italic border-t border-gray-200 pt-2 mt-2">
+                        → {msg.translated}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recipe Context */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+            <h3 className="text-lg font-semibold text-amber-900 mb-4">📖 Recipe Building</h3>
+            
+            {recipeContext.dishName && (
+              <div className="mb-4">
+                <h4 className="font-bold text-xl text-amber-900">{recipeContext.dishName}</h4>
+              </div>
+            )}
+
+            {recipeContext.ingredients.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-semibold text-amber-800 mb-2">🥬 Ingredients:</h4>
+                <ul className="space-y-1">
+                  {recipeContext.ingredients.map((ingredient, i) => (
+                    <li key={i} className="text-sm text-amber-900">• {ingredient}</li>
+                  ))}
                 </ul>
               </div>
             )}
 
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-amber-800">
-                What did {conversation.length === 0 ? "they say about the recipe" : "they tell you"}?
-              </label>
-              <textarea
-                value={currentInput}
-                onChange={(e) => setCurrentInput(e.target.value)}
-                placeholder={
-                  conversation.length === 0
-                    ? 'e.g., "Ah Ma says first you fry the onions until they smell good, then add some soy sauce - not too much! Then put in the chicken..."'
-                    : "Add more details from the conversation..."
-                }
-                rows={4}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none"
-              />
-              <button
-                onClick={processRecipe}
-                disabled={!currentInput.trim() || processing}
-                className="w-full bg-amber-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-amber-700 disabled:bg-amber-400 transition-colors"
-              >
-                {processing ? "🧠 AI is thinking..." : conversation.length === 0 ? "🤖 Capture Recipe" : "🔄 Update Recipe"}
-              </button>
-            </div>
+            {recipeContext.steps.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-semibold text-amber-800 mb-2">📋 Steps:</h4>
+                <ol className="space-y-1">
+                  {recipeContext.steps.map((step, i) => (
+                    <li key={i} className="text-sm text-amber-900">{i + 1}. {step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {recipeContext.missingInfo.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-semibold text-red-700 mb-2">❓ Still Need:</h4>
+                <ul className="space-y-1">
+                  {recipeContext.missingInfo.map((info, i) => (
+                    <li key={i} className="text-sm text-red-600">• {info}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <button
+              onClick={saveRecipe}
+              disabled={recipeContext.ingredients.length === 0 && recipeContext.steps.length === 0}
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+            >
+              💾 Save Recipe
+            </button>
           </div>
-        </div>
-
-        {/* AI Analysis Section */}
-        <div className="space-y-6">
-          {parsedRecipe && (
-            <>
-              {/* Confidence & Status */}
-              <div className={`rounded-2xl p-4 border ${confidenceColor[parsedRecipe.confidence]}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{confidenceIcon[parsedRecipe.confidence]}</span>
-                  <h3 className="font-semibold">
-                    Recipe Confidence: {parsedRecipe.confidence.charAt(0).toUpperCase() + parsedRecipe.confidence.slice(1)}
-                  </h3>
-                </div>
-                {parsedRecipe.missingInfo.length > 0 && (
-                  <div className="text-sm">
-                    <strong>Missing:</strong> {parsedRecipe.missingInfo.join(", ")}
-                  </div>
-                )}
-              </div>
-
-              {/* Clarifying Questions */}
-              {parsedRecipe.clarifyingQuestions.length > 0 && (
-                <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
-                  <h3 className="text-lg font-semibold text-amber-900 mb-4">❓ Suggested Questions to Ask</h3>
-                  <div className="space-y-2">
-                    {parsedRecipe.clarifyingQuestions.map((question, index) => (
-                      <button
-                        key={index}
-                        onClick={() => askQuestion(question)}
-                        className="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors"
-                      >
-                        <span className="text-purple-700 font-medium">{question}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Parsed Recipe Preview */}
-              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-amber-900">📖 Recipe Preview</h3>
-                  <button
-                    onClick={saveRecipe}
-                    disabled={saving || parsedRecipe.confidence === "low"}
-                    className="px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-                  >
-                    {saving ? "Saving..." : "💾 Save Recipe"}
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-bold text-xl text-amber-900">{parsedRecipe.title || "Untitled Recipe"}</h4>
-                    {parsedRecipe.description && <p className="text-amber-600 mt-1">{parsedRecipe.description}</p>}
-                  </div>
-
-                  {parsedRecipe.familyMember && (
-                    <div className="text-sm text-amber-600">
-                      👨👩👧 From: {parsedRecipe.familyMember}
-                    </div>
-                  )}
-
-                  {parsedRecipe.ingredients.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-amber-800 mb-2">🥬 Ingredients:</h4>
-                      <ul className="space-y-1">
-                        {parsedRecipe.ingredients.map((ing, i) => (
-                          <li key={i} className="text-sm">
-                            <span className={ing.amount ? "text-amber-900" : "text-red-500"}>
-                              {ing.amount || "???"} {ing.unit || ""} {ing.name}
-                            </span>
-                            {ing.notes && <span className="text-amber-500 ml-2">({ing.notes})</span>}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {parsedRecipe.instructions.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-amber-800 mb-2">📋 Instructions:</h4>
-                      <ol className="space-y-2">
-                        {parsedRecipe.instructions.map((step) => (
-                          <li key={step.step} className="text-sm flex gap-2">
-                            <span className="font-bold text-amber-600 flex-shrink-0">{step.step}.</span>
-                            <span>{step.text}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-
-          {!parsedRecipe && !processing && (
-            <div className="bg-amber-50 rounded-2xl p-8 border border-amber-200 text-center">
-              <div className="text-5xl mb-4">🤖</div>
-              <h3 className="text-xl font-bold text-amber-800 mb-2">AI Recipe Assistant Ready</h3>
-              <p className="text-amber-600">
-                Enter the recipe conversation on the left, and I'll help structure it into a proper recipe format.
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
