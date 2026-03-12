@@ -50,7 +50,7 @@ export default function LiveRecipeCapturePage() {
     type: "success",
   });
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   const promptTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const hideToast = useCallback(() => setToast((t) => ({ ...t, show: false })), []);
