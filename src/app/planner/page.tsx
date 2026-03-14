@@ -371,7 +371,7 @@ export default function PlannerPage() {
               : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
           }`}
         >
-          {shuffling ? "🎰 Shuffling..." : `🎲 Randomise ${viewMode === "week" ? "Week" : "Month"}`}
+          {shuffling ? "🎰 Shuffling..." : `🎲 Randomise Meals ${viewMode === "week" ? "(Week)" : "(Month)"}`}
         </button>
       </div>
 

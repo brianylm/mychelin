@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Toast } from "@/components/Toast";
 
@@ -17,17 +17,75 @@ interface Step {
 }
 
 export default function NewRecipePage() {
+  return (
+    <Suspense fallback={<div className="max-w-3xl mx-auto py-8 text-center text-amber-600">Loading...</div>}>
+      <RecipeForm />
+    </Suspense>
+  );
+}
+
+function RecipeForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const recipeId = searchParams.get("id"); // Get the 'id' parameter
+
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
     show: false,
     message: "",
     type: "success",
   });
+
+  // State for all form fields
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [story, setStory] = useState("");
+  const [origin, setOrigin] = useState("");
+  const [familyMember, setFamilyMember] = useState("");
+  const [cuisine, setCuisine] = useState("");
+  const [category, setCategory] = useState("");
+  const [prepTime, setPrepTime] = useState<number | null>(null);
+  const [cookTime, setCookTime] = useState<number | null>(null);
+  const [servings, setServings] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState("");
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: "", amount: "", unit: "" }]);
   const [instructions, setInstructions] = useState<Step[]>([{ step: 1, text: "" }]);
 
   const hideToast = useCallback(() => setToast((t) => ({ ...t, show: false })), []);
+
+  // Fetch recipe data if recipeId exists
+  useEffect(() => {
+    if (recipeId) {
+      const fetchRecipe = async () => {
+        try {
+          const res = await fetch(`/api/recipes/${recipeId}`); // Assuming API endpoint for single recipe is /api/recipes/[id]
+          if (res.ok) {
+            const data = await res.json();
+            // Populate all state variables with fetched data
+            setTitle(data.title || "");
+            setDescription(data.description || "");
+            setStory(data.story || "");
+            setOrigin(data.origin || "");
+            setFamilyMember(data.familyMember || "");
+            setCuisine(data.cuisine || "");
+            setCategory(data.category || "");
+            setPrepTime(data.prepTime || null);
+            setCookTime(data.cookTime || null);
+            setServings(data.servings || null);
+            setDifficulty(data.difficulty || "");
+            setIngredients(data.ingredients?.length ? data.ingredients : [{ name: "", amount: "", unit: "" }]);
+            setInstructions(data.instructions?.length ? data.instructions : [{ step: 1, text: "" }]);
+          } else {
+            setToast({ show: true, message: "Failed to load recipe.", type: "error" });
+          }
+        } catch (error) {
+          console.error("Error fetching recipe:", error);
+          setToast({ show: true, message: "Failed to load recipe.", type: "error" });
+        }
+      };
+      fetchRecipe();
+    }
+  }, [recipeId]); // Rerun when recipeId changes
 
   const addIngredient = () => {
     setIngredients([...ingredients, { name: "", amount: "", unit: "" }]);
@@ -67,36 +125,37 @@ export default function NewRecipePage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
-
-    const formData = new FormData(e.currentTarget);
     
     const recipe = {
-      title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      story: formData.get("story") as string,
-      origin: formData.get("origin") as string,
-      familyMember: formData.get("familyMember") as string,
-      cuisine: formData.get("cuisine") as string,
-      category: formData.get("category") as string,
-      prepTime: formData.get("prepTime") ? parseInt(formData.get("prepTime") as string) : null,
-      cookTime: formData.get("cookTime") ? parseInt(formData.get("cookTime") as string) : null,
-      servings: formData.get("servings") ? parseInt(formData.get("servings") as string) : null,
-      difficulty: formData.get("difficulty") as string,
+      title,
+      description,
+      story,
+      origin,
+      familyMember,
+      cuisine,
+      category,
+      prepTime,
+      cookTime,
+      servings,
+      difficulty,
       ingredients: ingredients.filter(i => i.name.trim()),
       instructions: instructions.filter(i => i.text.trim()),
     };
 
+    const method = recipeId ? "PUT" : "POST";
+    const url = recipeId ? `/api/recipes/${recipeId}` : "/api/recipes";
+
     try {
-      const res = await fetch("/api/recipes", {
-        method: "POST",
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(recipe),
       });
 
       if (res.ok) {
         const data = await res.json();
-        setToast({ show: true, message: "Recipe saved successfully! 🎉", type: "success" });
-        setTimeout(() => router.push(`/recipes/${data.id}`), 1500);
+        setToast({ show: true, message: recipeId ? "Recipe updated successfully! 🎉" : "Recipe saved successfully! 🎉", type: "success" });
+        setTimeout(() => router.push(`/recipes/${data.id || recipeId}`), 1500);
       } else {
         setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
       }
@@ -110,8 +169,10 @@ export default function NewRecipePage() {
   return (
     <div className="max-w-3xl mx-auto">
       <Toast message={toast.message} type={toast.type} show={toast.show} onClose={hideToast} />
-      <h1 className="text-3xl font-bold text-amber-900 mb-2">Add a New Recipe</h1>
-      <p className="text-amber-600 mb-6 text-lg">Write down a family recipe before it&apos;s forgotten</p>
+      <h1 className="text-3xl font-bold text-amber-900 mb-2">{recipeId ? "Edit Recipe" : "Add a New Recipe"}</h1>
+      <p className="text-amber-600 mb-6 text-lg">
+        {recipeId ? "Update your family recipe" : "Write down a family recipe before it's forgotten"}
+      </p>
 
       {/* AI Live Conversation CTA */}
       <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 mb-8 border border-purple-200">
@@ -158,6 +219,8 @@ export default function NewRecipePage() {
                 name="title"
                 required
                 placeholder="e.g., Grandma's Chicken Rice"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
               />
             </div>
@@ -170,6 +233,8 @@ export default function NewRecipePage() {
                 name="description"
                 rows={2}
                 placeholder="What makes this dish special?"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
               />
             </div>
@@ -181,6 +246,8 @@ export default function NewRecipePage() {
                 </label>
                 <select
                   name="cuisine"
+                  value={cuisine}
+                  onChange={(e) => setCuisine(e.target.value)}
                   className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select...</option>
@@ -203,6 +270,8 @@ export default function NewRecipePage() {
                 </label>
                 <select
                   name="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="">Select...</option>
@@ -232,6 +301,8 @@ export default function NewRecipePage() {
                 type="text"
                 name="familyMember"
                 placeholder="e.g., Grandma, Ah Ma, Mum"
+                value={familyMember}
+                onChange={(e) => setFamilyMember(e.target.value)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -244,6 +315,8 @@ export default function NewRecipePage() {
                 type="text"
                 name="origin"
                 placeholder="e.g., Our old house in Tiong Bahru, 1970s"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -256,6 +329,8 @@ export default function NewRecipePage() {
                 name="story"
                 rows={4}
                 placeholder="What memories do you have of this dish? When would your family make it?"
+                value={story}
+                onChange={(e) => setStory(e.target.value)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -276,6 +351,8 @@ export default function NewRecipePage() {
                   type="number"
                   name="prepTime"
                   placeholder="30"
+                  value={prepTime ?? ""}
+                  onChange={(e) => setPrepTime(e.target.value ? parseInt(e.target.value) : null)}
                   className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
                 />
                 <span className="text-amber-600">min</span>
@@ -291,6 +368,8 @@ export default function NewRecipePage() {
                   type="number"
                   name="cookTime"
                   placeholder="45"
+                  value={cookTime ?? ""}
+                  onChange={(e) => setCookTime(e.target.value ? parseInt(e.target.value) : null)}
                   className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
                 />
                 <span className="text-amber-600">min</span>
@@ -305,6 +384,8 @@ export default function NewRecipePage() {
                 type="number"
                 name="servings"
                 placeholder="4"
+                value={servings ?? ""}
+                onChange={(e) => setServings(e.target.value ? parseInt(e.target.value) : null)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -315,6 +396,8 @@ export default function NewRecipePage() {
               </label>
               <select
                 name="difficulty"
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
                 className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
               >
                 <option value="">Select...</option>
@@ -332,24 +415,8 @@ export default function NewRecipePage() {
           
           <div className="space-y-3">
             {ingredients.map((ing, index) => (
-              <div key={index} className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 items-start">
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <input
-                    type="text"
-                    placeholder="Amount"
-                    value={ing.amount}
-                    onChange={(e) => updateIngredient(index, "amount", e.target.value)}
-                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Unit"
-                    value={ing.unit}
-                    onChange={(e) => updateIngredient(index, "unit", e.target.value)}
-                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-                <div className="flex gap-2 w-full sm:flex-1">
+              <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start relative pb-4 mb-4 border-b border-amber-100 last-of-type:border-b-0 last-of-type:pb-0 last-of-type:mb-0">
+                <div className="flex gap-2 w-full sm:flex-1 order-1 sm:order-none">
                   <input
                     type="text"
                     placeholder="Ingredient name"
@@ -364,6 +431,34 @@ export default function NewRecipePage() {
                   >
                     ✕
                   </button>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-none">
+                  <input
+                    type="text"
+                    placeholder="Amount"
+                    value={ing.amount}
+                    onChange={(e) => updateIngredient(index, "amount", e.target.value)}
+                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  />
+                  <select
+                    value={ing.unit}
+                    onChange={(e) => updateIngredient(index, "unit", e.target.value)}
+                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Unit</option>
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="L">L</option>
+                    <option value="tsp">tsp</option>
+                    <option value="tbsp">tbsp</option>
+                    <option value="cup">cup</option>
+                    <option value="pcs">pcs</option>
+                    <option value="pinch">pinch</option>
+                    <option value="dash">dash</option>
+                    <option value="oz">oz</option>
+                    <option value="lb">lb</option>
+                  </select>
                 </div>
               </div>
             ))}
