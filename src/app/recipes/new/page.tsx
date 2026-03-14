@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Toast } from "@/components/Toast";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface Ingredient {
   name: string;
@@ -48,6 +49,7 @@ function RecipeForm() {
   const [cookTime, setCookTime] = useState<number | null>(null);
   const [servings, setServings] = useState<number | null>(null);
   const [difficulty, setDifficulty] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: "", amount: "", unit: "" }]);
   const [instructions, setInstructions] = useState<Step[]>([{ step: 1, text: "" }]);
 
@@ -73,6 +75,7 @@ function RecipeForm() {
             setCookTime(data.cookTime || null);
             setServings(data.servings || null);
             setDifficulty(data.difficulty || "");
+            setImageUrl(data.imageUrl || null);
             setIngredients(data.ingredients?.length ? data.ingredients : [{ name: "", amount: "", unit: "" }]);
             setInstructions(data.instructions?.length ? data.instructions : [{ step: 1, text: "" }]);
           } else {
@@ -134,6 +137,7 @@ function RecipeForm() {
       familyMember,
       cuisine,
       category,
+      imageUrl,
       prepTime,
       cookTime,
       servings,
@@ -205,6 +209,16 @@ function RecipeForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Recipe Photo */}
+        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+          <h2 className="text-xl font-semibold text-amber-800 mb-4">📸 Recipe Photo</h2>
+          <ImageUpload
+            currentImageUrl={imageUrl}
+            onImageUploaded={(url) => setImageUrl(url)}
+            onImageRemoved={() => setImageUrl(null)}
+          />
+        </section>
+
         {/* Basic Info */}
         <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
           <h2 className="text-xl font-semibold text-amber-800 mb-4">📝 Basic Information</h2>

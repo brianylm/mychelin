@@ -73,6 +73,7 @@ export async function PUT(
         familyMember: body.familyMember || null,
         cuisine: body.cuisine || null,
         category: body.category || null,
+        imageUrl: body.imageUrl || null,
         prepTime: body.prepTime || null,
         cookTime: body.cookTime || null,
         servings: body.servings || null,
