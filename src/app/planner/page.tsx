@@ -60,7 +60,7 @@ export default function PlannerPage() {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [meals, setMeals] = useState<MealEntry[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(() => formatDateKey(new Date()));
   const [editingMeal, setEditingMeal] = useState<{ date: string; meal: "breakfast" | "lunch" | "dinner" } | null>(null);
   const [mealInput, setMealInput] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -365,7 +365,7 @@ export default function PlannerPage() {
           disabled={noRecipes || shuffling}
           className={`ml-auto px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
             noRecipes
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              ? "bg-purple-100 text-purple-400 border border-purple-200 cursor-not-allowed"
               : shuffling
               ? "bg-purple-500 text-white animate-pulse"
               : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
@@ -488,8 +488,8 @@ export default function PlannerPage() {
             <button
               onClick={() => surpriseDay(selectedDate)}
               disabled={noRecipes}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-                noRecipes ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
+              className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+                noRecipes ? "bg-purple-100 text-purple-300 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
               }`}
             >
               🎲 Surprise whole day
@@ -532,7 +532,7 @@ export default function PlannerPage() {
                   </div>
 
                   {isEditing ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full overflow-hidden">
                       <RecipeSearchInput
                         value={mealInput}
                         onChange={setMealInput}
@@ -540,14 +540,14 @@ export default function PlannerPage() {
                         onKeyDown={(e) => e.key === "Enter" && saveMeal()}
                         placeholder="Search recipes or type meal..."
                         autoFocus
-                        className="flex-1 min-w-0 px-4 py-2 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                        className="flex-1 min-w-0 px-3 py-2 text-base border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
                       />
-                      <button onClick={() => saveMeal()} className="px-4 py-2 bg-amber-600 text-white rounded-xl font-semibold hover:bg-amber-700 flex-shrink-0">
+                      <button onClick={() => saveMeal()} className="px-3 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 flex-shrink-0 text-sm">
                         Save
                       </button>
                       <button
                         onClick={() => { setEditingMeal(null); setMealInput(""); }}
-                        className="px-3 py-2 text-amber-600 hover:bg-amber-100 rounded-xl flex-shrink-0"
+                        className="px-2 py-2 text-amber-600 hover:bg-amber-100 rounded-lg flex-shrink-0 text-sm"
                       >
                         ✕
                       </button>
