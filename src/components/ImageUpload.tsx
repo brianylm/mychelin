@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 
 interface ImageUploadProps {
   currentImageUrl?: string | null;
@@ -8,58 +8,77 @@ interface ImageUploadProps {
   onImageRemoved?: () => void;
 }
 
+const MAX_WIDTH = 800;
+const MAX_HEIGHT = 800;
+const JPEG_QUALITY = 0.75;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB input limit
+
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+
+        // Scale down if needed
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas not supported"));
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Output as JPEG for smaller size
+        const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ImageUpload({ currentImageUrl, onImageUploaded, onImageRemoved }: ImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     setError(null);
 
-    // Client-side validation
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
       setError("Please upload a JPEG, PNG, WebP, or GIF image.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
       setError("Image must be under 5MB.");
       return;
     }
 
-    // Show preview immediately
-    const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
-
-    // Upload
-    setUploading(true);
+    setProcessing(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        onImageUploaded(data.url);
-      } else {
-        const data = await res.json();
-        setError(data.error || "Upload failed");
-        setPreview(currentImageUrl || null);
-      }
+      const dataUrl = await compressImage(file);
+      setPreview(dataUrl);
+      onImageUploaded(dataUrl);
     } catch {
-      setError("Upload failed. Please try again.");
+      setError("Failed to process image. Please try again.");
       setPreview(currentImageUrl || null);
     } finally {
-      setUploading(false);
+      setProcessing(false);
     }
-  };
+  }, [currentImageUrl, onImageUploaded]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,12 +108,12 @@ export function ImageUpload({ currentImageUrl, onImageUploaded, onImageRemoved }
             alt="Recipe"
             className="w-full h-48 object-cover"
           />
-          {uploading && (
+          {processing && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <div className="text-white text-lg font-semibold animate-pulse">Uploading...</div>
+              <div className="text-white text-lg font-semibold animate-pulse">Processing...</div>
             </div>
           )}
-          {!uploading && (
+          {!processing && (
             <div className="absolute top-2 right-2 flex gap-2">
               <button
                 type="button"
@@ -127,7 +146,7 @@ export function ImageUpload({ currentImageUrl, onImageUploaded, onImageRemoved }
         >
           <span className="text-4xl mb-2">📸</span>
           <p className="text-amber-700 font-medium">
-            {uploading ? "Uploading..." : "Click or drag to add a photo"}
+            {processing ? "Processing..." : "Click or drag to add a photo"}
           </p>
           <p className="text-amber-500 text-sm mt-1">JPEG, PNG, WebP, GIF · Max 5MB</p>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Search, UtensilsCrossed, PenLine } from "lucide-react";
 
 interface Recipe {
   id: string;
@@ -18,16 +19,19 @@ interface Recipe {
 
 export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCuisine, setActiveCuisine] = useState<string | null>(null);
 
   const filteredRecipes = recipes.filter((recipe) => {
-    if (!searchQuery.trim()) return true;
+    const matchesCuisine = !activeCuisine || recipe.cuisine === activeCuisine;
+    if (!searchQuery.trim()) return matchesCuisine;
     const q = searchQuery.toLowerCase();
     return (
-      recipe.title.toLowerCase().includes(q) ||
-      recipe.cuisine?.toLowerCase().includes(q) ||
-      recipe.category?.toLowerCase().includes(q) ||
-      recipe.description?.toLowerCase().includes(q) ||
-      recipe.familyMember?.toLowerCase().includes(q)
+      matchesCuisine &&
+      (recipe.title.toLowerCase().includes(q) ||
+        recipe.cuisine?.toLowerCase().includes(q) ||
+        recipe.category?.toLowerCase().includes(q) ||
+        recipe.description?.toLowerCase().includes(q) ||
+        recipe.familyMember?.toLowerCase().includes(q))
     );
   });
 
@@ -41,22 +45,36 @@ export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
           placeholder="Search recipes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-amber-900"
+          className="w-full pl-10 pr-4 py-2 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-terracotta/50 focus:border-terracotta text-stone-800"
         />
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500">🔍</span>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
       </div>
 
       {/* Cuisine Filter */}
       {cuisines.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <span className="px-4 py-2 bg-amber-600 text-white rounded-full font-medium">All</span>
+          <button
+            onClick={() => setActiveCuisine(null)}
+            className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
+              !activeCuisine
+                ? "bg-terracotta text-white shadow-md"
+                : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+            }`}
+          >
+            All
+          </button>
           {cuisines.map((cuisine) => (
-            <span
+            <button
               key={cuisine}
-              className="px-4 py-2 bg-amber-100 text-amber-700 rounded-full hover:bg-amber-200 cursor-pointer"
+              onClick={() => setActiveCuisine(activeCuisine === cuisine ? null : cuisine!)}
+              className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
+                activeCuisine === cuisine
+                  ? "bg-terracotta text-white shadow-md"
+                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+              }`}
             >
               {cuisine}
-            </span>
+            </button>
           ))}
         </div>
       )}
@@ -68,17 +86,17 @@ export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
             <Link
               key={recipe.id}
               href={`/recipes/${recipe.id}`}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-amber-200 hover:shadow-md transition-shadow"
+              className="bg-white rounded-2xl overflow-hidden shadow-md border border-stone-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
             >
-              <div className="h-48 bg-amber-200 flex items-center justify-center">
+              <div className="h-48 bg-gradient-to-br from-stone-200 to-stone-100 flex items-center justify-center">
                 {recipe.imageUrl ? (
                   <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-7xl">🍽️</span>
+                  <UtensilsCrossed className="w-14 h-14 text-stone-400" />
                 )}
               </div>
               <div className="p-5">
-                <h3 className="text-xl font-semibold text-amber-900 mb-2">{recipe.title}</h3>
+                <h3 className="text-xl font-semibold text-stone-800 mb-2">{recipe.title}</h3>
 
                 <div className="flex flex-wrap gap-2 mb-3">
                   {recipe.cuisine && (
@@ -94,13 +112,13 @@ export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
                 </div>
 
                 {recipe.familyMember && (
-                  <p className="text-amber-600 text-sm">
-                    👨‍👩‍👧 From: {recipe.familyMember}
+                  <p className="text-stone-500 text-sm">
+                    From: {recipe.familyMember}
                   </p>
                 )}
 
                 {(recipe.prepTime || recipe.cookTime) && (
-                  <p className="text-amber-500 text-sm mt-2">
+                  <p className="text-stone-400 text-sm mt-2">
                     ⏱️ {recipe.prepTime && `${recipe.prepTime} min prep`}
                     {recipe.prepTime && recipe.cookTime && " · "}
                     {recipe.cookTime && `${recipe.cookTime} min cook`}
@@ -111,19 +129,19 @@ export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
           ))}
         </div>
       ) : searchQuery.trim() ? (
-        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-amber-300">
-          <div className="text-7xl mb-4">🔍</div>
-          <h2 className="text-2xl font-bold text-amber-800 mb-2">No recipes found</h2>
-          <p className="text-amber-600 mb-6 text-lg">Try a different search term</p>
+        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-stone-300">
+          <Search className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-stone-800 mb-2">No recipes found</h2>
+          <p className="text-stone-500 mb-6 text-lg">Try a different search term</p>
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-amber-300">
-          <div className="text-7xl mb-4">📝</div>
-          <h2 className="text-2xl font-bold text-amber-800 mb-2">No recipes yet</h2>
-          <p className="text-amber-600 mb-6 text-lg">Add your family&apos;s special dishes</p>
+        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-stone-300">
+          <PenLine className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-stone-800 mb-2">No recipes yet</h2>
+          <p className="text-stone-500 mb-6 text-lg">Add your family&apos;s special dishes</p>
           <Link
             href="/recipes/new"
-            className="inline-flex items-center gap-2 bg-amber-600 text-white px-8 py-4 rounded-xl text-xl font-semibold hover:bg-amber-700"
+            className="inline-flex items-center gap-2 bg-terracotta text-white px-8 py-4 rounded-xl text-xl font-semibold hover:bg-terracotta-600 transition-colors"
           >
             Add Your First Recipe
           </Link>

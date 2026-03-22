@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Box } from "lucide-react";
 
 interface FridgeItem {
   id: string;
@@ -41,12 +42,15 @@ export default function FridgePage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-amber-900 mb-2">🧊 My Fridge</h1>
-      <p className="text-amber-600 mb-8 text-lg">Keep track of what you have at home</p>
+      <div className="flex items-center gap-3 mb-2">
+        <Box className="w-8 h-8 text-terracotta" />
+        <h1 className="text-3xl font-bold text-stone-900">My Fridge</h1>
+      </div>
+      <p className="text-stone-600 mb-8 text-lg">Keep track of what you have at home</p>
 
       {/* Add Item Form */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 mb-8">
-        <h2 className="text-xl font-semibold text-amber-800 mb-4">Add an Item</h2>
+      <div className="bg-white rounded-2xl p-6 shadow-md border border-stone-200 mb-8">
+        <h2 className="text-xl font-semibold text-stone-800 mb-4">Add an Item</h2>
         
         <div className="space-y-3">
           <input
@@ -54,7 +58,7 @@ export default function FridgePage() {
             placeholder="What do you have?"
             value={newItem.name}
             onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-            className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+            className="w-full px-4 py-3 text-lg border border-stone-300 rounded-xl focus:ring-2 focus:ring-terracotta/50 focus:border-terracotta"
           />
           <div className="flex gap-3">
             <input
@@ -62,12 +66,12 @@ export default function FridgePage() {
               placeholder="Amount"
               value={newItem.quantity}
               onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
-              className="flex-1 min-w-0 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+              className="flex-1 min-w-0 px-4 py-3 text-lg border border-stone-300 rounded-xl focus:ring-2 focus:ring-terracotta/50 focus:border-terracotta"
             />
             <select
               value={newItem.category}
               onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-              className="flex-1 min-w-0 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+              className="flex-1 min-w-0 px-4 py-3 text-lg border border-stone-300 rounded-xl focus:ring-2 focus:ring-terracotta/50 focus:border-terracotta"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -76,7 +80,7 @@ export default function FridgePage() {
           </div>
           <button
             onClick={addItem}
-            className="w-full px-6 py-3 bg-amber-600 text-white rounded-xl text-lg font-semibold hover:bg-amber-700"
+            className="w-full px-6 py-3 bg-terracotta text-white rounded-xl text-lg font-semibold hover:bg-terracotta-600 transition-colors"
           >
             Add
           </button>
@@ -87,17 +91,17 @@ export default function FridgePage() {
       {groupedItems.length > 0 ? (
         <div className="space-y-6">
           {groupedItems.map((group) => (
-            <div key={group.category} className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-              <h3 className="text-lg font-semibold text-amber-800 mb-4">{group.category}</h3>
+            <div key={group.category} className="bg-white rounded-2xl p-6 shadow-md border border-stone-200">
+              <h3 className="text-lg font-semibold text-stone-800 mb-4">{group.category}</h3>
               <div className="space-y-2">
                 {group.items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between py-2 border-b border-amber-100 last:border-0"
+                    className="flex items-center justify-between py-2 border-b border-stone-100 last:border-0"
                   >
-                    <span className="text-lg text-amber-900">
+                    <span className="text-lg text-stone-800">
                       {item.name}
-                      {item.quantity && <span className="text-amber-500 ml-2">({item.quantity})</span>}
+                      {item.quantity && <span className="text-stone-400 ml-2">({item.quantity})</span>}
                     </span>
                     <button
                       onClick={() => removeItem(item.id)}
@@ -112,10 +116,10 @@ export default function FridgePage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-amber-300">
+        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-stone-300">
           <div className="text-7xl mb-4">🥬</div>
-          <h2 className="text-2xl font-bold text-amber-800 mb-2">Your fridge is empty</h2>
-          <p className="text-amber-600 text-lg">Add items to keep track of what you have</p>
+          <h2 className="text-2xl font-bold text-stone-800 mb-2">Your fridge is empty</h2>
+          <p className="text-stone-500 text-lg">Add items to keep track of what you have</p>
         </div>
       )}
     </div>

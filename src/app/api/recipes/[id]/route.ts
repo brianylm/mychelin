@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, recipes, recipeVersions } from "@/db";
 import { eq, desc } from "drizzle-orm";
+import { getCurrentUserId } from "@/lib/auth";
 
 // GET /api/recipes/[id] - Get a single recipe with its latest version
 export async function GET(
@@ -93,7 +94,7 @@ export async function PUT(
       ingredients: body.ingredients || [],
       instructions: body.instructions || [],
       notes: null,
-      changedBy: "demo-user",
+      changedBy: (await getCurrentUserId()) || "demo-user",
       changeNote: "Edited recipe",
     });
 

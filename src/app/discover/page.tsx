@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Shuffle, PenLine } from "lucide-react";
 
 interface Recipe {
   id: string;
@@ -42,27 +43,31 @@ export default function DiscoverPage() {
 
   return (
     <div className="max-w-2xl mx-auto text-center">
-      <h1 className="text-3xl font-bold text-amber-900 mb-2">🎲 Surprise Me!</h1>
-      <p className="text-amber-600 mb-8 text-lg">Not sure what to cook? Let us pick for you!</p>
+      <div className="flex items-center justify-center gap-3 mb-2">
+        <Shuffle className="w-8 h-8 text-terracotta" />
+        <h1 className="text-3xl font-bold text-stone-900">Surprise Me!</h1>
+      </div>
+      <p className="text-stone-600 mb-8 text-lg">Not sure what to cook? Let us pick for you!</p>
 
       {/* Random Button */}
       <button
         onClick={getRandomRecipe}
         disabled={loading}
-        className="mb-12 px-12 py-6 bg-amber-600 text-white rounded-2xl text-2xl font-bold hover:bg-amber-700 disabled:bg-amber-400 transition-all transform hover:scale-105"
+        className="mb-12 inline-flex items-center gap-3 px-12 py-6 bg-terracotta text-white rounded-2xl text-2xl font-bold hover:bg-terracotta-600 disabled:bg-stone-400 transition-all transform hover:scale-105"
       >
-        {loading ? "🎰 Picking..." : "🎲 Pick a Random Recipe"}
+        <Shuffle className="w-7 h-7" />
+        {loading ? "Picking..." : "Pick a Random Recipe"}
       </button>
 
       {/* Result */}
       {randomRecipe && (
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-amber-200 animate-fade-in">
+        <div className="bg-white rounded-2xl p-8 shadow-lg border border-stone-200 animate-fade-in">
           <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-amber-900 mb-4">
+          <h2 className="text-2xl font-bold text-stone-800 mb-4">
             How about...
           </h2>
           
-          <div className="text-4xl font-bold text-amber-800 mb-4">
+          <div className="text-4xl font-bold text-stone-800 mb-4 font-heading">
             {randomRecipe.title}
           </div>
 
@@ -80,13 +85,13 @@ export default function DiscoverPage() {
           </div>
 
           {randomRecipe.familyMember && (
-            <p className="text-amber-600 text-lg mb-6">
-              👨‍👩‍👧 From: {randomRecipe.familyMember}
+            <p className="text-stone-500 text-lg mb-6">
+              From: {randomRecipe.familyMember}
             </p>
           )}
 
           {(randomRecipe.prepTime || randomRecipe.cookTime) && (
-            <p className="text-amber-500 mb-6">
+            <p className="text-stone-400 mb-6">
               ⏱️ {randomRecipe.prepTime && `${randomRecipe.prepTime} min prep`}
               {randomRecipe.prepTime && randomRecipe.cookTime && " · "}
               {randomRecipe.cookTime && `${randomRecipe.cookTime} min cook`}
@@ -96,13 +101,13 @@ export default function DiscoverPage() {
           <div className="flex gap-4 justify-center">
             <Link
               href={`/recipes/${randomRecipe.id}`}
-              className="px-8 py-4 bg-amber-600 text-white rounded-xl text-xl font-semibold hover:bg-amber-700"
+              className="px-8 py-4 bg-terracotta text-white rounded-xl text-xl font-semibold hover:bg-terracotta-600 transition-colors"
             >
               Let&apos;s Cook This!
             </Link>
             <button
               onClick={getRandomRecipe}
-              className="px-8 py-4 border-2 border-amber-300 text-amber-700 rounded-xl text-xl font-semibold hover:bg-amber-50"
+              className="px-8 py-4 border-2 border-stone-300 text-stone-600 rounded-xl text-xl font-semibold hover:bg-stone-50 transition-colors"
             >
               Pick Another
             </button>
@@ -111,13 +116,13 @@ export default function DiscoverPage() {
       )}
 
       {noRecipes && (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-amber-200">
-          <div className="text-6xl mb-4">📝</div>
-          <h2 className="text-2xl font-bold text-amber-800 mb-2">No recipes yet!</h2>
-          <p className="text-amber-600 mb-6 text-lg">Add some recipes first, then come back for a surprise</p>
+        <div className="bg-white rounded-2xl p-8 shadow-md border border-stone-200">
+          <PenLine className="w-16 h-16 text-stone-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-stone-800 mb-2">No recipes yet!</h2>
+          <p className="text-stone-500 mb-6 text-lg">Add some recipes first, then come back for a surprise</p>
           <Link
             href="/recipes/new"
-            className="inline-block px-8 py-4 bg-amber-600 text-white rounded-xl text-xl font-semibold hover:bg-amber-700"
+            className="inline-block px-8 py-4 bg-terracotta text-white rounded-xl text-xl font-semibold hover:bg-terracotta-600 transition-colors"
           >
             Add Your First Recipe
           </Link>
@@ -126,22 +131,22 @@ export default function DiscoverPage() {
 
       {/* Ideas Section */}
       <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+        <div className="bg-white rounded-2xl p-6 shadow-md border border-stone-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="text-4xl mb-3">🍜</div>
-          <h3 className="text-lg font-semibold text-amber-900">Quick Meals</h3>
-          <p className="text-amber-600">Under 30 minutes</p>
+          <h3 className="text-lg font-semibold text-stone-800">Quick Meals</h3>
+          <p className="text-stone-500">Under 30 minutes</p>
         </div>
         
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+        <div className="bg-white rounded-2xl p-6 shadow-md border border-stone-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="text-4xl mb-3">👨‍👩‍👧‍👦</div>
-          <h3 className="text-lg font-semibold text-amber-900">Family Favorites</h3>
-          <p className="text-amber-600">Dishes everyone loves</p>
+          <h3 className="text-lg font-semibold text-stone-800">Family Favorites</h3>
+          <p className="text-stone-500">Dishes everyone loves</p>
         </div>
         
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
+        <div className="bg-white rounded-2xl p-6 shadow-md border border-stone-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200">
           <div className="text-4xl mb-3">🏆</div>
-          <h3 className="text-lg font-semibold text-amber-900">Heritage Recipes</h3>
-          <p className="text-amber-600">Traditional dishes</p>
+          <h3 className="text-lg font-semibold text-stone-800">Heritage Recipes</h3>
+          <p className="text-stone-500">Traditional dishes</p>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, recipes, recipeVersions, users } from "@/db";
+import { db, recipes, recipeVersions } from "@/db";
 import { desc } from "drizzle-orm";
+import { getCurrentUserId } from "@/lib/auth";
 
 // GET /api/recipes - List all recipes
 export async function GET() {
@@ -17,20 +18,6 @@ export async function GET() {
   return NextResponse.json(allRecipes);
 }
 
-// Ensure demo user exists
-async function ensureDemoUser() {
-  const existing = await db.query.users.findFirst({
-    where: (users, { eq }) => eq(users.id, "demo-user"),
-  });
-  if (!existing) {
-    await db.insert(users).values({
-      id: "demo-user",
-      name: "Family Chef",
-      email: "chef@mychelin.app",
-    });
-  }
-}
-
 // POST /api/recipes - Create a new recipe
 export async function POST(request: NextRequest) {
   try {
@@ -38,10 +25,9 @@ export async function POST(request: NextRequest) {
 
     const recipeId = crypto.randomUUID();
     const versionId = crypto.randomUUID();
-    const userId = "demo-user";
 
-    // Ensure demo user exists before creating recipe
-    await ensureDemoUser();
+    // Use authenticated user, fall back to demo-user for backward compat
+    const userId = (await getCurrentUserId()) || "demo-user";
 
     // Create recipe
     await db.insert(recipes).values({

@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { RecipeSearchInput } from "@/components/RecipeSearchInput";
 import { SaveMealPlanModal } from "@/components/SaveMealPlanModal";
+import { Calendar, Shuffle } from "lucide-react";
 
 interface MealEntry {
   id: string;
@@ -75,13 +76,11 @@ export default function PlannerPage() {
 
   // Fetch recipes and saved meal plans
   useEffect(() => {
-    // Fetch recipes
     fetch("/api/recipes")
       .then((r) => r.json())
       .then((data) => setRecipes(Array.isArray(data) ? data : []))
       .catch(() => {});
 
-    // Fetch saved meal plans
     fetch("/api/meal-plans")
       .then((r) => r.json())
       .then((data) => {
@@ -100,14 +99,12 @@ export default function PlannerPage() {
       .catch(() => {});
   }, []);
 
-  // Track unsaved changes
   useEffect(() => {
     const mealsJson = JSON.stringify(meals.sort((a, b) => a.date.localeCompare(b.date) || a.meal.localeCompare(b.meal)));
     const savedJson = JSON.stringify(lastSavedMeals.sort((a, b) => a.date.localeCompare(b.date) || a.meal.localeCompare(b.meal)));
     setHasUnsavedChanges(mealsJson !== savedJson);
   }, [meals, lastSavedMeals]);
 
-  // Browser navigation warning
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -115,7 +112,6 @@ export default function PlannerPage() {
         e.returnValue = "";
       }
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
@@ -125,12 +121,10 @@ export default function PlannerPage() {
     return recipes[Math.floor(Math.random() * recipes.length)];
   }, [recipes]);
 
-  // Surprise me for a single meal slot
   const surpriseMeal = useCallback(
     (dateKey: string, mealType: "breakfast" | "lunch" | "dinner") => {
       const recipe = pickRandomRecipe();
       if (!recipe) return;
-
       const existing = meals.find((m) => m.date === dateKey && m.meal === mealType);
       if (existing) {
         setMeals((prev) =>
@@ -146,7 +140,6 @@ export default function PlannerPage() {
     [meals, pickRandomRecipe]
   );
 
-  // Surprise me for a whole day (all 3 meals)
   const surpriseDay = useCallback(
     (dateKey: string) => {
       if (recipes.length === 0) return;
@@ -165,11 +158,9 @@ export default function PlannerPage() {
     [meals, recipes]
   );
 
-  // Randomise visible range (week or month)
   const randomiseRange = useCallback(() => {
     if (recipes.length === 0) return;
     setShuffling(true);
-
     const dates: string[] = [];
     if (viewMode === "week") {
       const weekDays = getWeekDays(currentDate);
@@ -182,7 +173,6 @@ export default function PlannerPage() {
         dates.push(formatDateKey(new Date(year, month, d)));
       }
     }
-
     const newMeals = [...meals];
     for (const dateKey of dates) {
       for (const { key } of MEAL_TYPES) {
@@ -199,7 +189,6 @@ export default function PlannerPage() {
     setTimeout(() => setShuffling(false), 600);
   }, [meals, recipes, viewMode, currentDate]);
 
-  // Calendar grid for month view
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -213,7 +202,6 @@ export default function PlannerPage() {
     return days;
   }, [currentDate]);
 
-  // Week days for week view
   const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate]);
 
   const prevPeriod = () => {
@@ -268,7 +256,6 @@ export default function PlannerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plans: meals }),
       });
-
       if (response.ok) {
         setLastSavedMeals([...meals]);
         setHasUnsavedChanges(false);
@@ -336,16 +323,19 @@ export default function PlannerPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-amber-900 mb-2">📅 Meal Planner</h1>
-      <p className="text-amber-600 mb-6 text-lg">Plan your meals for the week ahead</p>
+      <div className="flex items-center gap-3 mb-2">
+        <Calendar className="w-8 h-8 text-terracotta" />
+        <h1 className="text-3xl font-bold text-stone-900">Meal Planner</h1>
+      </div>
+      <p className="text-stone-600 mb-6 text-lg">Plan your meals for the week ahead</p>
 
       {/* View toggle + Randomise CTA */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex bg-amber-100 rounded-xl p-1">
+        <div className="flex bg-stone-100 rounded-xl p-1">
           <button
             onClick={() => setViewMode("month")}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              viewMode === "month" ? "bg-amber-600 text-white" : "text-amber-700 hover:bg-amber-200"
+              viewMode === "month" ? "bg-terracotta text-white" : "text-stone-600 hover:bg-stone-200"
             }`}
           >
             Month
@@ -353,7 +343,7 @@ export default function PlannerPage() {
           <button
             onClick={() => setViewMode("week")}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              viewMode === "week" ? "bg-amber-600 text-white" : "text-amber-700 hover:bg-amber-200"
+              viewMode === "week" ? "bg-terracotta text-white" : "text-stone-600 hover:bg-stone-200"
             }`}
           >
             Week
@@ -363,7 +353,7 @@ export default function PlannerPage() {
         <button
           onClick={randomiseRange}
           disabled={noRecipes || shuffling}
-          className={`ml-auto px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
             noRecipes
               ? "bg-purple-100 text-purple-400 border border-purple-200 cursor-not-allowed"
               : shuffling
@@ -371,35 +361,34 @@ export default function PlannerPage() {
               : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
           }`}
         >
-          {shuffling ? "🎰 Shuffling..." : `🎲 Randomise Meals ${viewMode === "week" ? "(Week)" : "(Month)"}`}
+          <Shuffle className="w-4 h-4" />
+          {shuffling ? "Shuffling..." : `Randomise ${viewMode === "week" ? "(Week)" : "(Month)"}`}
         </button>
       </div>
 
       {/* Calendar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-amber-200 mb-6 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-md border border-stone-200 mb-6 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-amber-600 text-white">
-          <button onClick={prevPeriod} className="p-2 hover:bg-amber-700 rounded-xl text-xl">◀</button>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-terracotta text-white">
+          <button onClick={prevPeriod} className="p-2 hover:bg-terracotta-600 rounded-xl text-xl">◀</button>
           <div className="text-center">
             <h2 className="text-lg sm:text-2xl font-bold">{headerLabel}</h2>
-            <button onClick={goToToday} className="text-amber-200 text-sm hover:text-white">Today</button>
+            <button onClick={goToToday} className="text-terracotta-100 text-sm hover:text-white">Today</button>
           </div>
-          <button onClick={nextPeriod} className="p-2 hover:bg-amber-700 rounded-xl text-xl">▶</button>
+          <button onClick={nextPeriod} className="p-2 hover:bg-terracotta-600 rounded-xl text-xl">▶</button>
         </div>
 
         {viewMode === "month" ? (
           <>
-            {/* Day headers */}
-            <div className="grid grid-cols-7 bg-amber-50 border-b border-amber-200">
+            <div className="grid grid-cols-7 bg-stone-50 border-b border-stone-200">
               {DAY_NAMES.map((day) => (
-                <div key={day} className="py-2 text-center text-sm font-semibold text-amber-700">{day}</div>
+                <div key={day} className="py-2 text-center text-sm font-semibold text-stone-600">{day}</div>
               ))}
             </div>
 
-            {/* Month grid */}
             <div className="grid grid-cols-7">
               {calendarDays.map((day, i) => {
-                if (!day) return <div key={`empty-${i}`} className="h-16 sm:h-20 bg-gray-50 border-b border-r border-amber-100" />;
+                if (!day) return <div key={`empty-${i}`} className="h-16 sm:h-20 bg-gray-50 border-b border-r border-stone-100" />;
                 const dateKey = formatDateKey(day);
                 const dayMeals = getMealsForDate(dateKey);
                 const isToday = isSameDay(day, today);
@@ -408,11 +397,11 @@ export default function PlannerPage() {
                   <button
                     key={dateKey}
                     onClick={() => setSelectedDate(dateKey)}
-                    className={`h-16 sm:h-20 border-b border-r border-amber-100 p-1 text-left transition-colors relative ${
-                      isSelected ? "bg-amber-100 ring-2 ring-amber-500 ring-inset" : isToday ? "bg-amber-50" : "hover:bg-amber-50"
+                    className={`h-16 sm:h-20 border-b border-r border-stone-100 p-1 text-left transition-colors relative ${
+                      isSelected ? "bg-stone-100 ring-2 ring-terracotta ring-inset" : isToday ? "bg-stone-50" : "hover:bg-stone-50"
                     }`}
                   >
-                    <span className={`text-xs sm:text-sm font-medium ${isToday ? "bg-amber-600 text-white w-6 h-6 rounded-full flex items-center justify-center" : "text-amber-800"}`}>
+                    <span className={`text-xs sm:text-sm font-medium ${isToday ? "bg-terracotta text-white w-6 h-6 rounded-full flex items-center justify-center" : "text-stone-700"}`}>
                       {day.getDate()}
                     </span>
                     {dayMeals.length > 0 && (
@@ -428,8 +417,7 @@ export default function PlannerPage() {
             </div>
           </>
         ) : (
-          /* Week view */
-          <div className="divide-y divide-amber-100">
+          <div className="divide-y divide-stone-100">
             {weekDays.map((day) => {
               const dateKey = formatDateKey(day);
               const dayMeals = getMealsForDate(dateKey);
@@ -440,12 +428,12 @@ export default function PlannerPage() {
                   key={dateKey}
                   onClick={() => setSelectedDate(dateKey)}
                   className={`w-full flex items-center gap-4 px-4 sm:px-6 py-3 text-left transition-colors ${
-                    isSelected ? "bg-amber-100" : isToday ? "bg-amber-50" : "hover:bg-amber-50"
+                    isSelected ? "bg-stone-100" : isToday ? "bg-stone-50" : "hover:bg-stone-50"
                   }`}
                 >
                   <div className={`w-12 text-center flex-shrink-0 ${isToday ? "font-bold" : ""}`}>
-                    <div className="text-xs text-amber-500 uppercase">{DAY_NAMES[day.getDay()]}</div>
-                    <div className={`text-lg font-bold ${isToday ? "bg-amber-600 text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto" : "text-amber-800"}`}>
+                    <div className="text-xs text-stone-400 uppercase">{DAY_NAMES[day.getDay()]}</div>
+                    <div className={`text-lg font-bold ${isToday ? "bg-terracotta text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto" : "text-stone-700"}`}>
                       {day.getDate()}
                     </div>
                   </div>
@@ -453,25 +441,24 @@ export default function PlannerPage() {
                     {MEAL_TYPES.map(({ key, emoji }) => {
                       const m = dayMeals.find((meal) => meal.meal === key);
                       return m ? (
-                        <span key={key} className="inline-flex items-center gap-1 text-sm bg-amber-100 text-amber-800 px-2 py-1 rounded-lg truncate max-w-[140px]">
+                        <span key={key} className="inline-flex items-center gap-1 text-sm bg-stone-100 text-stone-700 px-2 py-1 rounded-lg truncate max-w-[140px]">
                           {emoji} {m.title}
                         </span>
                       ) : (
-                        <span key={key} className="inline-flex items-center gap-1 text-sm text-amber-300 px-2 py-1">
+                        <span key={key} className="inline-flex items-center gap-1 text-sm text-stone-300 px-2 py-1">
                           {emoji} —
                         </span>
                       );
                     })}
                   </div>
-                  <span className="text-amber-400 flex-shrink-0">›</span>
+                  <span className="text-stone-400 flex-shrink-0">›</span>
                 </button>
               );
             })}
           </div>
         )}
 
-        {/* Legend */}
-        <div className="flex gap-4 px-4 sm:px-6 py-3 bg-amber-50 border-t border-amber-200 text-sm text-amber-600">
+        <div className="flex gap-4 px-4 sm:px-6 py-3 bg-stone-50 border-t border-stone-200 text-sm text-stone-500">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /> Breakfast</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400" /> Lunch</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400" /> Dinner</span>
@@ -480,19 +467,19 @@ export default function PlannerPage() {
 
       {/* Selected Day Detail */}
       {selectedDate && selectedDateObj && (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md border border-stone-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-amber-900">
+            <h3 className="text-xl font-bold text-stone-900">
               {selectedDateObj.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </h3>
             <button
               onClick={() => surpriseDay(selectedDate)}
               disabled={noRecipes}
-              className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
                 noRecipes ? "bg-purple-100 text-purple-300 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
               }`}
             >
-              🎲 Surprise whole day
+              <Shuffle className="w-3 h-3" /> Surprise whole day
             </button>
           </div>
 
@@ -509,18 +496,18 @@ export default function PlannerPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-lg text-amber-900">{emoji} {label}</h4>
+                    <h4 className="font-semibold text-lg text-stone-800">{emoji} {label}</h4>
                     <div className="flex items-center gap-2">
                       {!isEditing && (
                         <button
                           onClick={() => surpriseMeal(selectedDate, key)}
                           disabled={noRecipes}
-                          className={`text-sm px-2 py-1 rounded-lg transition-colors ${
+                          className={`inline-flex items-center text-sm px-2 py-1 rounded-lg transition-colors ${
                             noRecipes ? "text-gray-300 cursor-not-allowed" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"
                           }`}
                           title="Surprise me!"
                         >
-                          🎲
+                          <Shuffle className="w-4 h-4" />
                         </button>
                       )}
                       {meal && !isEditing && (
@@ -540,26 +527,26 @@ export default function PlannerPage() {
                         onKeyDown={(e) => e.key === "Enter" && saveMeal()}
                         placeholder="Search recipes or type meal..."
                         autoFocus
-                        className="flex-1 min-w-0 px-3 py-2 text-base border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                        className="flex-1 min-w-0 px-3 py-2 text-base border border-stone-300 rounded-xl focus:ring-2 focus:ring-terracotta/50 bg-white"
                       />
-                      <button onClick={() => saveMeal()} className="px-3 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 flex-shrink-0 text-sm">
+                      <button onClick={() => saveMeal()} className="px-3 py-2 bg-terracotta text-white rounded-lg font-semibold hover:bg-terracotta-600 flex-shrink-0 text-sm">
                         Save
                       </button>
                       <button
                         onClick={() => { setEditingMeal(null); setMealInput(""); }}
-                        className="px-2 py-2 text-amber-600 hover:bg-amber-100 rounded-lg flex-shrink-0 text-sm"
+                        className="px-2 py-2 text-stone-500 hover:bg-stone-100 rounded-lg flex-shrink-0 text-sm"
                       >
                         ✕
                       </button>
                     </div>
                   ) : meal ? (
-                    <button onClick={() => startEditing(selectedDate, key)} className="text-lg text-amber-800 hover:underline text-left w-full">
+                    <button onClick={() => startEditing(selectedDate, key)} className="text-lg text-stone-700 hover:underline text-left w-full">
                       {meal.title}
                     </button>
                   ) : (
                     <button
                       onClick={() => startEditing(selectedDate, key)}
-                      className="w-full text-left px-4 py-3 border-2 border-dashed border-amber-300 rounded-xl text-amber-400 hover:text-amber-600 hover:border-amber-400 transition-colors text-lg"
+                      className="w-full text-left px-4 py-3 border-2 border-dashed border-stone-300 rounded-xl text-stone-400 hover:text-stone-600 hover:border-stone-400 transition-colors text-lg"
                     >
                       + Add {label.toLowerCase()}
                     </button>
@@ -569,44 +556,41 @@ export default function PlannerPage() {
             })}
           </div>
 
-          {/* Quick links */}
-          <div className="mt-6 pt-4 border-t border-amber-200 flex flex-wrap gap-3">
+          <div className="mt-6 pt-4 border-t border-stone-200 flex flex-wrap gap-3">
             <Link 
               href="/discover" 
               onClick={(e) => handleLinkClick(e, "/discover")}
-              className="text-amber-600 hover:text-amber-800 text-sm font-medium"
+              className="inline-flex items-center gap-1 text-terracotta hover:text-terracotta-600 text-sm font-medium"
             >
-              🎲 Get a random suggestion →
+              <Shuffle className="w-4 h-4" /> Get a random suggestion →
             </Link>
           </div>
         </div>
       )}
 
-      {/* No date selected */}
       {!selectedDate && (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-amber-200 text-center">
+        <div className="bg-white rounded-2xl p-8 shadow-md border border-stone-200 text-center">
           <div className="text-5xl mb-4">👆</div>
-          <h3 className="text-xl font-bold text-amber-800 mb-2">Select a day</h3>
-          <p className="text-amber-600 text-lg">Tap a date on the calendar to plan your meals</p>
+          <h3 className="text-xl font-bold text-stone-800 mb-2">Select a day</h3>
+          <p className="text-stone-500 text-lg">Tap a date on the calendar to plan your meals</p>
         </div>
       )}
 
-      {/* Save CTA */}
       {hasUnsavedChanges && (
-        <div className="mt-6 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-200">
+        <div className="mt-6 bg-white rounded-2xl p-4 sm:p-6 shadow-md border border-stone-200">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-amber-900 mb-1">
+              <h3 className="text-lg font-semibold text-stone-800 mb-1">
                 💾 You have unsaved changes
               </h3>
-              <p className="text-amber-600">
+              <p className="text-stone-500">
                 {meals.length} meal{meals.length !== 1 ? "s" : ""} planned • Save your meal plan to keep your progress
               </p>
             </div>
             <button
               onClick={saveMealPlans}
               disabled={saving}
-              className="px-6 py-3 bg-amber-600 text-white rounded-xl text-lg font-semibold hover:bg-amber-700 disabled:bg-amber-400 transition-colors flex-shrink-0"
+              className="px-6 py-3 bg-terracotta text-white rounded-xl text-lg font-semibold hover:bg-terracotta-600 disabled:bg-stone-400 transition-colors flex-shrink-0"
             >
               {saving ? "Saving..." : "Save Meal Plan"}
             </button>
@@ -614,10 +598,9 @@ export default function PlannerPage() {
         </div>
       )}
 
-      {/* No recipes warning */}
       {noRecipes && (
-        <div className="mt-4 bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
-          <p className="text-amber-700 text-sm">
+        <div className="mt-4 bg-stone-50 rounded-xl p-4 border border-stone-200 text-center">
+          <p className="text-stone-600 text-sm">
             💡 <Link 
               href="/recipes/new"
               onClick={(e) => handleLinkClick(e, "/recipes/new")}
@@ -629,7 +612,6 @@ export default function PlannerPage() {
         </div>
       )}
 
-      {/* Save Modal */}
       <SaveMealPlanModal
         isOpen={showSaveModal}
         onSave={handleSaveAndNavigate}

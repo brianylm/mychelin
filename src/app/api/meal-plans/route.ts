@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, mealPlans, users } from "@/db";
-import { eq, and } from "drizzle-orm";
+import { db, mealPlans } from "@/db";
+import { eq } from "drizzle-orm";
+import { getCurrentUserId } from "@/lib/auth";
 
-// Ensure demo user exists
-async function ensureDemoUser() {
-  const existing = await db.query.users.findFirst({
-    where: (users, { eq }) => eq(users.id, "demo-user"),
-  });
-  if (!existing) {
-    await db.insert(users).values({
-      id: "demo-user",
-      name: "Family Chef",
-      email: "chef@mychelin.app",
-    });
-  }
-}
-
-// GET /api/meal-plans - Get meal plans for demo user
+// GET /api/meal-plans - Get meal plans for current user
 export async function GET() {
   try {
+    const userId = (await getCurrentUserId()) || "demo-user";
+
     const plans = await db.query.mealPlans.findMany({
-      where: (mealPlans, { eq }) => eq(mealPlans.userId, "demo-user"),
+      where: (mealPlans, { eq }) => eq(mealPlans.userId, userId),
     });
 
     return NextResponse.json(plans);
@@ -34,11 +23,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { plans } = await request.json();
-    const userId = "demo-user";
+    const userId = (await getCurrentUserId()) || "demo-user";
 
-    await ensureDemoUser();
-
-    // Clear existing plans for demo user
+    // Clear existing plans for user
     await db.delete(mealPlans).where(eq(mealPlans.userId, userId));
 
     // Insert new plans
