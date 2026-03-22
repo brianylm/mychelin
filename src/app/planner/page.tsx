@@ -396,7 +396,7 @@ export default function PlannerPage() {
                   <button
                     key={dateKey}
                     onClick={() => setSelectedDate(dateKey)}
-                    className={`h-16 sm:h-20 border-b border-r border-stone-100 p-1 text-left transition-colors relative ${
+                    className={`h-16 sm:h-20 border-b border-r border-stone-100 p-2 flex flex-col items-center transition-colors relative ${
                       isSelected ? "bg-stone-100 ring-2 ring-terracotta ring-inset" : isToday ? "bg-stone-50" : "hover:bg-stone-50"
                     }`}
                   >
@@ -404,7 +404,7 @@ export default function PlannerPage() {
                       {day.getDate()}
                     </span>
                     {dayMeals.length > 0 && (
-                      <div className="flex gap-0.5 mt-1 flex-wrap">
+                      <div className="flex gap-0.5 mt-auto flex-wrap justify-center">
                         {dayMeals.map((m) => (
                           <span key={m.id} className={`w-2 h-2 rounded-full ${m.meal === "breakfast" ? "bg-orange-400" : m.meal === "lunch" ? "bg-yellow-400" : "bg-indigo-400"}`} />
                         ))}
