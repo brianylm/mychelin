@@ -474,7 +474,7 @@ export default function PlannerPage() {
             <button
               onClick={() => surpriseDay(selectedDate)}
               disabled={noRecipes}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
                 noRecipes ? "bg-stone-100 text-stone-400 cursor-not-allowed" : "bg-terracotta text-white hover:bg-terracotta-600"
               }`}
             >
@@ -499,7 +499,7 @@ export default function PlannerPage() {
                         <button
                           onClick={() => surpriseMeal(selectedDate, key)}
                           disabled={noRecipes}
-                          className={`inline-flex items-center text-sm px-2 py-1 rounded-lg transition-colors ${
+                          className={`inline-flex items-center text-sm font-semibold px-2 py-1 rounded-lg transition-colors ${
                             noRecipes ? "text-gray-300 cursor-not-allowed" : "text-terracotta hover:bg-terracotta-50 hover:text-terracotta-600"
                           }`}
                           title="Surprise me!"
@@ -508,7 +508,7 @@ export default function PlannerPage() {
                         </button>
                       )}
                       {meal && !isEditing && (
-                        <button onClick={() => removeMeal(meal.id)} className="text-red-400 hover:text-red-600 text-sm px-2 py-1 rounded-lg hover:bg-red-50">
+                        <button onClick={() => removeMeal(meal.id)} className="text-red-400 hover:text-red-600 text-sm font-semibold px-2 py-1 rounded-lg hover:bg-red-50">
                           Remove
                         </button>
                       )}
