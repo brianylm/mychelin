@@ -29,25 +29,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${playfair.variable} font-sans bg-stone-50 min-h-screen`}>
+      <body className={`${dmSans.variable} ${playfair.variable} font-sans bg-stone-50 min-h-screen leading-relaxed`}>
         {/* Desktop Nav */}
-        <nav className="hidden md:block bg-white shadow-sm border-b border-stone-200">
-          <div className="max-w-5xl mx-auto px-4 py-4">
+        <nav className="hidden md:block bg-white border-b border-stone-200">
+          <div className="max-w-5xl mx-auto px-8 py-5">
             <div className="flex items-center justify-between">
-              <a href="/" className="flex items-center gap-2">
+              <a href="/" className="flex items-center gap-3">
                 <ChefHat className="w-8 h-8 text-terracotta" />
                 <span className="text-2xl font-bold text-stone-800 font-heading">Mychelin</span>
               </a>
-              <div className="flex items-center gap-6">
-                <a href="/recipes" className="flex items-center gap-1.5 text-lg text-stone-600 hover:text-stone-900 transition-colors">
+              <div className="flex items-center gap-8">
+                <a href="/recipes" className="flex items-center gap-2 text-lg text-stone-500 hover:text-stone-900 transition-colors">
                   <BookOpen className="w-5 h-5" />
                   Recipes
                 </a>
-                <a href="/fridge" className="flex items-center gap-1.5 text-lg text-stone-600 hover:text-stone-900 transition-colors">
+                <a href="/fridge" className="flex items-center gap-2 text-lg text-stone-500 hover:text-stone-900 transition-colors">
                   <Box className="w-5 h-5" />
                   My Fridge
                 </a>
-                <a href="/planner" className="flex items-center gap-1.5 text-lg text-stone-600 hover:text-stone-900 transition-colors">
+                <a href="/planner" className="flex items-center gap-2 text-lg text-stone-500 hover:text-stone-900 transition-colors">
                   <Calendar className="w-5 h-5" />
                   Meal Planner
                 </a>
@@ -60,7 +60,7 @@ export default function RootLayout({
         {/* Mobile Nav */}
         <MobileNav />
 
-        <main className="max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-8">
+        <main className="max-w-5xl mx-auto px-6 py-10 pb-28 md:pb-12">
           {children}
         </main>
       </body>

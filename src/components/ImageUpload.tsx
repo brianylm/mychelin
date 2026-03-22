@@ -11,7 +11,7 @@ interface ImageUploadProps {
 const MAX_WIDTH = 800;
 const MAX_HEIGHT = 800;
 const JPEG_QUALITY = 0.75;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB input limit
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -22,7 +22,6 @@ function compressImage(file: File): Promise<string> {
         const canvas = document.createElement("canvas");
         let { width, height } = img;
 
-        // Scale down if needed
         if (width > MAX_WIDTH || height > MAX_HEIGHT) {
           const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
           width = Math.round(width * ratio);
@@ -35,7 +34,6 @@ function compressImage(file: File): Promise<string> {
         if (!ctx) return reject(new Error("Canvas not supported"));
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Output as JPEG for smaller size
         const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
         resolve(dataUrl);
       };
@@ -102,7 +100,7 @@ export function ImageUpload({ currentImageUrl, onImageUploaded, onImageRemoved }
   return (
     <div>
       {preview ? (
-        <div className="relative rounded-xl overflow-hidden border border-amber-200">
+        <div className="relative rounded-2xl overflow-hidden border border-stone-200">
           <img
             src={preview}
             alt="Recipe"
@@ -114,18 +112,18 @@ export function ImageUpload({ currentImageUrl, onImageUploaded, onImageRemoved }
             </div>
           )}
           {!processing && (
-            <div className="absolute top-2 right-2 flex gap-2">
+            <div className="absolute top-3 right-3 flex gap-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-white/90 hover:bg-white text-amber-700 px-3 py-1 rounded-lg text-sm font-medium shadow-sm"
+                className="bg-white text-stone-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors"
               >
                 Change
               </button>
               <button
                 type="button"
                 onClick={removeImage}
-                className="bg-white/90 hover:bg-white text-red-600 px-3 py-1 rounded-lg text-sm font-medium shadow-sm"
+                className="bg-white text-red-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors"
               >
                 Remove
               </button>
@@ -138,17 +136,16 @@ export function ImageUpload({ currentImageUrl, onImageUploaded, onImageRemoved }
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+          className={`flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-2xl cursor-pointer transition-colors ${
             dragOver
-              ? "border-amber-500 bg-amber-50"
-              : "border-amber-300 hover:border-amber-400 hover:bg-amber-50"
+              ? "border-terracotta bg-terracotta-50"
+              : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
           }`}
         >
-          <span className="text-4xl mb-2">📸</span>
-          <p className="text-amber-700 font-medium">
+          <p className="text-stone-600 font-medium">
             {processing ? "Processing..." : "Click or drag to add a photo"}
           </p>
-          <p className="text-amber-500 text-sm mt-1">JPEG, PNG, WebP, GIF · Max 5MB</p>
+          <p className="text-stone-400 text-sm mt-2">JPEG, PNG, WebP, GIF · Max 5MB</p>
         </div>
       )}
 

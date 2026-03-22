@@ -11,9 +11,9 @@ export default async function RecipesPage() {
   });
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-stone-900">All Recipes</h1>
+    <div className="space-y-10">
+      <div className="flex items-end justify-between">
+        <h1 className="text-4xl font-bold text-stone-900 font-heading">All Recipes</h1>
         <AddRecipeMenu />
       </div>
 

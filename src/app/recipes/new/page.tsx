@@ -19,7 +19,7 @@ interface Step {
 
 export default function NewRecipePage() {
   return (
-    <Suspense fallback={<div className="max-w-3xl mx-auto py-8 text-center text-amber-600">Loading...</div>}>
+    <Suspense fallback={<div className="max-w-3xl mx-auto py-8 text-center text-stone-500">Loading...</div>}>
       <RecipeForm />
     </Suspense>
   );
@@ -28,7 +28,7 @@ export default function NewRecipePage() {
 function RecipeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const recipeId = searchParams.get("id"); // Get the 'id' parameter
+  const recipeId = searchParams.get("id");
 
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({
@@ -37,7 +37,6 @@ function RecipeForm() {
     type: "success",
   });
 
-  // State for all form fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [story, setStory] = useState("");
@@ -55,15 +54,13 @@ function RecipeForm() {
 
   const hideToast = useCallback(() => setToast((t) => ({ ...t, show: false })), []);
 
-  // Fetch recipe data if recipeId exists
   useEffect(() => {
     if (recipeId) {
       const fetchRecipe = async () => {
         try {
-          const res = await fetch(`/api/recipes/${recipeId}`); // Assuming API endpoint for single recipe is /api/recipes/[id]
+          const res = await fetch(`/api/recipes/${recipeId}`);
           if (res.ok) {
             const data = await res.json();
-            // Populate all state variables with fetched data
             setTitle(data.title || "");
             setDescription(data.description || "");
             setStory(data.story || "");
@@ -88,7 +85,7 @@ function RecipeForm() {
       };
       fetchRecipe();
     }
-  }, [recipeId]); // Rerun when recipeId changes
+  }, [recipeId]);
 
   const addIngredient = () => {
     setIngredients([...ingredients, { name: "", amount: "", unit: "" }]);
@@ -119,7 +116,6 @@ function RecipeForm() {
   const removeStep = (index: number) => {
     if (instructions.length > 1) {
       const updated = instructions.filter((_, i) => i !== index);
-      // Renumber steps
       updated.forEach((s, i) => (s.step = i + 1));
       setInstructions(updated);
     }
@@ -158,7 +154,7 @@ function RecipeForm() {
 
       if (res.ok) {
         const data = await res.json();
-        setToast({ show: true, message: recipeId ? "Recipe updated successfully! 🎉" : "Recipe saved successfully! 🎉", type: "success" });
+        setToast({ show: true, message: recipeId ? "Recipe updated successfully!" : "Recipe saved successfully!", type: "success" });
         setTimeout(() => router.push(`/recipes/${data.id || recipeId}`), 1500);
       } else {
         setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
@@ -173,45 +169,37 @@ function RecipeForm() {
   return (
     <div className="max-w-3xl mx-auto">
       <Toast message={toast.message} type={toast.type} show={toast.show} onClose={hideToast} />
-      <h1 className="text-3xl font-bold text-amber-900 mb-2">{recipeId ? "Edit Recipe" : "Add a New Recipe"}</h1>
-      <p className="text-amber-600 mb-6 text-lg">
+      <h1 className="text-4xl font-bold text-stone-900 mb-3 font-heading">{recipeId ? "Edit Recipe" : "Add a New Recipe"}</h1>
+      <p className="text-stone-500 mb-10 text-lg leading-relaxed">
         {recipeId ? "Update your family recipe" : "Write down a family recipe before it's forgotten"}
       </p>
 
-      {/* AI Live Conversation CTA */}
-      <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 mb-8 border border-purple-200">
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="text-5xl">🤖💬</div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-xl font-bold text-purple-900 mb-2">
-              Getting this recipe from a family member?
-            </h3>
-            <p className="text-purple-700 mb-4">
-              Use our AI-powered live conversation feature! It translates between dialects and English in real-time, 
-              helping you capture recipes through natural conversation.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+      {/* AI Capture CTA */}
+      {!recipeId && (
+        <div className="bg-stone-100 rounded-3xl p-8 mb-10">
+          <div className="flex flex-col md:flex-row items-start gap-5">
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-stone-800 mb-2 font-heading">
+                Getting this recipe from a family member?
+              </h3>
+              <p className="text-stone-600 mb-5 leading-relaxed">
+                Use our AI-powered live conversation feature! It translates between dialects and English in real-time.
+              </p>
               <Link
                 href="/capture"
-                className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-terracotta text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-terracotta-600 transition-colors"
               >
-                <span className="text-xl">🎙️</span>
                 Start Live Conversation
               </Link>
-              <div className="text-sm text-purple-600 flex items-center gap-2">
-                <span>✓ Real-time translation</span>
-                <span>✓ Speech recognition</span>
-                <span>✓ Cultural context</span>
-              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-10">
         {/* Recipe Photo */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-          <h2 className="text-xl font-semibold text-amber-800 mb-4">📸 Recipe Photo</h2>
+        <section className="bg-white rounded-3xl p-8 border border-stone-200">
+          <h2 className="text-xl font-semibold text-stone-800 mb-5 font-heading">Recipe Photo</h2>
           <ImageUpload
             currentImageUrl={imageUrl}
             onImageUploaded={(url) => setImageUrl(url)}
@@ -220,12 +208,12 @@ function RecipeForm() {
         </section>
 
         {/* Basic Info */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-          <h2 className="text-xl font-semibold text-amber-800 mb-4">📝 Basic Information</h2>
+        <section className="bg-white rounded-3xl p-8 border border-stone-200">
+          <h2 className="text-xl font-semibold text-stone-800 mb-5 font-heading">Basic Information</h2>
           
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Recipe Name *
               </label>
               <input
@@ -235,12 +223,12 @@ function RecipeForm() {
                 placeholder="e.g., Grandma's Chicken Rice"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               />
             </div>
 
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Short Description
               </label>
               <textarea
@@ -249,20 +237,20 @@ function RecipeForm() {
                 placeholder="What makes this dish special?"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-lg font-medium text-amber-800 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Cuisine Type
                 </label>
                 <select
                   name="cuisine"
                   value={cuisine}
                   onChange={(e) => setCuisine(e.target.value)}
-                  className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                 >
                   <option value="">Select...</option>
                   <option value="Peranakan">Peranakan</option>
@@ -279,14 +267,14 @@ function RecipeForm() {
               </div>
 
               <div>
-                <label className="block text-lg font-medium text-amber-800 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Category
                 </label>
                 <select
                   name="category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                 >
                   <option value="">Select...</option>
                   <option value="Main Dish">Main Dish</option>
@@ -303,12 +291,12 @@ function RecipeForm() {
         </section>
 
         {/* Family Story */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-          <h2 className="text-xl font-semibold text-amber-800 mb-4">👨‍👩‍👧 The Story Behind This Dish</h2>
+        <section className="bg-white rounded-3xl p-8 border border-stone-200">
+          <h2 className="text-xl font-semibold text-stone-800 mb-5 font-heading">The Story Behind This Dish</h2>
           
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Who passed down this recipe?
               </label>
               <input
@@ -317,12 +305,12 @@ function RecipeForm() {
                 placeholder="e.g., Grandma, Ah Ma, Mum"
                 value={familyMember}
                 onChange={(e) => setFamilyMember(e.target.value)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               />
             </div>
 
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Where does this recipe come from?
               </label>
               <input
@@ -331,12 +319,12 @@ function RecipeForm() {
                 placeholder="e.g., Our old house in Tiong Bahru, 1970s"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               />
             </div>
 
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Share the story or memory
               </label>
               <textarea
@@ -345,19 +333,19 @@ function RecipeForm() {
                 placeholder="What memories do you have of this dish? When would your family make it?"
                 value={story}
                 onChange={(e) => setStory(e.target.value)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               />
             </div>
           </div>
         </section>
 
         {/* Cooking Details */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-          <h2 className="text-xl font-semibold text-amber-800 mb-4">⏱️ Cooking Details</h2>
+        <section className="bg-white rounded-3xl p-8 border border-stone-200">
+          <h2 className="text-xl font-semibold text-stone-800 mb-5 font-heading">Cooking Details</h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Prep Time
               </label>
               <div className="flex items-center gap-2">
@@ -367,14 +355,14 @@ function RecipeForm() {
                   placeholder="30"
                   value={prepTime ?? ""}
                   onChange={(e) => setPrepTime(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                 />
-                <span className="text-amber-600">min</span>
+                <span className="text-stone-500">min</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Cook Time
               </label>
               <div className="flex items-center gap-2">
@@ -384,14 +372,14 @@ function RecipeForm() {
                   placeholder="45"
                   value={cookTime ?? ""}
                   onChange={(e) => setCookTime(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                 />
-                <span className="text-amber-600">min</span>
+                <span className="text-stone-500">min</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Servings
               </label>
               <input
@@ -400,19 +388,19 @@ function RecipeForm() {
                 placeholder="4"
                 value={servings ?? ""}
                 onChange={(e) => setServings(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               />
             </div>
 
             <div>
-              <label className="block text-lg font-medium text-amber-800 mb-2">
+              <label className="block text-base font-medium text-stone-700 mb-2">
                 Difficulty
               </label>
               <select
                 name="difficulty"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3.5 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
               >
                 <option value="">Select...</option>
                 <option value="easy">Easy</option>
@@ -424,19 +412,19 @@ function RecipeForm() {
         </section>
 
         {/* Ingredients */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-          <h2 className="text-xl font-semibold text-amber-800 mb-4">🥬 Ingredients</h2>
+        <section className="bg-white rounded-3xl p-8 border border-stone-200">
+          <h2 className="text-xl font-semibold text-stone-800 mb-5 font-heading">Ingredients</h2>
           
-          <div className="space-y-3">
+          <div className="space-y-4">
             {ingredients.map((ing, index) => (
-              <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start relative pb-4 mb-4 border-b border-amber-100 last-of-type:border-b-0 last-of-type:pb-0 last-of-type:mb-0">
+              <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start relative pb-4 mb-4 border-b border-stone-100 last-of-type:border-b-0 last-of-type:pb-0 last-of-type:mb-0">
                 <div className="flex gap-2 w-full sm:flex-1 order-1 sm:order-none">
                   <input
                     type="text"
                     placeholder="Ingredient name"
                     value={ing.name}
                     onChange={(e) => updateIngredient(index, "name", e.target.value)}
-                    className="flex-1 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                    className="flex-1 px-3 py-3 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                   />
                   <button
                     type="button"
@@ -452,12 +440,12 @@ function RecipeForm() {
                     placeholder="Amount"
                     value={ing.amount}
                     onChange={(e) => updateIngredient(index, "amount", e.target.value)}
-                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                    className="w-1/2 sm:w-24 px-3 py-3 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                   />
                   <select
                     value={ing.unit}
                     onChange={(e) => updateIngredient(index, "unit", e.target.value)}
-                    className="w-1/2 sm:w-24 px-3 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                    className="w-1/2 sm:w-24 px-3 py-3 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                   >
                     <option value="">Unit</option>
                     <option value="g">g</option>
@@ -481,20 +469,20 @@ function RecipeForm() {
           <button
             type="button"
             onClick={addIngredient}
-            className="mt-4 px-4 py-2 text-amber-600 border border-amber-300 rounded-xl hover:bg-amber-50"
+            className="mt-5 px-5 py-2.5 text-terracotta border border-stone-200 rounded-xl hover:bg-stone-50 font-medium transition-colors"
           >
             + Add Ingredient
           </button>
         </section>
 
         {/* Instructions */}
-        <section className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200">
-          <h2 className="text-xl font-semibold text-amber-800 mb-4">📋 Cooking Steps</h2>
+        <section className="bg-white rounded-3xl p-8 border border-stone-200">
+          <h2 className="text-xl font-semibold text-stone-800 mb-5 font-heading">Cooking Steps</h2>
           
-          <div className="space-y-4">
+          <div className="space-y-5">
             {instructions.map((step, index) => (
-              <div key={index} className="flex gap-3 items-start">
-                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-bold flex-shrink-0">
+              <div key={index} className="flex gap-4 items-start">
+                <div className="w-10 h-10 bg-terracotta text-white rounded-full flex items-center justify-center font-bold text-base flex-shrink-0">
                   {step.step}
                 </div>
                 <textarea
@@ -502,7 +490,7 @@ function RecipeForm() {
                   value={step.text}
                   onChange={(e) => updateStep(index, e.target.value)}
                   rows={2}
-                  className="flex-1 px-4 py-3 text-lg border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500"
+                  className="flex-1 px-4 py-3 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta"
                 />
                 <button
                   type="button"
@@ -518,7 +506,7 @@ function RecipeForm() {
           <button
             type="button"
             onClick={addStep}
-            className="mt-4 px-4 py-2 text-amber-600 border border-amber-300 rounded-xl hover:bg-amber-50"
+            className="mt-5 px-5 py-2.5 text-terracotta border border-stone-200 rounded-xl hover:bg-stone-50 font-medium transition-colors"
           >
             + Add Step
           </button>
@@ -529,14 +517,14 @@ function RecipeForm() {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 bg-amber-600 text-white py-4 rounded-xl text-xl font-semibold hover:bg-amber-700 disabled:bg-amber-400"
+            className="flex-1 bg-terracotta text-white py-4 rounded-xl text-lg font-semibold hover:bg-terracotta-600 disabled:bg-stone-400 transition-colors"
           >
             {saving ? "Saving..." : "Save Recipe"}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-8 py-4 border border-amber-300 text-amber-700 rounded-xl text-xl font-semibold hover:bg-amber-50"
+            className="px-8 py-4 border border-stone-200 text-stone-600 rounded-xl text-lg font-semibold hover:bg-stone-50 transition-colors"
           >
             Cancel
           </button>

@@ -354,7 +354,7 @@ export default function LiveRecipeConversationPage() {
     recognitionRef.current.start();
     setToast({
       show: true,
-      message: "🎙️ Live conversation started! Start talking...",
+      message: "Live conversation started! Start talking...",
       type: "success",
     });
   };
@@ -366,7 +366,6 @@ export default function LiveRecipeConversationPage() {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
-    // If names were skipped, show form
     if (!participants.giver.name && !participants.recipient.name) {
       setShowSaveNameForm(true);
     }
@@ -405,7 +404,7 @@ export default function LiveRecipeConversationPage() {
 
       if (response.ok) {
         const result = await response.json();
-        setToast({ show: true, message: "Recipe captured from live conversation! 🎉", type: "success" });
+        setToast({ show: true, message: "Recipe captured from live conversation!", type: "success" });
         setTimeout(() => router.push(`/recipes/${result.id}`), 1500);
       }
     } catch {
@@ -426,42 +425,42 @@ export default function LiveRecipeConversationPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
               onClick={() => setShowParticipantModal(false)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
+                className="bg-white rounded-3xl p-8 w-full max-w-md"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-xl font-bold text-stone-800">Who&apos;s sharing the recipe?</h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-stone-800 font-heading">Who&apos;s sharing the recipe?</h3>
                   <button onClick={() => setShowParticipantModal(false)} className="text-stone-400 hover:text-stone-600">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="space-y-4 mb-6">
+                <div className="space-y-5 mb-8">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">👵 Recipe Giver</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-2">Recipe Giver</label>
                     <input
                       type="text"
                       value={participants.giver.name}
                       onChange={(e) => setParticipants(p => ({ ...p, giver: { ...p.giver, name: e.target.value } }))}
                       placeholder='e.g., "Grandma", "Ah Ma", "Mom"'
-                      className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-stone-800"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta text-stone-800"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">👨‍🍳 Recipe Learner</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-2">Recipe Learner</label>
                     <input
                       type="text"
                       value={participants.recipient.name}
                       onChange={(e) => setParticipants(p => ({ ...p, recipient: { ...p.recipient, name: e.target.value } }))}
                       placeholder='e.g., "You", "Your name"'
-                      className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-stone-800"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta text-stone-800"
                     />
                   </div>
                 </div>
@@ -469,7 +468,7 @@ export default function LiveRecipeConversationPage() {
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={startConversation}
-                    className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Mic className="w-5 h-5" /> Start Conversation
                   </button>
@@ -481,7 +480,7 @@ export default function LiveRecipeConversationPage() {
                       });
                       startConversation();
                     }}
-                    className="w-full py-3 bg-stone-100 text-stone-600 rounded-xl font-medium hover:bg-stone-200 transition-colors"
+                    className="w-full py-3.5 bg-stone-100 text-stone-600 rounded-xl font-medium hover:bg-stone-200 transition-colors"
                   >
                     Skip — I&apos;ll add this later
                   </button>
@@ -491,36 +490,35 @@ export default function LiveRecipeConversationPage() {
           )}
         </AnimatePresence>
 
-        <div className="flex items-center gap-2 mb-8">
+        <div className="flex items-center gap-3 mb-10">
           <button onClick={() => router.push("/recipes")} className="text-stone-400 hover:text-stone-600 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <Sparkles className="w-6 h-6 text-purple-600" />
-          <h1 className="text-2xl font-bold text-stone-900">AI Capture</h1>
-          <span className="text-[10px] font-bold bg-purple-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
+          <h1 className="text-3xl font-bold text-stone-900 font-heading">AI Capture</h1>
+          <span className="text-[10px] font-bold bg-terracotta text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
         </div>
 
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-28 h-28 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mb-8 shadow-lg shadow-red-200">
-            <Mic className="w-14 h-14 text-white" />
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center mb-10">
+            <Mic className="w-12 h-12 text-white" />
           </div>
 
-          <h2 className="text-3xl font-bold text-stone-800 font-heading mb-3">
+          <h2 className="text-3xl md:text-4xl font-bold text-stone-800 font-heading mb-4">
             Capture a Family Recipe
           </h2>
-          <p className="text-stone-500 text-lg max-w-md mb-10">
+          <p className="text-stone-500 text-lg max-w-md mb-12 leading-relaxed">
             Record a live conversation while cooking together. AI will listen, translate, and extract the recipe in real-time.
           </p>
 
           <button
             onClick={handleStartClick}
-            className="inline-flex items-center gap-3 px-10 py-5 bg-red-600 text-white rounded-2xl text-xl font-bold hover:bg-red-700 transition-all transform hover:scale-105 shadow-lg shadow-red-200"
+            className="inline-flex items-center gap-3 px-10 py-5 bg-red-600 text-white rounded-2xl text-xl font-bold hover:bg-red-700 transition-colors"
           >
             <Mic className="w-7 h-7" />
             Start Live Conversation
           </button>
 
-          <p className="text-stone-400 text-sm mt-6">
+          <p className="text-stone-400 text-sm mt-8">
             Works best in Chrome · Language detected automatically
           </p>
         </div>
@@ -540,36 +538,36 @@ export default function LiveRecipeConversationPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
+              className="bg-white rounded-3xl p-8 w-full max-w-md"
             >
-              <h3 className="text-xl font-bold text-stone-800 mb-2">Who was in the conversation?</h3>
-              <p className="text-stone-500 text-sm mb-5">Add names before saving (optional)</p>
+              <h3 className="text-xl font-bold text-stone-800 mb-2 font-heading">Who was in the conversation?</h3>
+              <p className="text-stone-500 text-sm mb-6">Add names before saving (optional)</p>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-5 mb-8">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">👵 Recipe Giver</label>
+                  <label className="block text-sm font-medium text-stone-600 mb-2">Recipe Giver</label>
                   <input
                     type="text"
                     value={participants.giver.name}
                     onChange={(e) => setParticipants(p => ({ ...p, giver: { ...p.giver, name: e.target.value } }))}
                     placeholder='e.g., "Grandma"'
-                    className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-stone-800"
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta text-stone-800"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">👨‍🍳 Recipe Learner</label>
+                  <label className="block text-sm font-medium text-stone-600 mb-2">Recipe Learner</label>
                   <input
                     type="text"
                     value={participants.recipient.name}
                     onChange={(e) => setParticipants(p => ({ ...p, recipient: { ...p.recipient, name: e.target.value } }))}
                     placeholder='e.g., "You"'
-                    className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 text-stone-800"
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta text-stone-800"
                   />
                 </div>
               </div>
@@ -577,13 +575,13 @@ export default function LiveRecipeConversationPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSaveNameForm(false)}
-                  className="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl font-medium hover:bg-stone-200 transition-colors"
+                  className="flex-1 py-3.5 bg-stone-100 text-stone-600 rounded-xl font-medium hover:bg-stone-200 transition-colors"
                 >
                   Skip
                 </button>
                 <button
                   onClick={() => setShowSaveNameForm(false)}
-                  className="flex-1 py-3 bg-terracotta text-white rounded-xl font-semibold hover:bg-terracotta-600 transition-colors"
+                  className="flex-1 py-3.5 bg-terracotta text-white rounded-xl font-semibold hover:bg-terracotta-600 transition-colors"
                 >
                   Save Names
                 </button>
@@ -593,24 +591,24 @@ export default function LiveRecipeConversationPage() {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Chat Area */}
         <div className="lg:col-span-2 flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-140px)]">
           {/* Live Banner */}
           {pageState === "live" && (
-            <div className="bg-gradient-to-r from-red-500 to-pink-500 rounded-t-2xl px-5 py-3 text-white flex items-center justify-between shrink-0">
+            <div className="bg-red-600 rounded-t-2xl px-6 py-4 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-                <span className="text-lg font-bold">🔴 LIVE</span>
+                <span className="text-lg font-bold">LIVE</span>
                 {detectedDialect && (
-                  <span className="text-sm bg-white/20 px-2.5 py-0.5 rounded-full">
+                  <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
                     Detected: {detectedDialect}
                   </span>
                 )}
               </div>
               <button
                 onClick={stopConversation}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold text-sm transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
               >
                 <MicOff className="w-4 h-4" /> Stop
               </button>
@@ -619,7 +617,7 @@ export default function LiveRecipeConversationPage() {
 
           {/* Stopped Banner */}
           {pageState === "saving" && (
-            <div className="bg-stone-700 rounded-t-2xl px-5 py-3 text-white flex items-center justify-between shrink-0">
+            <div className="bg-stone-700 rounded-t-2xl px-6 py-4 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <MicOff className="w-4 h-4" />
                 <span className="text-lg font-bold">Conversation Ended</span>
@@ -630,7 +628,7 @@ export default function LiveRecipeConversationPage() {
                   isLiveRef.current = true;
                   if (recognitionRef.current) recognitionRef.current.start();
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold text-sm transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
               >
                 <Mic className="w-4 h-4" /> Resume
               </button>
@@ -640,17 +638,16 @@ export default function LiveRecipeConversationPage() {
           {/* Chat Messages */}
           <div
             ref={chatContainerRef}
-            className={`flex-1 overflow-y-auto bg-stone-100 px-4 py-4 space-y-3 ${
+            className={`flex-1 overflow-y-auto bg-stone-100 px-5 py-5 space-y-4 ${
               pageState === "live" ? "" : "rounded-t-2xl"
             }`}
-            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d6d3d1' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}
           >
             {transcriptions.length === 0 && (
               <div className="flex items-center justify-center h-full text-stone-400">
                 <div className="text-center">
-                  <Mic className="w-10 h-10 mx-auto mb-3 text-stone-300" />
+                  <Mic className="w-10 h-10 mx-auto mb-4 text-stone-300" />
                   <p className="text-lg">Listening...</p>
-                  <p className="text-sm">Start talking and messages will appear here</p>
+                  <p className="text-sm mt-1">Start talking and messages will appear here</p>
                 </div>
               </div>
             )}
@@ -664,7 +661,7 @@ export default function LiveRecipeConversationPage() {
                   className={`flex ${isRecipient ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
+                    className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-5 py-4 ${
                       isGiver
                         ? "bg-blue-500 text-white rounded-tl-sm"
                         : isRecipient
@@ -673,10 +670,10 @@ export default function LiveRecipeConversationPage() {
                     }`}
                   >
                     {/* Speaker label */}
-                    <div className={`text-xs font-semibold mb-1 ${
+                    <div className={`text-xs font-semibold mb-1.5 ${
                       isGiver || isRecipient ? "text-white/70" : "text-stone-400"
                     }`}>
-                      {isGiver ? `👵 ${giverName}` : isRecipient ? `👨‍🍳 ${learnerName}` : "🤷 Unknown"}
+                      {isGiver ? giverName : isRecipient ? learnerName : "Unknown"}
                     </div>
 
                     {/* Original text */}
@@ -684,13 +681,13 @@ export default function LiveRecipeConversationPage() {
 
                     {/* Translation */}
                     {t.processing ? (
-                      <div className={`mt-2 pt-2 border-t text-sm italic flex items-center gap-1.5 ${
+                      <div className={`mt-2.5 pt-2.5 border-t text-sm italic flex items-center gap-1.5 ${
                         isGiver || isRecipient ? "border-white/20 text-white/60" : "border-stone-200 text-stone-400"
                       }`}>
                         <TypingDots /> Translating...
                       </div>
                     ) : t.translated ? (
-                      <div className={`mt-2 pt-2 border-t text-sm italic ${
+                      <div className={`mt-2.5 pt-2.5 border-t text-sm italic ${
                         isGiver || isRecipient ? "border-white/20 text-white/70" : "border-stone-200 text-stone-500"
                       }`}>
                         → {t.translated}
@@ -698,7 +695,7 @@ export default function LiveRecipeConversationPage() {
                     ) : null}
 
                     {/* Timestamp */}
-                    <div className={`text-[10px] mt-1.5 text-right ${
+                    <div className={`text-[10px] mt-2 text-right ${
                       isGiver || isRecipient ? "text-white/50" : "text-stone-300"
                     }`}>
                       {new Date(t.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -711,9 +708,9 @@ export default function LiveRecipeConversationPage() {
             {/* Interim/ghost bubble */}
             {currentTranscription && pageState === "live" && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] sm:max-w-[70%] rounded-2xl rounded-tl-sm px-4 py-3 bg-white/60 border border-stone-200/50 text-stone-500 italic shadow-sm">
-                  <div className="text-xs font-semibold mb-1 text-stone-300">
-                    {currentSpeaker === "giver" ? `👵 ${giverName}` : currentSpeaker === "recipient" ? `👨‍🍳 ${learnerName}` : "🎙️ Listening..."}
+                <div className="max-w-[80%] sm:max-w-[70%] rounded-2xl rounded-tl-sm px-5 py-4 bg-white/60 border border-stone-200/50 text-stone-500 italic">
+                  <div className="text-xs font-semibold mb-1.5 text-stone-300">
+                    {currentSpeaker === "giver" ? giverName : currentSpeaker === "recipient" ? learnerName : "Listening..."}
                   </div>
                   <div className="text-[15px] leading-relaxed">{currentTranscription}</div>
                 </div>
@@ -723,7 +720,7 @@ export default function LiveRecipeConversationPage() {
             {/* Typing indicator when processing */}
             {pageState === "live" && !currentTranscription && transcriptions.length > 0 && transcriptions[transcriptions.length - 1]?.processing && (
               <div className="flex justify-start">
-                <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-stone-200">
+                <div className="bg-white rounded-2xl rounded-tl-sm px-5 py-4 border border-stone-200">
                   <TypingDots />
                 </div>
               </div>
@@ -732,11 +729,11 @@ export default function LiveRecipeConversationPage() {
 
           {/* Silence Prompts */}
           {silenceTimer > 2 && suggestedPrompts.length > 0 && (
-            <div className="bg-purple-50 px-4 py-3 border-t border-purple-200">
-              <p className="text-xs font-semibold text-purple-700 mb-2">💡 You could ask:</p>
+            <div className="bg-stone-50 px-5 py-4 border-t border-stone-200">
+              <p className="text-xs font-semibold text-stone-600 mb-2">You could ask:</p>
               <div className="flex flex-wrap gap-2">
                 {suggestedPrompts.slice(0, 3).map((prompt, i) => (
-                  <span key={i} className="text-xs bg-white border border-purple-200 text-purple-700 px-3 py-1.5 rounded-full">
+                  <span key={i} className="text-xs bg-white border border-stone-200 text-stone-600 px-3 py-1.5 rounded-full">
                     &ldquo;{prompt}&rdquo;
                   </span>
                 ))}
@@ -746,17 +743,17 @@ export default function LiveRecipeConversationPage() {
 
           {/* Bottom Actions */}
           {pageState === "saving" && (
-            <div className="bg-white rounded-b-2xl border-t border-stone-200 px-5 py-4 flex items-center gap-3 shrink-0">
+            <div className="bg-white rounded-b-2xl border-t border-stone-200 px-6 py-5 flex items-center gap-3 shrink-0">
               <button
                 onClick={() => router.push("/recipes")}
-                className="px-5 py-2.5 border border-stone-300 text-stone-600 rounded-xl font-medium hover:bg-stone-50 transition-colors"
+                className="px-6 py-3 border border-stone-200 text-stone-600 rounded-xl font-medium hover:bg-stone-50 transition-colors"
               >
                 Discard
               </button>
               <button
                 onClick={saveRecipe}
                 disabled={recipeContext.ingredients.length === 0 && recipeContext.steps.length === 0}
-                className="flex-1 py-2.5 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <ChefHat className="w-5 h-5" /> Save Recipe
               </button>
@@ -764,13 +761,13 @@ export default function LiveRecipeConversationPage() {
           )}
 
           {pageState === "live" && (
-            <div className="bg-white rounded-b-2xl border-t border-stone-200 px-5 py-3 flex items-center justify-between shrink-0">
+            <div className="bg-white rounded-b-2xl border-t border-stone-200 px-6 py-4 flex items-center justify-between shrink-0">
               <div className="text-sm text-stone-400">
                 {transcriptions.length} message{transcriptions.length !== 1 ? "s" : ""} captured
               </div>
               <button
                 onClick={() => setShowRecipeSidebar(true)}
-                className="lg:hidden text-sm text-purple-600 font-medium"
+                className="lg:hidden text-sm text-terracotta font-medium"
               >
                 View Recipe →
               </button>
@@ -780,9 +777,9 @@ export default function LiveRecipeConversationPage() {
 
         {/* Recipe Sidebar */}
         <div className={`${pageState === "live" && !showRecipeSidebar ? "hidden lg:block" : ""}`}>
-          <div className="bg-white rounded-2xl p-5 shadow-md border border-stone-200 sticky top-20">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-stone-800">📖 Live Recipe</h3>
+          <div className="bg-white rounded-3xl p-6 border border-stone-200 sticky top-20">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-stone-800 font-heading">Live Recipe</h3>
               <button
                 onClick={() => setShowRecipeSidebar(false)}
                 className="lg:hidden text-stone-400 hover:text-stone-600"
@@ -792,51 +789,51 @@ export default function LiveRecipeConversationPage() {
             </div>
 
             {recipeContext.dishName && (
-              <div className="mb-4">
+              <div className="mb-5">
                 <h4 className="font-bold text-xl text-stone-800 font-heading">{recipeContext.dishName}</h4>
               </div>
             )}
 
             {recipeContext.ingredients.length > 0 ? (
-              <div className="mb-4">
-                <h4 className="font-semibold text-stone-700 mb-2">🥬 Ingredients</h4>
-                <ul className="space-y-1">
+              <div className="mb-5">
+                <h4 className="font-semibold text-stone-700 mb-3">Ingredients</h4>
+                <ul className="space-y-2">
                   {recipeContext.ingredients.map((ingredient, i) => (
-                    <li key={i} className="text-sm text-stone-700 flex items-start gap-2">
-                      <span className="text-stone-300">•</span> {ingredient}
+                    <li key={i} className="text-sm text-stone-700 flex items-start gap-2 leading-relaxed">
+                      <span className="text-stone-300 mt-1">•</span> {ingredient}
                     </li>
                   ))}
                 </ul>
               </div>
             ) : (
-              <div className="text-sm text-stone-400 mb-4 italic">
+              <div className="text-sm text-stone-400 mb-5 italic leading-relaxed">
                 Ingredients will appear as the conversation progresses...
               </div>
             )}
 
             {recipeContext.steps.length > 0 ? (
-              <div className="mb-4">
-                <h4 className="font-semibold text-stone-700 mb-2">📋 Steps</h4>
-                <ol className="space-y-1.5">
+              <div className="mb-5">
+                <h4 className="font-semibold text-stone-700 mb-3">Steps</h4>
+                <ol className="space-y-2">
                   {recipeContext.steps.map((step, i) => (
-                    <li key={i} className="text-sm text-stone-700">
+                    <li key={i} className="text-sm text-stone-700 leading-relaxed">
                       <span className="text-stone-400 font-medium">{i + 1}.</span> {step}
                     </li>
                   ))}
                 </ol>
               </div>
             ) : (
-              <div className="text-sm text-stone-400 italic">
+              <div className="text-sm text-stone-400 italic leading-relaxed">
                 Steps will be extracted automatically...
               </div>
             )}
 
             {recipeContext.missingInfo.length > 0 && (
-              <div className="mb-4">
-                <h4 className="font-semibold text-red-700 mb-2">❓ Still Need</h4>
-                <ul className="space-y-1">
+              <div className="mb-5">
+                <h4 className="font-semibold text-red-700 mb-3">Still Need</h4>
+                <ul className="space-y-2">
                   {recipeContext.missingInfo.map((info, i) => (
-                    <li key={i} className="text-sm text-red-600 flex items-start gap-2">
+                    <li key={i} className="text-sm text-red-600 flex items-start gap-2 leading-relaxed">
                       <span>•</span> {info}
                     </li>
                   ))}
@@ -847,7 +844,7 @@ export default function LiveRecipeConversationPage() {
             {pageState === "saving" && (recipeContext.ingredients.length > 0 || recipeContext.steps.length > 0) && (
               <button
                 onClick={saveRecipe}
-                className="w-full mt-4 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full mt-4 bg-green-600 text-white py-3.5 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
               >
                 <ChefHat className="w-5 h-5" /> Save Recipe
               </button>

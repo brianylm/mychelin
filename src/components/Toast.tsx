@@ -18,7 +18,7 @@ export function Toast({ message, type = "success", show, onClose, duration = 300
       setVisible(true);
       const timer = setTimeout(() => {
         setVisible(false);
-        setTimeout(onClose, 300); // Wait for fade-out animation
+        setTimeout(onClose, 300);
       }, duration);
       return () => clearTimeout(timer);
     }
@@ -33,13 +33,12 @@ export function Toast({ message, type = "success", show, onClose, duration = 300
       }`}
     >
       <div
-        className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-lg text-lg font-semibold ${
+        className={`flex items-center gap-3 px-6 py-4 rounded-2xl text-base font-medium ${
           type === "success"
             ? "bg-green-600 text-white"
             : "bg-red-600 text-white"
         }`}
       >
-        <span className="text-2xl">{type === "success" ? "✅" : "❌"}</span>
         {message}
       </div>
     </div>

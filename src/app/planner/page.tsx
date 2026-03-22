@@ -8,7 +8,7 @@ import { Calendar, Shuffle } from "lucide-react";
 
 interface MealEntry {
   id: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   meal: "breakfast" | "lunch" | "dinner";
   title: string;
   recipeId?: string;
@@ -74,7 +74,6 @@ export default function PlannerPage() {
 
   const today = useMemo(() => new Date(), []);
 
-  // Fetch recipes and saved meal plans
   useEffect(() => {
     fetch("/api/recipes")
       .then((r) => r.json())
@@ -323,14 +322,14 @@ export default function PlannerPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3 mb-3">
         <Calendar className="w-8 h-8 text-terracotta" />
-        <h1 className="text-3xl font-bold text-stone-900">Meal Planner</h1>
+        <h1 className="text-4xl font-bold text-stone-900 font-heading">Meal Planner</h1>
       </div>
-      <p className="text-stone-600 mb-6 text-lg">Plan your meals for the week ahead</p>
+      <p className="text-stone-500 mb-8 text-lg leading-relaxed">Plan your meals for the week ahead</p>
 
       {/* View toggle + Randomise CTA */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex bg-stone-100 rounded-xl p-1">
           <button
             onClick={() => setViewMode("month")}
@@ -353,12 +352,12 @@ export default function PlannerPage() {
         <button
           onClick={randomiseRange}
           disabled={noRecipes || shuffling}
-          className={`ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
             noRecipes
-              ? "bg-purple-100 text-purple-400 border border-purple-200 cursor-not-allowed"
+              ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
               : shuffling
-              ? "bg-purple-500 text-white animate-pulse"
-              : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
+              ? "bg-terracotta text-white animate-pulse"
+              : "bg-terracotta text-white hover:bg-terracotta-600"
           }`}
         >
           <Shuffle className="w-4 h-4" />
@@ -367,9 +366,9 @@ export default function PlannerPage() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white rounded-2xl shadow-md border border-stone-200 mb-6 overflow-hidden">
+      <div className="bg-white rounded-3xl border border-stone-200 mb-8 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-terracotta text-white">
+        <div className="flex items-center justify-between px-6 sm:px-8 py-5 bg-terracotta text-white">
           <button onClick={prevPeriod} className="p-2 hover:bg-terracotta-600 rounded-xl text-xl">◀</button>
           <div className="text-center">
             <h2 className="text-lg sm:text-2xl font-bold">{headerLabel}</h2>
@@ -382,7 +381,7 @@ export default function PlannerPage() {
           <>
             <div className="grid grid-cols-7 bg-stone-50 border-b border-stone-200">
               {DAY_NAMES.map((day) => (
-                <div key={day} className="py-2 text-center text-sm font-semibold text-stone-600">{day}</div>
+                <div key={day} className="py-3 text-center text-sm font-semibold text-stone-500">{day}</div>
               ))}
             </div>
 
@@ -427,7 +426,7 @@ export default function PlannerPage() {
                 <button
                   key={dateKey}
                   onClick={() => setSelectedDate(dateKey)}
-                  className={`w-full flex items-center gap-4 px-4 sm:px-6 py-3 text-left transition-colors ${
+                  className={`w-full flex items-center gap-4 px-6 sm:px-8 py-4 text-left transition-colors ${
                     isSelected ? "bg-stone-100" : isToday ? "bg-stone-50" : "hover:bg-stone-50"
                   }`}
                 >
@@ -458,7 +457,7 @@ export default function PlannerPage() {
           </div>
         )}
 
-        <div className="flex gap-4 px-4 sm:px-6 py-3 bg-stone-50 border-t border-stone-200 text-sm text-stone-500">
+        <div className="flex gap-4 px-6 sm:px-8 py-3 bg-stone-50 border-t border-stone-200 text-sm text-stone-500">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /> Breakfast</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400" /> Lunch</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400" /> Dinner</span>
@@ -467,23 +466,23 @@ export default function PlannerPage() {
 
       {/* Selected Day Detail */}
       {selectedDate && selectedDateObj && (
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md border border-stone-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-stone-900">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-stone-900 font-heading">
               {selectedDateObj.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </h3>
             <button
               onClick={() => surpriseDay(selectedDate)}
               disabled={noRecipes}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
-                noRecipes ? "bg-purple-100 text-purple-300 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                noRecipes ? "bg-stone-100 text-stone-400 cursor-not-allowed" : "bg-terracotta text-white hover:bg-terracotta-600"
               }`}
             >
               <Shuffle className="w-3 h-3" /> Surprise whole day
             </button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {MEAL_TYPES.map(({ key, label, emoji }) => {
               const meal = getMealForSlot(selectedDate, key);
               const isEditing = editingMeal?.date === selectedDate && editingMeal?.meal === key;
@@ -491,11 +490,9 @@ export default function PlannerPage() {
               return (
                 <div
                   key={key}
-                  className={`rounded-xl border p-4 ${
-                    key === "breakfast" ? "border-orange-200 bg-orange-50" : key === "lunch" ? "border-yellow-200 bg-yellow-50" : "border-indigo-200 bg-indigo-50"
-                  }`}
+                  className="rounded-2xl border border-stone-200 p-5 bg-stone-50"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold text-lg text-stone-800">{emoji} {label}</h4>
                     <div className="flex items-center gap-2">
                       {!isEditing && (
@@ -503,7 +500,7 @@ export default function PlannerPage() {
                           onClick={() => surpriseMeal(selectedDate, key)}
                           disabled={noRecipes}
                           className={`inline-flex items-center text-sm px-2 py-1 rounded-lg transition-colors ${
-                            noRecipes ? "text-gray-300 cursor-not-allowed" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"
+                            noRecipes ? "text-gray-300 cursor-not-allowed" : "text-terracotta hover:bg-terracotta-50 hover:text-terracotta-600"
                           }`}
                           title="Surprise me!"
                         >
@@ -527,7 +524,7 @@ export default function PlannerPage() {
                         onKeyDown={(e) => e.key === "Enter" && saveMeal()}
                         placeholder="Search recipes or type meal..."
                         autoFocus
-                        className="flex-1 min-w-0 px-3 py-2 text-base border border-stone-300 rounded-xl focus:ring-2 focus:ring-terracotta/50 bg-white"
+                        className="flex-1 min-w-0 px-3 py-2 text-base border border-stone-200 rounded-xl focus:ring-2 focus:ring-terracotta/30 bg-white"
                       />
                       <button onClick={() => saveMeal()} className="px-3 py-2 bg-terracotta text-white rounded-lg font-semibold hover:bg-terracotta-600 flex-shrink-0 text-sm">
                         Save
@@ -540,13 +537,13 @@ export default function PlannerPage() {
                       </button>
                     </div>
                   ) : meal ? (
-                    <button onClick={() => startEditing(selectedDate, key)} className="text-lg text-stone-700 hover:underline text-left w-full">
+                    <button onClick={() => startEditing(selectedDate, key)} className="text-base text-stone-700 hover:underline text-left w-full leading-relaxed">
                       {meal.title}
                     </button>
                   ) : (
                     <button
                       onClick={() => startEditing(selectedDate, key)}
-                      className="w-full text-left px-4 py-3 border-2 border-dashed border-stone-300 rounded-xl text-stone-400 hover:text-stone-600 hover:border-stone-400 transition-colors text-lg"
+                      className="w-full text-left px-4 py-3 border-2 border-dashed border-stone-200 rounded-xl text-stone-400 hover:text-stone-600 hover:border-stone-300 transition-colors text-base"
                     >
                       + Add {label.toLowerCase()}
                     </button>
@@ -556,7 +553,7 @@ export default function PlannerPage() {
             })}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-stone-200 flex flex-wrap gap-3">
+          <div className="mt-8 pt-5 border-t border-stone-200 flex flex-wrap gap-3">
             <Link 
               href="/discover" 
               onClick={(e) => handleLinkClick(e, "/discover")}
@@ -569,28 +566,27 @@ export default function PlannerPage() {
       )}
 
       {!selectedDate && (
-        <div className="bg-white rounded-2xl p-8 shadow-md border border-stone-200 text-center">
-          <div className="text-5xl mb-4">👆</div>
-          <h3 className="text-xl font-bold text-stone-800 mb-2">Select a day</h3>
-          <p className="text-stone-500 text-lg">Tap a date on the calendar to plan your meals</p>
+        <div className="bg-white rounded-3xl p-10 border border-stone-200 text-center">
+          <h3 className="text-xl font-bold text-stone-800 mb-3 font-heading">Select a day</h3>
+          <p className="text-stone-500 text-lg leading-relaxed">Tap a date on the calendar to plan your meals</p>
         </div>
       )}
 
       {hasUnsavedChanges && (
-        <div className="mt-6 bg-white rounded-2xl p-4 sm:p-6 shadow-md border border-stone-200">
+        <div className="mt-8 bg-white rounded-3xl p-6 sm:p-8 border border-stone-200">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold text-stone-800 mb-1">
-                💾 You have unsaved changes
+                You have unsaved changes
               </h3>
-              <p className="text-stone-500">
-                {meals.length} meal{meals.length !== 1 ? "s" : ""} planned • Save your meal plan to keep your progress
+              <p className="text-stone-500 leading-relaxed">
+                {meals.length} meal{meals.length !== 1 ? "s" : ""} planned · Save your meal plan to keep your progress
               </p>
             </div>
             <button
               onClick={saveMealPlans}
               disabled={saving}
-              className="px-6 py-3 bg-terracotta text-white rounded-xl text-lg font-semibold hover:bg-terracotta-600 disabled:bg-stone-400 transition-colors flex-shrink-0"
+              className="px-8 py-4 bg-terracotta text-white rounded-xl text-lg font-semibold hover:bg-terracotta-600 disabled:bg-stone-400 transition-colors flex-shrink-0"
             >
               {saving ? "Saving..." : "Save Meal Plan"}
             </button>
@@ -599,9 +595,9 @@ export default function PlannerPage() {
       )}
 
       {noRecipes && (
-        <div className="mt-4 bg-stone-50 rounded-xl p-4 border border-stone-200 text-center">
-          <p className="text-stone-600 text-sm">
-            💡 <Link 
+        <div className="mt-6 bg-stone-50 rounded-xl p-4 border border-stone-200 text-center">
+          <p className="text-stone-600 text-sm leading-relaxed">
+            <Link 
               href="/recipes/new"
               onClick={(e) => handleLinkClick(e, "/recipes/new")}
               className="font-semibold underline"

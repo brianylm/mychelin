@@ -139,18 +139,18 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold text-stone-900">My Profile</h1>
+    <div className="max-w-2xl mx-auto space-y-10">
+      <h1 className="text-4xl font-bold text-stone-900 font-heading">My Profile</h1>
 
       {/* User Info Card */}
-      <div className="bg-white rounded-2xl shadow-md border border-stone-200 p-6">
-        <div className="flex items-center gap-4 mb-4">
+      <div className="bg-white rounded-3xl border border-stone-200 p-8">
+        <div className="flex items-center gap-5">
           <div className="w-16 h-16 rounded-full bg-terracotta/10 flex items-center justify-center">
             <User className="w-8 h-8 text-terracotta" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-stone-800">{user.name}</h2>
-            <div className="flex items-center gap-1.5 text-stone-500">
+            <div className="flex items-center gap-2 text-stone-500 mt-1">
               <Mail className="w-4 h-4" />
               <span>{user.email}</span>
             </div>
@@ -159,20 +159,20 @@ export default function ProfilePage() {
       </div>
 
       {/* Preferences Form */}
-      <form onSubmit={handleSavePreferences} className="space-y-6">
+      <form onSubmit={handleSavePreferences} className="space-y-8">
         {/* Favorite Cuisines */}
-        <div className="bg-white rounded-2xl shadow-md border border-stone-200 p-6">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="bg-white rounded-3xl border border-stone-200 p-8">
+          <div className="flex items-center gap-2 mb-5">
             <Heart className="w-5 h-5 text-terracotta" />
-            <h3 className="text-lg font-semibold text-stone-800">Favorite Cuisines</h3>
+            <h3 className="text-xl font-semibold text-stone-800 font-heading">Favorite Cuisines</h3>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {CUISINE_OPTIONS.map((cuisine) => (
               <button
                 key={cuisine}
                 type="button"
                 onClick={() => toggleCuisine(cuisine)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   preferences.favoriteCuisines.includes(cuisine)
                     ? "bg-terracotta text-white"
                     : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -185,18 +185,18 @@ export default function ProfilePage() {
         </div>
 
         {/* Dietary Restrictions */}
-        <div className="bg-white rounded-2xl shadow-md border border-stone-200 p-6">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="bg-white rounded-3xl border border-stone-200 p-8">
+          <div className="flex items-center gap-2 mb-5">
             <AlertCircle className="w-5 h-5 text-terracotta" />
-            <h3 className="text-lg font-semibold text-stone-800">Dietary Restrictions</h3>
+            <h3 className="text-xl font-semibold text-stone-800 font-heading">Dietary Restrictions</h3>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {DIETARY_OPTIONS.map((restriction) => (
               <button
                 key={restriction}
                 type="button"
                 onClick={() => toggleDietary(restriction)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
                   preferences.dietaryRestrictions.includes(restriction)
                     ? "bg-amber-500 text-white"
                     : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -209,11 +209,11 @@ export default function ProfilePage() {
         </div>
 
         {/* Cooking Skill & Household */}
-        <div className="bg-white rounded-2xl shadow-md border border-stone-200 p-6 space-y-5">
+        <div className="bg-white rounded-3xl border border-stone-200 p-8 space-y-6">
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-4">
               <ChefHat className="w-5 h-5 text-terracotta" />
-              <label className="text-lg font-semibold text-stone-800">Cooking Skill Level</label>
+              <label className="text-xl font-semibold text-stone-800 font-heading">Cooking Skill Level</label>
             </div>
             <div className="flex gap-3">
               {(["beginner", "intermediate", "advanced"] as const).map((level) => (
@@ -223,7 +223,7 @@ export default function ProfilePage() {
                   onClick={() =>
                     setPreferences((prev) => ({ ...prev, cookingSkillLevel: level }))
                   }
-                  className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
+                  className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium capitalize transition-colors ${
                     preferences.cookingSkillLevel === level
                       ? "bg-terracotta text-white"
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -236,9 +236,9 @@ export default function ProfilePage() {
           </div>
 
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-terracotta" />
-              <label htmlFor="householdSize" className="text-lg font-semibold text-stone-800">
+              <label htmlFor="householdSize" className="text-xl font-semibold text-stone-800 font-heading">
                 Household Size
               </label>
             </div>
@@ -254,7 +254,7 @@ export default function ProfilePage() {
                   householdSize: e.target.value ? parseInt(e.target.value) : null,
                 }))
               }
-              className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-terracotta/50 focus:border-terracotta transition-colors text-stone-800"
+              className="w-full px-4 py-3.5 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta transition-colors text-stone-800"
               placeholder="Number of people in your household"
             />
           </div>
@@ -263,7 +263,7 @@ export default function ProfilePage() {
         {/* Save & Message */}
         {message && (
           <div
-            className={`px-4 py-3 rounded-xl text-center font-medium ${
+            className={`px-4 py-3 rounded-xl text-center font-medium text-sm ${
               message.includes("saved") ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
             }`}
           >
@@ -275,7 +275,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 bg-terracotta text-white py-3 px-4 rounded-xl font-semibold text-lg hover:bg-terracotta-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 bg-terracotta text-white py-4 px-4 rounded-xl font-semibold text-lg hover:bg-terracotta-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -290,7 +290,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="bg-stone-100 text-stone-600 py-3 px-6 rounded-xl font-semibold hover:bg-stone-200 transition-colors flex items-center gap-2"
+            className="bg-stone-100 text-stone-600 py-4 px-6 rounded-xl font-semibold hover:bg-stone-200 transition-colors flex items-center gap-2"
           >
             <LogOut className="w-5 h-5" />
             Logout

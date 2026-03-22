@@ -26,12 +26,11 @@ export function SaveMealPlanModal({ isOpen, onSave, onDiscard, onCancel, mealCou
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
-        <div className="text-center mb-6">
-          <div className="text-4xl mb-3">💾</div>
-          <h2 className="text-xl font-bold text-amber-900 mb-2">Save your meal plan?</h2>
-          <p className="text-amber-600">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full">
+        <div className="text-center mb-8">
+          <h2 className="text-xl font-bold text-stone-900 mb-3 font-heading">Save your meal plan?</h2>
+          <p className="text-stone-500 leading-relaxed">
             You have {mealCount} meal{mealCount !== 1 ? "s" : ""} planned. Would you like to save your progress?
           </p>
         </div>
@@ -39,19 +38,19 @@ export function SaveMealPlanModal({ isOpen, onSave, onDiscard, onCancel, mealCou
         <div className="space-y-3">
           <button
             onClick={onSave}
-            className="w-full bg-amber-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-amber-700 transition-colors"
+            className="w-full bg-terracotta text-white py-3.5 rounded-xl text-base font-semibold hover:bg-terracotta-600 transition-colors"
           >
             Save & Continue
           </button>
           <button
             onClick={onDiscard}
-            className="w-full bg-red-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-red-700 transition-colors"
+            className="w-full bg-red-50 text-red-600 py-3.5 rounded-xl text-base font-semibold hover:bg-red-100 transition-colors"
           >
             Discard Changes
           </button>
           <button
             onClick={onCancel}
-            className="w-full bg-gray-200 text-gray-700 py-3 rounded-xl text-lg font-semibold hover:bg-gray-300 transition-colors"
+            className="w-full bg-stone-100 text-stone-600 py-3.5 rounded-xl text-base font-semibold hover:bg-stone-200 transition-colors"
           >
             Cancel
           </button>

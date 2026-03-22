@@ -34,7 +34,6 @@ export function RecipeSearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch recipes
   useEffect(() => {
     fetch("/api/recipes")
       .then((r) => r.json())
@@ -42,7 +41,6 @@ export function RecipeSearchInput({
       .catch(() => {});
   }, []);
 
-  // Filter recipes based on input
   const filteredRecipes = recipes.filter((recipe) =>
     recipe.title.toLowerCase().includes(value.toLowerCase())
   );
@@ -83,7 +81,6 @@ export function RecipeSearchInput({
   };
 
   const handleBlur = () => {
-    // Delay hiding dropdown to allow click on options
     setTimeout(() => setShowDropdown(false), 150);
   };
 
@@ -111,26 +108,26 @@ export function RecipeSearchInput({
       {showDropdown && filteredRecipes.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-amber-300 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+          className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-stone-200 rounded-xl max-h-60 overflow-y-auto"
         >
           {filteredRecipes.slice(0, 8).map((recipe, index) => (
             <button
               key={recipe.id}
               onClick={() => selectRecipe(recipe)}
-              className={`w-full text-left px-4 py-3 hover:bg-amber-50 transition-colors border-b border-amber-100 last:border-0 ${
-                index === selectedIndex ? "bg-amber-100" : ""
+              className={`w-full text-left px-4 py-3 hover:bg-stone-50 transition-colors border-b border-stone-100 last:border-0 ${
+                index === selectedIndex ? "bg-stone-100" : ""
               }`}
             >
-              <div className="font-medium text-amber-900">{recipe.title}</div>
+              <div className="font-medium text-stone-800">{recipe.title}</div>
               {(recipe.cuisine || recipe.category) && (
                 <div className="flex gap-2 mt-1">
                   {recipe.cuisine && (
-                    <span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full">
                       {recipe.cuisine}
                     </span>
                   )}
                   {recipe.category && (
-                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">
                       {recipe.category}
                     </span>
                   )}

@@ -22,7 +22,7 @@ export function AddRecipeMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-2 bg-terracotta text-white px-6 py-3 rounded-xl text-lg font-semibold hover:bg-terracotta-600 transition-colors"
+        className="inline-flex items-center gap-2 bg-terracotta text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-terracotta-600 transition-colors"
       >
         <Plus className="w-5 h-5" />
         Add Recipe
@@ -30,30 +30,30 @@ export function AddRecipeMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-stone-200 overflow-hidden z-50 animate-fade-in">
           <Link
             href="/recipes/new"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-5 py-4 hover:bg-stone-50 transition-colors border-b border-stone-100"
+            className="flex items-center gap-3 px-6 py-5 hover:bg-stone-50 transition-colors border-b border-stone-100"
           >
             <PenLine className="w-5 h-5 text-terracotta" />
             <div>
               <div className="font-semibold text-stone-800">Write Recipe</div>
-              <div className="text-sm text-stone-500">Add a recipe manually</div>
+              <div className="text-sm text-stone-500 mt-0.5">Add a recipe manually</div>
             </div>
           </Link>
           <Link
             href="/capture"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-5 py-4 hover:bg-stone-50 transition-colors"
+            className="flex items-center gap-3 px-6 py-5 hover:bg-stone-50 transition-colors"
           >
-            <Mic className="w-5 h-5 text-purple-500" />
+            <Mic className="w-5 h-5 text-terracotta" />
             <div>
               <div className="font-semibold text-stone-800 flex items-center gap-2">
                 AI Capture
-                <span className="text-[10px] font-bold bg-purple-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
+                <span className="text-[10px] font-bold bg-terracotta text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
               </div>
-              <div className="text-sm text-stone-500">Record a live conversation</div>
+              <div className="text-sm text-stone-500 mt-0.5">Record a live conversation</div>
             </div>
           </Link>
         </div>
