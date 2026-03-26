@@ -5,9 +5,10 @@ import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
   onMenuClick?: () => void;
+  children?: React.ReactNode;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, children }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -55,6 +56,9 @@ export function Header({ onMenuClick }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Desktop nav */}
+      {children}
 
       {/* User menu */}
       {user && (

@@ -123,6 +123,10 @@ button {
   font: inherit;
 }
 
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Radix theme overrides for Mychelin amber accent */
 .radix-themes {
   --cursor-button: pointer;

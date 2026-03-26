@@ -8,10 +8,16 @@ import { RecipeView } from "@/components/recipes/RecipeView";
 import { Header } from "@/components/layout/Header";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
+import { BottomNav, type AppView } from "@/components/layout/BottomNav";
+import { DesktopNav } from "@/components/layout/DesktopNav";
+import { MealPlanView } from "@/components/planner/MealPlanView";
+import { FridgeView } from "@/components/fridge/FridgeView";
+import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<AppView>("recipes");
 
   if (loading) {
     return (
@@ -27,15 +33,33 @@ export function RecipeWorkspace() {
 
   return (
     <RecipeStoreProvider>
-      <Header onMenuClick={() => setSidebarOpen(true)} />
+      <Header
+        onMenuClick={
+          currentView === "recipes"
+            ? () => setSidebarOpen(true)
+            : undefined
+        }
+      >
+        <DesktopNav current={currentView} onChange={setCurrentView} />
+      </Header>
+
       <div className="flex h-[calc(100dvh-50px)] w-full bg-surface text-foreground">
-        <RecipeSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          onOpen={() => setSidebarOpen(true)}
-        />
-        <RecipeView onOpenSidebar={() => setSidebarOpen(true)} />
+        {currentView === "recipes" && (
+          <>
+            <RecipeSidebar
+              isOpen={isSidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              onOpen={() => setSidebarOpen(true)}
+            />
+            <RecipeView onOpenSidebar={() => setSidebarOpen(true)} />
+          </>
+        )}
+        {currentView === "plan" && <MealPlanView />}
+        {currentView === "fridge" && <FridgeView />}
+        {currentView === "shop" && <ShoppingListView />}
       </div>
+
+      <BottomNav current={currentView} onChange={setCurrentView} />
     </RecipeStoreProvider>
   );
 }
