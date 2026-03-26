@@ -1,0 +1,153 @@
+@import "tailwindcss";
+@import "@radix-ui/themes/styles.css";
+
+:root {
+  color-scheme: light;
+
+  /* Surface colors */
+  --surface: 246 246 245;
+  --surface-card: 255 255 254;
+  --foreground: 28 28 30;
+
+  /* Mychelin accent — warm amber/gold */
+  --accent: 217 119 6;
+  --accent-light: 252 211 77;
+  --accent-dark: 180 83 9;
+
+  /* Semantic */
+  --background: #f6f6f5;
+  --color-foreground: #1c1c1e;
+}
+
+@theme inline {
+  --color-surface: rgb(var(--surface));
+  --color-surface-card: rgb(var(--surface-card));
+  --color-foreground: rgb(var(--foreground));
+  --color-accent: rgb(var(--accent));
+  --color-accent-light: rgb(var(--accent-light));
+  --color-accent-dark: rgb(var(--accent-dark));
+
+  --font-sans: var(--font-inter, "Inter"), system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Animations */
+  --animate-fade-in: fade-in 400ms ease-out forwards;
+  --animate-fade-out: fade-out 500ms ease-out forwards;
+  --animate-slide-up: slide-up 300ms ease-out forwards;
+  --animate-slide-down: slide-down 300ms ease-out;
+  --animate-shimmer: shimmer 3s ease-in-out infinite;
+
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fade-out {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-up {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-down {
+    from {
+      max-height: 0;
+      opacity: 0;
+    }
+    to {
+      max-height: 800px;
+      opacity: 1;
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+}
+
+*,
+*::before,
+*::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: rgba(var(--foreground), 0.08);
+}
+
+body {
+  min-height: 100vh;
+  background-color: rgb(var(--surface));
+  color: rgb(var(--foreground));
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+/* Radix theme overrides for Mychelin amber accent */
+.radix-themes {
+  --cursor-button: pointer;
+  --accent-1: #fffbeb;
+  --accent-2: #fef3c7;
+  --accent-3: #fde68a;
+  --accent-4: #fcd34d;
+  --accent-5: #fbbf24;
+  --accent-6: #f59e0b;
+  --accent-7: #d97706;
+  --accent-8: #b45309;
+  --accent-9: #d97706;
+  --accent-10: #b45309;
+  --accent-11: #92400e;
+  --accent-12: #451a03;
+  --accent-a1: rgba(217, 119, 6, 0.05);
+  --accent-a2: rgba(217, 119, 6, 0.1);
+  --accent-a3: rgba(217, 119, 6, 0.15);
+  --accent-a4: rgba(217, 119, 6, 0.2);
+  --accent-a5: rgba(217, 119, 6, 0.3);
+  --accent-a6: rgba(217, 119, 6, 0.4);
+  --accent-a7: rgba(217, 119, 6, 0.5);
+  --accent-a8: rgba(217, 119, 6, 0.6);
+  --accent-a9: rgba(217, 119, 6, 0.7);
+  --accent-a10: rgba(217, 119, 6, 0.8);
+  --accent-a11: rgba(217, 119, 6, 0.9);
+  --accent-a12: rgba(217, 119, 6, 0.95);
+}

@@ -1,0 +1,366 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  Recipe,
+  Ingredient,
+  Instruction,
+  VoiceRecording,
+  RecipePhoto,
+} from "@/db/schema";
+
+// Extended recipe type with relations
+export interface RecipeWithRelations extends Recipe {
+  ingredients: Ingredient[];
+  instructions: Instruction[];
+  voiceRecordings?: VoiceRecording[];
+  photos?: RecipePhoto[];
+}
+
+interface RecipeStoreValue {
+  recipes: Recipe[];
+  loading: boolean;
+  error: string | null;
+  selectedRecipeId: number | null;
+  selectedRecipe: RecipeWithRelations | null;
+  selectRecipe: (id: number | null) => void;
+  createRecipe: (title: string) => Promise<void>;
+  updateRecipe: (
+    id: number,
+    data: Partial<Recipe>
+  ) => Promise<void>;
+  deleteRecipe: (id: number) => Promise<void>;
+  addIngredient: (
+    recipeId: number,
+    data: { name: string; quantity?: number; unit?: string; notes?: string }
+  ) => Promise<void>;
+  updateIngredient: (
+    recipeId: number,
+    ingredientId: number,
+    data: Partial<Ingredient>
+  ) => Promise<void>;
+  deleteIngredient: (recipeId: number, ingredientId: number) => Promise<void>;
+  addInstruction: (
+    recipeId: number,
+    data: { content: string; tip?: string }
+  ) => Promise<void>;
+  updateInstruction: (
+    recipeId: number,
+    instructionId: number,
+    data: Partial<Instruction>
+  ) => Promise<void>;
+  deleteInstruction: (
+    recipeId: number,
+    instructionId: number
+  ) => Promise<void>;
+}
+
+const RecipeStoreContext = createContext<RecipeStoreValue>(null!);
+
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export function RecipeStoreProvider({ children }: { children: ReactNode }) {
+  const qc = useQueryClient();
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+
+  // Fetch all recipes (list)
+  const {
+    data: recipes = [],
+    isLoading,
+    error: recipesError,
+  } = useQuery<Recipe[]>({
+    queryKey: ["recipes"],
+    queryFn: () => fetchJson("/api/recipes"),
+  });
+
+  // Fetch selected recipe with relations
+  const { data: selectedRecipe = null } = useQuery<RecipeWithRelations | null>(
+    {
+      queryKey: ["recipe", selectedRecipeId],
+      queryFn: () =>
+        selectedRecipeId
+          ? fetchJson<RecipeWithRelations>(`/api/recipes/${selectedRecipeId}`)
+          : null,
+      enabled: selectedRecipeId !== null,
+    }
+  );
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (title: string) =>
+      fetchJson("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      }),
+    onSuccess: (_data, _vars) => {
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Recipe> }) =>
+      fetchJson(`/api/recipes/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      qc.invalidateQueries({ queryKey: ["recipe", vars.id] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) =>
+      fetchJson(`/api/recipes/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      setSelectedRecipeId(null);
+    },
+  });
+
+  // Ingredient mutations
+  const addIngredientMutation = useMutation({
+    mutationFn: ({
+      recipeId,
+      data,
+    }: {
+      recipeId: number;
+      data: { name: string; quantity?: number; unit?: string; notes?: string };
+    }) =>
+      fetchJson(`/api/recipes/${recipeId}/ingredients`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+    },
+  });
+
+  const updateIngredientMutation = useMutation({
+    mutationFn: ({
+      recipeId,
+      ingredientId,
+      data,
+    }: {
+      recipeId: number;
+      ingredientId: number;
+      data: Partial<Ingredient>;
+    }) =>
+      fetchJson(`/api/recipes/${recipeId}/ingredients/${ingredientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+    },
+  });
+
+  const deleteIngredientMutation = useMutation({
+    mutationFn: ({
+      recipeId,
+      ingredientId,
+    }: {
+      recipeId: number;
+      ingredientId: number;
+    }) =>
+      fetchJson(`/api/recipes/${recipeId}/ingredients/${ingredientId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+    },
+  });
+
+  // Instruction mutations
+  const addInstructionMutation = useMutation({
+    mutationFn: ({
+      recipeId,
+      data,
+    }: {
+      recipeId: number;
+      data: { content: string; tip?: string };
+    }) =>
+      fetchJson(`/api/recipes/${recipeId}/instructions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+    },
+  });
+
+  const updateInstructionMutation = useMutation({
+    mutationFn: ({
+      recipeId,
+      instructionId,
+      data,
+    }: {
+      recipeId: number;
+      instructionId: number;
+      data: Partial<Instruction>;
+    }) =>
+      fetchJson(`/api/recipes/${recipeId}/instructions/${instructionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+    },
+  });
+
+  const deleteInstructionMutation = useMutation({
+    mutationFn: ({
+      recipeId,
+      instructionId,
+    }: {
+      recipeId: number;
+      instructionId: number;
+    }) =>
+      fetchJson(`/api/recipes/${recipeId}/instructions/${instructionId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+    },
+  });
+
+  // Stable callbacks
+  const selectRecipe = useCallback((id: number | null) => {
+    setSelectedRecipeId(id);
+  }, []);
+
+  const createRecipe = useCallback(
+    async (title: string) => {
+      await createMutation.mutateAsync(title);
+    },
+    [createMutation]
+  );
+
+  const updateRecipe = useCallback(
+    async (id: number, data: Partial<Recipe>) => {
+      await updateMutation.mutateAsync({ id, data });
+    },
+    [updateMutation]
+  );
+
+  const deleteRecipe = useCallback(
+    async (id: number) => {
+      await deleteMutation.mutateAsync(id);
+    },
+    [deleteMutation]
+  );
+
+  const addIngredient = useCallback(
+    async (
+      recipeId: number,
+      data: { name: string; quantity?: number; unit?: string; notes?: string }
+    ) => {
+      await addIngredientMutation.mutateAsync({ recipeId, data });
+    },
+    [addIngredientMutation]
+  );
+
+  const updateIngredient = useCallback(
+    async (
+      recipeId: number,
+      ingredientId: number,
+      data: Partial<Ingredient>
+    ) => {
+      await updateIngredientMutation.mutateAsync({
+        recipeId,
+        ingredientId,
+        data,
+      });
+    },
+    [updateIngredientMutation]
+  );
+
+  const deleteIngredient = useCallback(
+    async (recipeId: number, ingredientId: number) => {
+      await deleteIngredientMutation.mutateAsync({ recipeId, ingredientId });
+    },
+    [deleteIngredientMutation]
+  );
+
+  const addInstruction = useCallback(
+    async (recipeId: number, data: { content: string; tip?: string }) => {
+      await addInstructionMutation.mutateAsync({ recipeId, data });
+    },
+    [addInstructionMutation]
+  );
+
+  const updateInstruction = useCallback(
+    async (
+      recipeId: number,
+      instructionId: number,
+      data: Partial<Instruction>
+    ) => {
+      await updateInstructionMutation.mutateAsync({
+        recipeId,
+        instructionId,
+        data,
+      });
+    },
+    [updateInstructionMutation]
+  );
+
+  const deleteInstruction = useCallback(
+    async (recipeId: number, instructionId: number) => {
+      await deleteInstructionMutation.mutateAsync({
+        recipeId,
+        instructionId,
+      });
+    },
+    [deleteInstructionMutation]
+  );
+
+  return (
+    <RecipeStoreContext.Provider
+      value={{
+        recipes,
+        loading: isLoading,
+        error: recipesError ? String(recipesError) : null,
+        selectedRecipeId,
+        selectedRecipe,
+        selectRecipe,
+        createRecipe,
+        updateRecipe,
+        deleteRecipe,
+        addIngredient,
+        updateIngredient,
+        deleteIngredient,
+        addInstruction,
+        updateInstruction,
+        deleteInstruction,
+      }}
+    >
+      {children}
+    </RecipeStoreContext.Provider>
+  );
+}
+
+export function useRecipeStore() {
+  const ctx = useContext(RecipeStoreContext);
+  if (!ctx) throw new Error("useRecipeStore must be inside RecipeStoreProvider");
+  return ctx;
+}
