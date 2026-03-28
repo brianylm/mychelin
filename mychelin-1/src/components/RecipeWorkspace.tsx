@@ -71,6 +71,7 @@ function RecipeWorkspaceContent({
             ? () => setSidebarOpen(true)
             : undefined
         }
+        onProfileClick={() => setCurrentView("profile")}
       >
         <DesktopNav current={currentView} onChange={setCurrentView} />
       </Header>

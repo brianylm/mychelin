@@ -1,14 +1,15 @@
 "use client";
 
-import { Button, DropdownMenu, IconButton } from "@radix-ui/themes";
+import { IconButton } from "@radix-ui/themes";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
   onMenuClick?: () => void;
+  onProfileClick?: () => void;
   children?: React.ReactNode;
 }
 
-export function Header({ onMenuClick, children }: HeaderProps) {
+export function Header({ onMenuClick, onProfileClick, children }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -62,25 +63,17 @@ export function Header({ onMenuClick, children }: HeaderProps) {
       {/* Desktop nav */}
       {children}
 
-      {/* User menu */}
+      {/* Profile button */}
       {user && (
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <Button variant="ghost" size="2" color="gray">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <span className="hidden text-sm sm:inline">{user.name}</span>
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
-            <DropdownMenu.Label>{user.email}</DropdownMenu.Label>
-            <DropdownMenu.Separator />
-            <DropdownMenu.Item color="red" onClick={() => logout()}>
-              Log out
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+        <button
+          onClick={onProfileClick}
+          className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-neutral-100"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <span className="hidden text-sm font-medium text-neutral-700 sm:inline">{user.name}</span>
+        </button>
       )}
     </header>
   );

@@ -15,7 +15,6 @@ const tabs: { id: AppView; label: string; icon: string }[] = [
   { id: "plan", label: "Plan", icon: "📅" },
   { id: "fridge", label: "Fridge", icon: "🧊" },
   { id: "shop", label: "Shop", icon: "🛒" },
-  { id: "profile", label: "Profile", icon: "👤" },
 ];
 
 export function BottomNav({ current, onChange }: BottomNavProps) {
