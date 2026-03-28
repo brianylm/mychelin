@@ -88,7 +88,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   });
 
   // Fetch selected recipe with relations
-  const { data: selectedRecipe = null } = useQuery<RecipeWithRelations | null>(
+  const { data: fetchedRecipe = null } = useQuery<RecipeWithRelations | null>(
     {
       queryKey: ["recipe", selectedRecipeId],
       queryFn: () =>
@@ -96,8 +96,22 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
           ? fetchJson<RecipeWithRelations>(`/api/recipes/${selectedRecipeId}`)
           : null,
       enabled: selectedRecipeId !== null,
+      // Show stale data instantly while revalidating
+      staleTime: 30_000,
     }
   );
+
+  // Optimistic: use list data as placeholder while full recipe loads
+  const selectedRecipe: RecipeWithRelations | null = fetchedRecipe
+    ? fetchedRecipe
+    : selectedRecipeId
+      ? (() => {
+          const listItem = recipes.find((r) => r.id === selectedRecipeId);
+          return listItem
+            ? { ...listItem, ingredients: [], instructions: [], voiceRecordings: [], photos: [] }
+            : null;
+        })()
+      : null;
 
   // Mutations
   const createMutation = useMutation({

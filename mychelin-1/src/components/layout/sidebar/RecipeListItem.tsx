@@ -7,6 +7,7 @@ import {
   DrawingPinFilledIcon,
   DrawingPinIcon,
 } from "@radix-ui/react-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import type { Recipe } from "@/db/schema";
 
@@ -25,6 +26,18 @@ export function RecipeListItem({
   onTogglePin,
   onDelete,
 }: RecipeListItemProps) {
+  const qc = useQueryClient();
+
+  const handlePointerEnter = () => {
+    // Prefetch full recipe on hover so it's instant on click
+    qc.prefetchQuery({
+      queryKey: ["recipe", recipe.id],
+      queryFn: () =>
+        fetch(`/api/recipes/${recipe.id}`).then((r) => r.json()),
+      staleTime: 30_000,
+    });
+  };
+
   return (
     <li
       className={cn(
@@ -32,6 +45,7 @@ export function RecipeListItem({
         isSelected ? "bg-amber-50" : "hover:bg-neutral-100"
       )}
       onClick={() => onSelect(recipe.id)}
+      onPointerEnter={handlePointerEnter}
     >
       {/* Thumbnail placeholder */}
       <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-amber-50">
