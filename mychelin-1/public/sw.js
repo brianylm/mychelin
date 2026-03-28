@@ -1,9 +1,22 @@
 const CACHE_NAME = "mychelin-v1";
-const STATIC_ASSETS = ["/", "/manifest.json"];
+const OFFLINE_CACHE = "mychelin-offline-v1";
+
+// Core app shell assets to cache on install
+const STATIC_ASSETS = [
+  "/",
+  "/offline.html",
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS).catch((error) => {
+        console.error("Failed to cache static assets:", error);
+      });
+    })
   );
   self.skipWaiting();
 });
@@ -13,7 +26,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE_NAME && key !== OFFLINE_CACHE)
           .map((key) => caches.delete(key))
       )
     )
@@ -23,26 +36,83 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+  const { url } = request;
 
-  // Skip non-GET and API requests
-  if (request.method !== "GET" || request.url.includes("/api/")) {
+  // Skip non-GET requests and extension requests
+  if (request.method !== "GET" || url.includes("chrome-extension://")) {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const fetched = fetch(request)
+  // Handle navigation requests (HTML pages) with offline fallback
+  if (request.mode === "navigate" || request.headers.get("Accept")?.includes("text/html")) {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          // Cache successful responses
+          // If successful, cache the response
           if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => {
+          // Network failed, try cache first, then offline fallback
+          return caches.match(request).then((cached) => {
+            if (cached) return cached;
+            return caches.match("/offline.html");
+          });
+        })
+    );
+    return;
+  }
 
-      return cached || fetched;
-    })
+  // Handle API requests - network first, no offline fallback
+  if (url.includes("/api/")) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        // For API failures, just let them fail gracefully
+        return new Response(
+          JSON.stringify({ error: "Network unavailable" }),
+          { status: 503, headers: { "Content-Type": "application/json" } }
+        );
+      })
+    );
+    return;
+  }
+
+  // Handle static assets (JS, CSS, images) - cache first with network fallback
+  if (url.includes("/_next/") || url.includes("/icons/") || /\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/.test(url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        
+        return fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() => {
+            // If it's a critical asset and we can't fetch it, return a placeholder response
+            return new Response("", { status: 404 });
+          });
+      })
+    );
+    return;
+  }
+
+  // For everything else, try network first, then cache
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });

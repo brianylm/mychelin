@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { PWARegister } from "@/components/PWARegister";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/favicon.ico" }],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   appleWebApp: {
     capable: true,
@@ -39,6 +43,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-surface text-foreground antialiased">
         <AppProviders>
           <PWARegister />
+          <InstallPrompt />
           <main>{children}</main>
         </AppProviders>
       </body>
