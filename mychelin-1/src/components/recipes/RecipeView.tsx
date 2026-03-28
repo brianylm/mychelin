@@ -34,6 +34,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     addInstruction,
     updateInstruction,
     deleteInstruction,
+    selectRecipe,
   } = useRecipeStore();
   const { addToast } = useToast();
   const qc = useQueryClient();
@@ -210,27 +211,108 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     );
   }
 
-  // No recipe selected — empty state
+  // No recipe selected — show card grid on desktop, welcome on mobile
   if (!selectedRecipe) {
+    // Mobile: simple welcome
+    if (recipes.length === 0) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8 text-neutral-500">
+          <div className="mx-auto max-w-md text-center">
+            <img src="/icons/icon-welcome.png" alt="Mychelin" className="mb-6 h-24 w-24 mx-auto" />
+            <h2 className="text-lg font-semibold text-neutral-800">
+              Welcome to Mychelin
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed">
+              Preserve your family&apos;s food heritage. Create a recipe to
+              capture the dishes, stories, and traditions that matter.
+            </p>
+            <div className="pt-6">
+              <Button onClick={onOpenSidebar} variant="solid" size="3">
+                Get started
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8 text-neutral-500">
-        <div className="mx-auto max-w-md text-center">
-          <img src="/icons/icon-welcome.png" alt="Mychelin" className="mb-6 h-24 w-24 mx-auto" />
-          <h2 className="text-lg font-semibold text-neutral-800">
-            Welcome to Mychelin
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed">
-            Preserve your family&apos;s food heritage. Create a recipe to
-            capture the dishes, stories, and traditions that matter.
-          </p>
-          <div className="pt-6">
+      <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
+        <div className="mx-auto max-w-5xl px-5 py-6">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-neutral-800">
+                Your Recipes
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} in your collection
+              </p>
+            </div>
             <Button
-              onClick={onOpenSidebar}
               variant="solid"
-              size="3"
+              size="2"
+              onClick={onOpenSidebar}
+              className="md:hidden"
             >
-            Browse recipes
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New
             </Button>
+          </div>
+
+          {/* Card grid */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {recipes.map((recipe) => (
+              <button
+                key={recipe.id}
+                onClick={() => selectRecipe(recipe.id)}
+                className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-left transition-all hover:border-amber-300 hover:shadow-md"
+              >
+                {/* Image area */}
+                <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+                  {recipe.imageUrl ? (
+                    <img
+                      src={recipe.imageUrl}
+                      alt={recipe.title}
+                      className="h-full w-full rounded-t-2xl object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl opacity-60">
+                      {recipe.cuisine === "Japanese" ? "🍱" :
+                       recipe.cuisine === "Korean" ? "🍲" :
+                       recipe.cuisine === "Italian" ? "🍝" :
+                       recipe.cuisine === "Indian" ? "🍛" :
+                       recipe.cuisine === "Thai" ? "🥘" :
+                       recipe.cuisine === "Mexican" ? "🌮" :
+                       recipe.cuisine === "French" ? "🥐" :
+                       "🍳"}
+                    </span>
+                  )}
+                </div>
+                {/* Info */}
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="font-semibold text-neutral-800 group-hover:text-amber-800">
+                    {recipe.title}
+                  </h3>
+                  {recipe.cuisine && (
+                    <span className="mt-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">
+                      {recipe.cuisine}
+                    </span>
+                  )}
+                  {recipe.description && (
+                    <p className="mt-2 line-clamp-2 text-xs text-neutral-500 leading-relaxed">
+                      {recipe.description}
+                    </p>
+                  )}
+                  {(recipe.prepTime || recipe.cookTime) && (
+                    <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
+                      {recipe.prepTime && <span>🔪 {recipe.prepTime}m prep</span>}
+                      {recipe.cookTime && <span>🔥 {recipe.cookTime}m cook</span>}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       </div>
