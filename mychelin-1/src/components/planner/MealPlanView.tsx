@@ -561,20 +561,33 @@ export function MealPlanView() {
                     No recipes yet. Create one first!
                   </p>
                 ) : (
-                  recipes.map((r) => (
+                  <>
+                    {/* Surprise Me */}
                     <button
-                      key={r.id}
-                      onClick={() => setSelectedRecipeId(r.id)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                        selectedRecipeId === r.id
-                          ? "bg-amber-50 font-medium text-amber-800"
-                          : "hover:bg-neutral-100"
-                      }`}
+                      onClick={() => {
+                        const random = recipes[Math.floor(Math.random() * recipes.length)];
+                        setSelectedRecipeId(random.id);
+                      }}
+                      className={`flex w-full items-center gap-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 text-left text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100`}
                     >
-                      <span className="text-base">🍳</span>
-                      {r.title}
+                      <span className="text-base">🎲</span>
+                      Surprise me!
                     </button>
-                  ))
+                    {recipes.map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => setSelectedRecipeId(r.id)}
+                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                          selectedRecipeId === r.id
+                            ? "bg-amber-50 font-medium text-amber-800"
+                            : "hover:bg-neutral-100"
+                        }`}
+                      >
+                        <span className="text-base">🍳</span>
+                        {r.title}
+                      </button>
+                    ))}
+                  </>
                 )}
               </div>
 
