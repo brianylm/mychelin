@@ -249,15 +249,30 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} in your collection
               </p>
             </div>
-            <Button
-              variant="solid"
-              size="2"
-              onClick={onOpenSidebar}
-              className="md:hidden"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New
-            </Button>
+            <div className="flex items-center gap-2">
+              {recipes.length > 0 && (
+                <Button
+                  variant="soft"
+                  color="amber"
+                  size="2"
+                  onClick={() => {
+                    const random = recipes[Math.floor(Math.random() * recipes.length)];
+                    selectRecipe(random.id);
+                  }}
+                >
+                  🎲 Surprise me
+                </Button>
+              )}
+              <Button
+                variant="solid"
+                size="2"
+                onClick={onOpenSidebar}
+                className="md:hidden"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New
+              </Button>
+            </div>
           </div>
 
           {/* Card grid */}
