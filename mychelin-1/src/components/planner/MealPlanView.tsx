@@ -335,8 +335,8 @@ export function MealPlanView() {
             </div>
           </div>
 
-          {/* Navigation and randomise */}
-          <div className="flex items-center justify-between">
+          {/* Navigation */}
+          <div className="flex items-center justify-center gap-4">
             <IconButton
               variant="ghost"
               size="2"
@@ -345,7 +345,7 @@ export function MealPlanView() {
               <ChevronLeftIcon />
             </IconButton>
             
-            <div className="text-center">
+            <div className="min-w-[200px] text-center">
               <h2 className="text-base font-semibold">
                 {currentDateRange.title}
               </h2>
@@ -359,25 +359,27 @@ export function MealPlanView() {
               )}
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button
-                size="1"
-                variant="soft"
-                color="amber"
-                disabled={randomising || recipes.length === 0}
-                onClick={randomiseMeals}
-                className="flex items-center gap-1"
-              >
-                {randomising ? "Randomising..." : "🎲 Randomise"}
-              </Button>
-              <IconButton
-                variant="ghost"
-                size="2"
-                onClick={() => setOffset((o) => o + 1)}
-              >
-                <ChevronRightIcon />
-              </IconButton>
-            </div>
+            <IconButton
+              variant="ghost"
+              size="2"
+              onClick={() => setOffset((o) => o + 1)}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          </div>
+
+          {/* Randomise */}
+          <div className="flex justify-center">
+            <Button
+              size="1"
+              variant="soft"
+              color="amber"
+              disabled={randomising || recipes.length === 0}
+              onClick={randomiseMeals}
+              className="flex items-center gap-1"
+            >
+              {randomising ? "Randomising..." : "🎲 Randomise"}
+            </Button>
           </div>
         </div>
 
