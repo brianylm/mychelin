@@ -33,7 +33,7 @@ export function AuthScreen() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
-            <span className="text-3xl">🍜</span>
+            <img src="/icons/icon-96.png" alt="Mychelin" className="h-10 w-10 rounded-lg" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">Mychelin</h1>
           <p className="mt-1 text-sm text-neutral-500">

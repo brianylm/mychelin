@@ -215,7 +215,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8 text-neutral-500">
         <div className="mx-auto max-w-md text-center">
-          <div className="mb-4 text-5xl">🍜</div>
+          <img src="/icons/icon-192.png" alt="Mychelin" className="mb-4 h-20 w-20 rounded-2xl mx-auto" />
           <h2 className="text-lg font-semibold text-neutral-800">
             Welcome to Mychelin
           </h2>

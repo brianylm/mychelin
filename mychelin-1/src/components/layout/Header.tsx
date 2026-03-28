@@ -43,9 +43,11 @@ export function Header({ onMenuClick, children }: HeaderProps) {
 
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100">
-            <span className="text-lg">🍜</span>
-          </div>
+          <img
+            src="/icons/icon-96.png"
+            alt="Mychelin"
+            className="h-9 w-9 rounded-lg"
+          />
           <div className="flex flex-col">
             <span className="text-base font-semibold leading-tight tracking-tight">
               Mychelin
