@@ -63,6 +63,14 @@ function RecipeWorkspaceContent({
     setCurrentView("recipes");
   }, [selectRecipe, setCurrentView]);
 
+  const handleViewChange = useCallback((view: AppView) => {
+    // When clicking "Recipes" tab, go to card grid (deselect recipe)
+    if (view === "recipes") {
+      selectRecipe(null);
+    }
+    setCurrentView(view);
+  }, [selectRecipe, setCurrentView]);
+
   return (
     <>
       <Header
@@ -71,9 +79,9 @@ function RecipeWorkspaceContent({
             ? () => setSidebarOpen(true)
             : undefined
         }
-        onProfileClick={() => setCurrentView("profile")}
+        onProfileClick={() => handleViewChange("profile")}
       >
-        <DesktopNav current={currentView} onChange={setCurrentView} />
+        <DesktopNav current={currentView} onChange={handleViewChange} />
       </Header>
 
       <div className="flex h-[calc(100dvh-50px)] w-full bg-surface text-foreground">
@@ -94,7 +102,7 @@ function RecipeWorkspaceContent({
         {currentView === "profile" && <ProfileView />}
       </div>
 
-      <BottomNav current={currentView} onChange={setCurrentView} />
+      <BottomNav current={currentView} onChange={handleViewChange} />
     </>
   );
 }
