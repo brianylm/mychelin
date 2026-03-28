@@ -33,6 +33,15 @@ const MEAL_LABELS: Record<string, string> = {
   snack: "🍪 Snack",
 };
 
+const MEAL_COLORS: Record<string, string> = {
+  breakfast: "bg-orange-400",
+  lunch: "bg-yellow-400", 
+  dinner: "bg-blue-400",
+  snack: "bg-purple-400",
+};
+
+type ViewType = "week" | "month";
+
 function getWeekDates(offset: number): string[] {
   const now = new Date();
   const monday = new Date(now);
@@ -44,6 +53,39 @@ function getWeekDates(offset: number): string[] {
   });
 }
 
+function getMonthDates(offset: number): string[][] {
+  const now = new Date();
+  const targetMonth = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const firstDay = new Date(targetMonth);
+  const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+  
+  // Start from the Monday of the week containing the first day
+  const startDate = new Date(firstDay);
+  startDate.setDate(firstDay.getDate() - firstDay.getDay() + 1);
+  
+  const weeks: string[][] = [];
+  const currentDate = new Date(startDate);
+  
+  while (weeks.length < 6) {
+    const week: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      week.push(currentDate.toISOString().split("T")[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    weeks.push(week);
+    
+    // Stop if we've covered the entire month and the first day of next week is in next month
+    if (currentDate.getMonth() !== targetMonth.getMonth() && week.some(date => {
+      const d = new Date(date + "T00:00:00");
+      return d.getMonth() === targetMonth.getMonth();
+    })) {
+      break;
+    }
+  }
+  
+  return weeks;
+}
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
   return {
@@ -51,36 +93,80 @@ function formatDate(dateStr: string) {
     date: d.getDate(),
     full: d.toLocaleDateString("en-SG", { day: "numeric", month: "short" }),
     isToday: dateStr === new Date().toISOString().split("T")[0],
+    month: d.getMonth(),
+    year: d.getFullYear(),
   };
+}
+
+function getRandomRecipe(recipes: Recipe[], usedRecipes: Set<number>): Recipe | null {
+  const availableRecipes = recipes.filter(r => !usedRecipes.has(r.id));
+  if (availableRecipes.length === 0) {
+    // If all recipes used, cycle through all recipes
+    return recipes[Math.floor(Math.random() * recipes.length)];
+  }
+  return availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
 }
 
 export function MealPlanView() {
   const { addToast } = useToast();
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [viewType, setViewType] = useState<ViewType>("week");
+  const [offset, setOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [randomising, setRandomising] = useState(false);
   const [addingSlot, setAddingSlot] = useState<{
     date: string;
     mealType: string;
   } | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
 
-  const weekDates = getWeekDates(weekOffset);
-  const startDate = weekDates[0];
-  const endDate = weekDates[6];
+  // Get current date range based on view type
+  const getCurrentDates = useCallback(() => {
+    if (viewType === "week") {
+      const weekDates = getWeekDates(offset);
+      return {
+        dates: weekDates,
+        startDate: weekDates[0],
+        endDate: weekDates[6],
+        title: `${new Date(weekDates[0] + "T00:00:00").toLocaleDateString("en-SG", {
+          day: "numeric",
+          month: "short",
+        })} – ${new Date(weekDates[6] + "T00:00:00").toLocaleDateString("en-SG", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })}`,
+      };
+    } else {
+      const monthWeeks = getMonthDates(offset);
+      const allDates = monthWeeks.flat();
+      const startDate = allDates[0];
+      const endDate = allDates[allDates.length - 1];
+      const monthDate = new Date(new Date().getFullYear(), new Date().getMonth() + offset, 1);
+      return {
+        dates: allDates,
+        weeks: monthWeeks,
+        startDate,
+        endDate,
+        title: monthDate.toLocaleDateString("en-SG", { month: "long", year: "numeric" }),
+      };
+    }
+  }, [viewType, offset]);
+
+  const currentDateRange = getCurrentDates();
 
   // Fetch meal plans
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/meal-plans?startDate=${startDate}&endDate=${endDate}`)
+    fetch(`/api/meal-plans?startDate=${currentDateRange.startDate}&endDate=${currentDateRange.endDate}`)
       .then((r) => r.json())
       .then((data) => setPlans(Array.isArray(data) ? data : []))
       .catch(() => setPlans([]))
       .finally(() => setLoading(false));
-  }, [startDate, endDate]);
+  }, [currentDateRange.startDate, currentDateRange.endDate]);
 
-  // Fetch recipes for the add dialog
+  // Fetch recipes for the add dialog and randomise
   useEffect(() => {
     fetch("/api/recipes")
       .then((r) => r.json())
@@ -115,67 +201,195 @@ export function MealPlanView() {
 
   const removePlan = useCallback(
     async (id: number) => {
-      await fetch(`/api/meal-plans/${id}`, { method: "DELETE" });
-      setPlans((prev) => prev.filter((p) => p.id !== id));
+      try {
+        await fetch(`/api/meal-plans/${id}`, { method: "DELETE" });
+        setPlans((prev) => prev.filter((p) => p.id !== id));
+        addToast("Meal removed", "success");
+      } catch {
+        addToast("Failed to remove meal", "error");
+      }
     },
-    []
+    [addToast]
   );
+
+  const randomiseMeals = useCallback(async () => {
+    if (recipes.length === 0) {
+      addToast("No recipes available", "error");
+      return;
+    }
+
+    setRandomising(true);
+    const emptySlots: Array<{ date: string; mealType: string }> = [];
+    
+    // Find all empty slots in current view
+    currentDateRange.dates.forEach(date => {
+      MEAL_TYPES.forEach(mealType => {
+        const hasPlans = plans.some(p => p.date === date && p.mealType === mealType);
+        if (!hasPlans) {
+          emptySlots.push({ date, mealType });
+        }
+      });
+    });
+
+    if (emptySlots.length === 0) {
+      addToast("No empty meal slots to fill", "info");
+      setRandomising(false);
+      return;
+    }
+
+    try {
+      const newPlans: MealPlan[] = [];
+      const usedRecipesPerDay: Record<string, Set<number>> = {};
+      
+      for (const slot of emptySlots) {
+        if (!usedRecipesPerDay[slot.date]) {
+          usedRecipesPerDay[slot.date] = new Set();
+        }
+        
+        const randomRecipe = getRandomRecipe(recipes, usedRecipesPerDay[slot.date]);
+        if (!randomRecipe) continue;
+        
+        usedRecipesPerDay[slot.date].add(randomRecipe.id);
+        
+        const res = await fetch("/api/meal-plans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: slot.date,
+            mealType: slot.mealType,
+            recipeId: randomRecipe.id,
+            servings: 1,
+          }),
+        });
+        
+        if (res.ok) {
+          const newPlan = await res.json();
+          newPlans.push(newPlan);
+        }
+      }
+      
+      setPlans((prev) => [...prev, ...newPlans]);
+      addToast(`Added ${newPlans.length} random meals`, "success");
+    } catch {
+      addToast("Failed to randomise meals", "error");
+    }
+    
+    setRandomising(false);
+  }, [recipes, plans, currentDateRange.dates, addToast]);
 
   const getPlansForSlot = (date: string, mealType: string) =>
     plans.filter((p) => p.date === date && p.mealType === mealType);
 
+  const getPlansForDate = (date: string) =>
+    plans.filter((p) => p.date === date);
+
+  const switchToWeekView = (targetDate: string) => {
+    const target = new Date(targetDate + "T00:00:00");
+    const now = new Date();
+    const currentMonday = new Date(now);
+    currentMonday.setDate(now.getDate() - now.getDay() + 1);
+    
+    const targetMonday = new Date(target);
+    targetMonday.setDate(target.getDate() - target.getDay() + 1);
+    
+    const weeksDiff = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    
+    setViewType("week");
+    setOffset(weeksDiff);
+  };
+
   return (
     <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
       <div className="mx-auto max-w-5xl px-4 py-6">
-        {/* Week header */}
-        <div className="mb-6 flex items-center justify-between">
-          <IconButton
-            variant="ghost"
-            size="2"
-            onClick={() => setWeekOffset((o) => o - 1)}
-          >
-            <ChevronLeftIcon />
-          </IconButton>
-          <div className="text-center">
-            <h2 className="text-base font-semibold">
-              {new Date(startDate + "T00:00:00").toLocaleDateString("en-SG", {
-                day: "numeric",
-                month: "short",
-              })}{" "}
-              –{" "}
-              {new Date(endDate + "T00:00:00").toLocaleDateString("en-SG", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </h2>
-            {weekOffset !== 0 && (
+        {/* Header with view toggle and navigation */}
+        <div className="mb-6">
+          {/* View toggle */}
+          <div className="mb-4 flex justify-center">
+            <div className="inline-flex rounded-lg bg-neutral-100 p-1">
               <button
-                onClick={() => setWeekOffset(0)}
-                className="mt-1 text-xs text-amber-700 hover:underline"
+                onClick={() => {
+                  setViewType("week");
+                  setOffset(0);
+                }}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewType === "week"
+                    ? "bg-amber-600 text-white shadow-sm"
+                    : "text-neutral-600 hover:text-neutral-800"
+                }`}
               >
-                Back to this week
+                Week
               </button>
-            )}
+              <button
+                onClick={() => {
+                  setViewType("month");
+                  setOffset(0);
+                }}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewType === "month"
+                    ? "bg-amber-600 text-white shadow-sm"
+                    : "text-neutral-600 hover:text-neutral-800"
+                }`}
+              >
+                Month
+              </button>
+            </div>
           </div>
-          <IconButton
-            variant="ghost"
-            size="2"
-            onClick={() => setWeekOffset((o) => o + 1)}
-          >
-            <ChevronRightIcon />
-          </IconButton>
+
+          {/* Navigation and randomise */}
+          <div className="flex items-center justify-between">
+            <IconButton
+              variant="ghost"
+              size="2"
+              onClick={() => setOffset((o) => o - 1)}
+            >
+              <ChevronLeftIcon />
+            </IconButton>
+            
+            <div className="text-center">
+              <h2 className="text-base font-semibold">
+                {currentDateRange.title}
+              </h2>
+              {offset !== 0 && (
+                <button
+                  onClick={() => setOffset(0)}
+                  className="mt-1 text-xs text-amber-700 hover:underline"
+                >
+                  Back to {viewType === "week" ? "this week" : "this month"}
+                </button>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                size="1"
+                variant="soft"
+                color="amber"
+                disabled={randomising || recipes.length === 0}
+                onClick={randomiseMeals}
+                className="flex items-center gap-1"
+              >
+                {randomising ? "Randomising..." : "🎲 Randomise"}
+              </Button>
+              <IconButton
+                variant="ghost"
+                size="2"
+                onClick={() => setOffset((o) => o + 1)}
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            </div>
+          </div>
         </div>
 
         {loading ? (
           <p className="py-12 text-center text-sm text-neutral-500">
             Loading meal plans...
           </p>
-        ) : (
+        ) : viewType === "week" ? (
+          /* Week View */
           <div className="space-y-3">
-            {weekDates.map((date) => {
+            {(currentDateRange.dates as string[]).map((date) => {
               const { day, date: num, isToday } = formatDate(date);
-              const dayPlans = plans.filter((p) => p.date === date);
 
               return (
                 <div
@@ -253,6 +467,74 @@ export function MealPlanView() {
                 </div>
               );
             })}
+          </div>
+        ) : (
+          /* Month View */
+          <div className="rounded-2xl border border-neutral-200 bg-white">
+            {/* Calendar header */}
+            <div className="grid grid-cols-7 border-b border-neutral-100 bg-neutral-50">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                <div key={day} className="p-2 text-center">
+                  <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    {day}
+                  </span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Calendar grid */}
+            {currentDateRange.weeks?.map((week, weekIndex) => (
+              <div key={weekIndex} className="grid grid-cols-7 border-b border-neutral-100 last:border-b-0">
+                {week.map((date) => {
+                  const { date: num, isToday, month } = formatDate(date);
+                  const dayPlans = getPlansForDate(date);
+                  const currentMonth = new Date().getMonth() + offset;
+                  const isCurrentMonth = month === currentMonth;
+                  
+                  return (
+                    <button
+                      key={date}
+                      onClick={() => switchToWeekView(date)}
+                      className={`min-h-[80px] p-2 text-left transition-colors hover:bg-neutral-50 ${
+                        isToday
+                          ? "bg-amber-50"
+                          : !isCurrentMonth
+                            ? "bg-neutral-50/50 text-neutral-400"
+                            : ""
+                      } ${isToday ? "ring-1 ring-amber-200" : ""} border-r border-neutral-100 last:border-r-0`}
+                    >
+                      <div className="flex flex-col h-full">
+                        <span
+                          className={`mb-1 text-sm font-medium ${
+                            isToday
+                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-white"
+                              : isCurrentMonth
+                                ? "text-neutral-900"
+                                : "text-neutral-400"
+                          }`}
+                        >
+                          {num}
+                        </span>
+                        <div className="flex-1 space-y-0.5">
+                          {dayPlans.slice(0, 3).map((plan) => (
+                            <div
+                              key={plan.id}
+                              className={`h-1.5 rounded-full ${MEAL_COLORS[plan.mealType]} opacity-80`}
+                              title={`${MEAL_LABELS[plan.mealType]}: ${plan.recipe?.title}`}
+                            />
+                          ))}
+                          {dayPlans.length > 3 && (
+                            <div className="text-[9px] text-neutral-500">
+                              +{dayPlans.length - 3} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
 
