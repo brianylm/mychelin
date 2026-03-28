@@ -111,9 +111,10 @@ export function CulturalContextCard({
     [values, origin, dialect, occasion, familyMember, generation, onSave]
   );
 
-  const selectClass =
-    "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200";
-  const inputClass = selectClass;
+  const inputClass =
+    "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200";
+  const selectClass = (value: string) =>
+    `w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200 ${!value ? "text-neutral-400" : "text-neutral-900"}`;
 
   const filledCount = Object.values(values).filter(Boolean).length;
 
@@ -142,7 +143,7 @@ export function CulturalContextCard({
               setValues((v) => ({ ...v, dialect: e.target.value }));
               setTimeout(() => handleBlur("dialect"), 0);
             }}
-            className={selectClass}
+            className={selectClass(values.dialect)}
           >
             {DIALECT_OPTIONS.map((d) => (
               <option key={d} value={d}>
@@ -159,7 +160,7 @@ export function CulturalContextCard({
               setValues((v) => ({ ...v, occasion: e.target.value }));
               setTimeout(() => handleBlur("occasion"), 0);
             }}
-            className={selectClass}
+            className={selectClass(values.occasion)}
           >
             {OCCASION_OPTIONS.map((o) => (
               <option key={o} value={o}>
@@ -176,7 +177,7 @@ export function CulturalContextCard({
               setValues((v) => ({ ...v, generation: e.target.value }));
               setTimeout(() => handleBlur("generation"), 0);
             }}
-            className={selectClass}
+            className={selectClass(values.generation)}
           >
             {GENERATION_OPTIONS.map((g) => (
               <option key={g} value={g}>

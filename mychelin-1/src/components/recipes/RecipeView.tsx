@@ -13,7 +13,7 @@ import { SpeedDialFAB } from "./SpeedDialFAB";
 import { PhotoUploadSection, type RecipePhoto } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
 import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecording";
-import { LanguageToggle } from "@/components/heritage/LanguageToggle";
+
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 
 interface RecipeViewProps {
@@ -43,8 +43,6 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [savingTitle, setSavingTitle] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
   const [savingCuisine, setSavingCuisine] = useState(false);
-
-  const [currentLang, setCurrentLang] = useState("English");
 
   // Sync local state with selected recipe
   useEffect(() => {
@@ -210,18 +208,6 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-6">
-        {/* Language toggle */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Recipe View
-          </h2>
-          <LanguageToggle
-            currentLang={currentLang}
-            onToggle={setCurrentLang}
-            availableLanguages={["English", "中文"]}
-          />
-        </div>
-
         {/* Core recipe info */}
         <RecipeHeader
           recipe={selectedRecipe}

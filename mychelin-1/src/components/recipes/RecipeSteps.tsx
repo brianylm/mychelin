@@ -142,7 +142,7 @@ export function RecipeSteps({
               </>
             ) : (
               <>
-                <Pencil1Icon className="mr-1 h-3 w-3" /> Edit steps
+                <Pencil1Icon className="mr-1 h-3 w-3" /> {sorted.length === 0 ? "Add steps" : "Edit steps"}
               </>
             )}
           </Button>

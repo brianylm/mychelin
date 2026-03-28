@@ -102,13 +102,15 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   // Mutations
   const createMutation = useMutation({
     mutationFn: (title: string) =>
-      fetchJson("/api/recipes", {
+      fetchJson<Recipe>("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title }),
       }),
-    onSuccess: (_data, _vars) => {
+    onSuccess: (data: Recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
+      // Auto-select the newly created recipe
+      setSelectedRecipeId(data.id);
     },
   });
 

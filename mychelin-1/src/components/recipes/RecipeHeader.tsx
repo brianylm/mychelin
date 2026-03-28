@@ -94,7 +94,7 @@ export function RecipeHeader({
             // Auto-save on change
             setTimeout(() => onBlur("cuisine"), 0);
           }}
-          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+          className={`w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200 ${!cuisine ? "text-neutral-400" : "text-neutral-900"}`}
         >
           <option value="">Select cuisine...</option>
           <optgroup label="Singapore Heritage">
