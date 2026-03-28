@@ -368,18 +368,7 @@ export function MealPlanView() {
             </IconButton>
           </div>
 
-          {/* Randomise */}
-          <div className="flex justify-center">
-            <Button
-              size="1"
-              variant="soft"
-              color="amber"
-              disabled={randomising || recipes.length === 0}
-              onClick={randomiseMeals}
-              className="flex items-center gap-1"
-            >
-              {randomising ? "Randomising..." : "🎲 Randomise"}
-            </Button>
+          <div className="hidden">
           </div>
         </div>
 
