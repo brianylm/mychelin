@@ -6,6 +6,28 @@ import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import type { Ingredient } from "@/db/schema";
 
+const UNIT_OPTIONS = [
+  "",
+  "g",
+  "kg",
+  "ml",
+  "L",
+  "tsp",
+  "tbsp",
+  "cup",
+  "pcs",
+  "slice",
+  "clove",
+  "sprig",
+  "pinch",
+  "handful",
+  "bunch",
+  "can",
+  "packet",
+  "block",
+  "stalk",
+];
+
 interface IngredientListProps {
   ingredients: Ingredient[];
   recipeId: number;
@@ -21,6 +43,9 @@ interface IngredientListProps {
   onDelete: (recipeId: number, ingredientId: number) => Promise<void>;
 }
 
+const fieldBase =
+  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
+
 export function IngredientList({
   ingredients,
   recipeId,
@@ -33,7 +58,6 @@ export function IngredientList({
     name: "",
     quantity: "",
     unit: "",
-    notes: "",
   });
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -43,10 +67,9 @@ export function IngredientList({
       name: draft.name.trim(),
       quantity: draft.quantity ? parseFloat(draft.quantity) : undefined,
       unit: draft.unit || undefined,
-      notes: draft.notes || undefined,
     });
-    setDraft({ name: "", quantity: "", unit: "", notes: "" });
-    setIsAdding(false);
+    setDraft({ name: "", quantity: "", unit: "" });
+    // Keep adding mode open for quick entry
   }, [draft, onAdd, recipeId]);
 
   const handleFieldBlur = useCallback(
@@ -83,8 +106,17 @@ export function IngredientList({
               key={ing.id}
               className="group flex items-center gap-2 rounded-lg border border-neutral-100 bg-neutral-50/50 px-3 py-2"
             >
-              <div className="flex flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
-                {/* Quantity */}
+              <div className="grid flex-1 grid-cols-[1fr_auto_auto] items-center gap-2">
+                {/* Name first */}
+                <input
+                  defaultValue={ing.name}
+                  onBlur={(e) =>
+                    handleFieldBlur(ing, "name", e.target.value)
+                  }
+                  className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                  placeholder="ingredient"
+                />
+                {/* Qty */}
                 <input
                   defaultValue={ing.quantity ?? ""}
                   onBlur={(e) =>
@@ -94,27 +126,22 @@ export function IngredientList({
                       e.target.value ? parseFloat(e.target.value) : null
                     )
                   }
-                  className="w-14 rounded border border-transparent bg-transparent px-1 text-sm font-medium tabular-nums outline-none transition hover:border-neutral-200 focus:border-neutral-400 focus:ring-1 focus:ring-neutral-200"
+                  className="w-14 rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                   placeholder="qty"
                 />
-                {/* Unit */}
-                <input
+                {/* Unit dropdown */}
+                <select
                   defaultValue={ing.unit ?? ""}
-                  onBlur={(e) =>
+                  onChange={(e) =>
                     handleFieldBlur(ing, "unit", e.target.value || null)
                   }
-                  className="w-12 rounded border border-transparent bg-transparent px-1 text-xs text-neutral-500 outline-none transition hover:border-neutral-200 focus:border-neutral-400 focus:ring-1 focus:ring-neutral-200"
-                  placeholder="unit"
-                />
-                {/* Name */}
-                <input
-                  defaultValue={ing.name}
-                  onBlur={(e) =>
-                    handleFieldBlur(ing, "name", e.target.value)
-                  }
-                  className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 text-sm outline-none transition hover:border-neutral-200 focus:border-neutral-400 focus:ring-1 focus:ring-neutral-200"
-                  placeholder="ingredient name"
-                />
+                  className="w-[70px] rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                >
+                  <option value="">unit</option>
+                  {UNIT_OPTIONS.filter(Boolean).map((u) => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
               </div>
 
               <SaveIndicator isSaving={savingId === ing.id} />
@@ -123,7 +150,7 @@ export function IngredientList({
                 variant="ghost"
                 size="1"
                 color="red"
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex-shrink-0 opacity-100 md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
                 onClick={() => onDelete(recipeId, ing.id)}
                 aria-label="Remove ingredient"
               >
@@ -136,36 +163,45 @@ export function IngredientList({
 
       {isAdding ? (
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-          <div className="mb-2 flex gap-2">
+          {/* Name first, full width */}
+          <input
+            value={draft.name}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, name: e.target.value }))
+            }
+            placeholder="Ingredient name"
+            className={`mb-2 w-full ${fieldBase}`}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAdd();
+              if (e.key === "Escape") setIsAdding(false);
+            }}
+          />
+          {/* Qty + Unit side by side */}
+          <div className="mb-3 flex gap-2">
             <input
               value={draft.quantity}
               onChange={(e) =>
                 setDraft((d) => ({ ...d, quantity: e.target.value }))
               }
               placeholder="Qty"
-              className="w-16 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
-              autoFocus
+              type="number"
+              min="0"
+              step="any"
+              className={`w-20 ${fieldBase}`}
             />
-            <input
+            <select
               value={draft.unit}
               onChange={(e) =>
                 setDraft((d) => ({ ...d, unit: e.target.value }))
               }
-              placeholder="Unit"
-              className="w-16 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
-            />
-            <input
-              value={draft.name}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, name: e.target.value }))
-              }
-              placeholder="Ingredient name"
-              className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAdd();
-                if (e.key === "Escape") setIsAdding(false);
-              }}
-            />
+              className={`flex-1 ${fieldBase} ${!draft.unit ? "text-neutral-400" : "text-neutral-900"}`}
+            >
+              <option value="">Select unit...</option>
+              {UNIT_OPTIONS.filter(Boolean).map((u) => (
+                <option key={u} value={u} className="text-neutral-900">{u}</option>
+              ))}
+            </select>
           </div>
           <div className="flex gap-2">
             <Button size="1" variant="solid" onClick={handleAdd}>
@@ -175,9 +211,12 @@ export function IngredientList({
               size="1"
               variant="soft"
               color="gray"
-              onClick={() => setIsAdding(false)}
+              onClick={() => {
+                setIsAdding(false);
+                setDraft({ name: "", quantity: "", unit: "" });
+              }}
             >
-              Cancel
+              Done
             </Button>
           </div>
         </div>
@@ -189,7 +228,7 @@ export function IngredientList({
           onClick={() => setIsAdding(true)}
         >
           <PlusIcon className="mr-1 h-4 w-4" />
-          Add ingredient
+          {ingredients.length === 0 ? "Add ingredients" : "Add ingredient"}
         </Button>
       )}
     </section>
