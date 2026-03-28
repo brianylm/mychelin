@@ -219,18 +219,19 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           <h2 className="text-lg font-semibold text-neutral-800">
             Welcome to Mychelin
           </h2>
-          <p className="mt-2 text-sm">
+          <p className="mt-3 text-sm leading-relaxed">
             Preserve your family&apos;s food heritage. Create a recipe to
             capture the dishes, stories, and traditions that matter.
           </p>
-          <Button
-            onClick={onOpenSidebar}
-            variant="solid"
-            size="3"
-            className="mt-8"
-          >
+          <div className="pt-6">
+            <Button
+              onClick={onOpenSidebar}
+              variant="solid"
+              size="3"
+            >
             Browse recipes
-          </Button>
+            </Button>
+          </div>
         </div>
       </div>
     );
