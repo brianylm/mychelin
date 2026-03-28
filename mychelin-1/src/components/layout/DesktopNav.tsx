@@ -11,9 +11,8 @@ interface DesktopNavProps {
 const tabs: { id: AppView; label: string; icon: string }[] = [
   { id: "recipes", label: "Recipes", icon: "🍳" },
   { id: "discover", label: "Discover", icon: "🎲" },
+  { id: "books", label: "Books", icon: "📚" },
   { id: "plan", label: "Meal Plan", icon: "📅" },
-  { id: "fridge", label: "Fridge", icon: "🧊" },
-  { id: "shop", label: "Shopping", icon: "🛒" },
 ];
 
 export function DesktopNav({ current, onChange }: DesktopNavProps) {

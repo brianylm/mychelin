@@ -142,9 +142,79 @@ export const instructions = sqliteTable("instructions", {
   imageUrl: text("image_url"),
 });
 
+// ─── Books ─────────────────────────────────────────────────
+export const books = sqliteTable("books", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  description: text("description"),
+  coverEmoji: text("cover_emoji").default("📚"),
+  coverColor: text("cover_color").default("amber"), // amber/rose/emerald/sky/violet/slate
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  isPublic: integer("is_public", { mode: "boolean" }).default(false),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Book Members ──────────────────────────────────────────
+export const bookMembers = sqliteTable("book_members", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  bookId: integer("book_id")
+    .notNull()
+    .references(() => books.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // "owner" | "editor" | "viewer"
+  joinedAt: text("joined_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Book Recipes ──────────────────────────────────────────
+export const bookRecipes = sqliteTable("book_recipes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  bookId: integer("book_id")
+    .notNull()
+    .references(() => books.id, { onDelete: "cascade" }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  addedBy: integer("added_by")
+    .notNull()
+    .references(() => users.id),
+  sortOrder: integer("sort_order").default(0),
+  addedAt: text("added_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Book Activity Log ─────────────────────────────────────
+export const bookActivityLog = sqliteTable("book_activity_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  bookId: integer("book_id")
+    .notNull()
+    .references(() => books.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // "created_book" | "added_recipe" | "removed_recipe" | "invited_member" | "removed_member" | "updated_book" | "joined_book"
+  targetName: text("target_name"), // recipe title, member name, etc.
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Relations ─────────────────────────────────────────────
 export const usersRelations = relations(users, ({ many }) => ({
   recipes: many(recipes),
+  createdBooks: many(books),
+  bookMemberships: many(bookMembers),
 }));
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -157,6 +227,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   mealPlans: many(mealPlans),
   voiceRecordings: many(voiceRecordings),
   photos: many(recipePhotos),
+  bookRecipes: many(bookRecipes),
 }));
 
 export const voiceRecordingsRelations = relations(voiceRecordings, ({ one }) => ({
@@ -210,6 +281,53 @@ export const instructionsRelations = relations(instructions, ({ one }) => ({
   }),
 }));
 
+export const booksRelations = relations(books, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [books.createdBy],
+    references: [users.id],
+  }),
+  members: many(bookMembers),
+  recipes: many(bookRecipes),
+  activityLog: many(bookActivityLog),
+}));
+
+export const bookMembersRelations = relations(bookMembers, ({ one }) => ({
+  book: one(books, {
+    fields: [bookMembers.bookId],
+    references: [books.id],
+  }),
+  user: one(users, {
+    fields: [bookMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const bookRecipesRelations = relations(bookRecipes, ({ one }) => ({
+  book: one(books, {
+    fields: [bookRecipes.bookId],
+    references: [books.id],
+  }),
+  recipe: one(recipes, {
+    fields: [bookRecipes.recipeId],
+    references: [recipes.id],
+  }),
+  addedByUser: one(users, {
+    fields: [bookRecipes.addedBy],
+    references: [users.id],
+  }),
+}));
+
+export const bookActivityLogRelations = relations(bookActivityLog, ({ one }) => ({
+  book: one(books, {
+    fields: [bookActivityLog.bookId],
+    references: [books.id],
+  }),
+  user: one(users, {
+    fields: [bookActivityLog.userId],
+    references: [users.id],
+  }),
+}));
+
 // ─── Types ─────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -229,3 +347,11 @@ export type VoiceRecording = typeof voiceRecordings.$inferSelect;
 export type NewVoiceRecording = typeof voiceRecordings.$inferInsert;
 export type RecipePhoto = typeof recipePhotos.$inferSelect;
 export type NewRecipePhoto = typeof recipePhotos.$inferInsert;
+export type Book = typeof books.$inferSelect;
+export type NewBook = typeof books.$inferInsert;
+export type BookMember = typeof bookMembers.$inferSelect;
+export type NewBookMember = typeof bookMembers.$inferInsert;
+export type BookRecipe = typeof bookRecipes.$inferSelect;
+export type NewBookRecipe = typeof bookRecipes.$inferInsert;
+export type BookActivityLog = typeof bookActivityLog.$inferSelect;
+export type NewBookActivityLog = typeof bookActivityLog.$inferInsert;

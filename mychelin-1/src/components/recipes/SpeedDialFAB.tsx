@@ -2,18 +2,31 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button, Tooltip } from "@radix-ui/themes";
-import { CopyIcon, TrashIcon, Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
+import { CopyIcon, TrashIcon, Cross2Icon, PlusIcon, BookmarkIcon } from "@radix-ui/react-icons";
 
 interface SpeedDialFABProps {
   onDuplicate?: () => void;
   onDelete?: () => void;
+  onAddToBook?: () => void;
 }
 
-export function SpeedDialFAB({ onDuplicate, onDelete }: SpeedDialFABProps) {
+export function SpeedDialFAB({ onDuplicate, onDelete, onAddToBook }: SpeedDialFABProps) {
   const [isOpen, setIsOpen] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
 
   const actions = [
+    ...(onAddToBook
+      ? [
+          {
+            icon: <BookmarkIcon className="h-4 w-4" />,
+            label: "Add to Book",
+            onClick: () => {
+              onAddToBook();
+              setIsOpen(false);
+            },
+          },
+        ]
+      : []),
     ...(onDuplicate
       ? [
           {

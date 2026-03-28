@@ -11,10 +11,9 @@ import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { MealPlanView } from "@/components/planner/MealPlanView";
-import { FridgeView } from "@/components/fridge/FridgeView";
-import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { DiscoverView } from "@/components/discover/DiscoverView";
+import { BooksView } from "@/components/books/BooksView";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -96,8 +95,7 @@ function RecipeWorkspaceContent({
           </>
         )}
         {currentView === "plan" && <MealPlanView />}
-        {currentView === "fridge" && <FridgeView />}
-        {currentView === "shop" && <ShoppingListView />}
+        {currentView === "books" && <BooksView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "profile" && <ProfileView />}
       </div>
