@@ -76,7 +76,7 @@ export function RecipeSteps({
                           });
                         }
                       }}
-                      className="flex-1 resize-none rounded border border-neutral-200 bg-white px-2 py-1 text-sm outline-none focus:border-neutral-400"
+                      className="flex-1 resize-none rounded border border-neutral-300 bg-neutral-50 px-2 py-1 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
                       rows={2}
                     />
                     <IconButton
@@ -117,7 +117,7 @@ export function RecipeSteps({
               value={newStep}
               onChange={(e) => setNewStep(e.target.value)}
               placeholder="Add a new step..."
-              className="flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+              className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleAddStep();
               }}

@@ -143,7 +143,7 @@ export function IngredientList({
                 setDraft((d) => ({ ...d, quantity: e.target.value }))
               }
               placeholder="Qty"
-              className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-neutral-400"
+              className="w-16 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
               autoFocus
             />
             <input
@@ -152,7 +152,7 @@ export function IngredientList({
                 setDraft((d) => ({ ...d, unit: e.target.value }))
               }
               placeholder="Unit"
-              className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-neutral-400"
+              className="w-16 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
             />
             <input
               value={draft.name}
@@ -160,7 +160,7 @@ export function IngredientList({
                 setDraft((d) => ({ ...d, name: e.target.value }))
               }
               placeholder="Ingredient name"
-              className="flex-1 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-sm outline-none focus:border-neutral-400"
+              className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleAdd();
                 if (e.key === "Escape") setIsAdding(false);

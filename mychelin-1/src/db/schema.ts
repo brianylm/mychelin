@@ -8,6 +8,11 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   avatarUrl: text("avatar_url"),
+  // Profile fields
+  cookingSkillLevel: text("cooking_skill_level"), // "beginner" | "intermediate" | "advanced"
+  householdSize: integer("household_size"),
+  favoriteCuisines: text("favorite_cuisines"), // JSON stringified array
+  dietaryRestrictions: text("dietary_restrictions"), // JSON stringified array
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -32,6 +37,10 @@ export const recipes = sqliteTable("recipes", {
   occasion: text("occasion"),          // e.g. "Chinese New Year", "Everyday"
   familyMember: text("family_member"), // e.g. "Ah Ma", "Grandma Lim"
   generation: text("generation"),      // e.g. "Grandparent", "Great-grandparent"
+  // Ratings
+  authenticityRating: integer("authenticity_rating"), // 1-5 stars, nullable
+  tasteRating: integer("taste_rating"),               // 1-5 stars, nullable
+  nostalgiaRating: integer("nostalgia_rating"),       // 1-5 stars, nullable
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

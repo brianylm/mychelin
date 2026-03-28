@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { RecipeStoreProvider } from "@/store/RecipeStore";
+import { RecipeStoreProvider, useRecipeStore } from "@/store/RecipeStore";
 import { RecipeSidebar } from "@/components/layout/RecipeSidebar";
 import { RecipeView } from "@/components/recipes/RecipeView";
 import { Header } from "@/components/layout/Header";
@@ -13,6 +13,8 @@ import { DesktopNav } from "@/components/layout/DesktopNav";
 import { MealPlanView } from "@/components/planner/MealPlanView";
 import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
+import { ProfileView } from "@/components/profile/ProfileView";
+import { DiscoverView } from "@/components/discover/DiscoverView";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -33,6 +35,36 @@ export function RecipeWorkspace() {
 
   return (
     <RecipeStoreProvider>
+      <RecipeWorkspaceContent 
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        isSidebarOpen={isSidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+    </RecipeStoreProvider>
+  );
+}
+
+function RecipeWorkspaceContent({ 
+  currentView, 
+  setCurrentView, 
+  isSidebarOpen, 
+  setSidebarOpen 
+}: {
+  currentView: AppView;
+  setCurrentView: (view: AppView) => void;
+  isSidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+}) {
+  const { selectRecipe } = useRecipeStore();
+
+  const handleNavigateToRecipe = useCallback((recipeId: number) => {
+    selectRecipe(recipeId);
+    setCurrentView("recipes");
+  }, [selectRecipe, setCurrentView]);
+
+  return (
+    <>
       <Header
         onMenuClick={
           currentView === "recipes"
@@ -57,9 +89,11 @@ export function RecipeWorkspace() {
         {currentView === "plan" && <MealPlanView />}
         {currentView === "fridge" && <FridgeView />}
         {currentView === "shop" && <ShoppingListView />}
+        {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
+        {currentView === "profile" && <ProfileView />}
       </div>
 
       <BottomNav current={currentView} onChange={setCurrentView} />
-    </RecipeStoreProvider>
+    </>
   );
 }

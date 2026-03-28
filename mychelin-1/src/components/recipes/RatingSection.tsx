@@ -6,11 +6,11 @@ import { StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 
 interface RatingSectionProps {
+  authenticityRating: number | null;
   tasteRating: number | null;
-  visualRating: number | null;
-  textureRating: number | null;
+  nostalgiaRating: number | null;
   onSave: (
-    field: "tasteRating" | "visualRating" | "textureRating",
+    field: "authenticityRating" | "tasteRating" | "nostalgiaRating",
     value: number | null
   ) => Promise<void>;
 }
@@ -67,16 +67,16 @@ function StarRating({
 }
 
 export function RatingSection({
+  authenticityRating,
   tasteRating,
-  visualRating,
-  textureRating,
+  nostalgiaRating,
   onSave,
 }: RatingSectionProps) {
   const [savingField, setSavingField] = useState<string | null>(null);
 
   const handleChange = useCallback(
     async (
-      field: "tasteRating" | "visualRating" | "textureRating",
+      field: "authenticityRating" | "tasteRating" | "nostalgiaRating",
       value: number | null
     ) => {
       setSavingField(field);
@@ -96,22 +96,22 @@ export function RatingSection({
       </h3>
       <div className="space-y-2">
         <StarRating
+          label="Authenticity"
+          value={authenticityRating}
+          onChange={(v) => handleChange("authenticityRating", v)}
+          isSaving={savingField === "authenticityRating"}
+        />
+        <StarRating
           label="Taste"
           value={tasteRating}
           onChange={(v) => handleChange("tasteRating", v)}
           isSaving={savingField === "tasteRating"}
         />
         <StarRating
-          label="Visual"
-          value={visualRating}
-          onChange={(v) => handleChange("visualRating", v)}
-          isSaving={savingField === "visualRating"}
-        />
-        <StarRating
-          label="Texture"
-          value={textureRating}
-          onChange={(v) => handleChange("textureRating", v)}
-          isSaving={savingField === "textureRating"}
+          label="Nostalgia"
+          value={nostalgiaRating}
+          onChange={(v) => handleChange("nostalgiaRating", v)}
+          isSaving={savingField === "nostalgiaRating"}
         />
       </div>
     </section>

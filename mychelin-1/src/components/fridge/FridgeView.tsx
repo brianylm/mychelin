@@ -156,7 +156,7 @@ export function FridgeView() {
                 value={draft.name}
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                 placeholder="Item name"
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
                 autoFocus
               />
               <div className="flex gap-2">
@@ -167,7 +167,7 @@ export function FridgeView() {
                   }
                   placeholder="Qty"
                   type="number"
-                  className="w-20 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                  className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
                 />
                 <input
                   value={draft.unit}
@@ -175,7 +175,7 @@ export function FridgeView() {
                     setDraft((d) => ({ ...d, unit: e.target.value }))
                   }
                   placeholder="Unit (g, ml, pcs)"
-                  className="flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                  className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
                 />
               </div>
               <select
@@ -183,7 +183,7 @@ export function FridgeView() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, location: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
               >
                 <option value="fridge">🧊 Fridge</option>
                 <option value="freezer">❄️ Freezer</option>
@@ -195,7 +195,7 @@ export function FridgeView() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, expiryDate: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
                 placeholder="Expiry date"
               />
             </div>

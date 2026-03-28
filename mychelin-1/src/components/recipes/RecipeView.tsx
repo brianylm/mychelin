@@ -9,6 +9,7 @@ import { RecipeHeader } from "./RecipeHeader";
 import { IngredientList } from "./IngredientList";
 import { RecipeSteps } from "./RecipeSteps";
 import { StorySection } from "./StorySection";
+import { RatingSection } from "./RatingSection";
 import { SpeedDialFAB } from "./SpeedDialFAB";
 import { PhotoUploadSection, type RecipePhoto } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
@@ -40,9 +41,15 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [cuisine, setCuisine] = useState("");
+  const [prepTime, setPrepTime] = useState("");
+  const [cookTime, setCookTime] = useState("");
+  const [recipeYield, setRecipeYield] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
   const [savingDescription, setSavingDescription] = useState(false);
   const [savingCuisine, setSavingCuisine] = useState(false);
+  const [savingPrepTime, setSavingPrepTime] = useState(false);
+  const [savingCookTime, setSavingCookTime] = useState(false);
+  const [savingYield, setSavingYield] = useState(false);
 
   // Sync local state with selected recipe
   useEffect(() => {
@@ -50,31 +57,47 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       setTitle(selectedRecipe.title);
       setDescription(selectedRecipe.description ?? "");
       setCuisine(selectedRecipe.cuisine ?? "");
+      setPrepTime(selectedRecipe.prepTime?.toString() ?? "");
+      setCookTime(selectedRecipe.cookTime?.toString() ?? "");
+      setRecipeYield(selectedRecipe.yield ?? "");
     }
   }, [selectedRecipe]);
 
   const handleBlur = useCallback(
-    async (field: "title" | "description" | "cuisine") => {
+    async (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => {
       if (!selectedRecipe) return;
 
       const setters = {
         title: setSavingTitle,
         description: setSavingDescription,
         cuisine: setSavingCuisine,
+        prepTime: setSavingPrepTime,
+        cookTime: setSavingCookTime,
+        yield: setSavingYield,
       };
-      const values = { title, description, cuisine };
+      const values = { title, description, cuisine, prepTime, cookTime, yield: recipeYield };
       const originals = {
         title: selectedRecipe.title,
         description: selectedRecipe.description ?? "",
         cuisine: selectedRecipe.cuisine ?? "",
+        prepTime: selectedRecipe.prepTime?.toString() ?? "",
+        cookTime: selectedRecipe.cookTime?.toString() ?? "",
+        yield: selectedRecipe.yield ?? "",
       };
 
       if (values[field] === originals[field]) return;
 
       setters[field](true);
       try {
+        let updateValue: any = values[field] || null;
+        
+        // Convert time fields to numbers
+        if (field === "prepTime" || field === "cookTime") {
+          updateValue = values[field] ? parseInt(values[field], 10) : null;
+        }
+
         await updateRecipe(selectedRecipe.id, {
-          [field]: values[field] || null,
+          [field]: updateValue,
         });
       } catch {
         addToast(`Failed to save ${field}`, "error");
@@ -82,7 +105,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         setters[field](false);
       }
     },
-    [selectedRecipe, title, description, cuisine, updateRecipe, addToast]
+    [selectedRecipe, title, description, cuisine, prepTime, cookTime, recipeYield, updateRecipe, addToast]
   );
 
   const handleStorySave = useCallback(
@@ -97,6 +120,14 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     async (field: string, value: string) => {
       if (!selectedRecipe) return;
       await updateRecipe(selectedRecipe.id, { [field]: value || null });
+    },
+    [selectedRecipe, updateRecipe]
+  );
+
+  const handleRatingSave = useCallback(
+    async (field: "authenticityRating" | "tasteRating" | "nostalgiaRating", value: number | null) => {
+      if (!selectedRecipe) return;
+      await updateRecipe(selectedRecipe.id, { [field]: value });
     },
     [selectedRecipe, updateRecipe]
   );
@@ -217,10 +248,19 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           onDescriptionChange={setDescription}
           cuisine={cuisine}
           onCuisineChange={setCuisine}
+          prepTime={prepTime}
+          onPrepTimeChange={setPrepTime}
+          cookTime={cookTime}
+          onCookTimeChange={setCookTime}
+          recipeYield={recipeYield}
+          onYieldChange={setRecipeYield}
           onBlur={handleBlur}
           savingTitle={savingTitle}
           savingDescription={savingDescription}
           savingCuisine={savingCuisine}
+          savingPrepTime={savingPrepTime}
+          savingCookTime={savingCookTime}
+          savingYield={savingYield}
         />
 
         {/* Photos */}
@@ -284,6 +324,14 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             onDeleteRecording={handleVoiceDelete}
           />
         </div>
+
+        {/* Ratings */}
+        <RatingSection
+          authenticityRating={selectedRecipe.authenticityRating ?? null}
+          tasteRating={selectedRecipe.tasteRating ?? null}
+          nostalgiaRating={selectedRecipe.nostalgiaRating ?? null}
+          onSave={handleRatingSave}
+        />
       </div>
 
       {/* Speed Dial FAB */}

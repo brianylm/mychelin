@@ -1,0 +1,240 @@
+"use client";
+
+import { useState, useCallback, useEffect } from "react";
+import { Button } from "@radix-ui/themes";
+import { useAuth } from "@/context/AuthContext";
+import { EditableField } from "@/components/ui/EditableField";
+import { SaveIndicator } from "@/components/ui/SaveIndicator";
+import { useToast } from "@/context/ToastContext";
+
+const CUISINE_OPTIONS = [
+  "Chinese", "Malay", "Indian", "Peranakan", "Eurasian", "Western",
+  "Japanese", "Korean", "Thai", "Vietnamese", "Indonesian", "Other",
+  "Hokkien", "Teochew", "Cantonese", "Hakka", "Hainanese", "Nyonya", 
+  "Tamil", "Punjabi", "Malay Kampung",
+];
+
+const DIETARY_RESTRICTIONS = [
+  "Vegetarian", "Vegan", "Halal", "Kosher", 
+  "Gluten-Free", "Dairy-Free", "Nut-Free", "Low-Carb"
+];
+
+const SKILL_LEVELS = ["beginner", "intermediate", "advanced"];
+
+interface UserPreferences {
+  name: string;
+  cookingSkillLevel: string;
+  householdSize: number | null;
+  favoriteCuisines: string[];
+  dietaryRestrictions: string[];
+}
+
+export function ProfileView() {
+  const { user, logout } = useAuth();
+  const { addToast } = useToast();
+  
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    name: "",
+    cookingSkillLevel: "",
+    householdSize: null,
+    favoriteCuisines: [],
+    dietaryRestrictions: [],
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch user preferences on mount
+  useEffect(() => {
+    async function fetchPreferences() {
+      try {
+        const response = await fetch("/api/user/preferences");
+        if (response.ok) {
+          const data = await response.json();
+          setPreferences({
+            name: data.name || "",
+            cookingSkillLevel: data.cookingSkillLevel || "",
+            householdSize: data.householdSize || null,
+            favoriteCuisines: data.favoriteCuisines || [],
+            dietaryRestrictions: data.dietaryRestrictions || [],
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch preferences:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchPreferences();
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/user/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(preferences),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save preferences");
+      }
+
+      addToast("Profile updated successfully", "success");
+    } catch (error) {
+      addToast("Failed to save preferences", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [preferences, addToast]);
+
+  const handleCuisineToggle = useCallback((cuisine: string) => {
+    setPreferences(prev => ({
+      ...prev,
+      favoriteCuisines: prev.favoriteCuisines.includes(cuisine)
+        ? prev.favoriteCuisines.filter(c => c !== cuisine)
+        : [...prev.favoriteCuisines, cuisine]
+    }));
+  }, []);
+
+  const handleDietaryToggle = useCallback((restriction: string) => {
+    setPreferences(prev => ({
+      ...prev,
+      dietaryRestrictions: prev.dietaryRestrictions.includes(restriction)
+        ? prev.dietaryRestrictions.filter(r => r !== restriction)
+        : [...prev.dietaryRestrictions, restriction]
+    }));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-surface">
+        <div className="text-neutral-500">Loading profile...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-surface">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6">
+        
+        {/* Header */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h1 className="text-lg font-semibold text-neutral-800 mb-2">Profile & Settings</h1>
+          <div className="space-y-2 text-sm text-neutral-600">
+            <p><span className="font-medium">Email:</span> {user?.email}</p>
+          </div>
+        </div>
+
+        {/* Basic Info */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-neutral-800 mb-4">Basic Information</h2>
+          
+          <div className="space-y-4">
+            <EditableField
+              label="Name"
+              value={preferences.name}
+              onChange={(value) => setPreferences(prev => ({ ...prev, name: value }))}
+              placeholder="Your name"
+            />
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                Cooking Skill Level
+              </label>
+              <select
+                value={preferences.cookingSkillLevel}
+                onChange={(e) => setPreferences(prev => ({ ...prev, cookingSkillLevel: e.target.value }))}
+                className={`w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400 ${!preferences.cookingSkillLevel ? "text-neutral-400" : "text-neutral-900"}`}
+              >
+                <option value="">Select skill level...</option>
+                {SKILL_LEVELS.map(level => (
+                  <option key={level} value={level}>
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                Household Size
+              </label>
+              <input
+                type="number"
+                value={preferences.householdSize?.toString() ?? ""}
+                onChange={(e) => setPreferences(prev => ({ 
+                  ...prev, 
+                  householdSize: e.target.value ? parseInt(e.target.value, 10) : null 
+                }))}
+                placeholder="e.g. 4"
+                min="1"
+                className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Favorite Cuisines */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-neutral-800 mb-4">Favorite Cuisines</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {CUISINE_OPTIONS.map(cuisine => (
+              <label key={cuisine} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.favoriteCuisines.includes(cuisine)}
+                  onChange={() => handleCuisineToggle(cuisine)}
+                  className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm text-neutral-700">{cuisine}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Dietary Restrictions */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-neutral-800 mb-4">Dietary Restrictions</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {DIETARY_RESTRICTIONS.map(restriction => (
+              <label key={restriction} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.dietaryRestrictions.includes(restriction)}
+                  onChange={() => handleDietaryToggle(restriction)}
+                  className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm text-neutral-700">{restriction}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              size="3"
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+
+            <Button
+              onClick={logout}
+              variant="outline"
+              size="3"
+              color="red"
+            >
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

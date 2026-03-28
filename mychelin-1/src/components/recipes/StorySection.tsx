@@ -43,7 +43,7 @@ export function StorySection({ story, onSave }: StorySectionProps) {
           onBlur={handleBlur}
           placeholder="Share the story behind this recipe — who taught it to you, when it's traditionally made, what it means to your family..."
           rows={5}
-          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+          className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
         />
         <p className="text-[10px] text-neutral-400">
           Every recipe tells a story. Capture the memories before they fade.

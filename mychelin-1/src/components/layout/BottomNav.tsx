@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type AppView = "recipes" | "plan" | "fridge" | "shop";
+export type AppView = "recipes" | "plan" | "fridge" | "shop" | "discover" | "profile";
 
 interface BottomNavProps {
   current: AppView;
@@ -11,9 +11,11 @@ interface BottomNavProps {
 
 const tabs: { id: AppView; label: string; icon: string }[] = [
   { id: "recipes", label: "Recipes", icon: "🍳" },
+  { id: "discover", label: "Discover", icon: "🎲" },
   { id: "plan", label: "Plan", icon: "📅" },
   { id: "fridge", label: "Fridge", icon: "🧊" },
   { id: "shop", label: "Shop", icon: "🛒" },
+  { id: "profile", label: "Profile", icon: "👤" },
 ];
 
 export function BottomNav({ current, onChange }: BottomNavProps) {
