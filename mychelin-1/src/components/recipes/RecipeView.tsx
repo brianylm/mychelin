@@ -551,7 +551,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   }
 
   return (
-    <div className="relative flex-1 overflow-y-auto bg-surface pb-20 md:pb-0">
+    <div className="relative flex-1 overflow-y-auto bg-surface">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-6">
         {/* Core recipe info */}
         <RecipeHeader
@@ -654,7 +654,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         />
 
         {/* Delete recipe */}
-        <div className="border-t border-neutral-200 pt-6 pb-24">
+        <div className="border-t border-neutral-200 pt-6 pb-20 md:pb-6">
           <button
             onClick={handleDelete}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
