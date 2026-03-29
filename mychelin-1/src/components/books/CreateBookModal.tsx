@@ -52,8 +52,12 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-neutral-900">Create Recipe Book</h2>
           <button
@@ -179,6 +183,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
