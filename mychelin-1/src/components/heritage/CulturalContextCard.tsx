@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 
@@ -94,6 +94,11 @@ export function CulturalContextCard({
     familyMember,
     generation,
   });
+
+  // Sync values when recipe changes (prop update)
+  useEffect(() => {
+    setValues({ origin, dialect, occasion, familyMember, generation });
+  }, [origin, dialect, occasion, familyMember, generation]);
 
   const handleBlur = useCallback(
     async (field: string) => {

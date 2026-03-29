@@ -96,14 +96,21 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
           ? fetchJson<RecipeWithRelations>(`/api/recipes/${selectedRecipeId}`)
           : null,
       enabled: selectedRecipeId !== null,
-      // Show stale data instantly while revalidating
       staleTime: 30_000,
+      // Don't keep previous recipe's data when switching to a different recipe
+      placeholderData: undefined,
     }
   );
 
   // Optimistic: use list data as placeholder while full recipe loads
-  const selectedRecipe: RecipeWithRelations | null = fetchedRecipe
-    ? fetchedRecipe
+  // Only use fetchedRecipe if it matches the currently selected ID
+  const validFetchedRecipe =
+    fetchedRecipe && fetchedRecipe.id === selectedRecipeId
+      ? fetchedRecipe
+      : null;
+
+  const selectedRecipe: RecipeWithRelations | null = validFetchedRecipe
+    ? validFetchedRecipe
     : selectedRecipeId
       ? (() => {
           const listItem = recipes.find((r) => r.id === selectedRecipeId);

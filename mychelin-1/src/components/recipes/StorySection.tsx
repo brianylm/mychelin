@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 
@@ -12,6 +12,11 @@ interface StorySectionProps {
 export function StorySection({ story, onSave }: StorySectionProps) {
   const [draft, setDraft] = useState(story);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync draft when recipe changes (prop update)
+  useEffect(() => {
+    setDraft(story);
+  }, [story]);
 
   const handleBlur = useCallback(async () => {
     if (draft === story) return;
