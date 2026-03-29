@@ -343,8 +343,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             return (
               <>
                 {/* Book header */}
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
                     <button
                       onClick={handleCloseBook}
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
@@ -354,54 +354,49 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       </svg>
                     </button>
                     <span className="text-2xl shrink-0">{activeBook?.coverEmoji ?? "📚"}</span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <button onClick={handleCloseBook} className="text-xs text-amber-600 hover:text-amber-700">Recipes</button>
-                        <span className="text-xs text-neutral-400">/</span>
-                        <h2 className="text-xl font-semibold text-neutral-800 truncate">
-                          {activeBook?.title ?? "Book"}
-                        </h2>
-                      </div>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""} in this book
-                      </p>
-                    </div>
+                    <h2 className="text-xl font-semibold text-neutral-800 truncate">
+                      {activeBook?.title ?? "Book"}
+                    </h2>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {activeBookRecipes.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-neutral-500">
+                      {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {activeBookRecipes.length > 0 && (
+                        <Button
+                          variant="soft"
+                          color="amber"
+                          size="2"
+                          onClick={() => {
+                            const random = activeBookRecipes[Math.floor(Math.random() * activeBookRecipes.length)];
+                            selectRecipe(random.id);
+                          }}
+                        >
+                          🎲 Surprise me
+                        </Button>
+                      )}
                       <Button
-                        variant="soft"
-                        color="amber"
+                        variant="solid"
                         size="2"
-                        onClick={() => {
-                          const random = activeBookRecipes[Math.floor(Math.random() * activeBookRecipes.length)];
-                          selectRecipe(random.id);
+                        onClick={async () => {
+                          try {
+                            const res = await fetch("/api/recipes", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ title: "Untitled Recipe", bookId: activeBookId }),
+                            });
+                            if (res.ok) {
+                              const newRecipe = await res.json();
+                              qc.invalidateQueries({ queryKey: ["recipes"] });
+                              selectRecipe(newRecipe.id);
+                            }
+                          } catch {}
                         }}
                       >
-                        🎲 Surprise me
+                        + New
                       </Button>
-                    )}
-                    <Button
-                      variant="solid"
-                      size="2"
-                      onClick={async () => {
-                        // Create a new recipe pre-assigned to this book
-                        try {
-                          const res = await fetch("/api/recipes", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ title: "Untitled Recipe", bookId: activeBookId }),
-                          });
-                          if (res.ok) {
-                            const newRecipe = await res.json();
-                            qc.invalidateQueries({ queryKey: ["recipes"] });
-                            selectRecipe(newRecipe.id);
-                          }
-                        } catch {}
-                      }}
-                    >
-                      + New
-                    </Button>
+                    </div>
                   </div>
                 </div>
 
