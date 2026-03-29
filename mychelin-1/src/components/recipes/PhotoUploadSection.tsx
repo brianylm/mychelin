@@ -19,8 +19,10 @@ export interface RecipePhoto {
 
 interface PhotoUploadSectionProps {
   photos: RecipePhoto[];
+  coverUrl?: string | null;
   onUpload: (file: File) => Promise<void>;
   onRemove: (photoId: string) => Promise<void>;
+  onSetCover?: (photoUrl: string) => Promise<void>;
   isUploading?: boolean;
   uploadError?: string | null;
 }
@@ -29,8 +31,10 @@ const MAX_PHOTOS = 10;
 
 export function PhotoUploadSection({
   photos,
+  coverUrl,
   onUpload,
   onRemove,
+  onSetCover,
   isUploading = false,
   uploadError,
 }: PhotoUploadSectionProps) {
@@ -106,7 +110,9 @@ export function PhotoUploadSection({
                 key={photo.id}
                 type="button"
                 onClick={() => openGallery(index)}
-                className="flex-shrink-0 h-20 w-20 overflow-hidden rounded-lg border-2 border-neutral-200 transition-colors hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className={`relative flex-shrink-0 h-20 w-20 overflow-hidden rounded-lg border-2 transition-colors hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+                  photo.url === coverUrl ? "border-amber-400" : "border-neutral-200"
+                }`}
               >
                 <img
                   src={photo.url}
@@ -114,6 +120,9 @@ export function PhotoUploadSection({
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />
+                {photo.url === coverUrl && (
+                  <span className="absolute bottom-0.5 right-0.5 text-[10px]">⭐</span>
+                )}
               </button>
             ))}
 
@@ -185,6 +194,17 @@ export function PhotoUploadSection({
 
           {/* Toolbar */}
           <div className="absolute right-4 top-4 z-20 flex gap-2">
+            {onSetCover && photos[galleryIndex].url !== coverUrl && (
+              <button
+                onClick={() => {
+                  onSetCover(photos[galleryIndex].url);
+                }}
+                className="flex h-9 items-center gap-1.5 rounded-full bg-black/40 px-3 text-xs font-medium text-white transition-colors hover:bg-black/60"
+                title="Set as cover"
+              >
+                ⭐ Cover
+              </button>
+            )}
             <button
               onClick={rotatePhoto}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"

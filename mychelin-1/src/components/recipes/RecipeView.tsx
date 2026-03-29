@@ -590,8 +590,20 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             url: p.blobUrl,
             sortOrder: p.sortOrder ?? 0,
           }))}
+          coverUrl={selectedRecipe.imageUrl}
           onUpload={handlePhotoUpload}
           onRemove={handlePhotoRemove}
+          onSetCover={async (photoUrl) => {
+            if (!selectedRecipe) return;
+            await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ photoUrl }),
+            });
+            qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+            qc.invalidateQueries({ queryKey: ["recipes"] });
+            addToast("Cover photo updated", "success");
+          }}
         />
 
         {/* Ingredients */}

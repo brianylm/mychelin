@@ -15,6 +15,29 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   return NextResponse.json(photos);
 }
 
+// PATCH — set a photo as the recipe cover image
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const recipeId = Number(id);
+    const { photoUrl } = await request.json();
+
+    if (!photoUrl) {
+      return NextResponse.json({ error: "photoUrl is required" }, { status: 400 });
+    }
+
+    await db
+      .update(recipes)
+      .set({ imageUrl: photoUrl, updatedAt: new Date().toISOString() })
+      .where(eq(recipes.id, recipeId));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Set cover photo error:", error);
+    return NextResponse.json({ error: "Failed to set cover photo" }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
@@ -55,6 +78,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
         createdAt: new Date().toISOString(),
       })
       .returning();
+
+    // Auto-set as cover image if recipe has no cover yet
+    if (!recipe.imageUrl) {
+      await db
+        .update(recipes)
+        .set({ imageUrl: blob.url, updatedAt: new Date().toISOString() })
+        .where(eq(recipes.id, recipeId));
+    }
 
     return NextResponse.json(newPhoto, { status: 201 });
   } catch (error) {
