@@ -498,6 +498,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               )}
 
               {/* All recipes card grid */}
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+                🍳 All Recipes
+              </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recipes.map((recipe) => (
                   <button
