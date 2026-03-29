@@ -12,7 +12,7 @@ import { IngredientList } from "./IngredientList";
 import { RecipeSteps } from "./RecipeSteps";
 import { StorySection } from "./StorySection";
 import { RatingSection } from "./RatingSection";
-import { SpeedDialFAB } from "./SpeedDialFAB";
+
 import { PhotoUploadSection, type RecipePhoto } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
 import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecording";
@@ -551,7 +551,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   }
 
   return (
-    <div className="relative flex-1 overflow-y-auto bg-surface">
+    <div className="relative flex-1 overflow-y-auto bg-surface pb-20 md:pb-0">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-6">
         {/* Core recipe info */}
         <RecipeHeader
@@ -652,10 +652,21 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           nostalgiaRating={selectedRecipe.nostalgiaRating ?? null}
           onSave={handleRatingSave}
         />
-      </div>
 
-      {/* Speed Dial FAB */}
-      <SpeedDialFAB onDelete={handleDelete} onAddToBook={handleAddToBook} />
+        {/* Delete recipe */}
+        <div className="border-t border-neutral-200 pt-6 pb-24">
+          <button
+            onClick={handleDelete}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Delete Recipe
+          </button>
+        </div>
+      </div>
 
       {/* Add to Book Modal */}
       {showAddToBookModal && selectedRecipe && (
