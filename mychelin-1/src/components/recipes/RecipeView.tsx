@@ -66,8 +66,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [savingYield, setSavingYield] = useState(false);
   const [showAddToBookModal, setShowAddToBookModal] = useState(false);
   const [books, setBooks] = useState<BookSummary[]>([]);
-  const [expandedBookId, setExpandedBookId] = useState<number | null>(null);
-  const [expandedBookRecipes, setExpandedBookRecipes] = useState<any[]>([]);
+  const [activeBookId, setActiveBookId] = useState<number | null>(null);
+  const [activeBookRecipes, setActiveBookRecipes] = useState<any[]>([]);
+  const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
 
   // Fetch books for card grid
@@ -107,22 +108,25 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     } catch {}
   }, [fetchBooks]);
 
-  const handleToggleBook = useCallback(async (bookId: number) => {
-    if (expandedBookId === bookId) {
-      setExpandedBookId(null);
-      setExpandedBookRecipes([]);
-      return;
-    }
-    setExpandedBookId(bookId);
-    setExpandedBookRecipes([]);
+  const handleOpenBook = useCallback(async (bookId: number) => {
+    setActiveBookId(bookId);
+    setLoadingBookRecipes(true);
+    setActiveBookRecipes([]);
     try {
       const res = await fetch(`/api/books/${bookId}/recipes`);
       if (res.ok) {
         const data = await res.json();
-        setExpandedBookRecipes(data);
+        setActiveBookRecipes(data);
       }
-    } catch {}
-  }, [expandedBookId]);
+    } catch {} finally {
+      setLoadingBookRecipes(false);
+    }
+  }, []);
+
+  const handleCloseBook = useCallback(() => {
+    setActiveBookId(null);
+    setActiveBookRecipes([]);
+  }, []);
 
   // Sync local state with selected recipe
   useEffect(() => {
@@ -370,157 +374,173 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             </div>
           </div>
 
-          {/* Books section */}
-          <div className="mb-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
-                📚 Books
-              </h3>
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
-                className="text-xs font-medium text-amber-600 hover:text-amber-700"
-              >
-                + Create Book
-              </button>
-            </div>
-            {books.length > 0 ? (
-              <div className="space-y-2">
-                {books.map((book) => {
-                  const colorMap: Record<string, string> = {
-                    amber: "border-amber-200 bg-amber-50",
-                    rose: "border-rose-200 bg-rose-50",
-                    emerald: "border-emerald-200 bg-emerald-50",
-                    sky: "border-sky-200 bg-sky-50",
-                    violet: "border-violet-200 bg-violet-50",
-                    slate: "border-slate-200 bg-slate-50",
-                  };
-                  const colorClass = colorMap[book.coverColor] || "border-amber-200 bg-amber-50";
-                  const isExpanded = expandedBookId === book.id;
+          {activeBookId ? (() => {
+            const activeBook = books.find(b => b.id === activeBookId);
+            return (
+              <>
+                {/* Book header with back button */}
+                <div className="mb-4 flex items-center gap-3">
+                  <button
+                    onClick={handleCloseBook}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                  <span className="text-2xl">{activeBook?.coverEmoji ?? "📚"}</span>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-semibold text-neutral-800 truncate">
+                      {activeBook?.title ?? "Book"}
+                    </h2>
+                    <p className="text-xs text-neutral-500">
+                      {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
 
-                  return (
-                    <div key={book.id} className={`rounded-xl border ${isExpanded ? colorClass : "border-neutral-200 bg-white"} transition-all`}>
+                {/* Book's recipes as cards */}
+                {loadingBookRecipes ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+                  </div>
+                ) : activeBookRecipes.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-neutral-400">
+                    <span className="mb-3 text-4xl">📖</span>
+                    <p className="text-sm">No recipes in this book yet</p>
+                    <p className="mt-1 text-xs">Assign recipes to this book from the recipe view</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {activeBookRecipes.map((recipe: any) => (
                       <button
-                        onClick={() => handleToggleBook(book.id)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                        key={recipe.id}
+                        onClick={() => selectRecipe(recipe.id)}
+                        className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-left transition-all hover:border-amber-300 hover:shadow-md"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className={cn(
-                            "shrink-0 text-neutral-400 transition-transform",
-                            isExpanded && "rotate-90"
-                          )}
-                        >
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                        <span className="text-xl">{book.coverEmoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-neutral-800">{book.title}</span>
-                          {book.description && (
-                            <p className="text-xs text-neutral-500 truncate">{book.description}</p>
+                        <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+                          {recipe.imageUrl ? (
+                            <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
+                          ) : (
+                            <span className="text-4xl opacity-60">🍳</span>
                           )}
                         </div>
-                        <span className="shrink-0 text-xs text-neutral-400">
-                          {book.recipeCount} recipe{book.recipeCount !== 1 ? "s" : ""}
-                        </span>
-                      </button>
-
-                      {isExpanded && (
-                        <div className="border-t border-neutral-200/60 px-4 pb-3 pt-2">
-                          {expandedBookRecipes.length === 0 ? (
-                            <p className="py-2 text-sm text-neutral-400">
-                              {expandedBookId === book.id ? "No recipes in this book yet" : "Loading…"}
-                            </p>
-                          ) : (
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                              {expandedBookRecipes.map((r: any) => (
-                                <button
-                                  key={r.id}
-                                  onClick={() => selectRecipe(r.id)}
-                                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/80"
-                                >
-                                  <span className="text-base opacity-60">🍳</span>
-                                  <span className="truncate font-medium text-neutral-700">
-                                    {r.title}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
+                        <div className="flex flex-1 flex-col p-4">
+                          <h3 className="font-semibold text-neutral-800 group-hover:text-amber-800">{recipe.title}</h3>
+                          {recipe.cuisine && (
+                            <span className="mt-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
                           )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })() : (
+            <>
+              {/* Book folders */}
+              {books.length > 0 && (
+                <div className="mb-6">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+                      📚 Books
+                    </h3>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
+                      className="text-xs font-medium text-amber-600 hover:text-amber-700"
+                    >
+                      + Create Book
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {books.map((book) => {
+                      const bgMap: Record<string, string> = {
+                        amber: "from-amber-50 to-amber-100/50",
+                        rose: "from-rose-50 to-rose-100/50",
+                        emerald: "from-emerald-50 to-emerald-100/50",
+                        sky: "from-sky-50 to-sky-100/50",
+                        violet: "from-violet-50 to-violet-100/50",
+                        slate: "from-slate-50 to-slate-100/50",
+                      };
+                      const bgClass = bgMap[book.coverColor] || "from-amber-50 to-amber-100/50";
+                      return (
+                        <button
+                          key={book.id}
+                          onClick={() => handleOpenBook(book.id)}
+                          className="group flex flex-col items-center gap-2 rounded-2xl border border-neutral-200 bg-gradient-to-br p-4 text-center transition-all hover:border-amber-300 hover:shadow-md"
+                          style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
+                        >
+                          <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${bgClass} text-2xl`}>
+                            {book.coverEmoji}
+                          </div>
+                          <span className="text-sm font-semibold text-neutral-800 group-hover:text-amber-800 truncate w-full">
+                            {book.title}
+                          </span>
+                          <span className="text-[10px] text-neutral-400">
+                            {book.recipeCount} recipe{book.recipeCount !== 1 ? "s" : ""}
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {/* Create book card */}
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
+                      className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-neutral-200 p-4 text-center transition-all hover:border-amber-300 hover:bg-amber-50/30"
+                    >
+                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-neutral-100 text-2xl text-neutral-400">
+                        +
+                      </div>
+                      <span className="text-sm font-medium text-neutral-400">New Book</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* All recipes card grid */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {recipes.map((recipe) => (
+                  <button
+                    key={recipe.id}
+                    onClick={() => selectRecipe(recipe.id)}
+                    className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-left transition-all hover:border-amber-300 hover:shadow-md"
+                  >
+                    <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+                      {recipe.imageUrl ? (
+                        <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
+                      ) : (
+                        <span className="text-4xl opacity-60">
+                          {recipe.cuisine === "Japanese" ? "🍱" :
+                           recipe.cuisine === "Korean" ? "🍲" :
+                           recipe.cuisine === "Italian" ? "🍝" :
+                           recipe.cuisine === "Indian" ? "🍛" :
+                           recipe.cuisine === "Thai" ? "🥘" :
+                           recipe.cuisine === "Mexican" ? "🌮" :
+                           recipe.cuisine === "French" ? "🥐" :
+                           "🍳"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <h3 className="font-semibold text-neutral-800 group-hover:text-amber-800">{recipe.title}</h3>
+                      {recipe.cuisine && (
+                        <span className="mt-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
+                      )}
+                      {recipe.description && (
+                        <p className="mt-2 line-clamp-2 text-xs text-neutral-500 leading-relaxed">{recipe.description}</p>
+                      )}
+                      {(recipe.prepTime || recipe.cookTime) && (
+                        <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
+                          {recipe.prepTime && <span>🔪 {recipe.prepTime}m prep</span>}
+                          {recipe.cookTime && <span>🔥 {recipe.cookTime}m cook</span>}
                         </div>
                       )}
                     </div>
-                  );
-                })}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-400">
-                No books yet — create one to organize your recipes into collections
-              </p>
-            )}
-          </div>
-
-          {/* Card grid */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recipes.map((recipe) => (
-              <button
-                key={recipe.id}
-                onClick={() => selectRecipe(recipe.id)}
-                className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-left transition-all hover:border-amber-300 hover:shadow-md"
-              >
-                {/* Image area */}
-                <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-amber-50 to-orange-50">
-                  {recipe.imageUrl ? (
-                    <img
-                      src={recipe.imageUrl}
-                      alt={recipe.title}
-                      className="h-full w-full rounded-t-2xl object-cover"
-                    />
-                  ) : (
-                    <span className="text-4xl opacity-60">
-                      {recipe.cuisine === "Japanese" ? "🍱" :
-                       recipe.cuisine === "Korean" ? "🍲" :
-                       recipe.cuisine === "Italian" ? "🍝" :
-                       recipe.cuisine === "Indian" ? "🍛" :
-                       recipe.cuisine === "Thai" ? "🥘" :
-                       recipe.cuisine === "Mexican" ? "🌮" :
-                       recipe.cuisine === "French" ? "🥐" :
-                       "🍳"}
-                    </span>
-                  )}
-                </div>
-                {/* Info */}
-                <div className="flex flex-1 flex-col p-4">
-                  <h3 className="font-semibold text-neutral-800 group-hover:text-amber-800">
-                    {recipe.title}
-                  </h3>
-                  {recipe.cuisine && (
-                    <span className="mt-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">
-                      {recipe.cuisine}
-                    </span>
-                  )}
-                  {recipe.description && (
-                    <p className="mt-2 line-clamp-2 text-xs text-neutral-500 leading-relaxed">
-                      {recipe.description}
-                    </p>
-                  )}
-                  {(recipe.prepTime || recipe.cookTime) && (
-                    <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
-                      {recipe.prepTime && <span>🔪 {recipe.prepTime}m prep</span>}
-                      {recipe.cookTime && <span>🔥 {recipe.cookTime}m cook</span>}
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+            </>
+          )}
         </div>
         {createBookModalEl}
       </div>
