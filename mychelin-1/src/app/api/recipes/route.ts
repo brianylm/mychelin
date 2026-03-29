@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       story,
       imageUrl,
       isPublic,
+      bookId,
       ingredients: ingredientsList,
       instructions: instructionsList,
     } = body;
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
         story,
         imageUrl,
         isPublic: isPublic ?? false,
+        bookId: bookId ?? null,
       })
       .returning();
 

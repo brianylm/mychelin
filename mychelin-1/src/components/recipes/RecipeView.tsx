@@ -338,64 +338,70 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     return (
       <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
         <div className="mx-auto max-w-5xl px-5 py-6">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-neutral-800">
-                Your Recipes
-              </h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} in your collection
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {recipes.length > 0 && (
-                <Button
-                  variant="soft"
-                  color="amber"
-                  size="2"
-                  onClick={() => {
-                    const random = recipes[Math.floor(Math.random() * recipes.length)];
-                    selectRecipe(random.id);
-                  }}
-                >
-                  🎲 Surprise me
-                </Button>
-              )}
-              <Button
-                variant="solid"
-                size="2"
-                onClick={onOpenSidebar}
-                className="md:hidden"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                New
-              </Button>
-            </div>
-          </div>
-
           {activeBookId ? (() => {
             const activeBook = books.find(b => b.id === activeBookId);
             return (
               <>
-                {/* Book header with back button */}
-                <div className="mb-4 flex items-center gap-3">
-                  <button
-                    onClick={handleCloseBook}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                  </button>
-                  <span className="text-2xl">{activeBook?.coverEmoji ?? "📚"}</span>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-semibold text-neutral-800 truncate">
-                      {activeBook?.title ?? "Book"}
-                    </h2>
-                    <p className="text-xs text-neutral-500">
-                      {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""}
-                    </p>
+                {/* Book header */}
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      onClick={handleCloseBook}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+                    <span className="text-2xl shrink-0">{activeBook?.coverEmoji ?? "📚"}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <button onClick={handleCloseBook} className="text-xs text-amber-600 hover:text-amber-700">Recipes</button>
+                        <span className="text-xs text-neutral-400">/</span>
+                        <h2 className="text-xl font-semibold text-neutral-800 truncate">
+                          {activeBook?.title ?? "Book"}
+                        </h2>
+                      </div>
+                      <p className="mt-1 text-sm text-neutral-500">
+                        {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""} in this book
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {activeBookRecipes.length > 0 && (
+                      <Button
+                        variant="soft"
+                        color="amber"
+                        size="2"
+                        onClick={() => {
+                          const random = activeBookRecipes[Math.floor(Math.random() * activeBookRecipes.length)];
+                          selectRecipe(random.id);
+                        }}
+                      >
+                        🎲 Surprise me
+                      </Button>
+                    )}
+                    <Button
+                      variant="solid"
+                      size="2"
+                      onClick={async () => {
+                        // Create a new recipe pre-assigned to this book
+                        try {
+                          const res = await fetch("/api/recipes", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ title: "Untitled Recipe", bookId: activeBookId }),
+                          });
+                          if (res.ok) {
+                            const newRecipe = await res.json();
+                            qc.invalidateQueries({ queryKey: ["recipes"] });
+                            selectRecipe(newRecipe.id);
+                          }
+                        } catch {}
+                      }}
+                    >
+                      + New
+                    </Button>
                   </div>
                 </div>
 
@@ -439,6 +445,42 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             );
           })() : (
             <>
+              {/* Header */}
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-neutral-800">
+                    Your Recipes
+                  </h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} in your collection
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {recipes.length > 0 && (
+                    <Button
+                      variant="soft"
+                      color="amber"
+                      size="2"
+                      onClick={() => {
+                        const random = recipes[Math.floor(Math.random() * recipes.length)];
+                        selectRecipe(random.id);
+                      }}
+                    >
+                      🎲 Surprise me
+                    </Button>
+                  )}
+                  <Button
+                    variant="solid"
+                    size="2"
+                    onClick={onOpenSidebar}
+                    className="md:hidden"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New
+                  </Button>
+                </div>
+              </div>
+
               {/* Book folders */}
               {books.length > 0 && (
                 <div className="mb-6">
