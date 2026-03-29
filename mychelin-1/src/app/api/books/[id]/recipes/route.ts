@@ -4,6 +4,64 @@ import { bookMembers, bookRecipes, bookActivityLog, recipes } from "@/db/schema"
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+// ─── GET /api/books/[id]/recipes ──────────────────────────
+// List recipes in a book
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const bookId = parseInt(id);
+
+    // Check membership
+    const membership = await db
+      .select()
+      .from(bookMembers)
+      .where(and(
+        eq(bookMembers.bookId, bookId),
+        eq(bookMembers.userId, currentUser.id)
+      ))
+      .limit(1);
+
+    if (!membership.length) {
+      return NextResponse.json(
+        { error: "Access denied" },
+        { status: 403 }
+      );
+    }
+
+    // Get recipes in this book
+    const result = await db
+      .select({
+        id: recipes.id,
+        title: recipes.title,
+        cuisine: recipes.cuisine,
+        imageUrl: recipes.imageUrl,
+      })
+      .from(bookRecipes)
+      .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
+      .where(eq(bookRecipes.bookId, bookId))
+      .orderBy(bookRecipes.sortOrder);
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("GET /api/books/[id]/recipes error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch book recipes" },
+      { status: 500 }
+    );
+  }
+}
+
 // ─── POST /api/books/[id]/recipes ─────────────────────────
 // Add a recipe to the book
 export async function POST(

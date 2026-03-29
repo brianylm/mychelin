@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@radix-ui/themes";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
 import { RecipeHeader } from "./RecipeHeader";
@@ -17,6 +18,15 @@ import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecor
 
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
+
+interface BookSummary {
+  id: number;
+  title: string;
+  coverEmoji: string;
+  coverColor: string;
+  recipeCount: number;
+  description: string | null;
+}
 
 interface RecipeViewProps {
   onOpenSidebar: () => void;
@@ -53,6 +63,34 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [savingCookTime, setSavingCookTime] = useState(false);
   const [savingYield, setSavingYield] = useState(false);
   const [showAddToBookModal, setShowAddToBookModal] = useState(false);
+  const [books, setBooks] = useState<BookSummary[]>([]);
+  const [expandedBookId, setExpandedBookId] = useState<number | null>(null);
+  const [expandedBookRecipes, setExpandedBookRecipes] = useState<any[]>([]);
+
+  // Fetch books for card grid
+  useEffect(() => {
+    fetch("/api/books")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setBooks(data))
+      .catch(() => {});
+  }, []);
+
+  const handleToggleBook = useCallback(async (bookId: number) => {
+    if (expandedBookId === bookId) {
+      setExpandedBookId(null);
+      setExpandedBookRecipes([]);
+      return;
+    }
+    setExpandedBookId(bookId);
+    setExpandedBookRecipes([]);
+    try {
+      const res = await fetch(`/api/books/${bookId}/recipes`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedBookRecipes(data);
+      }
+    } catch {}
+  }, [expandedBookId]);
 
   // Sync local state with selected recipe
   useEffect(() => {
@@ -281,6 +319,91 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               </Button>
             </div>
           </div>
+
+          {/* Books section */}
+          {books.length > 0 && (
+            <div className="mb-6">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+                📚 Books
+              </h3>
+              <div className="space-y-2">
+                {books.map((book) => {
+                  const colorMap: Record<string, string> = {
+                    amber: "border-amber-200 bg-amber-50",
+                    rose: "border-rose-200 bg-rose-50",
+                    emerald: "border-emerald-200 bg-emerald-50",
+                    sky: "border-sky-200 bg-sky-50",
+                    violet: "border-violet-200 bg-violet-50",
+                    slate: "border-slate-200 bg-slate-50",
+                  };
+                  const colorClass = colorMap[book.coverColor] || "border-amber-200 bg-amber-50";
+                  const isExpanded = expandedBookId === book.id;
+
+                  return (
+                    <div key={book.id} className={`rounded-xl border ${isExpanded ? colorClass : "border-neutral-200 bg-white"} transition-all`}>
+                      <button
+                        onClick={() => handleToggleBook(book.id)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={cn(
+                            "shrink-0 text-neutral-400 transition-transform",
+                            isExpanded && "rotate-90"
+                          )}
+                        >
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        <span className="text-xl">{book.coverEmoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-neutral-800">{book.title}</span>
+                          {book.description && (
+                            <p className="text-xs text-neutral-500 truncate">{book.description}</p>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-xs text-neutral-400">
+                          {book.recipeCount} recipe{book.recipeCount !== 1 ? "s" : ""}
+                        </span>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="border-t border-neutral-200/60 px-4 pb-3 pt-2">
+                          {expandedBookRecipes.length === 0 ? (
+                            <p className="py-2 text-sm text-neutral-400">
+                              {expandedBookId === book.id ? "No recipes in this book yet" : "Loading…"}
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              {expandedBookRecipes.map((r: any) => (
+                                <button
+                                  key={r.id}
+                                  onClick={() => selectRecipe(r.id)}
+                                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-white/80"
+                                >
+                                  <span className="text-base opacity-60">🍳</span>
+                                  <span className="truncate font-medium text-neutral-700">
+                                    {r.title}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Card grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

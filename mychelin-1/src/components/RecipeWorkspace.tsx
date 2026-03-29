@@ -13,7 +13,8 @@ import { DesktopNav } from "@/components/layout/DesktopNav";
 import { MealPlanView } from "@/components/planner/MealPlanView";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { DiscoverView } from "@/components/discover/DiscoverView";
-import { BooksView } from "@/components/books/BooksView";
+import { FridgeView } from "@/components/fridge/FridgeView";
+import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -94,8 +95,9 @@ function RecipeWorkspaceContent({
             <RecipeView onOpenSidebar={() => setSidebarOpen(true)} />
           </>
         )}
+        {currentView === "fridge" && <FridgeView />}
+        {currentView === "shopping" && <ShoppingListView />}
         {currentView === "plan" && <MealPlanView />}
-        {currentView === "books" && <BooksView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "profile" && <ProfileView />}
       </div>

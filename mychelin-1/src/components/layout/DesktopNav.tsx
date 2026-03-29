@@ -10,8 +10,8 @@ interface DesktopNavProps {
 
 const tabs: { id: AppView; label: string; icon: string }[] = [
   { id: "recipes", label: "Recipes", icon: "🍳" },
-  { id: "discover", label: "Discover", icon: "🎲" },
-  { id: "books", label: "Books", icon: "📚" },
+  { id: "fridge", label: "Fridge", icon: "🧊" },
+  { id: "shopping", label: "Shopping", icon: "🛒" },
   { id: "plan", label: "Meal Plan", icon: "📅" },
 ];
 
