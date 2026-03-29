@@ -39,7 +39,7 @@ export async function GET(
       );
     }
 
-    // Get recipes in this book
+    // Get recipes in this book (via direct bookId on recipes table)
     const result = await db
       .select({
         id: recipes.id,
@@ -47,10 +47,9 @@ export async function GET(
         cuisine: recipes.cuisine,
         imageUrl: recipes.imageUrl,
       })
-      .from(bookRecipes)
-      .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
-      .where(eq(bookRecipes.bookId, bookId))
-      .orderBy(bookRecipes.sortOrder);
+      .from(recipes)
+      .where(eq(recipes.bookId, bookId))
+      .orderBy(recipes.title);
 
     return NextResponse.json(result);
   } catch (error) {

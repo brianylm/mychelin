@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { books, bookMembers, bookRecipes, bookActivityLog, users } from "@/db/schema";
+import { books, bookMembers, bookRecipes, bookActivityLog, users, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -28,13 +28,13 @@ export async function GET(request: NextRequest) {
         createdAt: books.createdAt,
         updatedAt: books.updatedAt,
         memberCount: sql<number>`count(distinct ${bookMembers.userId})`,
-        recipeCount: sql<number>`count(distinct ${bookRecipes.recipeId})`,
+        recipeCount: sql<number>`count(distinct ${recipes.id})`,
         userRole: bookMembers.role,
         isOwner: sql<boolean>`${books.createdBy} = ${currentUser.id}`,
       })
       .from(books)
       .innerJoin(bookMembers, eq(books.id, bookMembers.bookId))
-      .leftJoin(bookRecipes, eq(books.id, bookRecipes.bookId))
+      .leftJoin(recipes, eq(books.id, recipes.bookId))
       .where(eq(bookMembers.userId, currentUser.id))
       .groupBy(books.id, bookMembers.role)
       .orderBy(books.updatedAt);
