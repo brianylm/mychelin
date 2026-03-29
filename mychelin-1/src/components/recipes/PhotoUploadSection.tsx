@@ -7,6 +7,8 @@ import {
   PlusIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  TrashIcon,
+  RotateCounterClockwiseIcon,
 } from "@radix-ui/react-icons";
 
 export interface RecipePhoto {
@@ -33,29 +35,38 @@ export function PhotoUploadSection({
   uploadError,
 }: PhotoUploadSectionProps) {
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  const [rotation, setRotation] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const canAddMore = photos.length < MAX_PHOTOS;
 
   const openGallery = useCallback((index: number) => {
     setGalleryIndex(index);
+    setRotation(0);
   }, []);
 
   const closeGallery = useCallback(() => {
     setGalleryIndex(null);
+    setRotation(0);
   }, []);
 
   const goNext = useCallback(() => {
     setGalleryIndex((i) =>
       i !== null ? (i < photos.length - 1 ? i + 1 : 0) : null
     );
+    setRotation(0);
   }, [photos.length]);
 
   const goPrev = useCallback(() => {
     setGalleryIndex((i) =>
       i !== null ? (i > 0 ? i - 1 : photos.length - 1) : null
     );
+    setRotation(0);
   }, [photos.length]);
+
+  const rotatePhoto = useCallback(() => {
+    setRotation((r) => (r + 90) % 360);
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -172,26 +183,34 @@ export function PhotoUploadSection({
             </>
           )}
 
-          {/* Close + delete */}
+          {/* Toolbar */}
           <div className="absolute right-4 top-4 z-20 flex gap-2">
-            <IconButton
-              size="2"
-              variant="soft"
-              color="red"
+            <button
+              onClick={rotatePhoto}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
+              title="Rotate"
+            >
+              <RotateCounterClockwiseIcon className="h-4 w-4 text-white" />
+            </button>
+            <button
               onClick={() => {
+                if (!confirm("Remove this photo?")) return;
                 onRemove(photos[galleryIndex].id);
                 if (photos.length <= 1) closeGallery();
                 else if (galleryIndex >= photos.length - 1)
                   setGalleryIndex(galleryIndex - 1);
               }}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
+              title="Delete photo"
             >
-              <Cross2Icon className="h-4 w-4" />
-            </IconButton>
+              <TrashIcon className="h-4 w-4 text-white" />
+            </button>
             <button
               onClick={closeGallery}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
+              title="Close"
             >
-              <Cross2Icon className="h-5 w-5 text-white" />
+              <Cross2Icon className="h-4 w-4 text-white" />
             </button>
           </div>
 
@@ -206,7 +225,8 @@ export function PhotoUploadSection({
           <img
             src={photos[galleryIndex].url}
             alt={`Recipe photo ${galleryIndex + 1}`}
-            className="relative z-10 max-h-full max-w-full object-contain"
+            className="relative z-10 max-h-full max-w-full object-contain transition-transform duration-200"
+            style={{ transform: `rotate(${rotation}deg)` }}
           />
 
           {/* Dots */}
