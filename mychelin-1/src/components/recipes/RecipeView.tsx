@@ -278,11 +278,20 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     setShowAddToBookModal(true);
   }, [selectedRecipe]);
 
+  // CreateBookModal — rendered outside early returns so it's always available
+  const createBookModalEl = showCreateBookModal ? (
+    <CreateBookModal
+      onClose={() => setShowCreateBookModal(false)}
+      onCreateBook={handleCreateBook}
+    />
+  ) : null;
+
   // Loading state
   if (loading && recipes.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center bg-surface">
         <LoadingAnimation />
+        {createBookModalEl}
       </div>
     );
   }
@@ -308,6 +317,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               </Button>
             </div>
           </div>
+          {createBookModalEl}
         </div>
       );
     }
@@ -503,6 +513,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             ))}
           </div>
         </div>
+        {createBookModalEl}
       </div>
     );
   }
@@ -617,12 +628,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         />
       )}
 
-      {showCreateBookModal && (
-        <CreateBookModal
-          onClose={() => setShowCreateBookModal(false)}
-          onCreateBook={handleCreateBook}
-        />
-      )}
+      {createBookModalEl}
     </div>
   );
 }
