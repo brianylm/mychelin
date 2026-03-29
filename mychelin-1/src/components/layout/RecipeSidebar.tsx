@@ -158,11 +158,22 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
         {/* Books + Recipe list */}
         <div className="flex-1 overflow-y-auto px-2 py-3">
           {/* Books section */}
-          {books.length > 0 && (
-            <div className="mb-3">
-              <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+          <div className="mb-3">
+            <div className="flex items-center justify-between px-3 pb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
                 Books
-              </div>
+              </span>
+              <button
+                onClick={() => {
+                  // Open create book flow — dispatch custom event
+                  window.dispatchEvent(new CustomEvent("mychelin:create-book"));
+                }}
+                className="text-[10px] font-medium text-amber-600 hover:text-amber-700"
+              >
+                + New
+              </button>
+            </div>
+            {books.length > 0 ? (
               <ul className="space-y-0.5">
                 {books.map((book) => (
                   <li key={book.id}>
@@ -233,8 +244,12 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="px-3 py-2 text-xs text-neutral-400">
+                No books yet. Create one to organize recipes.
+              </p>
+            )}
+          </div>
 
           {/* All recipes */}
           {books.length > 0 && (

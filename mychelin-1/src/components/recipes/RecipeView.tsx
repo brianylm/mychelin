@@ -18,6 +18,7 @@ import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecor
 
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
+import { CreateBookModal } from "@/components/books/CreateBookModal";
 
 interface BookSummary {
   id: number;
@@ -66,14 +67,44 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [expandedBookId, setExpandedBookId] = useState<number | null>(null);
   const [expandedBookRecipes, setExpandedBookRecipes] = useState<any[]>([]);
+  const [showCreateBookModal, setShowCreateBookModal] = useState(false);
 
   // Fetch books for card grid
-  useEffect(() => {
+  const fetchBooks = useCallback(() => {
     fetch("/api/books")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setBooks(data))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
+
+  // Listen for create-book events from sidebar/card grid
+  useEffect(() => {
+    const handler = () => setShowCreateBookModal(true);
+    window.addEventListener("mychelin:create-book", handler);
+    return () => window.removeEventListener("mychelin:create-book", handler);
+  }, []);
+
+  const handleCreateBook = useCallback(async (bookData: {
+    title: string;
+    description?: string;
+    coverEmoji?: string;
+    coverColor?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/books", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookData),
+      });
+      if (!res.ok) throw new Error("Failed to create book");
+      setShowCreateBookModal(false);
+      fetchBooks();
+    } catch {}
+  }, [fetchBooks]);
 
   const handleToggleBook = useCallback(async (bookId: number) => {
     if (expandedBookId === bookId) {
@@ -321,11 +352,19 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           </div>
 
           {/* Books section */}
-          {books.length > 0 && (
-            <div className="mb-6">
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
                 📚 Books
               </h3>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
+                className="text-xs font-medium text-amber-600 hover:text-amber-700"
+              >
+                + Create Book
+              </button>
+            </div>
+            {books.length > 0 ? (
               <div className="space-y-2">
                 {books.map((book) => {
                   const colorMap: Record<string, string> = {
@@ -402,8 +441,12 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-400">
+                No books yet — create one to organize your recipes into collections
+              </p>
+            )}
+          </div>
 
           {/* Card grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -571,6 +614,13 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           recipeId={selectedRecipe.id}
           recipeName={selectedRecipe.title}
           onClose={() => setShowAddToBookModal(false)}
+        />
+      )}
+
+      {showCreateBookModal && (
+        <CreateBookModal
+          onClose={() => setShowCreateBookModal(false)}
+          onCreateBook={handleCreateBook}
         />
       )}
     </div>
