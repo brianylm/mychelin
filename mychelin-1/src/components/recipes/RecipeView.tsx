@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
 import { RecipeHeader } from "./RecipeHeader";
+import { BookSelector } from "./BookSelector";
 import { IngredientList } from "./IngredientList";
 import { RecipeSteps } from "./RecipeSteps";
 import { StorySection } from "./StorySection";
@@ -278,6 +279,14 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     setShowAddToBookModal(true);
   }, [selectedRecipe]);
 
+  const handleBookChange = useCallback(
+    async (bookId: number | null) => {
+      if (!selectedRecipe) return;
+      await updateRecipe(selectedRecipe.id, { bookId } as any);
+    },
+    [selectedRecipe, updateRecipe]
+  );
+
   // CreateBookModal — rendered outside early returns so it's always available
   const createBookModalEl = showCreateBookModal ? (
     <CreateBookModal
@@ -543,6 +552,12 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           savingPrepTime={savingPrepTime}
           savingCookTime={savingCookTime}
           savingYield={savingYield}
+        />
+
+        {/* Book */}
+        <BookSelector
+          currentBookId={selectedRecipe.bookId ?? null}
+          onSave={handleBookChange}
         />
 
         {/* Photos */}

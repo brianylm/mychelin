@@ -41,6 +41,7 @@ export const recipes = sqliteTable("recipes", {
   authenticityRating: integer("authenticity_rating"), // 1-5 stars, nullable
   tasteRating: integer("taste_rating"),               // 1-5 stars, nullable
   nostalgiaRating: integer("nostalgia_rating"),       // 1-5 stars, nullable
+  bookId: integer("book_id").references(() => books.id, { onDelete: "set null" }),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -221,6 +222,10 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   user: one(users, {
     fields: [recipes.userId],
     references: [users.id],
+  }),
+  book: one(books, {
+    fields: [recipes.bookId],
+    references: [books.id],
   }),
   ingredients: many(ingredients),
   instructions: many(instructions),
