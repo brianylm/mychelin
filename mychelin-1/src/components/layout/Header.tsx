@@ -6,10 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 interface HeaderProps {
   onMenuClick?: () => void;
   onProfileClick?: () => void;
+  onLogoClick?: () => void;
   children?: React.ReactNode;
 }
 
-export function Header({ onMenuClick, onProfileClick, children }: HeaderProps) {
+export function Header({ onMenuClick, onProfileClick, onLogoClick, children }: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -43,13 +44,16 @@ export function Header({ onMenuClick, onProfileClick, children }: HeaderProps) {
         )}
 
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <button
+          onClick={onLogoClick}
+          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+        >
           <img
             src="/icons/icon-96.png"
             alt="Mychelin"
             className="h-9 w-9 rounded-lg"
           />
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="text-base font-semibold leading-tight tracking-tight">
               Mychelin
             </span>
@@ -57,7 +61,7 @@ export function Header({ onMenuClick, onProfileClick, children }: HeaderProps) {
               family recipe heritage
             </span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Desktop nav */}

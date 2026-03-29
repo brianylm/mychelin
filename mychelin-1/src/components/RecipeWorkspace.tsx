@@ -80,6 +80,7 @@ function RecipeWorkspaceContent({
             : undefined
         }
         onProfileClick={() => handleViewChange("profile")}
+        onLogoClick={() => handleViewChange("recipes")}
       >
         <DesktopNav current={currentView} onChange={handleViewChange} />
       </Header>
