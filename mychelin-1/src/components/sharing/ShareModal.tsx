@@ -1,0 +1,191 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Cross2Icon, CopyIcon, LinkBreak2Icon, CheckIcon } from "@radix-ui/react-icons";
+
+interface ShareLink {
+  id: number;
+  token: string;
+  permission: string;
+  createdAt: string;
+}
+
+interface ShareModalProps {
+  resourceType: "recipe" | "book";
+  resourceId: number;
+  resourceName: string;
+  onClose: () => void;
+}
+
+export function ShareModal({ resourceType, resourceId, resourceName, onClose }: ShareModalProps) {
+  const [links, setLinks] = useState<ShareLink[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  const fetchLinks = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/share?type=${resourceType}&id=${resourceId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLinks(data);
+      }
+    } catch {} finally {
+      setLoading(false);
+    }
+  }, [resourceType, resourceId]);
+
+  useEffect(() => {
+    fetchLinks();
+  }, [fetchLinks]);
+
+  const createLink = useCallback(async (permission: "view" | "edit") => {
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resourceType, resourceId, permission }),
+      });
+      if (res.ok) {
+        fetchLinks();
+      }
+    } catch {}
+  }, [resourceType, resourceId, fetchLinks]);
+
+  const deleteLink = useCallback(async (id: number) => {
+    try {
+      await fetch("/api/share", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      setLinks((prev) => prev.filter((l) => l.id !== id));
+    } catch {}
+  }, []);
+
+  const copyLink = useCallback((token: string) => {
+    const url = `${window.location.origin}/shared/${token}`;
+    navigator.clipboard.writeText(url);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  }, []);
+
+  const viewLink = links.find((l) => l.permission === "view");
+  const editLink = links.find((l) => l.permission === "edit");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6">
+          {/* Header */}
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-900">Share</h2>
+              <p className="text-xs text-neutral-500 truncate">{resourceName}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            >
+              <Cross2Icon className="h-4 w-4" />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* View-only link */}
+              <div className="rounded-xl border border-neutral-200 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-semibold text-neutral-800">👁 View only</span>
+                    <p className="text-xs text-neutral-500">Can view but not edit</p>
+                  </div>
+                </div>
+                {viewLink ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 truncate rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 font-mono">
+                      {window.location.origin}/shared/{viewLink.token}
+                    </div>
+                    <button
+                      onClick={() => copyLink(viewLink.token)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 transition-colors hover:bg-amber-200"
+                      title="Copy link"
+                    >
+                      {copiedToken === viewLink.token ? (
+                        <CheckIcon className="h-4 w-4" />
+                      ) : (
+                        <CopyIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => deleteLink(viewLink.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      title="Remove link"
+                    >
+                      <LinkBreak2Icon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => createLink("view")}
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                  >
+                    Create view-only link
+                  </button>
+                )}
+              </div>
+
+              {/* Collaborator link */}
+              <div className="rounded-xl border border-neutral-200 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-semibold text-neutral-800">✏️ Collaborator</span>
+                    <p className="text-xs text-neutral-500">Can view and edit</p>
+                  </div>
+                </div>
+                {editLink ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 truncate rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 font-mono">
+                      {window.location.origin}/shared/{editLink.token}
+                    </div>
+                    <button
+                      onClick={() => copyLink(editLink.token)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 transition-colors hover:bg-amber-200"
+                      title="Copy link"
+                    >
+                      {copiedToken === editLink.token ? (
+                        <CheckIcon className="h-4 w-4" />
+                      ) : (
+                        <CopyIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => deleteLink(editLink.id)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      title="Remove link"
+                    >
+                      <LinkBreak2Icon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => createLink("edit")}
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                  >
+                    Create collaborator link
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -211,6 +211,21 @@ export const bookActivityLog = sqliteTable("book_activity_log", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Share Links ───────────────────────────────────────────
+export const shareLinks = sqliteTable("share_links", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  token: text("token").notNull().unique(),
+  resourceType: text("resource_type").notNull(), // "recipe" | "book"
+  resourceId: integer("resource_id").notNull(),
+  permission: text("permission").notNull(), // "view" | "edit"
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Relations ─────────────────────────────────────────────
 export const usersRelations = relations(users, ({ many }) => ({
   recipes: many(recipes),

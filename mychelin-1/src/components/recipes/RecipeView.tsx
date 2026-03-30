@@ -20,6 +20,7 @@ import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecor
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
 import { CreateBookModal } from "@/components/books/CreateBookModal";
+import { ShareModal } from "@/components/sharing/ShareModal";
 
 interface BookSummary {
   id: number;
@@ -70,6 +71,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [activeBookRecipes, setActiveBookRecipes] = useState<any[]>([]);
   const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState<{ type: "recipe" | "book"; id: number; name: string } | null>(null);
 
   // Fetch books for card grid
   const fetchBooks = useCallback(() => {
@@ -291,7 +293,16 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     [selectedRecipe, updateRecipe]
   );
 
-  // CreateBookModal — rendered outside early returns so it's always available
+  // Modals — rendered outside early returns so they're always available
+  const shareModalEl = showShareModal ? (
+    <ShareModal
+      resourceType={showShareModal.type}
+      resourceId={showShareModal.id}
+      resourceName={showShareModal.name}
+      onClose={() => setShowShareModal(null)}
+    />
+  ) : null;
+
   const createBookModalEl = showCreateBookModal ? (
     <CreateBookModal
       onClose={() => setShowCreateBookModal(false)}
@@ -305,6 +316,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       <div className="flex flex-1 items-center justify-center bg-surface">
         <LoadingAnimation />
         {createBookModalEl}
+      {shareModalEl}
       </div>
     );
   }
@@ -331,6 +343,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             </div>
           </div>
           {createBookModalEl}
+      {shareModalEl}
         </div>
       );
     }
@@ -396,6 +409,17 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       >
                         + New
                       </Button>
+                      <button
+                        onClick={() => setShowShareModal({ type: "book", id: activeBookId!, name: activeBook?.title ?? "Book" })}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+                        title="Share book"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                          <polyline points="16 6 12 2 8 6" />
+                          <line x1="12" y1="2" x2="12" y2="15" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -583,6 +607,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           )}
         </div>
         {createBookModalEl}
+      {shareModalEl}
       </div>
     );
   }
@@ -614,11 +639,26 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           savingYield={savingYield}
         />
 
-        {/* Book */}
-        <BookSelector
-          currentBookId={selectedRecipe.bookId ?? null}
-          onSave={handleBookChange}
-        />
+        {/* Book + Share */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <BookSelector
+              currentBookId={selectedRecipe.bookId ?? null}
+              onSave={handleBookChange}
+            />
+          </div>
+          <button
+            onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
+            className="flex h-9 items-center gap-1.5 shrink-0 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-600 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            Share
+          </button>
+        </div>
 
         {/* Photos */}
         <PhotoUploadSection
@@ -727,6 +767,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       )}
 
       {createBookModalEl}
+      {shareModalEl}
     </div>
   );
 }
