@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { shareLinks, recipes, books, ingredients, instructions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
 // GET /api/share/:token — public access to shared resource
-export async function GET(_request: NextRequest, context: RouteContext) {
+// Optional: ?recipeId=X to fetch a full recipe within a shared book
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { token } = await context.params;
+    const recipeId = request.nextUrl.searchParams.get("recipeId");
 
     const link = await db
       .select()
@@ -21,6 +23,31 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     }
 
     const shareLink = link[0];
+
+    // Fetch a specific recipe within a shared book
+    if (recipeId && shareLink.resourceType === "book") {
+      const recipe = await db.query.recipes.findFirst({
+        where: and(
+          eq(recipes.id, Number(recipeId)),
+          eq(recipes.bookId, shareLink.resourceId)
+        ),
+        with: {
+          ingredients: { orderBy: (ing, { asc }) => [asc(ing.sortOrder)] },
+          instructions: { orderBy: (inst, { asc }) => [asc(inst.stepNumber)] },
+          photos: { orderBy: (p, { asc }) => [asc(p.sortOrder)] },
+        },
+      });
+
+      if (!recipe) {
+        return NextResponse.json({ error: "Recipe not found in this book" }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        type: "recipe",
+        permission: shareLink.permission,
+        data: recipe,
+      });
+    }
 
     if (shareLink.resourceType === "recipe") {
       const recipe = await db.query.recipes.findFirst({
