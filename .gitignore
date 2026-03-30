@@ -1,0 +1,28 @@
+# Personal / Identity - VPS only
+AGENTS.md
+SOUL.md
+TOOLS.md
+IDENTITY.md
+USER.md
+MEMORY.md
+HEARTBEAT.md
+BOOTSTRAP.md
+
+# Memory files
+memory/
+
+# Avatar / personal images
+brainie_*.png
+test_blue_circle.png
+
+# OpenClaw internals
+.openclaw/
+
+# Misc personal
+generation_failure.txt
+response.json
+security-hardening.sh
+
+# Env files
+.env*
+!.env.example
