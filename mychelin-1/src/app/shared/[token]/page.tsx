@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
+import { ServingScaler, formatScaledQuantity } from "@/components/recipes/ServingScaler";
 
 interface SharedRecipe {
   id: number;
   title: string;
   description: string | null;
   cuisine: string | null;
+  yield: string | null;
   prepTime: number | null;
   cookTime: number | null;
   story: string | null;
@@ -37,6 +39,7 @@ type SharedData =
 
 function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; permission: string; onBack?: () => void }) {
   const r = recipe;
+  const [scale, setScale] = useState(1);
   return (
     <div className="min-h-screen bg-neutral-50">
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
@@ -107,9 +110,16 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
           </div>
         )}
 
+        {/* Serving Scaler */}
+        {r.yield && (
+          <div className="mt-8">
+            <ServingScaler baseYield={r.yield} onScaleChange={setScale} />
+          </div>
+        )}
+
         {/* Ingredients */}
         {r.ingredients.length > 0 && (
-          <div className="mt-8">
+          <div className="mt-4">
             <h2 className="mb-3 text-lg font-semibold text-neutral-800">Ingredients</h2>
             <ul className="space-y-2">
               {r.ingredients.map((ing, i) => (
@@ -118,8 +128,8 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
                   <div>
                     <span className="font-medium text-neutral-800">{ing.name}</span>
                     {(ing.quantity || ing.unit) && (
-                      <span className="ml-2 text-sm text-neutral-500">
-                        {ing.quantity}{ing.unit ? ` ${ing.unit}` : ""}
+                      <span className={`ml-2 text-sm ${scale !== 1 ? "text-amber-700 font-medium" : "text-neutral-500"}`}>
+                        {ing.quantity ? formatScaledQuantity(ing.quantity, scale) : ""}{ing.unit ? ` ${ing.unit}` : ""}
                       </span>
                     )}
                     {ing.notes && <p className="mt-0.5 text-xs text-neutral-400">{ing.notes}</p>}

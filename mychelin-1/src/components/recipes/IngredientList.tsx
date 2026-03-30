@@ -5,6 +5,7 @@ import { Button, IconButton } from "@radix-ui/themes";
 import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import type { Ingredient } from "@/db/schema";
+import { formatScaledQuantity } from "./ServingScaler";
 
 const UNIT_OPTIONS = [
   "",
@@ -41,6 +42,7 @@ interface IngredientListProps {
     data: Partial<Ingredient>
   ) => Promise<void>;
   onDelete: (recipeId: number, ingredientId: number) => Promise<void>;
+  scale?: number;
 }
 
 const fieldBase =
@@ -52,6 +54,7 @@ export function IngredientList({
   onAdd,
   onUpdate,
   onDelete,
+  scale = 1,
 }: IngredientListProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState({
@@ -117,18 +120,24 @@ export function IngredientList({
                   placeholder="ingredient"
                 />
                 {/* Qty */}
-                <input
-                  defaultValue={ing.quantity ?? ""}
-                  onBlur={(e) =>
-                    handleFieldBlur(
-                      ing,
-                      "quantity",
-                      e.target.value ? parseFloat(e.target.value) : null
-                    )
-                  }
-                  className="w-14 rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
-                  placeholder="qty"
-                />
+                {scale !== 1 && ing.quantity ? (
+                  <span className="w-14 px-1 text-center text-sm tabular-nums text-amber-700 font-medium">
+                    {formatScaledQuantity(ing.quantity, scale)}
+                  </span>
+                ) : (
+                  <input
+                    defaultValue={ing.quantity ?? ""}
+                    onBlur={(e) =>
+                      handleFieldBlur(
+                        ing,
+                        "quantity",
+                        e.target.value ? parseFloat(e.target.value) : null
+                      )
+                    }
+                    className="w-14 rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                    placeholder="qty"
+                  />
+                )}
                 {/* Unit dropdown */}
                 <select
                   defaultValue={ing.unit ?? ""}

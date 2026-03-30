@@ -18,6 +18,7 @@ import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
 import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecording";
 
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
+import { ServingScaler } from "./ServingScaler";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
 import { CreateBookModal } from "@/components/books/CreateBookModal";
 import { ShareModal } from "@/components/sharing/ShareModal";
@@ -65,6 +66,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [savingPrepTime, setSavingPrepTime] = useState(false);
   const [savingCookTime, setSavingCookTime] = useState(false);
   const [savingYield, setSavingYield] = useState(false);
+  const [ingredientScale, setIngredientScale] = useState(1);
   const [showAddToBookModal, setShowAddToBookModal] = useState(false);
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
@@ -139,6 +141,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       setPrepTime(selectedRecipe.prepTime?.toString() ?? "");
       setCookTime(selectedRecipe.cookTime?.toString() ?? "");
       setRecipeYield(selectedRecipe.yield ?? "");
+      setIngredientScale(1);
     }
   }, [selectedRecipe]);
 
@@ -673,6 +676,12 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           }}
         />
 
+        {/* Serving Scaler */}
+        <ServingScaler
+          baseYield={selectedRecipe.yield ?? ""}
+          onScaleChange={setIngredientScale}
+        />
+
         {/* Ingredients */}
         <IngredientList
           ingredients={selectedRecipe.ingredients ?? []}
@@ -680,6 +689,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           onAdd={addIngredient}
           onUpdate={updateIngredient}
           onDelete={deleteIngredient}
+          scale={ingredientScale}
         />
 
         {/* Steps */}
