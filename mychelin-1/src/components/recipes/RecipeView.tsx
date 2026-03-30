@@ -409,17 +409,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       >
                         + New
                       </Button>
-                      <button
-                        onClick={() => setShowShareModal({ type: "book", id: activeBookId!, name: activeBook?.title ?? "Book" })}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
-                        title="Share book"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                          <polyline points="16 6 12 2 8 6" />
-                          <line x1="12" y1="2" x2="12" y2="15" />
-                        </svg>
-                      </button>
+
                     </div>
                   </div>
                 </div>
@@ -526,12 +516,26 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       };
                       const bgClass = bgMap[book.coverColor] || "from-amber-50 to-amber-100/50";
                       return (
-                        <button
+                        <div
                           key={book.id}
-                          onClick={() => handleOpenBook(book.id)}
-                          className="group flex flex-col items-center gap-2 rounded-2xl border border-neutral-200 bg-gradient-to-br p-4 text-center transition-all hover:border-amber-300 hover:shadow-md"
+                          className="group relative flex flex-col items-center gap-2 rounded-2xl border border-neutral-200 bg-gradient-to-br p-4 text-center transition-all hover:border-amber-300 hover:shadow-md cursor-pointer"
                           style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
+                          onClick={() => handleOpenBook(book.id)}
                         >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowShareModal({ type: "book", id: book.id, name: book.title });
+                            }}
+                            className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 transition-all hover:bg-white/80 hover:text-amber-600 opacity-60 group-hover:opacity-100"
+                            title="Share book"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                              <polyline points="16 6 12 2 8 6" />
+                              <line x1="12" y1="2" x2="12" y2="15" />
+                            </svg>
+                          </button>
                           <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${bgClass} text-2xl`}>
                             {book.coverEmoji}
                           </div>
@@ -541,7 +545,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                           <span className="text-[10px] text-neutral-400">
                             {book.recipeCount} recipe{book.recipeCount !== 1 ? "s" : ""}
                           </span>
-                        </button>
+                        </div>
                       );
                     })}
                     {/* Create book card */}
@@ -639,26 +643,11 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           savingYield={savingYield}
         />
 
-        {/* Book + Share */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <BookSelector
-              currentBookId={selectedRecipe.bookId ?? null}
-              onSave={handleBookChange}
-            />
-          </div>
-          <button
-            onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
-            className="flex h-9 items-center gap-1.5 shrink-0 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-600 transition-colors hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-            Share
-          </button>
-        </div>
+        {/* Book */}
+        <BookSelector
+          currentBookId={selectedRecipe.bookId ?? null}
+          onSave={handleBookChange}
+        />
 
         {/* Photos */}
         <PhotoUploadSection
@@ -742,8 +731,19 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           onSave={handleRatingSave}
         />
 
-        {/* Delete recipe */}
-        <div className="border-t border-neutral-200 pt-6 pb-20 md:pb-6">
+        {/* Share + Delete */}
+        <div className="border-t border-neutral-200 pt-6 pb-20 md:pb-6 space-y-3">
+          <button
+            onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-amber-300 hover:bg-amber-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            Share Recipe
+          </button>
           <button
             onClick={handleDelete}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
