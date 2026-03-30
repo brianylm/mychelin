@@ -409,7 +409,21 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       >
                         + New
                       </Button>
-
+                      {activeBook && (
+                        <button
+                          onClick={() => setShowShareModal({ type: "book", id: activeBook.id, name: activeBook.title })}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-amber-600"
+                          title="Share book"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="18" cy="5" r="3" />
+                            <circle cx="6" cy="12" r="3" />
+                            <circle cx="18" cy="19" r="3" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -522,20 +536,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                           style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
                           onClick={() => handleOpenBook(book.id)}
                         >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowShareModal({ type: "book", id: book.id, name: book.title });
-                            }}
-                            className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 transition-all hover:bg-white/80 hover:text-amber-600 opacity-60 group-hover:opacity-100"
-                            title="Share book"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                              <polyline points="16 6 12 2 8 6" />
-                              <line x1="12" y1="2" x2="12" y2="15" />
-                            </svg>
-                          </button>
+
                           <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${bgClass} text-2xl`}>
                             {book.coverEmoji}
                           </div>
@@ -738,9 +739,11 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-amber-300 hover:bg-amber-50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
             </svg>
             Share Recipe
           </button>
