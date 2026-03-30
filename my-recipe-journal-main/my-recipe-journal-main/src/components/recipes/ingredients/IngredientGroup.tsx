@@ -1,0 +1,212 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import type {
+  Ingredient,
+  IngredientGroup as IngredientGroupType,
+  PendingIngredient,
+  RecipeCategory,
+} from "@/types/recipes";
+import { IngredientListItem } from "./IngredientListItem";
+import { AddIngredientForm } from "./AddIngredientForm";
+import { BakersPercentageSummary } from "./BakersPercentageSummary";
+import { GroupHeader } from "./GroupHeader";
+import { getGroupFlourTotal } from "@/lib/migration-utils";
+
+interface IngredientGroupProps {
+  group: IngredientGroupType;
+  recipeId: string;
+  recipeCategory: RecipeCategory;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  onUpdateGroup: (data: Partial<IngredientGroupType>) => Promise<void>;
+  onDeleteGroup: () => void;
+  canDelete: boolean;
+  // Ingredient operations
+  onAddIngredient: (data: {
+    name: string;
+    quantity: number;
+    unit: string;
+    role: Ingredient["role"];
+    notes?: string;
+  }) => Promise<void>;
+  onUpdateIngredient: (
+    ingredientId: string,
+    data: Partial<{
+      name: string;
+      quantity: number;
+      unit: string;
+      role: Ingredient["role"];
+      notes: string | null;
+    }>,
+  ) => Promise<void>;
+  onDeleteIngredient: (ingredientId: string) => Promise<void>;
+  // UI state
+  savingIngredient?: Record<string, boolean>;
+  suggestions?: string[];
+  isLoadingSuggestions?: boolean;
+  checkedIngredients?: Set<string>;
+  onToggleIngredientCheck?: (id: string) => void;
+  onToggleAllIngredients?: () => void;
+}
+
+export function IngredientGroup({
+  group,
+  recipeId,
+  recipeCategory,
+  isCollapsed,
+  onToggleCollapse,
+  onUpdateGroup,
+  onDeleteGroup,
+  canDelete,
+  onAddIngredient,
+  onUpdateIngredient,
+  onDeleteIngredient,
+  savingIngredient = {},
+  suggestions = [],
+  isLoadingSuggestions = false,
+  checkedIngredients = new Set(),
+  onToggleIngredientCheck,
+  onToggleAllIngredients,
+}: IngredientGroupProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [localPendingIngredients, setLocalPendingIngredients] = useState<
+    PendingIngredient[]
+  >([]);
+
+  const isBakingCategory =
+    recipeCategory.primary === "baking" &&
+    ["bread", "sourdough", "cookies", "cakes", "pastries", "pies"].includes(
+      recipeCategory.secondary,
+    );
+
+  const flourTotal = getGroupFlourTotal(group);
+
+  const handleToggleExpand = useCallback((id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleToggleCheck = useCallback(
+    (id: string) => {
+      onToggleIngredientCheck?.(id);
+    },
+    [onToggleIngredientCheck],
+  );
+
+  useEffect(() => {
+    if (localPendingIngredients.length > 0) {
+      setLocalPendingIngredients([]);
+    }
+  }, [group.ingredients.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAddIngredient = async (payload: {
+    name: string;
+    quantity: number;
+    unit: string;
+    role: Ingredient["role"];
+    notes?: string;
+  }) => {
+    setLocalPendingIngredients((prev) => [
+      ...prev,
+      { ...payload, tempId: `pending-${Date.now()}` },
+    ]);
+
+    try {
+      await onAddIngredient(payload);
+    } catch (error) {
+      console.error("Failed to add ingredient:", error);
+      setLocalPendingIngredients((prev) => prev.filter((p) => p.name !== payload.name));
+    }
+  };
+
+  // Calculate if all ingredients are checked
+  const allChecked = group.ingredients.length > 0 && 
+    group.ingredients.every((ing) => checkedIngredients.has(ing.id));
+
+  return (
+    <div className="overflow-visible bg-white">
+      {/* Full-width header - sticky */}
+      <div className="sticky top-0 z-10">
+        <GroupHeader
+          group={group}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={onToggleCollapse}
+          onUpdateGroup={onUpdateGroup}
+          onDeleteGroup={onDeleteGroup}
+          canDelete={canDelete}
+          isBakingCategory={isBakingCategory}
+          // Check all props
+          showCheckAll={!!onToggleAllIngredients && group.ingredients.length > 0}
+          allChecked={allChecked}
+          onToggleAllIngredients={onToggleAllIngredients}
+          checkedIngredients={checkedIngredients}
+        />
+      </div>
+      
+      {!isCollapsed && (
+        <div className="py-2 pb-4">
+          {/* Ingredient List */}
+          <div className="px-3">
+            {group.ingredients.map((ingredient) => (
+              <IngredientListItem
+                key={ingredient.id}
+                ingredient={ingredient}
+                isChecked={checkedIngredients.has(ingredient.id)}
+                isExpanded={expandedId === ingredient.id}
+                onToggleCheck={handleToggleCheck}
+                onToggleExpand={handleToggleExpand}
+                onSave={onUpdateIngredient}
+                onDelete={onDeleteIngredient}
+                enableBakersPercent={group.enableBakersPercent}
+                flourTotal={flourTotal}
+                isSaving={savingIngredient[ingredient.id]}
+                suggestions={suggestions}
+              />
+            ))}
+
+            {/* Pending Ingredients */}
+            {localPendingIngredients.map((pending) => (
+              <div
+                key={pending.tempId}
+                className="animate-pulse rounded-md border border-neutral-200 bg-neutral-50 p-3 opacity-70"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{pending.name}</span>
+                  <span className="text-sm text-neutral-500">Adding...</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Empty State */}
+            {group.ingredients.length === 0 && localPendingIngredients.length === 0 && (
+              <div className="mx-3 rounded-lg border border-dashed border-neutral-300 p-6 text-center">
+                <p className="text-sm text-neutral-500">
+                  No ingredients in this group yet
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Add Ingredient Form */}
+          <div className="mt-2 px-3">
+            <AddIngredientForm
+              onAdd={handleAddIngredient}
+              suggestions={suggestions}
+              isLoadingSuggestions={isLoadingSuggestions}
+            />
+          </div>
+
+          {/* Baker's Percentage Summary */}
+          {group.enableBakersPercent && flourTotal > 0 && (
+            <div className="px-3">
+              <BakersPercentageSummary
+                flourTotal={flourTotal}
+                ingredients={group.ingredients}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

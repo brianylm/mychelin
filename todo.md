@@ -21,6 +21,7 @@
 ### Mychelin (Heritage Food App)
 - [ ] **PRD:** `~/projects/mychelin/docs/PRD-COMBINED.md`
 - [ ] **Status:** Concept/PRD phase.
+- [ ] **Video support for recipes** — add ability to attach/upload videos per recipe
 
 ## Operations (Priority Queue)
 1.  **Termius Setup (MacBook):**

@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --surface: 246 246 245;
+  --surface-card: 255 255 254;
+  --foreground: 28 28 30;
+  --accent: 34 197 94;
+}
+
+*,
+*::before,
+*::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: rgba(var(--foreground), 0.08);
+}
+
+body {
+  min-height: 100vh;
+  background-color: rgb(var(--surface));
+  color: rgb(var(--foreground));
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+}
+
+@layer base {
+  body {
+    font-family:
+      var(--font-inter, "Inter"),
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  @keyframes slideDown {
+    from {
+      max-height: 0;
+      opacity: 0;
+    }
+    to {
+      max-height: 800px;
+      opacity: 1;
+    }
+  }
+
+  .animate-slideDown {
+    animation: slideDown 300ms ease-out;
+    overflow: hidden;
+  }
+}
+
+.radix-themes {
+  --cursor-button: pointer;
+}
