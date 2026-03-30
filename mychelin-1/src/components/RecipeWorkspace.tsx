@@ -15,6 +15,7 @@ import { ProfileView } from "@/components/profile/ProfileView";
 import { DiscoverView } from "@/components/discover/DiscoverView";
 import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
+import { ConversationCapture } from "@/components/capture/ConversationCapture";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -99,6 +100,7 @@ function RecipeWorkspaceContent({
         {currentView === "fridge" && <FridgeView />}
         {currentView === "shopping" && <ShoppingListView />}
         {currentView === "plan" && <MealPlanView />}
+        {currentView === "capture" && <ConversationCapture />}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "profile" && <ProfileView />}
       </div>
