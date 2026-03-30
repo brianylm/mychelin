@@ -18,6 +18,11 @@ test_blue_circle.png
 # OpenClaw internals
 .openclaw/
 
+# Analysis / research / notes - VPS only
+mychelin-business-model.md
+research/
+todo.md
+
 # Misc personal
 generation_failure.txt
 response.json
