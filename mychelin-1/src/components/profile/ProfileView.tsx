@@ -117,7 +117,7 @@ export function ProfileView() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-surface">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 pb-28">
         
         {/* Header */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
