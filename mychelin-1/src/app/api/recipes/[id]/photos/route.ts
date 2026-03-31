@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { recipePhotos, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {

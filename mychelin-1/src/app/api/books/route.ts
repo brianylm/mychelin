@@ -4,6 +4,8 @@ import { books, bookMembers, bookRecipes, bookActivityLog, users, recipes } from
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and, sql } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 // ─── GET /api/books ────────────────────────────────────────
 // Returns all books the current user is a member of (any role)
 export async function GET(request: NextRequest) {

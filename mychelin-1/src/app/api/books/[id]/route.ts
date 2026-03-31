@@ -4,6 +4,8 @@ import { books, bookMembers, bookRecipes, bookActivityLog, users, recipes } from
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 // ─── GET /api/books/[id] ───────────────────────────────────
 // Get book details with recipes, members, and activity log
 export async function GET(

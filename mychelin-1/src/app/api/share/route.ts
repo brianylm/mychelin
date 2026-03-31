@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
+export const preferredRegion = "hnd1";
+
 // GET /api/share?type=recipe&id=1 — list share links for a resource
 export async function GET(request: NextRequest) {
   try {

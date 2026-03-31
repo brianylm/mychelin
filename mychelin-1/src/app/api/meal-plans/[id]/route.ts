@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { mealPlans } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 // ─── GET /api/meal-plans/:id ───────────────────────────────

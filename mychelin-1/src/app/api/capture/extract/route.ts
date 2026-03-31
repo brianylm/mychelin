@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 
+export const preferredRegion = "hnd1";
+
 interface ConversationMessage {
   speaker: string;
   text: string;

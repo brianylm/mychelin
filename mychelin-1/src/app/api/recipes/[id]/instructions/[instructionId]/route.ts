@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { instructions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 type RouteContext = {
   params: Promise<{ id: string; instructionId: string }>;
 };

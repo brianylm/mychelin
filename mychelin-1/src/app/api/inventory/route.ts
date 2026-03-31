@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { inventory } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 // ─── GET /api/inventory ────────────────────────────────────
 // Returns inventory items with optional location filtering
 export async function GET(request: NextRequest) {

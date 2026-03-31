@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { ingredients } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 type RouteContext = { params: Promise<{ id: string; ingredientId: string }> };
 
 export async function PATCH(request: NextRequest, context: RouteContext) {

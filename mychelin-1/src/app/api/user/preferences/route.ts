@@ -4,6 +4,8 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 
+export const preferredRegion = "hnd1";
+
 // ─── GET /api/user/preferences ──────────────────────────────
 export async function GET() {
   try {

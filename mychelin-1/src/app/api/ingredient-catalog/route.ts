@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { ingredientCatalog } from "@/db/schema";
 import { asc } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 // ─── GET /api/ingredient-catalog ───────────────────────────
 // Returns all ingredient catalog items
 export async function GET() {

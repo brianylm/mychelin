@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { voiceRecordings } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 type RouteContext = { params: Promise<{ id: string; clipId: string }> };
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {

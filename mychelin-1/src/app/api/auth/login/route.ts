@@ -6,6 +6,8 @@ import {
   type AuthUser,
 } from "@/lib/auth";
 
+export const preferredRegion = "hnd1";
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();

@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { ingredients, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, context: RouteContext) {

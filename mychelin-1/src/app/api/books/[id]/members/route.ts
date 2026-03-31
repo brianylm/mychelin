@@ -4,6 +4,8 @@ import { bookMembers, bookActivityLog, users, books } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 // ─── POST /api/books/[id]/members ─────────────────────────
 // Invite a user by email (owner only)
 export async function POST(

@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { mealPlans } from "@/db/schema";
 import { and, gte, lte, asc, eq } from "drizzle-orm";
 
+export const preferredRegion = "hnd1";
+
 // ─── GET /api/meal-plans ───────────────────────────────────
 // Returns meal plans with optional date range filtering
 export async function GET(request: NextRequest) {
