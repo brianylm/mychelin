@@ -317,10 +317,9 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
             ))}
           </div>
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
+              <p className="mt-3 text-sm text-neutral-400">Loading recipes…</p>
             </div>
           </div>
         </div>
