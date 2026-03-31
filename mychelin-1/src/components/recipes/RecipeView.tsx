@@ -75,11 +75,25 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState<{ type: "recipe" | "book"; id: number; name: string } | null>(null);
 
-  // Fetch books for card grid
+  // Cache for prefetched book recipes
+  const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, any[]>>({});
+
+  // Fetch books for card grid, then prefetch their recipes
   const fetchBooks = useCallback(() => {
     fetch("/api/books")
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setBooks(data))
+      .then((data: BookSummary[]) => {
+        setBooks(data);
+        // Prefetch recipes for all books in parallel
+        data.forEach((book) => {
+          fetch(`/api/books/${book.id}/recipes`)
+            .then((res) => (res.ok ? res.json() : []))
+            .then((recipes) => {
+              setBookRecipesCache((prev) => ({ ...prev, [book.id]: recipes }));
+            })
+            .catch(() => {});
+        });
+      })
       .catch(() => {});
   }, []);
 
@@ -114,18 +128,26 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
   const handleOpenBook = useCallback(async (bookId: number) => {
     setActiveBookId(bookId);
-    setLoadingBookRecipes(true);
-    setActiveBookRecipes([]);
+    // Use cached data instantly if available
+    if (bookRecipesCache[bookId]) {
+      setActiveBookRecipes(bookRecipesCache[bookId]);
+      setLoadingBookRecipes(false);
+    } else {
+      setLoadingBookRecipes(true);
+      setActiveBookRecipes([]);
+    }
+    // Always refresh in background
     try {
       const res = await fetch(`/api/books/${bookId}/recipes`);
       if (res.ok) {
         const data = await res.json();
         setActiveBookRecipes(data);
+        setBookRecipesCache((prev) => ({ ...prev, [bookId]: data }));
       }
     } catch {} finally {
       setLoadingBookRecipes(false);
     }
-  }, []);
+  }, [bookRecipesCache]);
 
   const handleCloseBook = useCallback(() => {
     setActiveBookId(null);
@@ -498,7 +520,20 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   <Button
                     variant="solid"
                     size="2"
-                    onClick={onOpenSidebar}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch("/api/recipes", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ title: "Untitled Recipe" }),
+                        });
+                        if (res.ok) {
+                          const newRecipe = await res.json();
+                          qc.invalidateQueries({ queryKey: ["recipes"] });
+                          selectRecipe(newRecipe.id);
+                        }
+                      } catch {}
+                    }}
                     className="md:hidden"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
