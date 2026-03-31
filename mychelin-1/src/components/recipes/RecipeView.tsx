@@ -41,6 +41,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     recipes,
     loading,
     selectedRecipe,
+    createRecipe,
     updateRecipe,
     deleteRecipe,
     addIngredient,
@@ -520,20 +521,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   <Button
                     variant="solid"
                     size="2"
-                    onClick={async () => {
-                      try {
-                        const res = await fetch("/api/recipes", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ title: "Untitled Recipe" }),
-                        });
-                        if (res.ok) {
-                          const newRecipe = await res.json();
-                          qc.invalidateQueries({ queryKey: ["recipes"] });
-                          selectRecipe(newRecipe.id);
-                        }
-                      } catch {}
-                    }}
+                    onClick={() => createRecipe("Untitled Recipe")}
                     className="md:hidden"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
