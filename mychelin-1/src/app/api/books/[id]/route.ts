@@ -39,12 +39,63 @@ export async function GET(
       );
     }
 
-    // Get book details
-    const book = await db
-      .select()
-      .from(books)
-      .where(eq(books.id, bookId))
-      .limit(1);
+    // Run all independent queries in parallel to avoid sequential round-trips
+    const [book, bookRecipesList, members, activityLog] = await Promise.all([
+      // Get book details
+      db
+        .select()
+        .from(books)
+        .where(eq(books.id, bookId))
+        .limit(1),
+
+      // Get recipes in this book
+      db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          description: recipes.description,
+          cuisine: recipes.cuisine,
+          imageUrl: recipes.imageUrl,
+          prepTime: recipes.prepTime,
+          cookTime: recipes.cookTime,
+          yield: recipes.yield,
+          addedAt: bookRecipes.addedAt,
+          addedBy: bookRecipes.addedBy,
+          sortOrder: bookRecipes.sortOrder,
+        })
+        .from(bookRecipes)
+        .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
+        .where(eq(bookRecipes.bookId, bookId))
+        .orderBy(bookRecipes.sortOrder),
+
+      // Get members
+      db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: bookMembers.role,
+          joinedAt: bookMembers.joinedAt,
+        })
+        .from(bookMembers)
+        .innerJoin(users, eq(bookMembers.userId, users.id))
+        .where(eq(bookMembers.bookId, bookId)),
+
+      // Get recent activity log (last 20)
+      db
+        .select({
+          id: bookActivityLog.id,
+          action: bookActivityLog.action,
+          targetName: bookActivityLog.targetName,
+          createdAt: bookActivityLog.createdAt,
+          userName: users.name,
+        })
+        .from(bookActivityLog)
+        .innerJoin(users, eq(bookActivityLog.userId, users.id))
+        .where(eq(bookActivityLog.bookId, bookId))
+        .orderBy(desc(bookActivityLog.createdAt))
+        .limit(20),
+    ]);
 
     if (!book.length) {
       return NextResponse.json(
@@ -52,54 +103,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    // Get recipes in this book
-    const bookRecipesList = await db
-      .select({
-        id: recipes.id,
-        title: recipes.title,
-        description: recipes.description,
-        cuisine: recipes.cuisine,
-        imageUrl: recipes.imageUrl,
-        prepTime: recipes.prepTime,
-        cookTime: recipes.cookTime,
-        yield: recipes.yield,
-        addedAt: bookRecipes.addedAt,
-        addedBy: bookRecipes.addedBy,
-        sortOrder: bookRecipes.sortOrder,
-      })
-      .from(bookRecipes)
-      .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
-      .where(eq(bookRecipes.bookId, bookId))
-      .orderBy(bookRecipes.sortOrder);
-
-    // Get members
-    const members = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: bookMembers.role,
-        joinedAt: bookMembers.joinedAt,
-      })
-      .from(bookMembers)
-      .innerJoin(users, eq(bookMembers.userId, users.id))
-      .where(eq(bookMembers.bookId, bookId));
-
-    // Get recent activity log (last 20)
-    const activityLog = await db
-      .select({
-        id: bookActivityLog.id,
-        action: bookActivityLog.action,
-        targetName: bookActivityLog.targetName,
-        createdAt: bookActivityLog.createdAt,
-        userName: users.name,
-      })
-      .from(bookActivityLog)
-      .innerJoin(users, eq(bookActivityLog.userId, users.id))
-      .where(eq(bookActivityLog.bookId, bookId))
-      .orderBy(desc(bookActivityLog.createdAt))
-      .limit(20);
 
     return NextResponse.json({
       ...book[0],

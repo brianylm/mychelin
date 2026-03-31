@@ -287,10 +287,43 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
     return colorMap[color] || "bg-amber-100";
   };
 
-  if (loading) {
+  if (loading && !bookDetail) {
+    // Show book header immediately from props, skeleton for content
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
+      <div className="min-h-screen bg-neutral-50 pb-20 md:pb-4">
+        <div className="mx-auto max-w-4xl p-4">
+          <div className="mb-6 flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-600 shadow-sm hover:bg-neutral-50"
+            >
+              ←
+            </button>
+            <div className="flex items-center gap-4 flex-1">
+              <div className={`flex h-16 w-16 items-center justify-center rounded-xl text-2xl ${getColorClass(book.coverColor)}`}>
+                {book.coverEmoji}
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-neutral-900">{book.title}</h1>
+                <div className="mt-2 h-4 w-32 animate-pulse rounded bg-neutral-200"></div>
+              </div>
+            </div>
+          </div>
+          <div className="mb-6 flex rounded-lg bg-neutral-100 p-1">
+            {["Recipes", "Members", "Activity"].map((tab) => (
+              <div key={tab} className="flex-1 rounded-md px-4 py-2 text-sm font-medium text-neutral-400 text-center">
+                {tab}
+              </div>
+            ))}
+          </div>
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-neutral-100"></div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
