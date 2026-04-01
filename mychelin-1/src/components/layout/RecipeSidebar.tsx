@@ -56,6 +56,18 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
       .catch(() => {});
   }, []);
 
+  // Listen for create-recipe event from mobile "New" button
+  useEffect(() => {
+    const handler = () => {
+      setIsCreating(true);
+      setDraftName("");
+      setCreationError(null);
+      onOpen();
+    };
+    window.addEventListener("mychelin:create-recipe", handler);
+    return () => window.removeEventListener("mychelin:create-recipe", handler);
+  }, [onOpen]);
+
   const toggleBook = useCallback(async (bookId: number) => {
     setExpandedBooks((prev) => {
       const next = new Set(prev);
