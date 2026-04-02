@@ -31,7 +31,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       .update(recipes)
       .set({
         activeVersionId: verId,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString() as string,
       })
       .where(eq(recipes.id, recipeId));
 

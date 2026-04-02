@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { recipeVersions, recipes, ingredients, instructions } from "@/db/schema";
-import { eq, desc, and, max } from "drizzle-orm";
+import { recipeVersions, recipes } from "@/db/schema";
+import { eq, desc, max } from "drizzle-orm";
 
 export const preferredRegion = "hnd1";
 
@@ -22,9 +22,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     // Parse JSON fields
     const parsed = versions.map((v) => ({
       ...v,
-      ingredients: v.ingredients ? JSON.parse(v.ingredients) : [],
-      instructions: v.instructions ? JSON.parse(v.instructions) : [],
-      photos: v.photos ? JSON.parse(v.photos) : [],
+      ingredients: v.ingredients ? JSON.parse(v.ingredients as string) : [],
+      instructions: v.instructions ? JSON.parse(v.instructions as string) : [],
+      photos: v.photos ? JSON.parse(v.photos as string) : [],
     }));
 
     // Get the recipe's active version id
@@ -75,51 +75,44 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const nextVersion = (maxResult[0]?.maxVer ?? 0) + 1;
 
-    // If no ingredients/instructions provided, try to snapshot current recipe state
+    // Resolve ingredients/instructions from base version if not provided
     let ingredientsData = newIngredients;
     let instructionsData = newInstructions;
 
-    if (!ingredientsData && !baseVersionId) {
-      // Snapshot current recipe ingredients
-      const currentIngredients = await db
-        .select()
-        .from(ingredients)
-        .where(eq(ingredients.recipeId, recipeId));
-      ingredientsData = currentIngredients.map((ing) => ({
-        name: ing.name,
-        quantity: ing.quantity,
-        unit: ing.unit,
-        notes: ing.notes,
-      }));
-    }
-
-    if (!instructionsData && !baseVersionId) {
-      // Snapshot current recipe instructions
-      const currentInstructions = await db
-        .select()
-        .from(instructions)
-        .where(eq(instructions.recipeId, recipeId));
-      instructionsData = currentInstructions.map((inst) => ({
-        step: inst.stepNumber,
-        content: inst.content,
-        tip: inst.tip,
-      }));
-    }
-
-    // If base version provided, fork from it
     if (baseVersionId && (!newIngredients || !newInstructions)) {
       const baseVersion = await db.query.recipeVersions.findFirst({
-        where: eq(recipeVersions.id, baseVersionId),
+        where: eq(recipeVersions.id, Number(baseVersionId)),
       });
       if (baseVersion) {
         if (!newIngredients) {
           ingredientsData = baseVersion.ingredients
-            ? JSON.parse(baseVersion.ingredients)
+            ? JSON.parse(baseVersion.ingredients as string)
             : [];
         }
         if (!newInstructions) {
           instructionsData = baseVersion.instructions
-            ? JSON.parse(baseVersion.instructions)
+            ? JSON.parse(baseVersion.instructions as string)
+            : [];
+        }
+      }
+    } else if (!newIngredients || !newInstructions) {
+      // Fork from latest version
+      const latest = await db
+        .select()
+        .from(recipeVersions)
+        .where(eq(recipeVersions.recipeId, recipeId))
+        .orderBy(desc(recipeVersions.versionNumber))
+        .limit(1);
+
+      if (latest[0]) {
+        if (!newIngredients) {
+          ingredientsData = latest[0].ingredients
+            ? JSON.parse(latest[0].ingredients as string)
+            : [];
+        }
+        if (!newInstructions) {
+          instructionsData = latest[0].instructions
+            ? JSON.parse(latest[0].instructions as string)
             : [];
         }
       }
@@ -130,7 +123,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .values({
         recipeId,
         versionNumber: nextVersion,
-        sourceVersionId: baseVersionId ?? null,
+        sourceVersionId: baseVersionId ? Number(baseVersionId) : null,
         captureMethod,
         ingredients: ingredientsData ? JSON.stringify(ingredientsData) : null,
         instructions: instructionsData ? JSON.stringify(instructionsData) : null,

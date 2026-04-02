@@ -28,15 +28,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     const recipeId = Number(id);
     const { searchParams } = new URL(request.url);
-    const baseId = Number(searchParams.get("base"));
-    const compareId = Number(searchParams.get("compare"));
+    const baseParam = searchParams.get("base");
+    const compareParam = searchParams.get("compare");
 
-    if (!baseId || !compareId) {
+    if (!baseParam || !compareParam) {
       return NextResponse.json(
         { error: "Both base and compare version IDs are required" },
         { status: 400 }
       );
     }
+
+    const baseId = Number(baseParam);
+    const compareId = Number(compareParam);
 
     const [baseVersion, compareVersion] = await Promise.all([
       db.query.recipeVersions.findFirst({
