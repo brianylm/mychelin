@@ -41,6 +41,7 @@ export const recipes = sqliteTable("recipes", {
   authenticityRating: integer("authenticity_rating"), // 1-5 stars, nullable
   tasteRating: integer("taste_rating"),               // 1-5 stars, nullable
   nostalgiaRating: integer("nostalgia_rating"),       // 1-5 stars, nullable
+  activeVersionId: integer("active_version_id"), // pointer to current best version
   bookId: integer("book_id").references(() => books.id, { onDelete: "set null" }),
   createdAt: text("created_at")
     .notNull()
@@ -143,6 +144,29 @@ export const instructions = sqliteTable("instructions", {
   imageUrl: text("image_url"),
 });
 
+// ─── Recipe Versions ───────────────────────────────────────
+export const recipeVersions = sqliteTable("recipe_versions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  versionNumber: integer("version_number").notNull(),
+  sourceVersionId: integer("source_version_id"), // which version this was forked from
+  captureMethod: text("capture_method").default("manual"), // "manual" | "ai_capture" | "cook_along" | "refinement"
+  ingredients: text("ingredients"), // JSON stringified array
+  instructions: text("instructions"), // JSON stringified array
+  notes: text("notes"),
+  changedBy: integer("changed_by").references(() => users.id),
+  changeNote: text("change_note"),
+  closenessRating: integer("closeness_rating"), // 1-5
+  closenessNotes: text("closeness_notes"),
+  cookingSessionDate: integer("cooking_session_date"), // unix timestamp
+  photos: text("photos"), // JSON stringified array of URLs
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Books ─────────────────────────────────────────────────
 export const books = sqliteTable("books", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -242,12 +266,34 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
     fields: [recipes.bookId],
     references: [books.id],
   }),
+  activeVersion: one(recipeVersions, {
+    fields: [recipes.activeVersionId],
+    references: [recipeVersions.id],
+    relationName: "activeVersion",
+  }),
   ingredients: many(ingredients),
   instructions: many(instructions),
   mealPlans: many(mealPlans),
   voiceRecordings: many(voiceRecordings),
   photos: many(recipePhotos),
   bookRecipes: many(bookRecipes),
+  versions: many(recipeVersions, { relationName: "recipeVersions" }),
+}));
+
+export const recipeVersionsRelations = relations(recipeVersions, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeVersions.recipeId],
+    references: [recipes.id],
+    relationName: "recipeVersions",
+  }),
+  changedByUser: one(users, {
+    fields: [recipeVersions.changedBy],
+    references: [users.id],
+  }),
+  sourceVersion: one(recipeVersions, {
+    fields: [recipeVersions.sourceVersionId],
+    references: [recipeVersions.id],
+  }),
 }));
 
 export const voiceRecordingsRelations = relations(voiceRecordings, ({ one }) => ({
@@ -375,3 +421,5 @@ export type BookRecipe = typeof bookRecipes.$inferSelect;
 export type NewBookRecipe = typeof bookRecipes.$inferInsert;
 export type BookActivityLog = typeof bookActivityLog.$inferSelect;
 export type NewBookActivityLog = typeof bookActivityLog.$inferInsert;
+export type RecipeVersion = typeof recipeVersions.$inferSelect;
+export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
