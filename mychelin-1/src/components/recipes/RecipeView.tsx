@@ -22,6 +22,10 @@ import { ServingScaler } from "./ServingScaler";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
 import { CreateBookModal } from "@/components/books/CreateBookModal";
 import { ShareModal } from "@/components/sharing/ShareModal";
+import { VersionTimeline } from "@/components/versions/VersionTimeline";
+import { VersionCompare } from "@/components/versions/VersionCompare";
+import { CookAlongCapture } from "@/components/versions/CookAlongCapture";
+import { RefinementPanel } from "@/components/versions/RefinementPanel";
 
 interface BookSummary {
   id: number;
@@ -75,6 +79,10 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState<{ type: "recipe" | "book"; id: number; name: string } | null>(null);
+  const [showCookAlong, setShowCookAlong] = useState(false);
+  const [compareVersions, setCompareVersions] = useState<{ base: number; compare: number } | null>(null);
+  const [refinementVersion, setRefinementVersion] = useState<any>(null);
+  const [versionTimelineKey, setVersionTimelineKey] = useState(0);
 
   // Cache for prefetched book recipes
   const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, any[]>>({});
@@ -768,6 +776,39 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           onSave={handleRatingSave}
         />
 
+        {/* Version History */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+              Versions & Refinement
+            </h2>
+            <button
+              onClick={() => setShowCookAlong(true)}
+              className="flex items-center gap-1 rounded-xl bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-200"
+            >
+              👨‍🍳 Cook Along
+            </button>
+          </div>
+
+          <VersionTimeline
+            key={versionTimelineKey}
+            recipeId={selectedRecipe.id}
+            onCompare={(baseId, compareId) =>
+              setCompareVersions({ base: baseId, compare: compareId })
+            }
+            onVersionSelect={(version) => {
+              // If it's a cook_along version with closeness data, offer refinement
+              if (
+                version.captureMethod === "cook_along" &&
+                version.closenessRating &&
+                version.closenessRating < 5
+              ) {
+                setRefinementVersion(version);
+              }
+            }}
+          />
+        </div>
+
         {/* Share + Delete */}
         <div className="border-t border-neutral-200 pt-6 pb-20 md:pb-6 space-y-3">
           <button
@@ -807,6 +848,34 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
       {createBookModalEl}
       {shareModalEl}
+
+      {/* Version modals */}
+      {showCookAlong && selectedRecipe && (
+        <CookAlongCapture
+          recipeId={selectedRecipe.id}
+          onClose={() => setShowCookAlong(false)}
+          onComplete={() => setVersionTimelineKey((k) => k + 1)}
+        />
+      )}
+
+      {compareVersions && selectedRecipe && (
+        <VersionCompare
+          recipeId={selectedRecipe.id}
+          baseVersionId={compareVersions.base}
+          compareVersionId={compareVersions.compare}
+          onClose={() => setCompareVersions(null)}
+        />
+      )}
+
+      {refinementVersion && selectedRecipe && (
+        <RefinementPanel
+          recipeId={selectedRecipe.id}
+          recipeTitle={selectedRecipe.title}
+          version={refinementVersion}
+          onClose={() => setRefinementVersion(null)}
+          onComplete={() => setVersionTimelineKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }
