@@ -3,6 +3,7 @@ import { db, recipes, recipeVersions } from "@/db";
 import { eq, desc } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth";
 
+
 // GET /api/recipes/[id] - Get a single recipe with its latest version
 export async function GET(
   _request: NextRequest,
@@ -27,10 +28,21 @@ export async function GET(
 
     const latestVersion = recipe.versions[0];
 
+    // If forked, look up the original recipe's title
+    let forkedFromTitle: string | null = null;
+    if (recipe.forkedFrom) {
+      const originalRecipe = await db.query.recipes.findFirst({
+        where: eq(recipes.id, recipe.forkedFrom),
+        columns: { title: true },
+      });
+      forkedFromTitle = originalRecipe?.title ?? null;
+    }
+
     return NextResponse.json({
       ...recipe,
       ingredients: latestVersion?.ingredients || [],
       instructions: latestVersion?.instructions || [],
+      forkedFromTitle,
     });
   } catch (error) {
     console.error("Error fetching recipe:", error);

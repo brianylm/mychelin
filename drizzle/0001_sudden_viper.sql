@@ -1,0 +1,1 @@
+ALTER TABLE `recipes` ADD `forked_from` text REFERENCES recipes(id);

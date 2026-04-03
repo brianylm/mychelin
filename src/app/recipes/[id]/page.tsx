@@ -2,6 +2,8 @@ import Link from "next/link";
 import { db, recipes, recipeVersions } from "@/db";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { getCurrentUserId } from "@/lib/auth";
+import ForkButton from "@/components/ForkButton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,15 +26,18 @@ export default async function RecipeDetailPage({
 }) {
   const { id } = await params;
 
-  const recipe = await db.query.recipes.findFirst({
-    where: eq(recipes.id, id),
-    with: {
-      versions: {
-        orderBy: [desc(recipeVersions.versionNumber)],
-        limit: 1,
+  const [recipe, currentUserId] = await Promise.all([
+    db.query.recipes.findFirst({
+      where: eq(recipes.id, id),
+      with: {
+        versions: {
+          orderBy: [desc(recipeVersions.versionNumber)],
+          limit: 1,
+        },
       },
-    },
-  });
+    }),
+    getCurrentUserId(),
+  ]);
 
   if (!recipe) {
     notFound();
@@ -41,6 +46,19 @@ export default async function RecipeDetailPage({
   const latestVersion = recipe.versions[0];
   const ingredients = (latestVersion?.ingredients as Ingredient[]) || [];
   const instructions = (latestVersion?.instructions as Step[]) || [];
+
+  const isOwner = currentUserId === recipe.createdBy;
+  const isLoggedIn = !!currentUserId;
+
+  // If this recipe was forked, fetch the original title
+  let forkedFromTitle: string | null = null;
+  if (recipe.forkedFrom) {
+    const original = await db.query.recipes.findFirst({
+      where: eq(recipes.id, recipe.forkedFrom),
+      columns: { title: true },
+    });
+    forkedFromTitle = original?.title ?? null;
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -66,13 +84,41 @@ export default async function RecipeDetailPage({
       {/* Header */}
       <div className="mb-10">
         <div className="flex items-start justify-between mb-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-stone-900 font-heading leading-tight">{recipe.title}</h1>
-          <Link
-            href={`/recipes/new?id=${recipe.id}`}
-            className="px-5 py-2.5 bg-stone-100 text-stone-700 rounded-xl text-base font-medium hover:bg-stone-200 transition-colors flex-shrink-0 ml-4"
-          >
-            Edit
-          </Link>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-4xl md:text-5xl font-bold text-stone-900 font-heading leading-tight">{recipe.title}</h1>
+            {/* Forked-from indicator */}
+            {recipe.forkedFrom && (
+              <p className="mt-2 text-sm text-stone-400 flex items-center gap-1">
+                <span>⑂</span>
+                {forkedFromTitle ? (
+                  <>
+                    Forked from{" "}
+                    <Link
+                      href={`/recipes/${recipe.forkedFrom}`}
+                      className="text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
+                    >
+                      {forkedFromTitle}
+                    </Link>
+                  </>
+                ) : (
+                  <span>Forked from a deleted recipe</span>
+                )}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+            {isOwner && (
+              <Link
+                href={`/recipes/new?id=${recipe.id}`}
+                className="px-5 py-2.5 bg-stone-100 text-stone-700 rounded-xl text-base font-medium hover:bg-stone-200 transition-colors"
+              >
+                Edit
+              </Link>
+            )}
+            {isLoggedIn && !isOwner && (
+              <ForkButton recipeId={recipe.id} />
+            )}
+          </div>
         </div>
         
         {recipe.description && (
@@ -177,9 +223,17 @@ export default async function RecipeDetailPage({
 
       {/* Version info */}
       {latestVersion && (
-        <p className="text-center text-stone-400 text-sm mt-4 mb-8">
-          Version {latestVersion.versionNumber} · Last updated {new Date(latestVersion.createdAt).toLocaleDateString()}
-        </p>
+        <div className="flex items-center justify-center gap-3 mt-4 mb-8">
+          <p className="text-stone-400 text-sm">
+            Version {latestVersion.versionNumber} · Last updated {new Date(latestVersion.createdAt).toLocaleDateString()}
+          </p>
+          <Link
+            href={`/recipes/${id}/versions`}
+            className="text-sm text-stone-500 hover:text-stone-800 underline underline-offset-2 transition-colors"
+          >
+            History
+          </Link>
+        </div>
       )}
     </div>
   );

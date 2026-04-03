@@ -56,6 +56,8 @@ export const recipes = sqliteTable("recipes", {
   difficulty: text("difficulty").$type<"easy" | "medium" | "hard">(),
   // Metadata
   createdBy: text("created_by").notNull().references(() => users.id),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  forkedFrom: text("forked_from").references((): any => recipes.id, { onDelete: "set null" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 }, (table) => ({
@@ -121,6 +123,18 @@ export const shoppingItems = sqliteTable("shopping_items", {
   userIdx: index("shopping_user_idx").on(table.userId),
 }));
 
+// ============ BOOK TIPS / PRINCIPLES ============
+export const bookTips = sqliteTable("book_tips", {
+  id: text("id").primaryKey(),
+  bookId: text("book_id").notNull().references(() => recipeBooks.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  addedBy: text("added_by").notNull().references(() => users.id),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+  bookIdx: index("book_tips_book_idx").on(table.bookId),
+  addedByIdx: index("book_tips_added_by_idx").on(table.addedBy),
+}));
+
 // ============ USER PREFERENCES (for AI recommendations) ============
 export const userPreferences = sqliteTable("user_preferences", {
   id: text("id").primaryKey(),
@@ -140,12 +154,19 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   mealPlans: many(mealPlans),
   shoppingItems: many(shoppingItems),
   preferences: one(userPreferences),
+  bookTips: many(bookTips),
 }));
 
 export const recipeBooksRelations = relations(recipeBooks, ({ one, many }) => ({
   creator: one(users, { fields: [recipeBooks.createdBy], references: [users.id], relationName: "createdBooks" }),
   members: many(bookMembers),
   recipes: many(recipes),
+  tips: many(bookTips),
+}));
+
+export const bookTipsRelations = relations(bookTips, ({ one }) => ({
+  book: one(recipeBooks, { fields: [bookTips.bookId], references: [recipeBooks.id] }),
+  author: one(users, { fields: [bookTips.addedBy], references: [users.id] }),
 }));
 
 export const bookMembersRelations = relations(bookMembers, ({ one }) => ({
