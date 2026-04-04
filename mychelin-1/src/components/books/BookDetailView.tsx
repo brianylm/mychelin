@@ -5,6 +5,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { RecipePickerModal } from "./RecipePickerModal";
 import { InviteMemberModal } from "./InviteMemberModal";
+import { CookingPrinciples } from "./CookingPrinciples";
 
 interface BookDetail {
   id: number;
@@ -55,7 +56,7 @@ interface BookDetailViewProps {
   onNavigateToRecipe?: (recipeId: number) => void;
 }
 
-type Tab = "recipes" | "members" | "activity";
+type Tab = "recipes" | "members" | "activity" | "principles";
 
 const COLORS = [
   { name: "amber", label: "Amber", class: "bg-amber-100 border-amber-200" },
@@ -447,6 +448,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
         <div className="mb-6 flex rounded-lg bg-neutral-100 p-1">
           {[
             { id: "recipes" as const, label: "Recipes", count: bookDetail.recipes.length },
+            { id: "principles" as const, label: "Principles", count: null },
             { id: "members" as const, label: "Members", count: bookDetail.members.length },
             { id: "activity" as const, label: "Activity", count: bookDetail.activityLog.length },
           ].map((tab) => (
@@ -459,7 +461,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                   : "text-neutral-600 hover:text-neutral-900"
               }`}
             >
-              {tab.label} ({tab.count})
+              {tab.label}{tab.count !== null ? ` (${tab.count})` : ""}
             </button>
           ))}
         </div>
@@ -572,6 +574,14 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                 ))}
               </div>
             </div>
+          )}
+
+          {activeTab === "principles" && (
+            <CookingPrinciples
+              bookId={book.id}
+              canEdit={canEdit}
+              isOwner={bookDetail.isOwner}
+            />
           )}
 
           {activeTab === "activity" && (

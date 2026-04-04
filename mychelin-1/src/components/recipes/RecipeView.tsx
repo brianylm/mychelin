@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import { RecipeHeader } from "./RecipeHeader";
 import { BookSelector } from "./BookSelector";
 import { IngredientList } from "./IngredientList";
@@ -26,6 +27,8 @@ import { VersionTimeline } from "@/components/versions/VersionTimeline";
 import { VersionCompare } from "@/components/versions/VersionCompare";
 import { CookAlongCapture } from "@/components/versions/CookAlongCapture";
 import { RefinementPanel } from "@/components/versions/RefinementPanel";
+import { RecipeForkButton } from "./RecipeForkButton";
+import { ForkedFromBadge } from "./ForkedFromBadge";
 
 interface BookSummary {
   id: number;
@@ -57,6 +60,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     selectRecipe,
   } = useRecipeStore();
   const { addToast } = useToast();
+  const { user } = useAuth();
   const qc = useQueryClient();
 
   const [title, setTitle] = useState("");
@@ -681,6 +685,14 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           savingYield={savingYield}
         />
 
+        {/* Forked from badge */}
+        {selectedRecipe.forkedFrom && (
+          <ForkedFromBadge
+            forkedFrom={selectedRecipe.forkedFrom}
+            onNavigate={(id) => selectRecipe(id)}
+          />
+        )}
+
         {/* Book */}
         <BookSelector
           currentBookId={selectedRecipe.bookId ?? null}
@@ -811,6 +823,14 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
         {/* Share + Delete */}
         <div className="border-t border-neutral-200 pt-6 pb-20 md:pb-6 space-y-3">
+          {/* Fork button — shown when current user is not the owner */}
+          {user && selectedRecipe.userId !== user.id && (
+            <RecipeForkButton
+              recipeId={selectedRecipe.id}
+              recipeTitle={selectedRecipe.title}
+              onForked={(id) => selectRecipe(id)}
+            />
+          )}
           <button
             onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-amber-300 hover:bg-amber-50"

@@ -42,6 +42,7 @@ export const recipes = sqliteTable("recipes", {
   tasteRating: integer("taste_rating"),               // 1-5 stars, nullable
   nostalgiaRating: integer("nostalgia_rating"),       // 1-5 stars, nullable
   activeVersionId: integer("active_version_id"), // pointer to current best version
+  forkedFrom: text("forked_from"),
   bookId: integer("book_id").references(() => books.id, { onDelete: "set null" }),
   createdAt: text("created_at")
     .notNull()
@@ -165,6 +166,15 @@ export const recipeVersions = sqliteTable("recipe_versions", {
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Book Tips (Cooking Principles) ───────────────────────
+export const bookTips = sqliteTable("book_tips", {
+  id: text("id").primaryKey(),
+  bookId: text("book_id").notNull(),
+  content: text("content").notNull(),
+  addedBy: text("added_by").notNull(),
+  createdAt: integer("created_at").notNull(),
 });
 
 // ─── Books ─────────────────────────────────────────────────
@@ -355,6 +365,7 @@ export const booksRelations = relations(books, ({ one, many }) => ({
   members: many(bookMembers),
   recipes: many(bookRecipes),
   activityLog: many(bookActivityLog),
+  tips: many(bookTips),
 }));
 
 export const bookMembersRelations = relations(bookMembers, ({ one }) => ({
@@ -423,3 +434,5 @@ export type BookActivityLog = typeof bookActivityLog.$inferSelect;
 export type NewBookActivityLog = typeof bookActivityLog.$inferInsert;
 export type RecipeVersion = typeof recipeVersions.$inferSelect;
 export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
+export type BookTip = typeof bookTips.$inferSelect;
+export type NewBookTip = typeof bookTips.$inferInsert;
