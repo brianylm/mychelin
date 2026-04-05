@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { RecipePickerModal } from "./RecipePickerModal";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { CookingPrinciples } from "./CookingPrinciples";
+import { RecipeForkButton } from "../recipes/RecipeForkButton";
 
 interface BookDetail {
   id: number;
@@ -29,6 +30,7 @@ interface BookDetail {
     addedAt: string;
     addedBy: number;
     sortOrder: number;
+    forkedFrom: string | null;
   }>;
   members: Array<{
     id: number;
@@ -82,6 +84,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
   });
   const [showRecipePicker, setShowRecipePicker] = useState(false);
   const [showInviteMember, setShowInviteMember] = useState(false);
+  const [tipCount, setTipCount] = useState<number | null>(null);
 
   const fetchBookDetail = async () => {
     try {
@@ -107,6 +110,11 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
 
   useEffect(() => {
     fetchBookDetail();
+    // Fetch tip count for the Principles tab badge
+    fetch(`/api/books/${book.id}/tips`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((tips: unknown[]) => setTipCount(tips.length))
+      .catch(() => {});
   }, [book.id]);
 
   const handleUpdateBook = async () => {
@@ -311,7 +319,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
             </div>
           </div>
           <div className="mb-6 flex rounded-lg bg-neutral-100 p-1">
-            {["Recipes", "Members", "Activity"].map((tab) => (
+            {["Recipes", "Principles", "Members", "Activity"].map((tab) => (
               <div key={tab} className="flex-1 rounded-md px-4 py-2 text-sm font-medium text-neutral-400 text-center">
                 {tab}
               </div>
@@ -448,7 +456,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
         <div className="mb-6 flex rounded-lg bg-neutral-100 p-1">
           {[
             { id: "recipes" as const, label: "Recipes", count: bookDetail.recipes.length },
-            { id: "principles" as const, label: "Principles", count: null },
+            { id: "principles" as const, label: "Principles", count: tipCount },
             { id: "members" as const, label: "Members", count: bookDetail.members.length },
             { id: "activity" as const, label: "Activity", count: bookDetail.activityLog.length },
           ].map((tab) => (
@@ -494,22 +502,44 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                       className="group rounded-xl border border-neutral-200 p-4 hover:border-amber-200 hover:shadow-sm transition-all"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 
+                        <h3
                           className="font-medium text-neutral-900 cursor-pointer hover:text-amber-700 transition-colors flex-1"
                           onClick={() => handleRecipeClick(recipe.id)}
                         >
                           {recipe.title}
                         </h3>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleRemoveRecipe(recipe.id, recipe.title)}
-                            className="opacity-0 group-hover:opacity-100 ml-2 text-red-600 hover:text-red-700 text-sm transition-opacity"
-                            title="Remove from book"
-                          >
-                            ×
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1 ml-2">
+                          {user && recipe.addedBy !== user.id && (
+                            <RecipeForkButton
+                              recipeId={recipe.id}
+                              recipeTitle={recipe.title}
+                              onForked={(id) => onNavigateToRecipe?.(id)}
+                              variant="compact"
+                            />
+                          )}
+                          {canEdit && (
+                            <button
+                              onClick={() => handleRemoveRecipe(recipe.id, recipe.title)}
+                              className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700 text-sm transition-opacity"
+                              title="Remove from book"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
                       </div>
+                      {recipe.forkedFrom && (
+                        <div className="mb-2 flex items-center gap-1 text-xs text-amber-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="18" r="3"/>
+                            <circle cx="6" cy="6" r="3"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <path d="M18 9v2a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/>
+                            <line x1="12" y1="12" x2="12" y2="15"/>
+                          </svg>
+                          <span>Forked</span>
+                        </div>
+                      )}
                       {recipe.description && (
                         <p className="mt-1 text-sm text-neutral-600 line-clamp-2">
                           {recipe.description}
@@ -581,6 +611,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
               bookId={book.id}
               canEdit={canEdit}
               isOwner={bookDetail.isOwner}
+              onTipCountChange={setTipCount}
             />
           )}
 

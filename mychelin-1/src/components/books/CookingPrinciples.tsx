@@ -16,9 +16,10 @@ interface CookingPrinciplesProps {
   bookId: number;
   canEdit: boolean;
   isOwner: boolean;
+  onTipCountChange?: (count: number) => void;
 }
 
-export function CookingPrinciples({ bookId, canEdit, isOwner }: CookingPrinciplesProps) {
+export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }: CookingPrinciplesProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [tips, setTips] = useState<Tip[]>([]);
@@ -32,6 +33,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner }: CookingPrinciple
       if (!res.ok) throw new Error("Failed to fetch tips");
       const data = await res.json();
       setTips(data);
+      onTipCountChange?.(data.length);
     } catch {
       addToast("Failed to load cooking principles", "error");
     } finally {
@@ -57,8 +59,10 @@ export function CookingPrinciples({ bookId, canEdit, isOwner }: CookingPrinciple
         throw new Error(err.error || "Failed to add tip");
       }
       const tip = await res.json();
-      setTips((prev) => [tip, ...prev]);
+      const updated = [tip, ...tips];
+      setTips(updated);
       setNewContent("");
+      onTipCountChange?.(updated.length);
       addToast("Cooking principle added!", "success");
     } catch (error: any) {
       addToast(error.message || "Failed to add principle", "error");
@@ -74,7 +78,9 @@ export function CookingPrinciples({ bookId, canEdit, isOwner }: CookingPrinciple
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete tip");
-      setTips((prev) => prev.filter((t) => t.id !== tipId));
+      const updated = tips.filter((t) => t.id !== tipId);
+      setTips(updated);
+      onTipCountChange?.(updated.length);
       addToast("Cooking principle removed", "success");
     } catch {
       addToast("Failed to remove principle", "error");
