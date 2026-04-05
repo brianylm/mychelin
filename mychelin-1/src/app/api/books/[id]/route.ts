@@ -61,6 +61,7 @@ export async function GET(
           prepTime: recipes.prepTime,
           cookTime: recipes.cookTime,
           yield: recipes.yield,
+          forkedFrom: recipes.forkedFrom,
           addedAt: bookRecipes.addedAt,
           addedBy: bookRecipes.addedBy,
           sortOrder: bookRecipes.sortOrder,
