@@ -29,12 +29,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check current session on mount
+  // Check current session on mount (with timeout to avoid infinite loading)
   useEffect(() => {
-    fetch("/api/auth/me")
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    fetch("/api/auth/me", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : { user: null }))
       .then((data) => setUser(data.user))
-      .finally(() => setLoading(false));
+      .catch(() => setUser(null))
+      .finally(() => {
+        clearTimeout(timeout);
+        setLoading(false);
+      });
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
