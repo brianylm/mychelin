@@ -8,61 +8,68 @@ interface SignupNudgeProps {
   resourceName: string;
 }
 
-// Shown to anonymous viewers of a shared recipe or book. Renders
-// optimistically on mount — the default assumption is "anonymous" —
-// and only suppresses itself after a successful /api/auth/me call
-// returns a real user. That way a flaky auth check can never cause
-// the nudge to silently fail to show; the worst case is a brief
-// flash for authed users.
+// Dismissible sticky sign-up banner on the public /shared/[token]
+// pages. Mounts as a thin banner at the bottom and auto-expands into
+// a full modal on first view per session. Dismissal persists in
+// localStorage so returning visitors aren't nagged.
+//
+// We intentionally don't hide this based on auth state. Earlier
+// versions called /api/auth/me and the check was unreliable — authed
+// users appeared to vanish the banner for anonymous viewers in some
+// contexts. Showing a dismissible banner to logged-in users viewing
+// someone else's shared content is harmless, and getting it in front
+// of anonymous viewers is the whole point.
+const DISMISS_KEY = "mychelin_signup_nudge_dismissed";
+const SEEN_SESSION_KEY = "mychelin_signup_nudge_seen";
+
 export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
-  const [isAuthed, setIsAuthed] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
+  // Read persisted dismissal once on mount so SSR doesn't flash a
+  // banner the user already closed.
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/auth/me")
-      .then(async (res) => {
-        if (!res.ok) return null;
-        try {
-          return await res.json();
-        } catch {
-          return null;
-        }
-      })
-      .then((data) => {
-        if (!cancelled && data?.user) setIsAuthed(true);
-      })
-      .catch(() => {
-        /* stay anonymous — banner remains visible */
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      if (localStorage.getItem(DISMISS_KEY) === "1") {
+        setDismissed(true);
+      }
+    } catch {
+      /* storage might be unavailable */
+    }
+    setHydrated(true);
   }, []);
 
   // Auto-open the full modal once after ~2 seconds so new visitors
   // get a clear invitation, but only on first view per session.
   useEffect(() => {
-    if (isAuthed || dismissed) return;
+    if (!hydrated || dismissed) return;
     try {
-      const seen = sessionStorage.getItem("mychelin_signup_nudge_seen");
-      if (seen) return;
-      const t = setTimeout(() => {
-        setExpanded(true);
-        try {
-          sessionStorage.setItem("mychelin_signup_nudge_seen", "1");
-        } catch {
-          /* ignore */
-        }
-      }, 2000);
-      return () => clearTimeout(t);
+      if (sessionStorage.getItem(SEEN_SESSION_KEY) === "1") return;
     } catch {
-      /* sessionStorage might be unavailable in private mode */
+      /* ignore */
     }
-  }, [isAuthed, dismissed]);
+    const t = setTimeout(() => {
+      setExpanded(true);
+      try {
+        sessionStorage.setItem(SEEN_SESSION_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [hydrated, dismissed]);
 
-  if (isAuthed || dismissed) return null;
+  const persistDismiss = () => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(DISMISS_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (dismissed) return null;
 
   const noun = context === "book" ? "cookbook" : "recipe";
   const signupHref = `/?signup=1`;
@@ -89,7 +96,7 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
             Sign up
           </button>
           <button
-            onClick={() => setDismissed(true)}
+            onClick={persistDismiss}
             aria-label="Dismiss"
             className="shrink-0 rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
           >
