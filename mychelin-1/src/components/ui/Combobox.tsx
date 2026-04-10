@@ -29,6 +29,10 @@ export function Combobox({
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
+  // Track whether the most recent highlight change came from the keyboard,
+  // so we only auto-scroll for arrow-key nav — not for mouse hover, which
+  // would fight the user's own scroll position.
+  const keyboardHighlightRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -71,12 +75,21 @@ export function Combobox({
     return () => document.removeEventListener("mousedown", handler);
   }, [query, value]);
 
-  // Scroll highlighted item into view
+  // Scroll highlighted item into view — only for keyboard nav, and find
+  // the actual option button. listRef.children[idx] would return a <li>
+  // group container, not the button at that flat index.
   useEffect(() => {
-    if (highlightIdx >= 0 && listRef.current) {
-      const el = listRef.current.children[highlightIdx] as HTMLElement;
-      el?.scrollIntoView({ block: "nearest" });
+    if (
+      keyboardHighlightRef.current &&
+      highlightIdx >= 0 &&
+      listRef.current
+    ) {
+      const buttons = listRef.current.querySelectorAll<HTMLElement>(
+        "button[data-combobox-option]"
+      );
+      buttons[highlightIdx]?.scrollIntoView({ block: "nearest" });
     }
+    keyboardHighlightRef.current = false;
   }, [highlightIdx]);
 
   const flatFiltered = filtered;
@@ -100,9 +113,11 @@ export function Combobox({
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
+      keyboardHighlightRef.current = true;
       setHighlightIdx((i) => Math.min(i + 1, flatFiltered.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      keyboardHighlightRef.current = true;
       setHighlightIdx((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter" && highlightIdx >= 0) {
       e.preventDefault();
@@ -208,6 +223,7 @@ export function Combobox({
                     <button
                       key={opt.value}
                       type="button"
+                      data-combobox-option
                       className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
                         idx === highlightIdx
                           ? "bg-amber-50 text-amber-800"
@@ -215,7 +231,6 @@ export function Combobox({
                             ? "bg-neutral-50 font-medium text-neutral-900"
                             : "text-neutral-700 hover:bg-neutral-50"
                       }`}
-                      onMouseEnter={() => setHighlightIdx(idx)}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         selectOption(opt);
