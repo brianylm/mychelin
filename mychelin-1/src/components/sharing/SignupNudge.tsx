@@ -8,13 +8,13 @@ interface SignupNudgeProps {
   resourceName: string;
 }
 
-// Shown to anonymous viewers of a shared recipe or book. Checks
-// /api/auth/me once on mount and renders nothing if the viewer is
-// already logged in (so real users don't get a redundant prompt).
-// Otherwise it mounts as a dismissible bottom banner that opens into
-// a full modal with sign up / log in actions.
+// Shown to anonymous viewers of a shared recipe or book. Renders
+// optimistically on mount — the default assumption is "anonymous" —
+// and only suppresses itself after a successful /api/auth/me call
+// returns a real user. That way a flaky auth check can never cause
+// the nudge to silently fail to show; the worst case is a brief
+// flash for authed users.
 export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
-  const [checkedAuth, setCheckedAuth] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -22,15 +22,19 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   useEffect(() => {
     let cancelled = false;
     fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) {
-          setIsAuthed(!!data?.user);
-          setCheckedAuth(true);
+      .then(async (res) => {
+        if (!res.ok) return null;
+        try {
+          return await res.json();
+        } catch {
+          return null;
         }
       })
+      .then((data) => {
+        if (!cancelled && data?.user) setIsAuthed(true);
+      })
       .catch(() => {
-        if (!cancelled) setCheckedAuth(true);
+        /* stay anonymous — banner remains visible */
       });
     return () => {
       cancelled = true;
@@ -38,25 +42,27 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   }, []);
 
   // Auto-open the full modal once after ~2 seconds so new visitors
-  // get a clear invitation, but only on first view per session. A
-  // session-scoped sessionStorage flag means normal navigation doesn't
-  // re-trigger it.
+  // get a clear invitation, but only on first view per session.
   useEffect(() => {
-    if (!checkedAuth || isAuthed || dismissed) return;
+    if (isAuthed || dismissed) return;
     try {
       const seen = sessionStorage.getItem("mychelin_signup_nudge_seen");
       if (seen) return;
       const t = setTimeout(() => {
         setExpanded(true);
-        sessionStorage.setItem("mychelin_signup_nudge_seen", "1");
+        try {
+          sessionStorage.setItem("mychelin_signup_nudge_seen", "1");
+        } catch {
+          /* ignore */
+        }
       }, 2000);
       return () => clearTimeout(t);
     } catch {
       /* sessionStorage might be unavailable in private mode */
     }
-  }, [checkedAuth, isAuthed, dismissed]);
+  }, [isAuthed, dismissed]);
 
-  if (!checkedAuth || isAuthed || dismissed) return null;
+  if (isAuthed || dismissed) return null;
 
   const noun = context === "book" ? "cookbook" : "recipe";
   const signupHref = `/?signup=1`;
