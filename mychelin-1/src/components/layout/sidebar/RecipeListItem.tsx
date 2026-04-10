@@ -90,18 +90,15 @@ export function RecipeListItem({
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
             {onDelete && (
-              <>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item
-                  color="red"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(recipe.id);
-                  }}
-                >
-                  Delete
-                </DropdownMenu.Item>
-              </>
+              <DropdownMenu.Item
+                color="red"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(recipe.id);
+                }}
+              >
+                Delete
+              </DropdownMenu.Item>
             )}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
