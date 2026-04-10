@@ -201,23 +201,34 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                   <p className="text-sm text-neutral-600">Note the actual measurements you used:</p>
                   <div className="space-y-2">
                     {adjustedIngredients.map((ing, i) => (
-                      <div key={i} className={`rounded-xl border px-3 py-2.5 ${ing.adjusted ? "border-amber-300 bg-amber-50/50" : "border-neutral-200"}`}>
-                        <div className="mb-1.5 text-sm font-medium text-neutral-800">{ing.name}</div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <label className="text-[10px] uppercase tracking-wide text-neutral-400">Recipe says</label>
-                            <div className="text-xs text-neutral-500">{ing.quantity} {ing.unit}</div>
+                      <div key={i} className={`rounded-xl border px-3 py-3 ${ing.adjusted ? "border-amber-300 bg-amber-50/50" : "border-neutral-200"}`}>
+                        <div className="mb-2 text-sm font-medium text-neutral-800">{ing.name}</div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-neutral-400">Recipe says</label>
+                            <div className="rounded-lg bg-neutral-100 px-2.5 py-1.5 text-xs text-neutral-600">
+                              {ing.quantity ?? "—"} {ing.unit ?? ""}
+                            </div>
                           </div>
-                          <ArrowRightIcon className="h-3 w-3 text-neutral-300" />
-                          <div className="flex-1">
-                            <label className="text-[10px] uppercase tracking-wide text-neutral-400">I used</label>
+                          <ArrowRightIcon className="mt-5 h-3 w-3 shrink-0 text-neutral-300" />
+                          <div className="flex-1 min-w-0">
+                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-amber-600">I used</label>
                             <div className="flex gap-1">
-                              <input type="number" step="any" value={ing.actualQuantity ?? ""}
+                              <input
+                                type="number"
+                                step="any"
+                                value={ing.actualQuantity ?? ""}
                                 onChange={(e) => updateIngredient(i, "actualQuantity", e.target.value ? parseFloat(e.target.value) : undefined)}
-                                className="w-16 rounded-lg border border-neutral-200 px-2 py-1 text-xs focus:border-amber-400 focus:outline-none" />
-                              <input type="text" value={ing.actualUnit ?? ""}
+                                placeholder="qty"
+                                className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs text-neutral-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-300"
+                              />
+                              <input
+                                type="text"
+                                value={ing.actualUnit ?? ""}
                                 onChange={(e) => updateIngredient(i, "actualUnit", e.target.value)}
-                                className="w-14 rounded-lg border border-neutral-200 px-2 py-1 text-xs focus:border-amber-400 focus:outline-none" placeholder="unit" />
+                                placeholder="unit"
+                                className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs text-neutral-900 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-300"
+                              />
                             </div>
                           </div>
                         </div>
