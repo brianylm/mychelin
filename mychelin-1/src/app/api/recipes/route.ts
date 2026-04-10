@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipes, ingredients, instructions, recipeVersions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
 // Creates a new recipe with optional ingredients and instructions
 export async function POST(request: NextRequest) {
   try {
+    await ensureVersionLabelColumn();
     const body = await request.json();
     const {
       title,

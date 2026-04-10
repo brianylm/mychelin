@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeVersions, recipes } from "@/db/schema";
 import { eq, desc, max } from "drizzle-orm";
+import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -50,6 +51,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 // ─── POST /api/recipes/:id/versions ────────────────────────
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    await ensureVersionLabelColumn();
     const { id } = await context.params;
     const recipeId = Number(id);
     const body = await request.json();
