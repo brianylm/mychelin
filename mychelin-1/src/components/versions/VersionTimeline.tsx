@@ -15,6 +15,7 @@ import {
 interface Version {
   id: number;
   versionNumber: number;
+  versionLabel: string | null;
   captureMethod: string;
   closenessRating: number | null;
   closenessNotes: string | null;
@@ -25,6 +26,9 @@ interface Version {
   instructions: any[];
   sourceVersionId: number | null;
 }
+
+const labelOf = (v: { versionLabel?: string | null; versionNumber: number }) =>
+  v.versionLabel ?? String(v.versionNumber);
 
 interface VersionTimelineProps {
   recipeId: number;
@@ -160,7 +164,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                   <div className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
                     isActive ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-500"
                   }`}>
-                    {isActive ? <CheckIcon className="h-3.5 w-3.5" /> : version.versionNumber}
+                    {isActive ? <CheckIcon className="h-3.5 w-3.5" /> : labelOf(version)}
                   </div>
                   {index < displayVersions.length - 1 && <div className="mt-1 h-4 w-px bg-neutral-200" />}
                 </div>
@@ -168,7 +172,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm" title={method.label}>{method.icon}</span>
-                    <span className="text-sm font-medium text-neutral-800">v{version.versionNumber}</span>
+                    <span className="text-sm font-medium text-neutral-800">v{labelOf(version)}</span>
                     {isActive && (
                       <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">ACTIVE</span>
                     )}
@@ -181,7 +185,10 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                     {new Date(version.createdAt).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
                     {version.sourceVersionId && (
                       <span className="ml-1">
-                        · forked from v{versions.find((v) => v.id === version.sourceVersionId)?.versionNumber ?? "?"}
+                        · forked from v{(() => {
+                          const src = versions.find((v) => v.id === version.sourceVersionId);
+                          return src ? labelOf(src) : "?";
+                        })()}
                       </span>
                     )}
                   </p>

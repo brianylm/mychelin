@@ -152,6 +152,7 @@ export const recipeVersions = sqliteTable("recipe_versions", {
     .notNull()
     .references(() => recipes.id, { onDelete: "cascade" }),
   versionNumber: integer("version_number").notNull(),
+  versionLabel: text("version_label"), // human label e.g. "1", "1.1", "1.1.2"
   sourceVersionId: integer("source_version_id"), // which version this was forked from
   captureMethod: text("capture_method").default("manual"), // "manual" | "ai_capture" | "cook_along" | "refinement"
   ingredients: text("ingredients"), // JSON stringified array

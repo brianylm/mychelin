@@ -124,6 +124,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .values({
         recipeId,
         versionNumber: nextVersion,
+        versionLabel: String(nextVersion),
         sourceVersionId: baseVersionId ? Number(baseVersionId) : null,
         captureMethod,
         ingredients: ingredientsData ? JSON.stringify(ingredientsData) : null,
