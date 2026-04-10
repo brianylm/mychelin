@@ -6,11 +6,12 @@ import { StopIcon, MagicWandIcon } from "@radix-ui/react-icons";
 import { SpeakerSetup } from "./SpeakerSetup";
 import { ChatBubble } from "./ChatBubble";
 import { RecipeReview } from "./RecipeReview";
-import { cn } from "@/lib/utils";
 
+// Each chat bubble is one Gemini-returned segment: a contiguous utterance
+// attributed to a single participant.
 interface ConversationMessage {
   id: string;
-  speaker: string;
+  speaker: string; // participant display name
   text: string;
   language: string;
   timestamp: string;
@@ -43,144 +44,236 @@ interface ExtractedRecipe {
 
 type CaptureState = "setup" | "recording" | "review";
 
-// Web Speech API types
-declare global {
-  interface Window {
-    webkitSpeechRecognition: any;
-    SpeechRecognition: any;
-  }
+// How long each audio chunk is before we POST it to Gemini. 4s strikes a
+// decent balance between "live" feel and Gemini call overhead. Lower =
+// snappier but more API calls; higher = fewer calls but more lag.
+const CHUNK_DURATION_MS = 4000;
+
+// Convert a Blob to a base64 string without the data:...;base64, prefix.
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 export function ConversationCapture() {
   const [state, setState] = useState<CaptureState>("setup");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [speakers, setSpeakers] = useState<{speaker1: string; speaker2: string}>({
+  const [speakers, setSpeakers] = useState<{ speaker1: string; speaker2: string }>({
     speaker1: "",
-    speaker2: ""
+    speaker2: "",
   });
-  const [selectedLanguage, setSelectedLanguage] = useState("auto");
+  const [selectedLanguage, setSelectedLanguage] = useState("zh-yue");
   const [isRecording, setIsRecording] = useState(false);
-  const [currentSpeaker, setCurrentSpeaker] = useState<string | null>(null);
-  const [interimTranscript, setInterimTranscript] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [processingChunks, setProcessingChunks] = useState(0);
   const [extractedRecipe, setExtractedRecipe] = useState<ExtractedRecipe | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const recognitionRef = useRef<any>(null);
+  // Mic + recorder state (refs so we don't re-render on each chunk)
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mimeTypeRef = useRef<string>("audio/webm");
+  // Each chunk we post to Gemini needs to be a *self-contained* encoded
+  // blob. We can't just slice a running MediaRecorder stream — the
+  // resulting bytes wouldn't be a valid container. So the pattern is:
+  //   - start a new MediaRecorder every CHUNK_DURATION_MS
+  //   - stop it, which fires a dataavailable event with the full blob
+  //   - post that blob, then immediately start a fresh recorder
+  // recordingActiveRef gates the auto-restart so stopRecording() can
+  // break the loop.
+  const recordingActiveRef = useRef<boolean>(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check for speech recognition support
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    setSpeechSupported(!!SpeechRecognition);
-  }, []);
-
-  // Auto-scroll to bottom of messages
+  // Auto-scroll as new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, interimTranscript]);
+  }, [messages]);
 
-  const initializeSpeechRecognition = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) return null;
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = selectedLanguage === "auto" ? "en-US" : selectedLanguage;
-
-    let finalTranscript = "";
-
-    recognition.onresult = (event: any) => {
-      let interim = "";
-      
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-
-      setInterimTranscript(interim);
-
-      // If we have final results and a current speaker, add to messages
-      if (finalTranscript && currentSpeaker) {
-        const newMessage: ConversationMessage = {
-          id: Date.now().toString(),
-          speaker: currentSpeaker,
-          text: finalTranscript.trim(),
-          language: event.results[event.resultIndex]?.language || 
-                   (selectedLanguage === "auto" ? "EN" : selectedLanguage.toUpperCase()),
-          timestamp: new Date().toISOString(),
-        };
-
-        if (newMessage.text) {
-          setMessages(prev => [...prev, newMessage]);
-        }
-        
-        finalTranscript = "";
-        setInterimTranscript("");
-      }
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      hardStopInternal();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     };
+  }, []);
 
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
-      setIsRecording(false);
-      setCurrentSpeaker(null);
-      setInterimTranscript("");
-    };
-
-    recognition.onend = () => {
-      // If we were recording, restart (unless explicitly stopped)
-      if (isRecording && currentSpeaker) {
-        setTimeout(() => {
-          if (recognitionRef.current && isRecording) {
-            recognitionRef.current.start();
-          }
-        }, 100);
-      }
-    };
-
-    return recognition;
-  }, [selectedLanguage, currentSpeaker, isRecording]);
-
-  const startRecording = (speaker: string) => {
-    if (!speechSupported) {
-      alert("Speech recognition is not supported in your browser. Please use Chrome or a compatible browser.");
-      return;
-    }
-
-    setCurrentSpeaker(speaker);
-    setIsRecording(true);
-    setInterimTranscript("");
-
-    recognitionRef.current = initializeSpeechRecognition();
-    if (recognitionRef.current) {
+  // POST a finished chunk to the transcribe endpoint. Segments that come
+  // back are appended to the chat log in order.
+  const uploadChunk = useCallback(
+    async (blob: Blob, mimeType: string) => {
+      if (blob.size < 500) return; // tiny blobs are almost certainly silence
+      setProcessingChunks((n) => n + 1);
       try {
-        recognitionRef.current.start();
-      } catch (error) {
-        console.error("Failed to start speech recognition:", error);
-        setIsRecording(false);
-        setCurrentSpeaker(null);
+        const audioBase64 = await blobToBase64(blob);
+        const res = await fetch("/api/capture/transcribe-chunk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audioBase64,
+            mimeType,
+            language: selectedLanguage,
+            participants: [speakers.speaker1, speakers.speaker2].filter(Boolean),
+          }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Transcription failed");
+        }
+        const data = (await res.json()) as {
+          segments?: Array<{ speaker: string; text: string }>;
+        };
+        const segments = data.segments ?? [];
+        if (segments.length === 0) return;
+
+        setMessages((prev) => {
+          const next = [...prev];
+          for (const seg of segments) {
+            // Merge consecutive segments from the same speaker so a long
+            // turn split across chunks reads as one bubble.
+            const last = next[next.length - 1];
+            if (last && last.speaker === seg.speaker) {
+              next[next.length - 1] = {
+                ...last,
+                text: `${last.text} ${seg.text}`.trim(),
+              };
+            } else {
+              next.push({
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                speaker: seg.speaker,
+                text: seg.text,
+                language: selectedLanguage,
+                timestamp: new Date().toISOString(),
+              });
+            }
+          }
+          return next;
+        });
+      } catch (err: any) {
+        console.error("Chunk upload failed:", err);
+        setErrorMessage(err?.message || "Transcription failed");
+      } finally {
+        setProcessingChunks((n) => Math.max(0, n - 1));
       }
+    },
+    [selectedLanguage, speakers]
+  );
+
+  // Internal hard-stop used by both stopRecording and unmount cleanup.
+  // Doesn't depend on any useCallback-tracked value so it's safe to call
+  // from cleanup effects.
+  const hardStopInternal = () => {
+    recordingActiveRef.current = false;
+    try {
+      mediaRecorderRef.current?.stop();
+    } catch {
+      /* ignore */
     }
+    mediaRecorderRef.current = null;
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
   };
 
-  const stopRecording = () => {
+  // Start one short MediaRecorder "window". On stop we post the blob
+  // and, if we're still recording, immediately start the next window.
+  const startChunkRecorder = useCallback(() => {
+    const stream = mediaStreamRef.current;
+    if (!stream) return;
+    const mimeType = mimeTypeRef.current;
+    const recorder = new MediaRecorder(stream, { mimeType });
+    mediaRecorderRef.current = recorder;
+
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      // Fire-and-forget the upload so we can start the next window
+      // immediately without waiting on Gemini.
+      uploadChunk(blob, mimeType);
+      if (recordingActiveRef.current) {
+        startChunkRecorder();
+      }
+    };
+    recorder.start();
+
+    // Schedule the stop that ends this chunk.
+    setTimeout(() => {
+      if (recorder.state === "recording") {
+        try {
+          recorder.stop();
+        } catch {
+          /* ignore */
+        }
+      }
+    }, CHUNK_DURATION_MS);
+  }, [uploadChunk]);
+
+  const startRecording = useCallback(async () => {
+    setErrorMessage(null);
+    setConnecting(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+        },
+      });
+      mediaStreamRef.current = stream;
+
+      const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/mp4",
+      ];
+      const mimeType = candidates.find(
+        (c) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)
+      );
+      if (!mimeType) {
+        throw new Error("Your browser doesn't support audio recording");
+      }
+      mimeTypeRef.current = mimeType;
+
+      recordingActiveRef.current = true;
+      setIsRecording(true);
+      setConnecting(false);
+      startChunkRecorder();
+    } catch (err: any) {
+      console.error("Failed to start recording:", err);
+      setErrorMessage(
+        err?.name === "NotAllowedError"
+          ? "Microphone permission denied"
+          : err?.message || "Failed to start recording"
+      );
+      setConnecting(false);
+      hardStopInternal();
+    }
+  }, [startChunkRecorder]);
+
+  const stopRecording = useCallback(() => {
     setIsRecording(false);
-    setCurrentSpeaker(null);
-    setInterimTranscript("");
-    
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-  };
+    hardStopInternal();
+  }, []);
 
-  const handleSetupComplete = (speaker1: string, speaker2: string, language: string) => {
+  const handleSetupComplete = (
+    speaker1: string,
+    speaker2: string,
+    language: string
+  ) => {
     setSpeakers({ speaker1, speaker2 });
     setSelectedLanguage(language);
     setState("recording");
@@ -194,7 +287,14 @@ export function ConversationCapture() {
       const response = await fetch("/api/capture/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation: messages }),
+        body: JSON.stringify({
+          conversation: messages.map((m) => ({
+            speaker: m.speaker,
+            text: m.text,
+            language: m.language,
+            timestamp: m.timestamp,
+          })),
+        }),
       });
 
       if (!response.ok) {
@@ -206,7 +306,7 @@ export function ConversationCapture() {
       setState("review");
     } catch (error) {
       console.error("Recipe extraction failed:", error);
-      alert("Failed to extract recipe. Please try again.");
+      setErrorMessage("Failed to extract recipe. Please try again.");
     } finally {
       setIsExtracting(false);
     }
@@ -235,15 +335,13 @@ export function ConversationCapture() {
         throw new Error("Failed to save recipe");
       }
 
-      // Reset to start fresh
       setState("setup");
       setMessages([]);
       setExtractedRecipe(null);
-      
       alert("Recipe saved successfully! 🎉");
     } catch (error) {
       console.error("Save recipe failed:", error);
-      alert("Failed to save recipe. Please try again.");
+      setErrorMessage("Failed to save recipe. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -269,23 +367,44 @@ export function ConversationCapture() {
     );
   }
 
-  // Recording state
+  // Side assignment: speaker2 (the elder) goes on the right. Anything
+  // that doesn't match them (including stray "Speaker 1"/"Speaker 2"
+  // labels from Gemini) lands on the left.
+  const sideForSpeaker = (name: string): "left" | "right" =>
+    name === speakers.speaker2 ? "right" : "left";
+
+  const languageLabel = (() => {
+    switch (selectedLanguage) {
+      case "zh-yue":
+        return "Cantonese";
+      case "nan":
+        return "Hokkien";
+      case "zh-cn":
+        return "Mandarin";
+      case "en":
+        return "English";
+      default:
+        return "the selected language";
+    }
+  })();
+
   return (
     <div className="h-full flex flex-col bg-neutral-50">
       {/* Header */}
       <div className="flex-shrink-0 bg-white border-b border-neutral-200 px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <span className="font-medium text-neutral-900">
-              {speakers.speaker1} & {speakers.speaker2}
+          <div className="text-sm min-w-0">
+            <span className="font-medium text-neutral-900 truncate">
+              {speakers.speaker1} &amp; {speakers.speaker2}
             </span>
             <div className="text-xs text-neutral-500">
-              {messages.length} messages recorded
+              {messages.length} {messages.length === 1 ? "turn" : "turns"}
+              {processingChunks > 0 && " · transcribing…"}
             </div>
           </div>
           <Button
             onClick={extractRecipe}
-            disabled={messages.length === 0 || isExtracting}
+            disabled={messages.length === 0 || isExtracting || isRecording}
             className="bg-amber-600 hover:bg-amber-700 text-white"
           >
             {isExtracting ? "Extracting..." : (
@@ -298,46 +417,41 @@ export function ConversationCapture() {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Chat log */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-        {messages.length === 0 && (
+        {messages.length === 0 && !isRecording && !connecting && (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="text-4xl mb-4">👥</div>
-              <p className="text-neutral-600">
-                Tap a speaker below to start recording their voice
+            <div className="text-center max-w-xs">
+              <div className="text-4xl mb-4">🎙️</div>
+              <p className="text-neutral-600 text-sm">
+                Press <strong>Start conversation</strong> below. As you both
+                talk, the AI will label each person and stream the transcript
+                into the chat every few seconds.
               </p>
             </div>
           </div>
         )}
 
-        {messages.map((message, index) => (
+        {messages.map((message) => (
           <ChatBubble
             key={message.id}
             speaker={message.speaker}
             text={message.text}
             language={message.language}
             timestamp={message.timestamp}
-            isRight={message.speaker === speakers.speaker2}
+            isRight={sideForSpeaker(message.speaker) === "right"}
           />
         ))}
 
-        {/* Interim result while recording */}
-        {interimTranscript && currentSpeaker && (
-          <div className={cn(
-            "flex w-full mb-4",
-            currentSpeaker === speakers.speaker2 ? "justify-end" : "justify-start"
-          )}>
-            <div className={cn(
-              "max-w-[80%] rounded-2xl px-4 py-3 border-2 border-dashed animate-pulse",
-              currentSpeaker === speakers.speaker2 
-                ? "border-amber-300 bg-amber-50" 
-                : "border-neutral-300 bg-neutral-50"
-            )}>
-              <div className="text-xs font-medium text-neutral-600 mb-1">
-                {currentSpeaker} (speaking...)
-              </div>
-              <p className="text-sm text-neutral-700 italic">{interimTranscript}</p>
+        {/* Listening indicator while waiting for the next chunk */}
+        {isRecording && processingChunks > 0 && (
+          <div className="flex justify-center py-2">
+            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+              </span>
+              Transcribing the last few seconds…
             </div>
           </div>
         )}
@@ -345,76 +459,47 @@ export function ConversationCapture() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Recording Controls */}
+      {/* Error banner */}
+      {errorMessage && (
+        <div className="flex-shrink-0 bg-red-50 border-t border-red-200 px-4 py-2 text-xs text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
+      {/* Start / Stop bar */}
       <div className="flex-shrink-0 bg-white border-t border-neutral-200 px-4 py-4 safe-bottom">
-        <div className="flex items-center justify-center gap-6">
-          {/* Speaker 1 Button */}
-          <div className="flex flex-col items-center">
+        <div className="flex items-center justify-center gap-4">
+          {isRecording ? (
             <button
-              onClick={() => 
-                isRecording && currentSpeaker === speakers.speaker1 
-                  ? stopRecording() 
-                  : startRecording(speakers.speaker1)
-              }
-              disabled={isRecording && currentSpeaker !== speakers.speaker1}
-              className={cn(
-                "w-16 h-16 rounded-full text-2xl font-bold transition-all duration-200 shadow-lg",
-                isRecording && currentSpeaker === speakers.speaker1
-                  ? "bg-red-500 text-white animate-pulse scale-110"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-95",
-                isRecording && currentSpeaker !== speakers.speaker1 && "opacity-50"
-              )}
+              onClick={stopRecording}
+              className="flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
             >
-              {isRecording && currentSpeaker === speakers.speaker1 ? <StopIcon /> : "👤"}
+              <StopIcon className="h-4 w-4" />
+              Stop conversation
             </button>
-            <span className="text-xs font-medium text-neutral-600 mt-2">
-              {speakers.speaker1}
-            </span>
-          </div>
-
-          {/* Recording indicator */}
-          <div className="flex flex-col items-center">
-            {isRecording && (
-              <div className="flex items-center gap-2 text-red-500 animate-pulse">
-                <div className="w-2 h-2 bg-red-500 rounded-full" />
-                <span className="text-xs font-medium">Recording</span>
-              </div>
-            )}
-            {!speechSupported && (
-              <div className="text-xs text-red-500 max-w-32 text-center">
-                Speech recognition not supported
-              </div>
-            )}
-          </div>
-
-          {/* Speaker 2 Button */}
-          <div className="flex flex-col items-center">
+          ) : (
             <button
-              onClick={() => 
-                isRecording && currentSpeaker === speakers.speaker2 
-                  ? stopRecording() 
-                  : startRecording(speakers.speaker2)
-              }
-              disabled={isRecording && currentSpeaker !== speakers.speaker2}
-              className={cn(
-                "w-16 h-16 rounded-full text-2xl font-bold transition-all duration-200 shadow-lg",
-                isRecording && currentSpeaker === speakers.speaker2
-                  ? "bg-red-500 text-white animate-pulse scale-110"
-                  : "bg-amber-100 text-amber-700 hover:bg-amber-200 active:scale-95",
-                isRecording && currentSpeaker !== speakers.speaker2 && "opacity-50"
-              )}
+              onClick={startRecording}
+              disabled={connecting}
+              className="flex items-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-60"
             >
-              {isRecording && currentSpeaker === speakers.speaker2 ? <StopIcon /> : "👵"}
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+              </span>
+              {connecting ? "Connecting…" : "Start conversation"}
             </button>
-            <span className="text-xs font-medium text-neutral-600 mt-2">
-              {speakers.speaker2}
-            </span>
-          </div>
+          )}
+          {isRecording && (
+            <div className="flex items-center gap-2 text-xs text-red-500">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+              <span className="font-medium">Live</span>
+            </div>
+          )}
         </div>
-
-        <div className="mt-4 text-xs text-center text-neutral-500">
-          Tap a person to start recording their voice. Tap again to stop.
-        </div>
+        <p className="mt-3 text-center text-[11px] text-neutral-500">
+          The AI listens in {languageLabel} and labels each turn automatically.
+        </p>
       </div>
     </div>
   );
