@@ -79,6 +79,7 @@ interface RecipeHeaderProps {
   savingPrepTime: boolean;
   savingCookTime: boolean;
   savingYield: boolean;
+  autoFocusTitle?: boolean;
 }
 
 const inputClass =
@@ -105,6 +106,7 @@ export function RecipeHeader({
   savingPrepTime,
   savingCookTime,
   savingYield,
+  autoFocusTitle = false,
 }: RecipeHeaderProps) {
   return (
     <section className="grid gap-4 rounded-2xl border border-neutral-200 bg-white p-5">
@@ -115,6 +117,7 @@ export function RecipeHeader({
         placeholder="e.g. Grandma's Laksa"
         onBlur={() => onBlur("title")}
         isSaving={savingTitle}
+        autoFocusAndSelect={autoFocusTitle}
       />
 
       <EditableField

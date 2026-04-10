@@ -6,7 +6,6 @@ import { useRecipeStore } from "@/store/RecipeStore";
 import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
-import { CreateRecipeForm } from "./sidebar/CreateRecipeForm";
 
 interface Book {
   id: number;
@@ -39,10 +38,6 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
 
   const [query, setQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [draftName, setDraftName] = useState("");
-  const [creationError, setCreationError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Books state
   const [books, setBooks] = useState<Book[]>([]);
@@ -56,17 +51,27 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
       .catch(() => {});
   }, []);
 
+  // Handler that creates a blank recipe and navigates straight to it,
+  // skipping the "enter a name first" step. Used by the sidebar New
+  // Recipe button AND the mobile "New" button event. RecipeView will
+  // auto-focus and select the title so the user can immediately rename.
+  const handleCreateBlank = useCallback(async () => {
+    try {
+      await createRecipe();
+      onClose();
+    } catch (err) {
+      console.error("Failed to create recipe:", err);
+    }
+  }, [createRecipe, onClose]);
+
   // Listen for create-recipe event from mobile "New" button
   useEffect(() => {
     const handler = () => {
-      setIsCreating(true);
-      setDraftName("");
-      setCreationError(null);
-      onOpen();
+      handleCreateBlank();
     };
     window.addEventListener("mychelin:create-recipe", handler);
     return () => window.removeEventListener("mychelin:create-recipe", handler);
-  }, [onOpen]);
+  }, [handleCreateBlank]);
 
   const toggleBook = useCallback(async (bookId: number) => {
     setExpandedBooks((prev) => {
@@ -92,24 +97,6 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
   const filteredRecipes = recipes.filter((r) =>
     r.title.toLowerCase().includes(query.toLowerCase())
   );
-
-  const handleCreate = async () => {
-    if (!draftName.trim()) return;
-    setIsSaving(true);
-    setCreationError(null);
-    try {
-      await createRecipe(draftName.trim());
-      setIsCreating(false);
-      setDraftName("");
-      onClose();
-    } catch (err) {
-      setCreationError(
-        err instanceof Error ? err.message : "Failed to create recipe"
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <>
@@ -144,27 +131,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
             </div>
           )}
 
-          <SidebarToolbar
-            onCreateOpen={() => {
-              setIsCreating(true);
-              onOpen();
-            }}
-          />
-
-          {isCreating && (
-            <CreateRecipeForm
-              name={draftName}
-              onNameChange={setDraftName}
-              error={creationError}
-              isSaving={isSaving}
-              onSave={handleCreate}
-              onCancel={() => {
-                setIsCreating(false);
-                setDraftName("");
-                setCreationError(null);
-              }}
-            />
-          )}
+          <SidebarToolbar onCreateOpen={handleCreateBlank} />
         </div>
 
         {/* Books + Recipe list */}
