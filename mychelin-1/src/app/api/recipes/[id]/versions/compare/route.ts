@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { recipeVersions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ id: string }> };

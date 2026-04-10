@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { recipes, ingredients, instructions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 // ─── GET /api/recipes ──────────────────────────────────────

@@ -4,6 +4,7 @@ import { bookMembers, bookRecipes, bookActivityLog, recipes } from "@/db/schema"
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 // ─── GET /api/books/[id]/recipes ──────────────────────────

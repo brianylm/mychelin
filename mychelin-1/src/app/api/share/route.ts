@@ -3,8 +3,8 @@ import { db } from "@/db";
 import { shareLinks, recipes, books } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
-import { randomUUID } from "crypto";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 // GET /api/share?type=recipe&id=1 — list share links for a resource
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(existing[0]);
     }
 
-    const token = randomUUID().replace(/-/g, "").slice(0, 16);
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
 
     const [link] = await db
       .insert(shareLinks)

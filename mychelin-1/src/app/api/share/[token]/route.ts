@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { shareLinks, recipes, books, ingredients, instructions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ token: string }> };

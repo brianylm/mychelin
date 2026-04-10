@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { mealPlans } from "@/db/schema";
 import { and, gte, lte, asc, eq } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 // ─── GET /api/meal-plans ───────────────────────────────────

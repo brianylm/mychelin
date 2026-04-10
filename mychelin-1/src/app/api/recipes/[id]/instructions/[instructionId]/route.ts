@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { instructions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = {

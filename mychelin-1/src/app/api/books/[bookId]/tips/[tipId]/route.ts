@@ -4,6 +4,7 @@ import { bookTips, bookMembers, books } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ bookId: string; tipId: string }> };

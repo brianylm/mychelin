@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { mealPlans, recipes, ingredients, inventory, ingredientCatalog } from "@/db/schema";
 import { and, gte, lte, eq } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 interface ShoppingListItem {
