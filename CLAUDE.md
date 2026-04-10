@@ -5,6 +5,7 @@
 - When the user says something needs to happen, do it. Don't ask the user to do it manually unless there's genuinely no way to do it from here.
 - Merge PRs, redeploy, test endpoints — handle the full loop.
 - Only escalate to the user when truly blocked (e.g., needs credentials, dashboard-only actions with no API access).
+- **The user tests in the UI, not the DB.** Never ask the user to poke around in Turso / query tables / inspect rows. If data needs to be seeded, reset, inspected, migrated, or cleaned up — do it yourself via the Turso CLI, API routes, or a script. Treat the DB as your responsibility; present only UI-level test steps to the user.
 
 ## Project: Mychelin
 - **Live site**: mychelin-sg.vercel.app
