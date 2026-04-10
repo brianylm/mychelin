@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { recipes, ingredients, instructions } from "@/db/schema";
+import { recipes, ingredients, instructions, recipeVersions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -130,6 +130,26 @@ export async function POST(request: NextRequest) {
         )
       );
     }
+
+    // Auto-create version 1 — this is what cook-along uses
+    const [v1] = await db
+      .insert(recipeVersions)
+      .values({
+        recipeId: newRecipe.id,
+        versionNumber: 1,
+        versionLabel: "1",
+        captureMethod: "manual",
+        ingredients: ingredientsList ? JSON.stringify(ingredientsList) : JSON.stringify([]),
+        instructions: instructionsList ? JSON.stringify(instructionsList) : JSON.stringify([]),
+        changeNote: "Initial version",
+      })
+      .returning();
+
+    // Point the recipe's activeVersionId at v1
+    await db
+      .update(recipes)
+      .set({ activeVersionId: v1.id })
+      .where(eq(recipes.id, newRecipe.id));
 
     // Return complete recipe
     const fullRecipe = await db.query.recipes.findFirst({

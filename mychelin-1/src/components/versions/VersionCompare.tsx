@@ -19,14 +19,17 @@ interface IngredientDiff {
 }
 
 interface CompareData {
-  base: { id: number; versionNumber: number; captureMethod: string; closenessRating: number | null; createdAt: string };
-  compare: { id: number; versionNumber: number; captureMethod: string; closenessRating: number | null; createdAt: string };
+  base: { id: number; versionNumber: number; versionLabel: string | null; captureMethod: string; closenessRating: number | null; createdAt: string };
+  compare: { id: number; versionNumber: number; versionLabel: string | null; captureMethod: string; closenessRating: number | null; createdAt: string };
   ingredientDiffs: IngredientDiff[];
   baseInstructions: any[];
   compareInstructions: any[];
   baseNotes: string | null;
   compareNotes: string | null;
 }
+
+const labelOf = (v: { versionLabel?: string | null; versionNumber: number }) =>
+  v.versionLabel ?? String(v.versionNumber);
 
 interface VersionCompareProps {
   recipeId: number;
@@ -95,12 +98,12 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
             <div className="grid grid-cols-2 gap-px border-b border-neutral-100 bg-neutral-100">
               <div className="bg-white px-4 py-3">
                 <div className="text-xs font-medium text-neutral-500">Base</div>
-                <div className="text-sm font-semibold text-neutral-800">v{data.base.versionNumber}</div>
+                <div className="text-sm font-semibold text-neutral-800">v{labelOf(data.base)}</div>
                 <ClosenessStars rating={data.base.closenessRating} />
               </div>
               <div className="bg-white px-4 py-3">
                 <div className="text-xs font-medium text-neutral-500">Compare</div>
-                <div className="text-sm font-semibold text-neutral-800">v{data.compare.versionNumber}</div>
+                <div className="text-sm font-semibold text-neutral-800">v{labelOf(data.compare)}</div>
                 <ClosenessStars rating={data.compare.closenessRating} />
               </div>
             </div>
@@ -155,7 +158,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
 
               {tab === "instructions" && (
                 <div className="grid grid-cols-2 gap-3">
-                  {[{ label: data.base.versionNumber, items: data.baseInstructions }, { label: data.compare.versionNumber, items: data.compareInstructions }].map((col, ci) => (
+                  {[{ label: labelOf(data.base), items: data.baseInstructions }, { label: labelOf(data.compare), items: data.compareInstructions }].map((col, ci) => (
                     <div key={ci}>
                       <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-neutral-400">v{col.label}</div>
                       {col.items.length === 0 ? (
@@ -177,7 +180,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
 
               {tab === "notes" && (
                 <div className="grid grid-cols-2 gap-3">
-                  {[{ label: data.base.versionNumber, text: data.baseNotes }, { label: data.compare.versionNumber, text: data.compareNotes }].map((col, ci) => (
+                  {[{ label: labelOf(data.base), text: data.baseNotes }, { label: labelOf(data.compare), text: data.compareNotes }].map((col, ci) => (
                     <div key={ci}>
                       <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-neutral-400">v{col.label}</div>
                       <p className="text-xs leading-relaxed text-neutral-600">

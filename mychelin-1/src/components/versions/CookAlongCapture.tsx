@@ -20,9 +20,13 @@ interface Ingredient {
 interface Version {
   id: number;
   versionNumber: number;
+  versionLabel: string | null;
   ingredients: Ingredient[];
   instructions: any[];
 }
+
+const labelOf = (v: { versionLabel?: string | null; versionNumber: number }) =>
+  v.versionLabel ?? String(v.versionNumber);
 
 interface AdjustedIngredient extends Ingredient {
   actualQuantity?: number;
@@ -109,7 +113,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
           captureMethod: "cook_along",
           ingredients: actualIngredients,
           instructions: selectedVersion.instructions,
-          changeNote: `Cook-along from v${selectedVersion.versionNumber}`,
+          changeNote: `Cook-along from v${labelOf(selectedVersion)}`,
           closenessRating: closenessRating || null,
           closenessNotes: closenessNotes || null,
           cookingSessionDate: Math.floor(Date.now() / 1000),
@@ -178,9 +182,9 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                         >
                           <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
                             selectedVersion?.id === v.id ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-500"
-                          }`}>{v.versionNumber}</div>
+                          }`}>{labelOf(v)}</div>
                           <div>
-                            <div className="text-sm font-medium text-neutral-800">Version {v.versionNumber}</div>
+                            <div className="text-sm font-medium text-neutral-800">Version {labelOf(v)}</div>
                             <div className="text-[11px] text-neutral-400">{v.ingredients.length} ingredients</div>
                           </div>
                           {selectedVersion?.id === v.id && <CheckIcon className="ml-auto h-4 w-4 text-amber-600" />}
@@ -256,7 +260,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                   <div className="rounded-xl bg-amber-50 p-4">
                     <h4 className="mb-2 text-sm font-semibold text-amber-800">Session Summary</h4>
                     <div className="space-y-1 text-xs text-amber-700">
-                      <p>Cooked from: v{selectedVersion?.versionNumber}</p>
+                      <p>Cooked from: v{selectedVersion ? labelOf(selectedVersion) : ""}</p>
                       <p>Adjusted: {adjustedIngredients.filter((i) => i.adjusted).length} ingredients</p>
                       {closenessRating > 0 && (
                         <div className="flex items-center gap-1">

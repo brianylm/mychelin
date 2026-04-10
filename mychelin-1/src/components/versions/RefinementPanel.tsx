@@ -13,6 +13,7 @@ import {
 interface Version {
   id: number;
   versionNumber: number;
+  versionLabel: string | null;
   captureMethod: string;
   closenessRating: number | null;
   closenessNotes: string | null;
@@ -20,6 +21,9 @@ interface Version {
   instructions: any[];
   notes: string | null;
 }
+
+const labelOf = (v: { versionLabel?: string | null; versionNumber: number }) =>
+  v.versionLabel ?? String(v.versionNumber);
 
 interface Suggestion {
   ingredient: string;
@@ -129,7 +133,7 @@ Return ONLY the JSON array, no other text.`,
         body: JSON.stringify({
           baseVersionId: version.id, captureMethod: "refinement", ingredients: refinedIngredients,
           instructions: version.instructions, notes: version.notes,
-          changeNote: `AI refinement based on v${version.versionNumber} cook-along feedback`, setActive: false,
+          changeNote: `AI refinement based on v${labelOf(version)} cook-along feedback`, setActive: false,
         }),
       });
       if (res.ok) { onComplete?.(); onClose(); }
@@ -154,7 +158,7 @@ Return ONLY the JSON array, no other text.`,
         <div className="border-b border-neutral-100 px-4 py-3">
           <div className="rounded-xl bg-amber-50 p-3">
             <div className="flex items-center gap-2 text-xs text-amber-700">
-              <span>Based on v{version.versionNumber} cook-along</span>
+              <span>Based on v{labelOf(version)} cook-along</span>
               {version.closenessRating && (
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) =>

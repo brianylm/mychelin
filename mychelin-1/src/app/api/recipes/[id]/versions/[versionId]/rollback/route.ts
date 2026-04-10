@@ -37,7 +37,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       .where(eq(recipes.id, recipeId));
 
     return NextResponse.json({
-      message: "Rolled back to version " + version.versionNumber,
+      message: "Rolled back to version " + (version.versionLabel ?? version.versionNumber),
       activeVersionId: verId,
     });
   } catch (error) {

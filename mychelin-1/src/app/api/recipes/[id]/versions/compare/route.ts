@@ -139,6 +139,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       base: {
         id: baseVersion.id,
         versionNumber: baseVersion.versionNumber,
+        versionLabel: baseVersion.versionLabel,
         captureMethod: baseVersion.captureMethod,
         closenessRating: baseVersion.closenessRating,
         createdAt: baseVersion.createdAt,
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       compare: {
         id: compareVersion.id,
         versionNumber: compareVersion.versionNumber,
+        versionLabel: compareVersion.versionLabel,
         captureMethod: compareVersion.captureMethod,
         closenessRating: compareVersion.closenessRating,
         createdAt: compareVersion.createdAt,
