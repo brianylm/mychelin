@@ -10,30 +10,57 @@ export const preferredRegion = "hnd1";
 type RouteContext = { params: Promise<{ id: string }> };
 
 // ─── GET /api/recipes/:id/versions ─────────────────────────
-// Returns all versions belonging to this recipe AND every ancestor recipe
-// it was forked from. Walking up the fork chain via `recipes.forkedFrom`
-// lets the version timeline show the full lineage (v1 → v1.1 → v1.1.1 …).
+// Returns the full fork tree's versions so the timeline can show the
+// whole lineage — not just direct ancestors, but siblings and cousins
+// spawned from the same root. Walks up via `recipes.forkedFrom` to find
+// the root, then walks down to collect every descendant.
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const startRecipeId = Number(id);
 
-    // Walk up the fork chain to collect every ancestor recipe id. Cap at
-    // 20 hops to defend against accidental cycles from bad data.
-    const recipeIds: number[] = [];
-    const seen = new Set<number>();
+    // Walk up to the root ancestor. Cap at 20 hops to defend against
+    // accidental cycles from bad data.
+    let rootId = startRecipeId;
+    const seenUp = new Set<number>();
     let cursor: number | null = startRecipeId;
-    for (let i = 0; i < 20 && cursor != null && !seen.has(cursor); i++) {
-      seen.add(cursor);
-      recipeIds.push(cursor);
+    for (let i = 0; i < 20 && cursor != null && !seenUp.has(cursor); i++) {
+      seenUp.add(cursor);
       const row: { forkedFrom: string | null } | undefined =
         await db.query.recipes.findFirst({
           where: eq(recipes.id, cursor),
           columns: { forkedFrom: true },
         });
       const parent: number | null = row?.forkedFrom ? Number(row.forkedFrom) : null;
-      cursor = parent !== null && !Number.isNaN(parent) ? parent : null;
+      if (parent !== null && !Number.isNaN(parent)) {
+        rootId = parent;
+        cursor = parent;
+      } else {
+        rootId = cursor;
+        cursor = null;
+      }
     }
+
+    // BFS down from the root to collect every descendant. forkedFrom is
+    // stored as text, so compare via LIKE on the string form.
+    const allRecipeIds = new Set<number>([rootId]);
+    let frontier: number[] = [rootId];
+    for (let depth = 0; depth < 20 && frontier.length > 0; depth++) {
+      const children = await db
+        .select({ id: recipes.id, forkedFrom: recipes.forkedFrom })
+        .from(recipes)
+        .where(inArray(recipes.forkedFrom, frontier.map((n) => String(n))));
+      const next: number[] = [];
+      for (const child of children) {
+        if (!allRecipeIds.has(child.id)) {
+          allRecipeIds.add(child.id);
+          next.push(child.id);
+        }
+      }
+      frontier = next;
+    }
+
+    const recipeIds = Array.from(allRecipeIds);
 
     const versions = recipeIds.length
       ? await db
