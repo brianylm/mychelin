@@ -62,12 +62,20 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
     } catch {}
   }, []);
 
-  const copyLink = useCallback((token: string) => {
-    const url = `${window.location.origin}/shared/${token}`;
-    navigator.clipboard.writeText(url);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
-  }, []);
+  const copyLink = useCallback(
+    (token: string) => {
+      const url = `${window.location.origin}/shared/${token}`;
+      // Attach a short blurb alongside the URL so whoever receives it in
+      // a message app sees context, not just a naked URL. The noun
+      // ("recipe" / "cookbook") follows the resource type.
+      const noun = resourceType === "book" ? "cookbook" : "recipe";
+      const blurb = `Come view my ${noun} "${resourceName}" on Mychelin — the heritage recipe app.\n\n${url}`;
+      navigator.clipboard.writeText(blurb);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 2000);
+    },
+    [resourceType, resourceName]
+  );
 
   const viewLink = links.find((l) => l.permission === "view");
   const editLink = links.find((l) => l.permission === "edit");
