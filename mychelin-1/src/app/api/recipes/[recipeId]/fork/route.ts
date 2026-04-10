@@ -40,7 +40,9 @@ export async function POST(
     }
 
     // Resolve the source version — use the recipe's active version if set,
-    // otherwise fall back to the latest version, otherwise null.
+    // otherwise fall back to the latest version. If the original recipe has
+    // no versions at all (existing pre-v1 recipe), create v1 on the fly from
+    // its current ingredients/instructions so the fork graph stays intact.
     let sourceVersion = original.activeVersionId
       ? await db.query.recipeVersions.findFirst({
           where: eq(recipeVersions.id, original.activeVersionId),
@@ -57,18 +59,53 @@ export async function POST(
       sourceVersion = latest ?? null;
     }
 
-    // Determine the new fork's version label.
-    // Count existing forks of the same source version to pick the next index.
-    let newLabel = "1";
-    if (sourceVersion) {
-      const parentLabel = sourceVersion.versionLabel ?? String(sourceVersion.versionNumber);
-      const siblings = await db
-        .select({ id: recipeVersions.id })
-        .from(recipeVersions)
-        .where(eq(recipeVersions.sourceVersionId, sourceVersion.id));
-      const forkIndex = siblings.length + 1;
-      newLabel = `${parentLabel}.${forkIndex}`;
+    if (!sourceVersion) {
+      // Backfill v1 for the original recipe using its current state.
+      const [backfilled] = await db
+        .insert(recipeVersions)
+        .values({
+          recipeId: recipeIdNum,
+          versionNumber: 1,
+          versionLabel: "1",
+          captureMethod: "manual",
+          ingredients: JSON.stringify(
+            original.ingredients.map((ing) => ({
+              name: ing.name,
+              quantity: ing.quantity,
+              unit: ing.unit,
+              notes: ing.notes,
+            }))
+          ),
+          instructions: JSON.stringify(
+            original.instructions.map((inst) => ({
+              content: inst.content,
+              tip: inst.tip,
+              imageUrl: inst.imageUrl,
+            }))
+          ),
+          changedBy: original.userId ?? currentUser.id,
+          changeNote: "Initial version (backfilled on fork)",
+        })
+        .returning();
+
+      // Point the original recipe at its new v1
+      await db
+        .update(recipes)
+        .set({ activeVersionId: backfilled.id })
+        .where(eq(recipes.id, recipeIdNum));
+
+      sourceVersion = backfilled;
     }
+
+    // Determine the new fork's version label by counting existing forks of
+    // the same source version. e.g. first fork of v1 → "1.1", second → "1.2".
+    const parentLabel = sourceVersion.versionLabel ?? String(sourceVersion.versionNumber);
+    const siblings = await db
+      .select({ id: recipeVersions.id })
+      .from(recipeVersions)
+      .where(eq(recipeVersions.sourceVersionId, sourceVersion.id));
+    const forkIndex = siblings.length + 1;
+    const newLabel = `${parentLabel}.${forkIndex}`;
 
     const now = new Date().toISOString();
 
