@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { SaveIndicator } from "./SaveIndicator";
 
 interface EditableFieldProps {
@@ -11,6 +12,10 @@ interface EditableFieldProps {
   rows?: number;
   onBlur?: () => void;
   isSaving?: boolean;
+  // When true, focus the field and select its contents on mount. Used for
+  // the title of a freshly created recipe so the user can start typing
+  // immediately over the default "Untitled recipe" name.
+  autoFocusAndSelect?: boolean;
 }
 
 export function EditableField({
@@ -22,7 +27,18 @@ export function EditableField({
   rows = 3,
   onBlur,
   isSaving = false,
+  autoFocusAndSelect = false,
 }: EditableFieldProps) {
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (autoFocusAndSelect && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocusAndSelect]);
+
   const inputClasses =
     "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
 
@@ -36,6 +52,9 @@ export function EditableField({
       </div>
       {multiline ? (
         <textarea
+          ref={(el) => {
+            inputRef.current = el;
+          }}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
@@ -45,6 +64,9 @@ export function EditableField({
         />
       ) : (
         <input
+          ref={(el) => {
+            inputRef.current = el;
+          }}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}

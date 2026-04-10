@@ -60,6 +60,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     updateInstruction,
     deleteInstruction,
     selectRecipe,
+    justCreatedRecipeId,
+    clearJustCreated,
   } = useRecipeStore();
   const { addToast } = useToast();
   const { user } = useAuth();
@@ -182,6 +184,19 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       setIngredientScale(1);
     }
   }, [selectedRecipe]);
+
+  // Clear the just-created flag once we navigate away from the freshly
+  // created recipe, so selecting it again later doesn't re-trigger the
+  // auto-focus + select-all on the title.
+  useEffect(() => {
+    if (
+      justCreatedRecipeId != null &&
+      selectedRecipe &&
+      selectedRecipe.id !== justCreatedRecipeId
+    ) {
+      clearJustCreated();
+    }
+  }, [justCreatedRecipeId, selectedRecipe, clearJustCreated]);
 
   const handleBlur = useCallback(
     async (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => {
@@ -708,6 +723,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           savingPrepTime={savingPrepTime}
           savingCookTime={savingCookTime}
           savingYield={savingYield}
+          autoFocusTitle={
+            !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
+          }
         />
 
         {/* Forked from badge */}

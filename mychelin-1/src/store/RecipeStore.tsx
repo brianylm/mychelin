@@ -30,8 +30,13 @@ interface RecipeStoreValue {
   error: string | null;
   selectedRecipeId: number | null;
   selectedRecipe: RecipeWithRelations | null;
+  // Id of the recipe that was just created via createRecipe(). RecipeView
+  // reads this to auto-focus the title input so the user can immediately
+  // rename a freshly created recipe inline. Caller clears it once consumed.
+  justCreatedRecipeId: number | null;
+  clearJustCreated: () => void;
   selectRecipe: (id: number | null) => void;
-  createRecipe: (title: string) => Promise<void>;
+  createRecipe: (title?: string) => Promise<void>;
   updateRecipe: (
     id: number,
     data: Partial<Recipe>
@@ -76,6 +81,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+  const [justCreatedRecipeId, setJustCreatedRecipeId] = useState<number | null>(null);
 
   // Fetch all recipes (list)
   const {
@@ -130,8 +136,10 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       }),
     onSuccess: (data: Recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
-      // Auto-select the newly created recipe
+      // Auto-select the newly created recipe and flag it as just-created
+      // so the recipe view can auto-focus the title input.
       setSelectedRecipeId(data.id);
+      setJustCreatedRecipeId(data.id);
     },
   });
 
@@ -273,11 +281,15 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createRecipe = useCallback(
-    async (title: string) => {
-      await createMutation.mutateAsync(title);
+    async (title?: string) => {
+      await createMutation.mutateAsync(title?.trim() || "Untitled recipe");
     },
     [createMutation]
   );
+
+  const clearJustCreated = useCallback(() => {
+    setJustCreatedRecipeId(null);
+  }, []);
 
   const updateRecipe = useCallback(
     async (id: number, data: Partial<Recipe>) => {
@@ -365,6 +377,8 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
         error: recipesError ? String(recipesError) : null,
         selectedRecipeId,
         selectedRecipe,
+        justCreatedRecipeId,
+        clearJustCreated,
         selectRecipe,
         createRecipe,
         updateRecipe,
