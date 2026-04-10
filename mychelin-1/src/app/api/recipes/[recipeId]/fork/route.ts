@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { recipes, ingredients, instructions, recipeVersions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { eq, desc } from "drizzle-orm";
+import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -18,6 +19,7 @@ export async function POST(
   { params }: RouteContext
 ) {
   try {
+    await ensureVersionLabelColumn();
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
