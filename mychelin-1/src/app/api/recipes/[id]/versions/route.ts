@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeVersions, recipes } from "@/db/schema";
-import { eq, desc, max } from "drizzle-orm";
+import { eq, desc, max, inArray } from "drizzle-orm";
 import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 
 export const runtime = "edge";
@@ -10,16 +10,38 @@ export const preferredRegion = "hnd1";
 type RouteContext = { params: Promise<{ id: string }> };
 
 // ─── GET /api/recipes/:id/versions ─────────────────────────
+// Returns all versions belonging to this recipe AND every ancestor recipe
+// it was forked from. Walking up the fork chain via `recipes.forkedFrom`
+// lets the version timeline show the full lineage (v1 → v1.1 → v1.1.1 …).
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const recipeId = Number(id);
+    const startRecipeId = Number(id);
 
-    const versions = await db
-      .select()
-      .from(recipeVersions)
-      .where(eq(recipeVersions.recipeId, recipeId))
-      .orderBy(desc(recipeVersions.versionNumber));
+    // Walk up the fork chain to collect every ancestor recipe id. Cap at
+    // 20 hops to defend against accidental cycles from bad data.
+    const recipeIds: number[] = [];
+    const seen = new Set<number>();
+    let cursor: number | null = startRecipeId;
+    for (let i = 0; i < 20 && cursor != null && !seen.has(cursor); i++) {
+      seen.add(cursor);
+      recipeIds.push(cursor);
+      const row: { forkedFrom: string | null } | undefined =
+        await db.query.recipes.findFirst({
+          where: eq(recipes.id, cursor),
+          columns: { forkedFrom: true },
+        });
+      const parent: number | null = row?.forkedFrom ? Number(row.forkedFrom) : null;
+      cursor = parent !== null && !Number.isNaN(parent) ? parent : null;
+    }
+
+    const versions = recipeIds.length
+      ? await db
+          .select()
+          .from(recipeVersions)
+          .where(inArray(recipeVersions.recipeId, recipeIds))
+          .orderBy(desc(recipeVersions.createdAt))
+      : [];
 
     // Parse JSON fields
     const parsed = versions.map((v) => ({
@@ -29,9 +51,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       photos: v.photos ? JSON.parse(v.photos as string) : [],
     }));
 
-    // Get the recipe's active version id
+    // Get the current recipe's active version id
     const recipe = await db.query.recipes.findFirst({
-      where: eq(recipes.id, recipeId),
+      where: eq(recipes.id, startRecipeId),
       columns: { activeVersionId: true },
     });
 

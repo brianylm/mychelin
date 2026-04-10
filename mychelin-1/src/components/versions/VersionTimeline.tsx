@@ -14,6 +14,7 @@ import {
 
 interface Version {
   id: number;
+  recipeId: number;
   versionNumber: number;
   versionLabel: string | null;
   captureMethod: string;
@@ -146,6 +147,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
         {displayVersions.map((version, index) => {
           const method = METHOD_ICONS[version.captureMethod] ?? METHOD_ICONS.manual;
           const isActive = version.id === activeVersionId;
+          const isAncestor = version.recipeId !== recipeId;
           return (
             <div
               key={version.id}
@@ -176,6 +178,9 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                     {isActive && (
                       <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">ACTIVE</span>
                     )}
+                    {isAncestor && (
+                      <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">ANCESTOR</span>
+                    )}
                     {version.closenessRating && <ClosenessStars rating={version.closenessRating} />}
                   </div>
                   {version.changeNote && (
@@ -204,7 +209,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                     </button>
                     {menuOpen === version.id && (
                       <div className="absolute right-0 top-8 z-10 w-40 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg">
-                        {!isActive && (
+                        {!isActive && !isAncestor && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRollback(version.id); }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"

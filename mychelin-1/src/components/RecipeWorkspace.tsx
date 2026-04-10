@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { RecipeStoreProvider, useRecipeStore } from "@/store/RecipeStore";
 import { RecipeSidebar } from "@/components/layout/RecipeSidebar";
@@ -58,11 +59,15 @@ function RecipeWorkspaceContent({
   setSidebarOpen: (open: boolean) => void;
 }) {
   const { selectRecipe } = useRecipeStore();
+  const qc = useQueryClient();
 
   const handleNavigateToRecipe = useCallback((recipeId: number) => {
+    // Always refresh the list — a navigation often follows a fork/create
+    // from elsewhere in the app, and the sidebar list is cached.
+    qc.invalidateQueries({ queryKey: ["recipes"] });
     selectRecipe(recipeId);
     setCurrentView("recipes");
-  }, [selectRecipe, setCurrentView]);
+  }, [qc, selectRecipe, setCurrentView]);
 
   const handleViewChange = useCallback((view: AppView) => {
     // When clicking "Recipes" tab, go to card grid (deselect recipe)
