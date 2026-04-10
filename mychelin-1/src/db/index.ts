@@ -1,5 +1,9 @@
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
-import { createClient, type Client } from "@libsql/client";
+// Use the /web export so the client works on both Node and Edge runtimes.
+// The default @libsql/client uses Node-specific APIs that break on edge,
+// and on this Vercel deployment the Node serverless runtime is also broken
+// for POST requests — edge is the only working path.
+import { createClient, type Client } from "@libsql/client/web";
 import * as schema from "./schema";
 
 // Lazy initialization - client is only created on first access.

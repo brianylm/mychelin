@@ -4,6 +4,7 @@ import { users } from "@/db/schema";
 import { hashPassword, setAuthCookie, type AuthUser } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 export async function POST(request: NextRequest) {

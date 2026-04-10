@@ -6,6 +6,7 @@ import {
   type AuthUser,
 } from "@/lib/auth";
 
+export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 export async function POST(request: NextRequest) {
