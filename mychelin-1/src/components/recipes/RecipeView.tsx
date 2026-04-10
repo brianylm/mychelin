@@ -30,6 +30,7 @@ import { RefinementPanel } from "@/components/versions/RefinementPanel";
 import { VersionDetailsModal } from "@/components/versions/VersionDetailsModal";
 import { RecipeForkButton } from "./RecipeForkButton";
 import { ForkedFromBadge } from "./ForkedFromBadge";
+import { RecipeSaveStatus } from "./RecipeSaveStatus";
 
 interface BookSummary {
   id: number;
@@ -660,9 +661,31 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     );
   }
 
+  const anyFieldSaving =
+    savingTitle ||
+    savingDescription ||
+    savingCuisine ||
+    savingPrepTime ||
+    savingCookTime ||
+    savingYield;
+
+  const handleSaveNow = () => {
+    // Blur whatever is currently focused — fires any pending onBlur
+    // autosave handlers so in-progress edits get persisted without
+    // waiting for the user to click elsewhere.
+    const active = document.activeElement as HTMLElement | null;
+    if (active && typeof active.blur === "function") active.blur();
+    addToast("Changes saved", "success");
+  };
+
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-6">
+        <RecipeSaveStatus
+          isSaving={anyFieldSaving}
+          updatedAt={selectedRecipe.updatedAt}
+          onSaveNow={handleSaveNow}
+        />
         {/* Core recipe info */}
         <RecipeHeader
           recipe={selectedRecipe}
