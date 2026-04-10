@@ -15,7 +15,7 @@
 - **Region**: hnd1 (Tokyo) on Vercel
 - **Auth**: JWT cookie (`mychelin_token`), bcrypt passwords, 30-day expiry, uses `jose` (not `jsonwebtoken`) for edge compatibility
 - **Framework**: Next.js 16 with Drizzle ORM
-- **Key env vars**: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `JWT_SECRET`, `BLOB_READ_WRITE_TOKEN`
+- **Key env vars**: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `JWT_SECRET`, `BLOB_READ_WRITE_TOKEN`, `GOOGLE_API_KEY` (Gemini — powers AI capture transcription + extraction; also accepts `GEMINI_API_KEY` or `GOOGLE_AI_API_KEY`; get one at https://aistudio.google.com/apikey)
 
 ## Runtime Gotcha — Use Edge, Not Node
 The **Node.js serverless runtime is broken** on this Vercel project — POST requests hang indefinitely with "Provisional headers" in DevTools, and zero function invocations appear in Vercel runtime logs. Edge runtime works fine.
