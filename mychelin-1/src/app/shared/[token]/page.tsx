@@ -176,7 +176,7 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         )}
 
         <div className="mt-12 pb-8 text-center text-xs text-neutral-400">
-          Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> — family recipe heritage
+          Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> · preserving family recipe heritage
         </div>
       </div>
     </div>
@@ -317,7 +317,7 @@ export default function SharedPage() {
         )}
 
         <div className="mt-12 pb-8 text-center text-xs text-neutral-400">
-          Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> — family recipe heritage
+          Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> · preserving family recipe heritage
         </div>
       </div>
       <SignupNudge context="book" resourceName={b.title} />
