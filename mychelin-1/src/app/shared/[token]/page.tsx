@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { ServingScaler, formatScaledQuantity } from "@/components/recipes/ServingScaler";
+import { SignupNudge } from "@/components/sharing/SignupNudge";
 
 interface SharedRecipe {
   id: number;
@@ -41,7 +42,7 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
   const r = recipe;
   const [scale, setScale] = useState(1);
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 pb-24">
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-3">
           {onBack ? (
@@ -240,18 +241,21 @@ export default function SharedPage() {
     if (!recipe) return null;
 
     return (
-      <RecipeDetail
-        recipe={recipe}
-        permission={shared.permission}
-        onBack={selectedRecipe ? () => setSelectedRecipe(null) : undefined}
-      />
+      <>
+        <RecipeDetail
+          recipe={recipe}
+          permission={shared.permission}
+          onBack={selectedRecipe ? () => setSelectedRecipe(null) : undefined}
+        />
+        <SignupNudge context="recipe" resourceName={recipe.title} />
+      </>
     );
   }
 
   // Book view with clickable recipe cards
   const b = shared.data;
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 pb-24">
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-3">
           <img src="/icons/icon-96.png" alt="Mychelin" className="h-8 w-8 rounded-lg" />
@@ -316,6 +320,7 @@ export default function SharedPage() {
           Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> — family recipe heritage
         </div>
       </div>
+      <SignupNudge context="book" resourceName={b.title} />
     </div>
   );
 }
