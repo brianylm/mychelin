@@ -1,9 +1,8 @@
-const CACHE_NAME = "mychelin-v1";
-const OFFLINE_CACHE = "mychelin-offline-v1";
+const CACHE_NAME = "mychelin-v2";
+const OFFLINE_CACHE = "mychelin-offline-v2";
 
 // Core app shell assets to cache on install
 const STATIC_ASSETS = [
-  "/",
   "/offline.html",
   "/manifest.json",
   "/icons/icon-192.png",
@@ -36,10 +35,15 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  const { url } = request;
+  const url = new URL(request.url);
 
   // Skip non-GET requests and extension requests
-  if (request.method !== "GET" || url.includes("chrome-extension://")) {
+  if (request.method !== "GET" || request.url.includes("chrome-extension://")) {
+    return;
+  }
+
+  // ALWAYS bypass service worker for API routes — must go to network
+  if (url.pathname.startsWith("/api/")) {
     return;
   }
 
@@ -66,26 +70,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle API requests - network first, no offline fallback
-  if (url.includes("/api/")) {
-    event.respondWith(
-      fetch(request).catch(() => {
-        // For API failures, just let them fail gracefully
-        return new Response(
-          JSON.stringify({ error: "Network unavailable" }),
-          { status: 503, headers: { "Content-Type": "application/json" } }
-        );
-      })
-    );
-    return;
-  }
-
   // Handle static assets (JS, CSS, images) - cache first with network fallback
-  if (url.includes("/_next/") || url.includes("/icons/") || /\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/.test(url)) {
+  if (request.url.includes("/_next/") || request.url.includes("/icons/") || /\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$/.test(request.url)) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
-        
+
         return fetch(request)
           .then((response) => {
             if (response.ok) {
