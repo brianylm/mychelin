@@ -24,10 +24,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const apiKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY;
+    const apiKey =
+      process.env.GOOGLE_API_KEY ||
+      process.env.GOOGLE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "AI transcription is not configured on this deployment" },
+        {
+          error:
+            "AI transcription is not configured. Add a GOOGLE_API_KEY (or GEMINI_API_KEY) environment variable in Vercel with a Gemini API key from https://aistudio.google.com/apikey.",
+        },
         { status: 503 }
       );
     }

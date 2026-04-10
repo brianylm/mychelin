@@ -55,6 +55,50 @@ type ModalStep = "recording" | "naming" | "processing";
 
 const CHUNK_DURATION_MS = 4000;
 
+// Detect the "not configured" error from the transcribe / extract routes
+// so we can show a richer banner with setup steps instead of a tiny red
+// error line.
+function isSetupError(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("not configured") ||
+    m.includes("gemini_api_key") ||
+    m.includes("google_api_key")
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  if (isSetupError(message)) {
+    return (
+      <div className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+        <div className="mb-1 flex items-center gap-1.5 font-semibold">
+          <span>⚙️</span>
+          <span>AI capture needs a Gemini API key</span>
+        </div>
+        <p className="leading-relaxed text-amber-800">
+          Add a <code className="rounded bg-amber-100 px-1">GOOGLE_API_KEY</code>{" "}
+          environment variable in Vercel → Project Settings → Environment
+          Variables, then redeploy. Get a free key at{" "}
+          <a
+            href="https://aistudio.google.com/apikey"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            aistudio.google.com/apikey
+          </a>
+          .
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+      {message}
+    </div>
+  );
+}
+
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -421,11 +465,7 @@ export function ConversationCapture({
               <div ref={messagesEndRef} />
             </div>
 
-            {errorMessage && (
-              <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
-                {errorMessage}
-              </div>
-            )}
+            {errorMessage && <ErrorBanner message={errorMessage} />}
 
             {/* Controls */}
             <div className="border-t border-neutral-200 bg-white px-4 py-4">
@@ -523,11 +563,7 @@ export function ConversationCapture({
               </div>
             </div>
 
-            {errorMessage && (
-              <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
-                {errorMessage}
-              </div>
-            )}
+            {errorMessage && <ErrorBanner message={errorMessage} />}
 
             <div className="flex items-center gap-2 border-t border-neutral-200 bg-white px-4 py-3">
               <Button variant="soft" color="gray" onClick={() => setStep("recording")}>

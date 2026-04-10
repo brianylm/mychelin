@@ -36,11 +36,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Get Gemini API key
-    const apiKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY;
+    const apiKey =
+      process.env.GOOGLE_API_KEY ||
+      process.env.GOOGLE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.error("Missing Google API key");
       return NextResponse.json(
-        { error: "AI service unavailable" },
+        {
+          error:
+            "AI extraction is not configured. Add a GOOGLE_API_KEY (or GEMINI_API_KEY) environment variable in Vercel with a Gemini API key from https://aistudio.google.com/apikey.",
+        },
         { status: 503 }
       );
     }
