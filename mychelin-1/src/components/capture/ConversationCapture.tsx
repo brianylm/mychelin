@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@radix-ui/themes";
-import { StopIcon, MagicWandIcon } from "@radix-ui/react-icons";
-import { SpeakerSetup } from "./SpeakerSetup";
+import { StopIcon, MagicWandIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { ChatBubble } from "./ChatBubble";
-import { RecipeReview } from "./RecipeReview";
 
-// Each chat bubble is one Gemini-returned segment: a contiguous utterance
-// attributed to a single participant.
+// Modal-based conversational capture. Opens from the recipe page, records
+// the full conversation with zero pre-setup (no speaker names, no language
+// picker), streams chunks to Gemini for live transcription + diarization,
+// and on save lets the user assign real names to the speaker labels
+// Gemini produced. The final recipe data PATCHes back into the recipe
+// the modal was opened from.
+
 interface ConversationMessage {
   id: string;
-  speaker: string; // participant display name
+  speakerLabel: string; // raw label from Gemini, e.g. "Speaker 1"
   text: string;
-  language: string;
   timestamp: string;
 }
 
@@ -42,14 +44,17 @@ interface ExtractedRecipe {
   story?: string;
 }
 
-type CaptureState = "setup" | "recording" | "review";
+interface ConversationCaptureProps {
+  recipeId: number;
+  onClose: () => void;
+  // Called after the recipe is PATCHed so the parent can refresh.
+  onRecipeUpdated?: () => void;
+}
 
-// How long each audio chunk is before we POST it to Gemini. 4s strikes a
-// decent balance between "live" feel and Gemini call overhead. Lower =
-// snappier but more API calls; higher = fewer calls but more lag.
+type ModalStep = "recording" | "naming" | "processing";
+
 const CHUNK_DURATION_MS = 4000;
 
-// Convert a Blob to a base64 string without the data:...;base64, prefix.
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -63,44 +68,33 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-export function ConversationCapture() {
-  const [state, setState] = useState<CaptureState>("setup");
+export function ConversationCapture({
+  recipeId,
+  onClose,
+  onRecipeUpdated,
+}: ConversationCaptureProps) {
+  const [step, setStep] = useState<ModalStep>("recording");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [speakers, setSpeakers] = useState<{ speaker1: string; speaker2: string }>({
-    speaker1: "",
-    speaker2: "",
-  });
-  const [selectedLanguage, setSelectedLanguage] = useState("zh-yue");
   const [isRecording, setIsRecording] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [processingChunks, setProcessingChunks] = useState(0);
-  const [extractedRecipe, setExtractedRecipe] = useState<ExtractedRecipe | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Mic + recorder state (refs so we don't re-render on each chunk)
+  // Map from raw Gemini speaker label to the real name the user assigns
+  // in the naming step. Defaults below give the user something to edit.
+  const [speakerNameMap, setSpeakerNameMap] = useState<Record<string, string>>({});
+
+  // Recorder refs (don't want to re-render on every chunk)
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mimeTypeRef = useRef<string>("audio/webm");
-  // Each chunk we post to Gemini needs to be a *self-contained* encoded
-  // blob. We can't just slice a running MediaRecorder stream — the
-  // resulting bytes wouldn't be a valid container. So the pattern is:
-  //   - start a new MediaRecorder every CHUNK_DURATION_MS
-  //   - stop it, which fires a dataavailable event with the full blob
-  //   - post that blob, then immediately start a fresh recorder
-  // recordingActiveRef gates the auto-restart so stopRecording() can
-  // break the loop.
-  const recordingActiveRef = useRef<boolean>(false);
-
+  const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll as new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       hardStopInternal();
@@ -108,70 +102,61 @@ export function ConversationCapture() {
     };
   }, []);
 
-  // POST a finished chunk to the transcribe endpoint. Segments that come
-  // back are appended to the chat log in order.
-  const uploadChunk = useCallback(
-    async (blob: Blob, mimeType: string) => {
-      if (blob.size < 500) return; // tiny blobs are almost certainly silence
-      setProcessingChunks((n) => n + 1);
-      try {
-        const audioBase64 = await blobToBase64(blob);
-        const res = await fetch("/api/capture/transcribe-chunk", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            audioBase64,
-            mimeType,
-            language: selectedLanguage,
-            participants: [speakers.speaker1, speakers.speaker2].filter(Boolean),
-          }),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "Transcription failed");
-        }
-        const data = (await res.json()) as {
-          segments?: Array<{ speaker: string; text: string }>;
-        };
-        const segments = data.segments ?? [];
-        if (segments.length === 0) return;
-
-        setMessages((prev) => {
-          const next = [...prev];
-          for (const seg of segments) {
-            // Merge consecutive segments from the same speaker so a long
-            // turn split across chunks reads as one bubble.
-            const last = next[next.length - 1];
-            if (last && last.speaker === seg.speaker) {
-              next[next.length - 1] = {
-                ...last,
-                text: `${last.text} ${seg.text}`.trim(),
-              };
-            } else {
-              next.push({
-                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                speaker: seg.speaker,
-                text: seg.text,
-                language: selectedLanguage,
-                timestamp: new Date().toISOString(),
-              });
-            }
-          }
-          return next;
-        });
-      } catch (err: any) {
-        console.error("Chunk upload failed:", err);
-        setErrorMessage(err?.message || "Transcription failed");
-      } finally {
-        setProcessingChunks((n) => Math.max(0, n - 1));
+  const uploadChunk = useCallback(async (blob: Blob, mimeType: string) => {
+    if (blob.size < 500) return;
+    setProcessingChunks((n) => n + 1);
+    try {
+      const audioBase64 = await blobToBase64(blob);
+      const res = await fetch("/api/capture/transcribe-chunk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audioBase64,
+          mimeType,
+          language: "auto",
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Transcription failed");
       }
-    },
-    [selectedLanguage, speakers]
-  );
+      const data = (await res.json()) as {
+        segments?: Array<{ speaker: string; text: string }>;
+      };
+      const segments = data.segments ?? [];
+      if (segments.length === 0) return;
 
-  // Internal hard-stop used by both stopRecording and unmount cleanup.
-  // Doesn't depend on any useCallback-tracked value so it's safe to call
-  // from cleanup effects.
+      setMessages((prev) => {
+        const next = [...prev];
+        for (const seg of segments) {
+          const label = (seg.speaker || "Speaker 1").trim();
+          const last = next[next.length - 1];
+          // Merge consecutive segments with the same raw label so long
+          // turns that span chunks read as one bubble.
+          if (last && last.speakerLabel === label) {
+            next[next.length - 1] = {
+              ...last,
+              text: `${last.text} ${seg.text}`.trim(),
+            };
+          } else {
+            next.push({
+              id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              speakerLabel: label,
+              text: seg.text,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        }
+        return next;
+      });
+    } catch (err: any) {
+      console.error("Chunk upload failed:", err);
+      setErrorMessage(err?.message || "Transcription failed");
+    } finally {
+      setProcessingChunks((n) => Math.max(0, n - 1));
+    }
+  }, []);
+
   const hardStopInternal = () => {
     recordingActiveRef.current = false;
     try {
@@ -184,8 +169,6 @@ export function ConversationCapture() {
     mediaStreamRef.current = null;
   };
 
-  // Start one short MediaRecorder "window". On stop we post the blob
-  // and, if we're still recording, immediately start the next window.
   const startChunkRecorder = useCallback(() => {
     const stream = mediaStreamRef.current;
     if (!stream) return;
@@ -199,16 +182,12 @@ export function ConversationCapture() {
     };
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
-      // Fire-and-forget the upload so we can start the next window
-      // immediately without waiting on Gemini.
       uploadChunk(blob, mimeType);
       if (recordingActiveRef.current) {
         startChunkRecorder();
       }
     };
     recorder.start();
-
-    // Schedule the stop that ends this chunk.
     setTimeout(() => {
       if (recorder.state === "recording") {
         try {
@@ -269,237 +248,316 @@ export function ConversationCapture() {
     hardStopInternal();
   }, []);
 
-  const handleSetupComplete = (
-    speaker1: string,
-    speaker2: string,
-    language: string
-  ) => {
-    setSpeakers({ speaker1, speaker2 });
-    setSelectedLanguage(language);
-    setState("recording");
-  };
-
-  const extractRecipe = async () => {
-    if (messages.length === 0) return;
-
-    setIsExtracting(true);
-    try {
-      const response = await fetch("/api/capture/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversation: messages.map((m) => ({
-            speaker: m.speaker,
-            text: m.text,
-            language: m.language,
-            timestamp: m.timestamp,
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to extract recipe");
+  // Unique speaker labels that appeared during the conversation, in the
+  // order they first spoke. Used in the naming step.
+  const uniqueSpeakerLabels = useMemo(() => {
+    const seen = new Set<string>();
+    const order: string[] = [];
+    for (const m of messages) {
+      if (!seen.has(m.speakerLabel)) {
+        seen.add(m.speakerLabel);
+        order.push(m.speakerLabel);
       }
-
-      const data = await response.json();
-      setExtractedRecipe(data.recipe);
-      setState("review");
-    } catch (error) {
-      console.error("Recipe extraction failed:", error);
-      setErrorMessage("Failed to extract recipe. Please try again.");
-    } finally {
-      setIsExtracting(false);
     }
+    return order;
+  }, [messages]);
+
+  // When moving to the naming step, seed the map with sensible defaults
+  // so the user only has to adjust.
+  const goToNaming = () => {
+    if (isRecording) stopRecording();
+    const seeded: Record<string, string> = {};
+    const defaults = ["Me", "Ah Ma"];
+    uniqueSpeakerLabels.forEach((label, i) => {
+      seeded[label] = speakerNameMap[label] || defaults[i] || label;
+    });
+    setSpeakerNameMap(seeded);
+    setStep("naming");
   };
 
-  const saveRecipe = async (recipe: ExtractedRecipe) => {
-    setIsSaving(true);
+  // Replace raw labels in messages with user-provided names and send
+  // the conversation to the extract endpoint, then PATCH the target
+  // recipe with the extracted fields.
+  const saveConversation = async () => {
+    setStep("processing");
+    setErrorMessage(null);
     try {
-      const response = await fetch("/api/recipes", {
+      const named = messages.map((m) => ({
+        speaker: speakerNameMap[m.speakerLabel]?.trim() || m.speakerLabel,
+        text: m.text,
+        language: "auto",
+        timestamp: m.timestamp,
+      }));
+
+      const extractRes = await fetch("/api/capture/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation: named }),
+      });
+      if (!extractRes.ok) {
+        throw new Error("Failed to extract recipe from conversation");
+      }
+      const extractData = (await extractRes.json()) as { recipe: ExtractedRecipe };
+      const recipe = extractData.recipe;
+
+      // PATCH the existing recipe with the extracted data.
+      const patchRes = await fetch(`/api/recipes/${recipeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: recipe.title,
-          description: recipe.description,
-          cuisine: recipe.cuisine,
-          yield: recipe.yield,
-          prepTime: recipe.prepTime,
-          cookTime: recipe.cookTime,
-          story: recipe.story,
+          title: recipe.title || undefined,
+          description: recipe.description || undefined,
+          cuisine: recipe.cuisine || undefined,
+          yield: recipe.yield || undefined,
+          prepTime: recipe.prepTime ? Number(recipe.prepTime) || undefined : undefined,
+          cookTime: recipe.cookTime ? Number(recipe.cookTime) || undefined : undefined,
+          story: recipe.story || undefined,
+          origin: recipe.origin || undefined,
+          dialect: recipe.dialect || undefined,
+          occasion: recipe.occasion || undefined,
+          familyMember: recipe.familyMember || undefined,
           ingredients: recipe.ingredients,
           instructions: recipe.instructions,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save recipe");
+      if (!patchRes.ok) {
+        throw new Error("Failed to update recipe");
       }
 
-      setState("setup");
-      setMessages([]);
-      setExtractedRecipe(null);
-      alert("Recipe saved successfully! 🎉");
-    } catch (error) {
-      console.error("Save recipe failed:", error);
-      setErrorMessage("Failed to save recipe. Please try again.");
-    } finally {
-      setIsSaving(false);
+      onRecipeUpdated?.();
+      onClose();
+    } catch (err: any) {
+      console.error("Save conversation failed:", err);
+      setErrorMessage(err?.message || "Failed to save. Please try again.");
+      setStep("naming");
     }
   };
 
-  const backToChat = () => {
-    setState("recording");
-    setExtractedRecipe(null);
+  const handleClose = () => {
+    hardStopInternal();
+    onClose();
   };
 
-  if (state === "setup") {
-    return <SpeakerSetup onStart={handleSetupComplete} />;
-  }
-
-  if (state === "review" && extractedRecipe) {
-    return (
-      <RecipeReview
-        recipe={extractedRecipe}
-        onSave={saveRecipe}
-        onBack={backToChat}
-        isSaving={isSaving}
-      />
-    );
-  }
-
-  // Side assignment: speaker2 (the elder) goes on the right. Anything
-  // that doesn't match them (including stray "Speaker 1"/"Speaker 2"
-  // labels from Gemini) lands on the left.
-  const sideForSpeaker = (name: string): "left" | "right" =>
-    name === speakers.speaker2 ? "right" : "left";
-
-  const languageLabel = (() => {
-    switch (selectedLanguage) {
-      case "zh-yue":
-        return "Cantonese";
-      case "nan":
-        return "Hokkien";
-      case "zh-cn":
-        return "Mandarin";
-      case "en":
-        return "English";
-      default:
-        return "the selected language";
-    }
-  })();
+  // Side assignment for the live chat log. For the recording step,
+  // we use first-seen order (first speaker = left, second = right).
+  const sideForLabel = (label: string): "left" | "right" => {
+    const idx = uniqueSpeakerLabels.indexOf(label);
+    return idx === 1 ? "right" : "left";
+  };
 
   return (
-    <div className="h-full flex flex-col bg-neutral-50">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-white border-b border-neutral-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="text-sm min-w-0">
-            <span className="font-medium text-neutral-900 truncate">
-              {speakers.speaker1} &amp; {speakers.speaker2}
-            </span>
-            <div className="text-xs text-neutral-500">
-              {messages.length} {messages.length === 1 ? "turn" : "turns"}
-              {processingChunks > 0 && " · transcribing…"}
-            </div>
-          </div>
-          <Button
-            onClick={extractRecipe}
-            disabled={messages.length === 0 || isExtracting || isRecording}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
-          >
-            {isExtracting ? "Extracting..." : (
-              <>
-                <MagicWandIcon />
-                Extract Recipe
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* Chat log */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-        {messages.length === 0 && !isRecording && !connecting && (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center max-w-xs">
-              <div className="text-4xl mb-4">🎙️</div>
-              <p className="text-neutral-600 text-sm">
-                Press <strong>Start conversation</strong> below. As you both
-                talk, the AI will label each person and stream the transcript
-                into the chat every few seconds.
+    <div
+      className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
+      onClick={handleClose}
+    >
+      <div
+        className="flex h-full w-full flex-col bg-white sm:h-[90vh] sm:max-h-[720px] sm:max-w-lg sm:rounded-2xl sm:shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🎙️</span>
+            <div>
+              <h2 className="text-sm font-semibold text-neutral-900">
+                Heritage capture
+              </h2>
+              <p className="text-[11px] text-neutral-500">
+                {step === "recording" && isRecording && "Recording — speak naturally"}
+                {step === "recording" && !isRecording && messages.length === 0 && "Press start to begin"}
+                {step === "recording" && !isRecording && messages.length > 0 && "Press start to keep talking, or Done to save"}
+                {step === "naming" && "Who was speaking?"}
+                {step === "processing" && "Extracting your recipe…"}
               </p>
             </div>
           </div>
+          <button
+            onClick={handleClose}
+            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+          >
+            <Cross2Icon className="h-4 w-4" />
+          </button>
+        </div>
+
+        {step === "recording" && (
+          <>
+            {/* Chat log */}
+            <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4 space-y-2">
+              {messages.length === 0 && !isRecording && !connecting && (
+                <div className="flex h-full items-center justify-center">
+                  <div className="max-w-xs text-center">
+                    <div className="mb-4 text-4xl">🗣️</div>
+                    <p className="text-sm text-neutral-600">
+                      Press <strong>Start conversation</strong> and the AI will
+                      listen to whoever is speaking. Each person gets their own
+                      side of the chat. You&apos;ll label them at the end.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {messages.map((m) => (
+                <ChatBubble
+                  key={m.id}
+                  speaker={m.speakerLabel}
+                  text={m.text}
+                  language="auto"
+                  timestamp={m.timestamp}
+                  isRight={sideForLabel(m.speakerLabel) === "right"}
+                />
+              ))}
+
+              {isRecording && processingChunks > 0 && (
+                <div className="flex justify-center py-2">
+                  <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                    </span>
+                    Transcribing the last few seconds…
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {errorMessage && (
+              <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+                {errorMessage}
+              </div>
+            )}
+
+            {/* Controls */}
+            <div className="border-t border-neutral-200 bg-white px-4 py-4">
+              <div className="flex items-center justify-center gap-3">
+                {isRecording ? (
+                  <button
+                    onClick={stopRecording}
+                    className="flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
+                  >
+                    <StopIcon className="h-4 w-4" />
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    onClick={startRecording}
+                    disabled={connecting}
+                    className="flex items-center gap-2 rounded-full bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-60"
+                  >
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+                    </span>
+                    {connecting
+                      ? "Connecting…"
+                      : messages.length > 0
+                      ? "Keep talking"
+                      : "Start conversation"}
+                  </button>
+                )}
+                {messages.length > 0 && !isRecording && (
+                  <Button
+                    onClick={goToNaming}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    <MagicWandIcon />
+                    Done
+                  </Button>
+                )}
+              </div>
+              <p className="mt-2 text-center text-[11px] text-neutral-500">
+                The AI auto-detects the language — including Cantonese, Hokkien,
+                Mandarin, and English.
+              </p>
+            </div>
+          </>
         )}
 
-        {messages.map((message) => (
-          <ChatBubble
-            key={message.id}
-            speaker={message.speaker}
-            text={message.text}
-            language={message.language}
-            timestamp={message.timestamp}
-            isRight={sideForSpeaker(message.speaker) === "right"}
-          />
-        ))}
-
-        {/* Listening indicator while waiting for the next chunk */}
-        {isRecording && processingChunks > 0 && (
-          <div className="flex justify-center py-2">
-            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
-              </span>
-              Transcribing the last few seconds…
+        {step === "naming" && (
+          <>
+            <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4">
+              <p className="mb-4 text-sm text-neutral-600">
+                The AI heard {uniqueSpeakerLabels.length}{" "}
+                {uniqueSpeakerLabels.length === 1 ? "speaker" : "speakers"}.
+                Who were they?
+              </p>
+              <div className="space-y-3">
+                {uniqueSpeakerLabels.map((label, i) => {
+                  const side = i === 1 ? "right" : "left";
+                  const preview = messages.find((m) => m.speakerLabel === label)?.text ?? "";
+                  return (
+                    <div
+                      key={label}
+                      className="rounded-xl border border-neutral-200 bg-white p-3"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
+                          {label}
+                          {side === "right" ? " · right side" : " · left side"}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">
+                          {messages.filter((m) => m.speakerLabel === label).length}{" "}
+                          turns
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={speakerNameMap[label] ?? ""}
+                        onChange={(e) =>
+                          setSpeakerNameMap((prev) => ({
+                            ...prev,
+                            [label]: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Ah Ma, Me, Grandpa"
+                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white"
+                      />
+                      {preview && (
+                        <p className="mt-2 line-clamp-2 text-xs text-neutral-500 italic">
+                          &ldquo;{preview}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+
+            {errorMessage && (
+              <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+                {errorMessage}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 border-t border-neutral-200 bg-white px-4 py-3">
+              <Button variant="soft" color="gray" onClick={() => setStep("recording")}>
+                Back
+              </Button>
+              <Button
+                onClick={saveConversation}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={uniqueSpeakerLabels.some(
+                  (l) => !speakerNameMap[l]?.trim()
+                )}
+              >
+                <MagicWandIcon />
+                Extract &amp; save recipe
+              </Button>
+            </div>
+          </>
+        )}
+
+        {step === "processing" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+            <p className="text-center text-sm text-neutral-700">
+              Extracting the recipe from your conversation…
+            </p>
+            <p className="text-center text-xs text-neutral-400">
+              This usually takes 5–15 seconds.
+            </p>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Error banner */}
-      {errorMessage && (
-        <div className="flex-shrink-0 bg-red-50 border-t border-red-200 px-4 py-2 text-xs text-red-700">
-          {errorMessage}
-        </div>
-      )}
-
-      {/* Start / Stop bar */}
-      <div className="flex-shrink-0 bg-white border-t border-neutral-200 px-4 py-4 safe-bottom">
-        <div className="flex items-center justify-center gap-4">
-          {isRecording ? (
-            <button
-              onClick={stopRecording}
-              className="flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
-            >
-              <StopIcon className="h-4 w-4" />
-              Stop conversation
-            </button>
-          ) : (
-            <button
-              onClick={startRecording}
-              disabled={connecting}
-              className="flex items-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-60"
-            >
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
-              </span>
-              {connecting ? "Connecting…" : "Start conversation"}
-            </button>
-          )}
-          {isRecording && (
-            <div className="flex items-center gap-2 text-xs text-red-500">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-              <span className="font-medium">Live</span>
-            </div>
-          )}
-        </div>
-        <p className="mt-3 text-center text-[11px] text-neutral-500">
-          The AI listens in {languageLabel} and labels each turn automatically.
-        </p>
       </div>
     </div>
   );

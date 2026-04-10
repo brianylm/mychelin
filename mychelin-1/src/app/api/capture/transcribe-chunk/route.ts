@@ -6,17 +6,17 @@ export const preferredRegion = "hnd1";
 
 // POST /api/capture/transcribe-chunk
 //
-// Accepts a base64-encoded audio chunk plus participant names and language,
-// sends it to Gemini 1.5 Flash for transcription + speaker diarization,
-// and returns a list of segments:
+// Accepts a base64-encoded audio chunk, sends it to Gemini 1.5 Flash for
+// transcription + speaker diarization, and returns a list of segments:
 //
-//   { segments: [ { speaker: "Ah Ma", text: "..." }, ... ] }
+//   { segments: [ { speaker: "Speaker 1", text: "..." }, ... ] }
 //
-// We pick Gemini (instead of a streaming STT like Deepgram) because the
-// project targets Chinese heritage dialects — Hokkien, Cantonese, and
-// Mandarin — which mainstream streaming STT services barely support.
-// Gemini's multimodal model handles these dialects natively. Chunks are
-// typically 4-5s of opus audio, so each call is small and fast.
+// Participants are intentionally unknown at this point — the user labels
+// them after the recording ends. The default language is "auto" and the
+// prompt lets Gemini decide, which is important because this project
+// targets Chinese heritage dialects (Hokkien, Cantonese, Mandarin) that
+// mainstream streaming STT services don't cover well. Gemini's
+// multimodal model handles those dialects natively.
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -35,16 +35,12 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       audioBase64?: string;
       mimeType?: string;
-      language?: string; // "zh-yue" | "zh-cn" | "nan" (Hokkien) | "auto"
-      participants?: string[]; // e.g. ["Me", "Ah Ma"]
+      language?: string;
     };
 
     const audioBase64 = body.audioBase64;
     const mimeType = body.mimeType || "audio/webm";
     const languageCode = body.language || "auto";
-    const participants = Array.isArray(body.participants)
-      ? body.participants.filter((p) => typeof p === "string" && p.trim())
-      : [];
 
     if (!audioBase64) {
       return NextResponse.json(
@@ -53,55 +49,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Friendly label for the prompt (Gemini doesn't need ISO codes).
-    const languageLabel = (() => {
+    // Friendly language hint. For "auto" we ask Gemini to detect,
+    // emphasizing the Chinese dialects we care about.
+    const languageInstruction = (() => {
       switch (languageCode) {
         case "zh-yue":
         case "yue":
         case "zh-HK":
-          return "Cantonese (粵語)";
+          return "The speakers are speaking Cantonese (粵語). Transcribe in Traditional Chinese characters.";
         case "nan":
         case "hokkien":
-          return "Hokkien (閩南語)";
+          return "The speakers are speaking Hokkien / Minnan (閩南語). Transcribe in Traditional Chinese characters or romanization as appropriate.";
         case "zh-cn":
         case "zh":
         case "cmn":
-          return "Mandarin Chinese (普通話)";
+          return "The speakers are speaking Mandarin Chinese (普通話). Transcribe in Simplified Chinese characters.";
         case "en":
         case "en-US":
-          return "English";
-        case "ms":
-          return "Bahasa Melayu";
-        case "ta":
-          return "Tamil";
+          return "The speakers are speaking English. Transcribe in English.";
         default:
-          return "the language the speakers are using (likely Chinese, English, or a Chinese dialect such as Cantonese or Hokkien)";
+          return "Auto-detect the language. It is most likely a Chinese dialect (Cantonese, Hokkien, or Mandarin) or English. Transcribe in the speakers' native script — Chinese characters for Chinese dialects, Latin script for English. Do NOT translate.";
       }
     })();
 
-    const participantLine =
-      participants.length >= 2
-        ? `The two participants are named "${participants[0]}" and "${participants[1]}". Use these exact names as the speaker labels.`
-        : `There are up to two speakers. If you can distinguish them, label them "Speaker 1" and "Speaker 2".`;
-
     const prompt = `You are transcribing a short chunk of a live conversation about a family heritage recipe.
 
-The spoken language is ${languageLabel}. Transcribe faithfully in the script the speakers use (Chinese characters for Chinese dialects, Latin script for English, etc.) and preserve dialect-specific vocabulary. Do not translate.
+${languageInstruction}
 
-${participantLine}
+There may be one or more speakers. Label each distinct voice you hear as "Speaker 1", "Speaker 2", etc. — always using these exact generic labels. Use "Speaker 1" for the first voice you hear in this chunk.
 
-If the same speaker talks the entire chunk, return one segment. If the speakers take turns within this chunk, return multiple segments in spoken order. If the audio is silence or unintelligible, return an empty segments array.
+If the same speaker talks the entire chunk, return one segment. If speakers take turns within this chunk, return multiple segments in spoken order. If the audio is silence or unintelligible, return an empty segments array.
+
+Preserve dialect-specific vocabulary and expressions faithfully. Do not translate or standardize.
 
 Return STRICT JSON only, no prose, no markdown fences, matching this shape:
 {
   "segments": [
-    { "speaker": "<name>", "text": "<what they said>" }
+    { "speaker": "Speaker 1", "text": "<what they said>" }
   ]
 }`;
 
-    // Gemini 1.5 Flash — fast, multimodal, cheap. Audio is sent inline as
-    // base64 in the `inline_data` part. The same API key is reused from
-    // the existing /api/capture/extract route.
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -146,13 +133,11 @@ Return STRICT JSON only, no prose, no markdown fences, matching this shape:
       return NextResponse.json({ segments: [] });
     }
 
-    // Gemini returns strict JSON because we requested responseMimeType,
-    // but defensively strip any stray code fences.
     const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();
     let parsed: { segments?: Array<{ speaker?: string; text?: string }> };
     try {
       parsed = JSON.parse(cleaned);
-    } catch (e) {
+    } catch {
       console.error("Failed to parse Gemini transcribe JSON:", cleaned);
       return NextResponse.json({ segments: [] });
     }
@@ -161,7 +146,7 @@ Return STRICT JSON only, no prose, no markdown fences, matching this shape:
       ? parsed.segments
           .filter((s) => s && typeof s.text === "string" && s.text.trim())
           .map((s) => ({
-            speaker: (s.speaker ?? "").toString().trim() || "Speaker",
+            speaker: (s.speaker ?? "").toString().trim() || "Speaker 1",
             text: s.text!.trim(),
           }))
       : [];
