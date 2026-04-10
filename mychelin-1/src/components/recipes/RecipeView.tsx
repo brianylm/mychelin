@@ -27,6 +27,7 @@ import { VersionTimeline } from "@/components/versions/VersionTimeline";
 import { VersionCompare } from "@/components/versions/VersionCompare";
 import { CookAlongCapture } from "@/components/versions/CookAlongCapture";
 import { RefinementPanel } from "@/components/versions/RefinementPanel";
+import { VersionDetailsModal } from "@/components/versions/VersionDetailsModal";
 import { RecipeForkButton } from "./RecipeForkButton";
 import { ForkedFromBadge } from "./ForkedFromBadge";
 
@@ -86,6 +87,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [showCookAlong, setShowCookAlong] = useState(false);
   const [compareVersions, setCompareVersions] = useState<{ base: number; compare: number } | null>(null);
   const [refinementVersion, setRefinementVersion] = useState<any>(null);
+  const [viewingVersion, setViewingVersion] = useState<any>(null);
   const [versionTimelineKey, setVersionTimelineKey] = useState(0);
 
   // Cache for prefetched book recipes
@@ -808,16 +810,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             onCompare={(baseId, compareId) =>
               setCompareVersions({ base: baseId, compare: compareId })
             }
-            onVersionSelect={(version) => {
-              // If it's a cook_along version with closeness data, offer refinement
-              if (
-                version.captureMethod === "cook_along" &&
-                version.closenessRating &&
-                version.closenessRating < 5
-              ) {
-                setRefinementVersion(version);
-              }
-            }}
+            onVersionSelect={(version) => setViewingVersion(version)}
           />
         </div>
 
@@ -828,7 +821,10 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             <RecipeForkButton
               recipeId={selectedRecipe.id}
               recipeTitle={selectedRecipe.title}
-              onForked={(id) => selectRecipe(id)}
+              onForked={(id) => {
+                qc.invalidateQueries({ queryKey: ["recipes"] });
+                selectRecipe(id);
+              }}
             />
           )}
           <button
@@ -894,6 +890,17 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           version={refinementVersion}
           onClose={() => setRefinementVersion(null)}
           onComplete={() => setVersionTimelineKey((k) => k + 1)}
+        />
+      )}
+
+      {viewingVersion && (
+        <VersionDetailsModal
+          version={viewingVersion}
+          onClose={() => setViewingVersion(null)}
+          onRefine={() => {
+            setRefinementVersion(viewingVersion);
+            setViewingVersion(null);
+          }}
         />
       )}
     </div>
