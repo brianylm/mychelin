@@ -472,35 +472,6 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""}
                     </p>
                     <div className="flex items-center gap-2">
-                      {activeBookRecipes.length > 0 && (
-                        <>
-                          <Button
-                            variant="soft"
-                            color="amber"
-                            size="2"
-                            onClick={() => {
-                              const random =
-                                activeBookRecipes[
-                                  Math.floor(Math.random() * activeBookRecipes.length)
-                                ];
-                              selectRecipe(random.id);
-                            }}
-                          >
-                            🎲 Surprise me
-                          </Button>
-                          <Button
-                            variant="outline"
-                            color="amber"
-                            size="2"
-                            onClick={() => {
-                              setSurpriseByQuery("");
-                              setSurpriseByOpen(true);
-                            }}
-                          >
-                            🎯 Surprise me by…
-                          </Button>
-                        </>
-                      )}
                       <Button
                         variant="solid"
                         size="2"
@@ -606,17 +577,30 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   {recipes.length > 0 && (
-                    <Button
-                      variant="soft"
-                      color="amber"
-                      size="2"
-                      onClick={() => {
-                        const random = recipes[Math.floor(Math.random() * recipes.length)];
-                        selectRecipe(random.id);
-                      }}
-                    >
-                      🎲 Surprise me
-                    </Button>
+                    <>
+                      <Button
+                        variant="soft"
+                        color="amber"
+                        size="2"
+                        onClick={() => {
+                          const random = recipes[Math.floor(Math.random() * recipes.length)];
+                          selectRecipe(random.id);
+                        }}
+                      >
+                        🎲 Surprise me
+                      </Button>
+                      <Button
+                        variant="outline"
+                        color="amber"
+                        size="2"
+                        onClick={() => {
+                          setSurpriseByQuery("");
+                          setSurpriseByOpen(true);
+                        }}
+                      >
+                        🎯 Surprise me by…
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="solid"
@@ -1155,13 +1139,11 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 onClick={async () => {
                   const q = surpriseByQuery.trim();
                   if (!q) {
-                    // No query → just pick from the active book's
-                    // recipes, same as the plain Surprise me button.
-                    if (activeBookRecipes.length > 0) {
+                    // No query → just pick any random recipe, same as
+                    // the plain Surprise me button.
+                    if (recipes.length > 0) {
                       const r =
-                        activeBookRecipes[
-                          Math.floor(Math.random() * activeBookRecipes.length)
-                        ];
+                        recipes[Math.floor(Math.random() * recipes.length)];
                       selectRecipe(r.id);
                       setSurpriseByOpen(false);
                     }
@@ -1175,18 +1157,10 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                     const data = (await res.json()) as {
                       results: Array<{ recipe: { id: number } }>;
                     };
-                    // Restrict to recipes that are also in the active
-                    // book, so "surprise me by chicken" inside a book
-                    // stays scoped to that book.
-                    const bookIds = new Set(
-                      activeBookRecipes.map((r: any) => r.id)
-                    );
-                    const matches = data.results
-                      .map((r) => r.recipe)
-                      .filter((r) => bookIds.has(r.id));
+                    const matches = data.results.map((r) => r.recipe);
                     if (matches.length === 0) {
                       addToast(
-                        `No recipes in this book match "${q}"`,
+                        `No recipes match "${q}"`,
                         "error"
                       );
                       return;

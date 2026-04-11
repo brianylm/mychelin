@@ -26,6 +26,12 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
   const [loading, setLoading] = useState(true);
   const [newContent, setNewContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // AI analysis state — "Analyze with AI" button reads all recipes in
+  // the book and asks Gemini to surface shared patterns / house style
+  // rules. Each suggested principle can be saved with one click.
+  const [analyzing, setAnalyzing] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [savingIdx, setSavingIdx] = useState<number | null>(null);
 
   const fetchTips = useCallback(async () => {
     try {
@@ -98,11 +104,109 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
   const canDeleteTip = (tip: Tip) =>
     isOwner || (user && String(user.id) === tip.addedBy);
 
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    setSuggestions([]);
+    try {
+      const res = await fetch(`/api/books/${bookId}/analyze-principles`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Analysis failed");
+      }
+      const data = (await res.json()) as { principles?: string[] };
+      const list = data.principles ?? [];
+      setSuggestions(list);
+      if (list.length === 0) {
+        addToast(
+          "Not enough recipes in this book yet to find patterns",
+          "error"
+        );
+      }
+    } catch (err: any) {
+      addToast(err?.message || "Failed to analyze recipes", "error");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleSaveSuggestion = async (idx: number) => {
+    const content = suggestions[idx];
+    if (!content) return;
+    setSavingIdx(idx);
+    try {
+      const res = await fetch(`/api/books/${bookId}/tips`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error("Failed to save principle");
+      const tip = await res.json();
+      const updated = [tip, ...tips];
+      setTips(updated);
+      onTipCountChange?.(updated.length);
+      setSuggestions((prev) => prev.filter((_, i) => i !== idx));
+      addToast("Principle saved", "success");
+    } catch (err: any) {
+      addToast(err?.message || "Failed to save", "error");
+    } finally {
+      setSavingIdx(null);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Cooking Principles</h2>
+        <button
+          onClick={handleAnalyze}
+          disabled={analyzing}
+          className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
+        >
+          {analyzing ? (
+            <>
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+              Analyzing…
+            </>
+          ) : (
+            <>✨ Analyze with AI</>
+          )}
+        </button>
       </div>
+
+      {/* AI suggestions — shown after Analyze with AI returns results.
+          Each card is a suggested principle the user can save with one
+          click, which adds it to the tips list and removes it from the
+          suggestions. */}
+      {suggestions.length > 0 && (
+        <div className="mb-6 space-y-2 rounded-xl border border-amber-300 bg-gradient-to-br from-amber-50 to-white p-4">
+          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+            <span>✨</span>
+            <span>AI-spotted patterns in this book</span>
+          </div>
+          <p className="mb-2 text-[11px] text-amber-700">
+            Click a card to save it as a principle. Anything you don&apos;t
+            want is just discarded.
+          </p>
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => handleSaveSuggestion(i)}
+              disabled={savingIdx !== null}
+              className="flex w-full items-start gap-3 rounded-lg border border-amber-200 bg-white p-3 text-left transition-all hover:border-amber-400 hover:shadow-sm disabled:opacity-60"
+            >
+              <span className="mt-0.5 text-base">💡</span>
+              <p className="flex-1 text-sm leading-relaxed text-neutral-800">
+                {s}
+              </p>
+              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                {savingIdx === i ? "Saving…" : "+ Save"}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Add new tip form */}
       {canEdit && (
