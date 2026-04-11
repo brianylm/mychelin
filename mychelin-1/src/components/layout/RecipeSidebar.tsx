@@ -94,9 +94,55 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
     });
   }, [bookRecipes]);
 
-  const filteredRecipes = recipes.filter((r) =>
-    r.title.toLowerCase().includes(query.toLowerCase())
-  );
+  // When the user types in the search box we hit /api/recipes/search,
+  // which matches against both recipe titles AND ingredient names —
+  // so "chilli" returns Arrabiata (because it has chilli in the
+  // ingredient list) as well as anything called "Chilli Crab".
+  // When the query is empty we fall back to the full recipe list.
+  const [searchResults, setSearchResults] = useState<
+    Array<{ recipe: typeof recipes[number]; matchedIngredient: string | null }>
+  >([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/recipes/search?q=${encodeURIComponent(trimmed)}`
+        );
+        if (!res.ok) throw new Error("Search failed");
+        const data = (await res.json()) as {
+          results: Array<{
+            recipe: typeof recipes[number];
+            matchedIngredient: string | null;
+          }>;
+        };
+        setSearchResults(data.results ?? []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 200);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const hasQuery = query.trim().length > 0;
+  const filteredRecipes = hasQuery
+    ? searchResults.map((r) => r.recipe)
+    : recipes;
+  const matchedIngredientById = new Map<number, string>();
+  for (const r of searchResults) {
+    if (r.matchedIngredient)
+      matchedIngredientById.set(r.recipe.id, r.matchedIngredient);
+  }
 
   return (
     <>
@@ -236,7 +282,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
               All Recipes
             </div>
           )}
-          {filteredRecipes.length === 0 && !loading ? (
+          {filteredRecipes.length === 0 && !loading && !searching ? (
             <p className="px-3 py-6 text-center text-sm text-neutral-500">
               {query ? "No recipes match your search." : "No recipes yet. Create one!"}
             </p>
@@ -252,6 +298,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                     onClose();
                   }}
                   onDelete={deleteRecipe}
+                  matchedIngredient={matchedIngredientById.get(recipe.id)}
                 />
               ))}
             </ul>
