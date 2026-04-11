@@ -33,6 +33,7 @@ import { ForkedFromBadge } from "./ForkedFromBadge";
 import { RecipeSaveStatus } from "./RecipeSaveStatus";
 import { ConversationCapture } from "@/components/capture/ConversationCapture";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
+import { CookingPrinciples } from "@/components/books/CookingPrinciples";
 
 interface BookSummary {
   id: number;
@@ -96,6 +97,11 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [versionTimelineKey, setVersionTimelineKey] = useState(0);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
+  // "Surprise me by..." state for the inline book view. When the user
+  // opens the filter popover we show an input; typing narrows the
+  // random pool to recipes whose title or an ingredient matches.
+  const [surpriseByOpen, setSurpriseByOpen] = useState(false);
+  const [surpriseByQuery, setSurpriseByQuery] = useState("");
 
   // Cache for prefetched book recipes
   const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, any[]>>({});
@@ -467,17 +473,33 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                     </p>
                     <div className="flex items-center gap-2">
                       {activeBookRecipes.length > 0 && (
-                        <Button
-                          variant="soft"
-                          color="amber"
-                          size="2"
-                          onClick={() => {
-                            const random = activeBookRecipes[Math.floor(Math.random() * activeBookRecipes.length)];
-                            selectRecipe(random.id);
-                          }}
-                        >
-                          🎲 Surprise me
-                        </Button>
+                        <>
+                          <Button
+                            variant="soft"
+                            color="amber"
+                            size="2"
+                            onClick={() => {
+                              const random =
+                                activeBookRecipes[
+                                  Math.floor(Math.random() * activeBookRecipes.length)
+                                ];
+                              selectRecipe(random.id);
+                            }}
+                          >
+                            🎲 Surprise me
+                          </Button>
+                          <Button
+                            variant="outline"
+                            color="amber"
+                            size="2"
+                            onClick={() => {
+                              setSurpriseByQuery("");
+                              setSurpriseByOpen(true);
+                            }}
+                          >
+                            🎯 Surprise me by…
+                          </Button>
+                        </>
                       )}
                       <Button
                         variant="solid"
@@ -552,6 +574,20 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                         </div>
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {/* Cooking principles — tips and guiding rules for this
+                    book. The server scopes to book membership, so any
+                    user who can see this book can read the tips; only
+                    members with edit rights can add them. */}
+                {activeBookId != null && (
+                  <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+                    <CookingPrinciples
+                      bookId={activeBookId}
+                      canEdit={true}
+                      isOwner={true}
+                    />
                   </div>
                 )}
               </>
@@ -1063,6 +1099,112 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             addToast("Recipe extracted from pasted text!", "success");
           }}
         />
+      )}
+
+      {/* Surprise me by... — filter the active book's recipes by a
+          query (title or ingredient) and pick a random one. */}
+      {surpriseByOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSurpriseByOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-xl">🎯</span>
+              <h3 className="text-base font-semibold text-neutral-900">
+                Surprise me by…
+              </h3>
+            </div>
+            <p className="mb-4 text-xs text-neutral-500">
+              Narrow the pick by an ingredient, cuisine, or keyword.
+              Matches titles AND ingredients in this book.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              value={surpriseByQuery}
+              onChange={(e) => setSurpriseByQuery(e.target.value)}
+              placeholder="e.g. chicken, soup, italian"
+              className="mb-3 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+            />
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {["chicken", "soup", "italian", "spicy"].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => setSurpriseByQuery(chip)}
+                  className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="soft"
+                color="gray"
+                onClick={() => setSurpriseByOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                onClick={async () => {
+                  const q = surpriseByQuery.trim();
+                  if (!q) {
+                    // No query → just pick from the active book's
+                    // recipes, same as the plain Surprise me button.
+                    if (activeBookRecipes.length > 0) {
+                      const r =
+                        activeBookRecipes[
+                          Math.floor(Math.random() * activeBookRecipes.length)
+                        ];
+                      selectRecipe(r.id);
+                      setSurpriseByOpen(false);
+                    }
+                    return;
+                  }
+                  try {
+                    const res = await fetch(
+                      `/api/recipes/search?q=${encodeURIComponent(q)}`
+                    );
+                    if (!res.ok) throw new Error("Search failed");
+                    const data = (await res.json()) as {
+                      results: Array<{ recipe: { id: number } }>;
+                    };
+                    // Restrict to recipes that are also in the active
+                    // book, so "surprise me by chicken" inside a book
+                    // stays scoped to that book.
+                    const bookIds = new Set(
+                      activeBookRecipes.map((r: any) => r.id)
+                    );
+                    const matches = data.results
+                      .map((r) => r.recipe)
+                      .filter((r) => bookIds.has(r.id));
+                    if (matches.length === 0) {
+                      addToast(
+                        `No recipes in this book match "${q}"`,
+                        "error"
+                      );
+                      return;
+                    }
+                    const pick =
+                      matches[Math.floor(Math.random() * matches.length)];
+                    selectRecipe(pick.id);
+                    setSurpriseByOpen(false);
+                  } catch {
+                    addToast("Search failed, try again", "error");
+                  }
+                }}
+              >
+                🎲 Pick one
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
