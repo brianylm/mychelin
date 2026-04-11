@@ -7,10 +7,17 @@ interface HeaderProps {
   onMenuClick?: () => void;
   onProfileClick?: () => void;
   onLogoClick?: () => void;
+  onSearchClick?: () => void;
   children?: React.ReactNode;
 }
 
-export function Header({ onMenuClick, onProfileClick, onLogoClick, children }: HeaderProps) {
+export function Header({
+  onMenuClick,
+  onProfileClick,
+  onLogoClick,
+  onSearchClick,
+  children,
+}: HeaderProps) {
   const { user, logout } = useAuth();
 
   return (
@@ -67,18 +74,46 @@ export function Header({ onMenuClick, onProfileClick, onLogoClick, children }: H
       {/* Desktop nav */}
       {children}
 
-      {/* Profile button */}
-      {user && (
-        <button
-          onClick={onProfileClick}
-          className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-neutral-100"
-        >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-          <span className="hidden text-sm font-medium text-neutral-700 sm:inline">{user.name}</span>
-        </button>
-      )}
+      <div className="flex items-center gap-1">
+        {/* Search button — opens the recipe search modal */}
+        {onSearchClick && (
+          <IconButton
+            variant="ghost"
+            size="2"
+            onClick={onSearchClick}
+            aria-label="Search recipes"
+            title="Search by recipe or ingredient"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </IconButton>
+        )}
+
+        {/* Profile button */}
+        {user && (
+          <button
+            onClick={onProfileClick}
+            className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-neutral-100"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="hidden text-sm font-medium text-neutral-700 sm:inline">{user.name}</span>
+          </button>
+        )}
+      </div>
     </header>
   );
 }
