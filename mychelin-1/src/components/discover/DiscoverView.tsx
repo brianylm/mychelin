@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
 import { useRecipeStore } from "@/store/RecipeStore";
 import type { Recipe } from "@/db/schema";
@@ -9,22 +9,64 @@ interface DiscoverViewProps {
   onNavigateToRecipe: (recipeId: number) => void;
 }
 
+// Discover / "Surprise me" view. Two modes:
+//  • Surprise me: pure random pick from the full recipe collection.
+//  • Surprise me by X: narrow the pool to recipes matching a filter
+//    query (title, cuisine, or ingredient) using /api/recipes/search,
+//    then pick a random one from that result set. e.g. "surprise me
+//    by chicken" picks from any recipe with chicken in it; "italian"
+//    picks from Italian recipes; "soup" picks from anything with
+//    "soup" in the title/cuisine.
 export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
   const { recipes } = useRecipeStore();
   const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
   const [isRolling, setIsRolling] = useState(false);
+  const [filterQuery, setFilterQuery] = useState("");
+  const [matchedPool, setMatchedPool] = useState<Recipe[] | null>(null);
+  const [poolLoading, setPoolLoading] = useState(false);
+
+  // Re-fetch the narrowed pool whenever the filter query changes,
+  // debounced 250ms so we're not hammering the endpoint on every
+  // keystroke. An empty query clears the pool so "Surprise me"
+  // reverts to picking from the full collection.
+  useEffect(() => {
+    const trimmed = filterQuery.trim();
+    if (!trimmed) {
+      setMatchedPool(null);
+      setPoolLoading(false);
+      return;
+    }
+    setPoolLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/recipes/search?q=${encodeURIComponent(trimmed)}`
+        );
+        if (!res.ok) throw new Error("Search failed");
+        const data = (await res.json()) as {
+          results: Array<{ recipe: Recipe; matchedIngredient: string | null }>;
+        };
+        setMatchedPool(data.results.map((r) => r.recipe));
+      } catch {
+        setMatchedPool([]);
+      } finally {
+        setPoolLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [filterQuery]);
 
   const pickRandomRecipe = useCallback(() => {
-    if (recipes.length === 0) return;
-    
+    const pool = matchedPool ?? recipes;
+    if (pool.length === 0) return;
+
     setIsRolling(true);
-    // Add a small delay for visual effect
     setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * recipes.length);
-      setRandomRecipe(recipes[randomIndex]);
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      setRandomRecipe(pool[randomIndex]);
       setIsRolling(false);
     }, 500);
-  }, [recipes]);
+  }, [recipes, matchedPool]);
 
   const handleCookThis = useCallback(() => {
     if (randomRecipe) {
@@ -32,7 +74,6 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
     }
   }, [randomRecipe, onNavigateToRecipe]);
 
-  // Empty state if no recipes
   if (recipes.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8">
@@ -42,17 +83,21 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             No Recipes Yet
           </h2>
           <p className="text-sm text-neutral-500">
-            Add some recipes to your collection first, then come back to discover what to cook!
+            Add some recipes to your collection first, then come back to
+            discover what to cook!
           </p>
         </div>
       </div>
     );
   }
 
+  const pool = matchedPool ?? recipes;
+  const isFiltered = filterQuery.trim().length > 0;
+  const canRoll = pool.length > 0 && !isRolling && !poolLoading;
+
   return (
     <div className="flex-1 overflow-y-auto bg-surface">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-8">
-        
         {/* Header */}
         <div className="text-center">
           <h1 className="text-2xl font-bold text-neutral-800 mb-2">
@@ -63,15 +108,75 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
           </p>
         </div>
 
+        {/* Narrow-by filter */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+          <label
+            htmlFor="surprise-filter"
+            className="mb-2 block text-xs font-semibold uppercase tracking-wide text-amber-800"
+          >
+            Surprise me by…
+          </label>
+          <input
+            id="surprise-filter"
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="chicken, Italian, soup… (leave blank for all recipes)"
+            className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+          />
+          <p className="mt-2 text-[11px] leading-relaxed text-amber-700">
+            Narrow the randomiser by an ingredient, cuisine, or keyword.
+            Matches recipe titles AND ingredient lists. e.g.{" "}
+            <button
+              type="button"
+              onClick={() => setFilterQuery("chicken")}
+              className="underline underline-offset-2 hover:text-amber-900"
+            >
+              chicken
+            </button>
+            ,{" "}
+            <button
+              type="button"
+              onClick={() => setFilterQuery("italian")}
+              className="underline underline-offset-2 hover:text-amber-900"
+            >
+              italian
+            </button>
+            ,{" "}
+            <button
+              type="button"
+              onClick={() => setFilterQuery("soup")}
+              className="underline underline-offset-2 hover:text-amber-900"
+            >
+              soup
+            </button>
+          </p>
+          {isFiltered && !poolLoading && (
+            <p className="mt-1 text-[11px] text-amber-800">
+              {pool.length === 0
+                ? `No recipes match "${filterQuery.trim()}"`
+                : `Picking from ${pool.length} matching recipe${
+                    pool.length !== 1 ? "s" : ""
+                  }`}
+            </p>
+          )}
+        </div>
+
         {/* Random Recipe Button */}
         <div className="text-center">
           <Button
             onClick={pickRandomRecipe}
-            disabled={isRolling}
+            disabled={!canRoll}
             size="4"
             className="bg-amber-600 hover:bg-amber-700 text-lg px-8 py-4"
           >
-            {isRolling ? "🎲 Rolling..." : "🎲 Surprise Me!"}
+            {isRolling
+              ? "🎲 Rolling..."
+              : poolLoading
+              ? "🎲 Loading…"
+              : isFiltered
+              ? `🎲 Surprise me by "${filterQuery.trim()}"`
+              : "🎲 Surprise Me!"}
           </Button>
         </div>
 
@@ -103,9 +208,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
               {randomRecipe.cookTime && (
                 <span>🔥 Cook: {randomRecipe.cookTime}m</span>
               )}
-              {randomRecipe.yield && (
-                <span>🍽️ {randomRecipe.yield}</span>
-              )}
+              {randomRecipe.yield && <span>🍽️ {randomRecipe.yield}</span>}
             </div>
 
             {/* Action Buttons */}
@@ -117,11 +220,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
               >
                 🍳 Cook this!
               </Button>
-              <Button
-                onClick={pickRandomRecipe}
-                variant="outline"
-                size="3"
-              >
+              <Button onClick={pickRandomRecipe} variant="outline" size="3">
                 🔄 Try another
               </Button>
             </div>
@@ -131,7 +230,10 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
         {/* Recipe Stats */}
         <div className="text-center text-sm text-neutral-500">
           <p>
-            You have <span className="font-medium text-neutral-700">{recipes.length}</span>{" "}
+            You have{" "}
+            <span className="font-medium text-neutral-700">
+              {recipes.length}
+            </span>{" "}
             recipe{recipes.length !== 1 ? "s" : ""} in your collection
           </p>
         </div>

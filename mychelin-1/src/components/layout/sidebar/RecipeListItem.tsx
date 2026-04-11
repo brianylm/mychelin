@@ -17,6 +17,9 @@ interface RecipeListItemProps {
   onSelect: (id: number) => void;
   onTogglePin?: (id: number) => void;
   onDelete?: (id: number) => void;
+  // Optional "ingredient: X" hint shown under the title when this item
+  // is a search hit matched on an ingredient name.
+  matchedIngredient?: string | null;
 }
 
 export function RecipeListItem({
@@ -25,6 +28,7 @@ export function RecipeListItem({
   onSelect,
   onTogglePin,
   onDelete,
+  matchedIngredient,
 }: RecipeListItemProps) {
   const qc = useQueryClient();
 
@@ -60,17 +64,24 @@ export function RecipeListItem({
         )}
       </div>
 
-      {/* Name + cuisine */}
+      {/* Name + cuisine (or matched ingredient context during search) */}
       <div className="flex min-w-0 flex-1 flex-col">
         <span
           className={cn("truncate text-sm", isSelected && "font-medium")}
         >
           {recipe.title}
         </span>
-        {recipe.cuisine && (
-          <span className="truncate text-xs text-neutral-500">
-            {recipe.cuisine}
+        {matchedIngredient ? (
+          <span className="truncate text-[11px] text-amber-700">
+            ingredient:{" "}
+            <span className="font-medium">{matchedIngredient}</span>
           </span>
+        ) : (
+          recipe.cuisine && (
+            <span className="truncate text-xs text-neutral-500">
+              {recipe.cuisine}
+            </span>
+          )
         )}
       </div>
 
