@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@radix-ui/themes";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -201,6 +201,36 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       clearJustCreated();
     }
   }, [justCreatedRecipeId, selectedRecipe, clearJustCreated]);
+
+  // Auto-delete pristine just-created recipes when the user navigates
+  // away without editing anything. Criteria: the recipe the user is
+  // leaving must be the one they just created, AND it still has the
+  // default title, AND has no ingredients, AND has no instructions.
+  // This keeps the DB from filling up with "Untitled recipe" entries
+  // every time someone clicks New Recipe and then bails.
+  const prevSelectedRecipeRef = useRef<typeof selectedRecipe>(null);
+  useEffect(() => {
+    const prev = prevSelectedRecipeRef.current;
+    prevSelectedRecipeRef.current = selectedRecipe;
+
+    if (
+      prev &&
+      prev.id !== selectedRecipe?.id &&
+      prev.id === justCreatedRecipeId &&
+      (prev.title === "Untitled recipe" || !prev.title.trim()) &&
+      (prev.ingredients?.length ?? 0) === 0 &&
+      (prev.instructions?.length ?? 0) === 0
+    ) {
+      const idToDelete = prev.id;
+      fetch(`/api/recipes/${idToDelete}`, { method: "DELETE" })
+        .then(() => {
+          qc.invalidateQueries({ queryKey: ["recipes"] });
+        })
+        .catch(() => {
+          /* best-effort cleanup — silent on failure */
+        });
+    }
+  }, [selectedRecipe, justCreatedRecipeId, qc]);
 
   const handleBlur = useCallback(
     async (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => {

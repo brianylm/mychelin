@@ -16,6 +16,7 @@ import { ProfileView } from "@/components/profile/ProfileView";
 import { DiscoverView } from "@/components/discover/DiscoverView";
 import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
+import { RecipeSearchModal } from "@/components/search/RecipeSearchModal";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -59,6 +60,7 @@ function RecipeWorkspaceContent({
 }) {
   const { selectRecipe } = useRecipeStore();
   const qc = useQueryClient();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleNavigateToRecipe = useCallback((recipeId: number) => {
     // Always refresh the list — a navigation often follows a fork/create
@@ -86,9 +88,17 @@ function RecipeWorkspaceContent({
         }
         onProfileClick={() => handleViewChange("profile")}
         onLogoClick={() => handleViewChange("recipes")}
+        onSearchClick={() => setSearchOpen(true)}
       >
         <DesktopNav current={currentView} onChange={handleViewChange} />
       </Header>
+
+      {searchOpen && (
+        <RecipeSearchModal
+          onClose={() => setSearchOpen(false)}
+          onPickRecipe={(recipeId) => handleNavigateToRecipe(recipeId)}
+        />
+      )}
 
       <div className="flex h-[calc(100dvh-50px)] w-full bg-surface text-foreground">
         {currentView === "recipes" && (
