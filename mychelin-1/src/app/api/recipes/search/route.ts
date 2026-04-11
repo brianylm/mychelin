@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipes, ingredients } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { eq, like, inArray, desc, sql } from "drizzle-orm";
+import { eq, inArray, desc, sql } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -12,26 +12,21 @@ export const preferredRegion = "hnd1";
 // Matches the query against recipe titles AND ingredient names, so
 // typing "chicken" returns recipes called "Chicken Rice" as well as
 // any recipe that has chicken in its ingredient list.
-// Case-insensitive.
 //
-// NOTE on scoping: this intentionally does NOT filter by user_id.
-// The existing POST /api/recipes route never sets user_id on new
-// recipes (a separate bug), so every recipe in the DB has
-// user_id = NULL and filtering by it returns zero rows. The main
-// GET /api/recipes route is also unscoped today. Keeping search
-// aligned with that behaviour so results actually show up. Once
-// recipe ownership is tightened up across the app, this should
-// also be scoped.
-//
-// Response shape:
-//   {
-//     results: [
-//       {
-//         recipe: { id, title, cuisine, imageUrl, ... },
-//         matchedIngredient: "Chicken thigh" | null
-//       }
-//     ]
-//   }
+// Notes:
+//  - Uses raw SQL LIKE. SQLite LIKE is case-insensitive for ASCII by
+//    default (PRAGMA case_sensitive_like = OFF), so "broccoli" matches
+//    "Broccoli" without any explicit LOWER() wrapping. We ALSO match
+//    the lowercased query as a second pattern to handle any CJK or
+//    case oddities.
+//  - Intentionally NOT scoped by user_id — the existing POST
+//    /api/recipes route never sets user_id on new recipes, so every
+//    row has user_id = NULL and filtering by it returns zero. Main
+//    GET /api/recipes is also unscoped. Search mirrors that.
+//  - When ?debug=1 is passed, the response includes counts of rows
+//    in the recipes / ingredients tables plus a sample of ingredient
+//    names. Useful for diagnosing "search returns nothing" when the
+//    ingredient table might be empty.
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -41,25 +36,23 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim() ?? "";
+    const debug = searchParams.get("debug") === "1";
     if (!q) {
       return NextResponse.json({ results: [] });
     }
 
-    // SQLite LIKE isn't case-insensitive for non-ASCII by default, so
-    // we LOWER() both sides. LOWER is a no-op on CJK glyphs, which is
-    // fine — they match themselves regardless.
-    const pattern = `%${q.toLowerCase()}%`;
-    const lower = (col: unknown) => sql<string>`lower(${col})`;
+    const pattern = `%${q}%`;
+    const patternLower = `%${q.toLowerCase()}%`;
 
-    // 1. Find recipe ids whose title matches.
+    // Title matches — raw SQL with two LIKE patterns (original + lower).
     const titleMatches = await db
       .select({ id: recipes.id })
       .from(recipes)
-      .where(like(lower(recipes.title), pattern));
+      .where(
+        sql`${recipes.title} LIKE ${pattern} OR ${recipes.title} LIKE ${patternLower}`
+      );
 
-    // 2. Find ingredient rows whose name matches. Join through to
-    //    recipes so we get the full recipe later; the join also
-    //    filters out any orphaned ingredient rows.
+    // Ingredient matches. Join via recipe id for hydration later.
     const ingredientMatches = await db
       .select({
         recipeId: ingredients.recipeId,
@@ -67,10 +60,11 @@ export async function GET(request: NextRequest) {
       })
       .from(ingredients)
       .innerJoin(recipes, eq(recipes.id, ingredients.recipeId))
-      .where(like(lower(ingredients.name), pattern));
+      .where(
+        sql`${ingredients.name} LIKE ${pattern} OR ${ingredients.name} LIKE ${patternLower}`
+      );
 
-    // 3. Merge ids. Record the first matching ingredient per recipe so
-    //    the client can show "found in: ..." context.
+    // Record the first matching ingredient per recipe for UI context.
     const idToIngredient = new Map<number, string>();
     for (const m of ingredientMatches) {
       if (!idToIngredient.has(m.recipeId)) {
@@ -82,11 +76,35 @@ export async function GET(request: NextRequest) {
       ...idToIngredient.keys(),
     ]);
 
-    if (allIds.size === 0) {
-      return NextResponse.json({ results: [] });
+    let debugPayload: Record<string, unknown> | undefined;
+    if (debug || allIds.size === 0) {
+      // Collect diagnostic info so we can tell whether the search is
+      // broken or the underlying tables are actually empty / shaped
+      // differently than we expect.
+      const [ingCount] = await db
+        .select({ n: sql<number>`count(*)` })
+        .from(ingredients);
+      const [recCount] = await db
+        .select({ n: sql<number>`count(*)` })
+        .from(recipes);
+      const sampleIngredients = await db
+        .select({ name: ingredients.name })
+        .from(ingredients)
+        .limit(20);
+      debugPayload = {
+        query: q,
+        titleMatchCount: titleMatches.length,
+        ingredientMatchCount: ingredientMatches.length,
+        totalIngredientsInDb: ingCount?.n ?? 0,
+        totalRecipesInDb: recCount?.n ?? 0,
+        sampleIngredientNames: sampleIngredients.map((s) => s.name),
+      };
     }
 
-    // 4. Hydrate the matched recipes.
+    if (allIds.size === 0) {
+      return NextResponse.json({ results: [], debug: debugPayload });
+    }
+
     const matchedRecipes = await db
       .select()
       .from(recipes)
@@ -98,11 +116,14 @@ export async function GET(request: NextRequest) {
       matchedIngredient: idToIngredient.get(r.id) ?? null,
     }));
 
-    return NextResponse.json({ results });
+    return NextResponse.json({
+      results,
+      ...(debug ? { debug: debugPayload } : {}),
+    });
   } catch (error) {
     console.error("GET /api/recipes/search error:", error);
     return NextResponse.json(
-      { error: "Search failed" },
+      { error: "Search failed", detail: String(error) },
       { status: 500 }
     );
   }
