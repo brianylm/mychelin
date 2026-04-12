@@ -406,6 +406,90 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     />
   ) : null;
 
+  // Surprise-me-by modal — extracted as a variable so it renders in
+  // BOTH the card-grid return and the recipe-detail return.
+  const surpriseByModal = surpriseByOpen ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={() => setSurpriseByOpen(false)}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-1 flex items-center gap-2">
+          <span className="text-xl">🎯</span>
+          <h3 className="text-base font-semibold text-neutral-900">
+            Surprise me by…
+          </h3>
+        </div>
+        <p className="mb-4 text-xs text-neutral-500">
+          Narrow the random pick by an ingredient, cuisine, or keyword.
+        </p>
+        <input
+          type="text"
+          autoFocus
+          value={surpriseByQuery}
+          onChange={(e) => setSurpriseByQuery(e.target.value)}
+          placeholder="e.g. chicken, soup, italian"
+          className="mb-3 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+        />
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {["chicken", "soup", "italian", "spicy"].map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => setSurpriseByQuery(chip)}
+              className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="soft"
+            color="gray"
+            onClick={() => setSurpriseByOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+            onClick={async () => {
+              const q = surpriseByQuery.trim();
+              if (!q) {
+                if (recipes.length > 0) {
+                  const r = recipes[Math.floor(Math.random() * recipes.length)];
+                  selectRecipe(r.id);
+                  setSurpriseByOpen(false);
+                }
+                return;
+              }
+              try {
+                const res = await fetch(`/api/recipes/search?q=${encodeURIComponent(q)}`);
+                if (!res.ok) throw new Error("Search failed");
+                const data = (await res.json()) as { results: Array<{ recipe: { id: number } }> };
+                const matches = data.results.map((r) => r.recipe);
+                if (matches.length === 0) {
+                  addToast(`No recipes match "${q}"`, "error");
+                  return;
+                }
+                const pick = matches[Math.floor(Math.random() * matches.length)];
+                selectRecipe(pick.id);
+                setSurpriseByOpen(false);
+              } catch {
+                addToast("Search failed, try again", "error");
+              }
+            }}
+          >
+            🎲 Pick one
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // Loading state
   if (loading && recipes.length === 0) {
     return (
@@ -726,6 +810,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         </div>
         {createBookModalEl}
       {shareModalEl}
+      {surpriseByModal}
       </div>
     );
   }
@@ -1085,101 +1170,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         />
       )}
 
-      {/* Surprise me by... — filter the active book's recipes by a
-          query (title or ingredient) and pick a random one. */}
-      {surpriseByOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setSurpriseByOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-xl">🎯</span>
-              <h3 className="text-base font-semibold text-neutral-900">
-                Surprise me by…
-              </h3>
-            </div>
-            <p className="mb-4 text-xs text-neutral-500">
-              Narrow the pick by an ingredient, cuisine, or keyword.
-              Matches titles AND ingredients in this book.
-            </p>
-            <input
-              type="text"
-              autoFocus
-              value={surpriseByQuery}
-              onChange={(e) => setSurpriseByQuery(e.target.value)}
-              placeholder="e.g. chicken, soup, italian"
-              className="mb-3 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
-            />
-            <div className="mb-4 flex flex-wrap gap-1.5">
-              {["chicken", "soup", "italian", "spicy"].map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => setSurpriseByQuery(chip)}
-                  className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="soft"
-                color="gray"
-                onClick={() => setSurpriseByOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-                onClick={async () => {
-                  const q = surpriseByQuery.trim();
-                  if (!q) {
-                    // No query → just pick any random recipe, same as
-                    // the plain Surprise me button.
-                    if (recipes.length > 0) {
-                      const r =
-                        recipes[Math.floor(Math.random() * recipes.length)];
-                      selectRecipe(r.id);
-                      setSurpriseByOpen(false);
-                    }
-                    return;
-                  }
-                  try {
-                    const res = await fetch(
-                      `/api/recipes/search?q=${encodeURIComponent(q)}`
-                    );
-                    if (!res.ok) throw new Error("Search failed");
-                    const data = (await res.json()) as {
-                      results: Array<{ recipe: { id: number } }>;
-                    };
-                    const matches = data.results.map((r) => r.recipe);
-                    if (matches.length === 0) {
-                      addToast(
-                        `No recipes match "${q}"`,
-                        "error"
-                      );
-                      return;
-                    }
-                    const pick =
-                      matches[Math.floor(Math.random() * matches.length)];
-                    selectRecipe(pick.id);
-                    setSurpriseByOpen(false);
-                  } catch {
-                    addToast("Search failed, try again", "error");
-                  }
-                }}
-              >
-                🎲 Pick one
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {surpriseByModal}
     </div>
   );
 }
