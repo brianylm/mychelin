@@ -30,4 +30,4 @@ Root cause is still unknown — possibly a Vercel bundling issue specific to thi
 - Drizzle's `drizzle-orm/libsql` adapter is compatible with both the `/web` and default clients
 
 ## Service Worker
-Currently **disabled** (self-unregistering `public/sw.js`). The old SW was intercepting POST requests and caching stale HTML. Do not re-enable without a plan to bypass `/api/*` routes explicitly and version the cache aggressively.
+Active (`public/sw.js`). Caches the app shell (HTML, JS, CSS, icons) for fast loads and basic offline support. **API routes (`/api/*`) are always network-only** — never cached. Non-GET requests (POST, PATCH, DELETE) are never intercepted. Cache is versioned via `CACHE_VERSION` in `sw.js` — bump it on breaking changes to bust stale assets. The previous SW was self-destructing because it cached everything including POST requests; the current one is explicit about what to cache and what to pass through.
