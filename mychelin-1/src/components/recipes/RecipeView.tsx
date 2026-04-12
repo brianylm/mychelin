@@ -431,21 +431,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           autoFocus
           value={surpriseByQuery}
           onChange={(e) => setSurpriseByQuery(e.target.value)}
-          placeholder="e.g. chicken, soup, italian"
-          className="mb-3 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+          placeholder="Search by ingredient, cuisine, or keyword…"
+          className="mb-4 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
         />
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {["chicken", "soup", "italian", "spicy"].map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => setSurpriseByQuery(chip)}
-              className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
         <div className="flex gap-2">
           <Button
             variant="soft"
