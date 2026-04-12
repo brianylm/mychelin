@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button, DropdownMenu } from "@radix-ui/themes";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
@@ -661,30 +661,31 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   {recipes.length > 0 && (
-                    <>
-                      <Button
-                        variant="soft"
-                        color="amber"
-                        size="2"
-                        onClick={() => {
-                          const random = recipes[Math.floor(Math.random() * recipes.length)];
-                          selectRecipe(random.id);
-                        }}
-                      >
-                        🎲 Surprise me
-                      </Button>
-                      <Button
-                        variant="outline"
-                        color="amber"
-                        size="2"
-                        onClick={() => {
-                          setSurpriseByQuery("");
-                          setSurpriseByOpen(true);
-                        }}
-                      >
-                        🎯 Surprise me by…
-                      </Button>
-                    </>
+                    <DropdownMenu.Root>
+                      <DropdownMenu.Trigger>
+                        <Button variant="soft" color="amber" size="2">
+                          🎲 Surprise me
+                        </Button>
+                      </DropdownMenu.Trigger>
+                      <DropdownMenu.Content>
+                        <DropdownMenu.Item
+                          onClick={() => {
+                            const random = recipes[Math.floor(Math.random() * recipes.length)];
+                            selectRecipe(random.id);
+                          }}
+                        >
+                          🎲 Just surprise me
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          onClick={() => {
+                            setSurpriseByQuery("");
+                            setSurpriseByOpen(true);
+                          }}
+                        >
+                          🎯 Surprise me by…
+                        </DropdownMenu.Item>
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Root>
                   )}
                   <Button
                     variant="solid"
