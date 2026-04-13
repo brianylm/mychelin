@@ -144,7 +144,7 @@ function ResetPasswordInner() {
                 type="button"
                 variant="solid"
                 size="3"
-                className="w-full"
+                style={{ width: "100%" }}
                 onClick={() => router.replace("/")}
               >
                 Back to sign in
@@ -198,7 +198,7 @@ function ResetPasswordInner() {
                 type="submit"
                 variant="solid"
                 size="3"
-                className="mt-4 w-full"
+                style={{ width: "100%", marginTop: "32px" }}
                 disabled={status.kind === "submitting"}
               >
                 {status.kind === "submitting" ? "Updating…" : "Reset password"}
@@ -216,7 +216,7 @@ function ResetPasswordInner() {
             type="button"
             variant="solid"
             size="3"
-            className="w-full"
+            style={{ width: "100%" }}
             onClick={() => router.replace("/")}
           >
             Sign in
