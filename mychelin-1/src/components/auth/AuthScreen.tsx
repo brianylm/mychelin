@@ -175,7 +175,7 @@ export function AuthScreen() {
                 type="submit"
                 variant="solid"
                 size="3"
-                className="mt-4 w-full"
+                className="mt-6 w-full"
                 disabled={loading}
               >
                 {loading
