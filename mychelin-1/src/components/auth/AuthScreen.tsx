@@ -32,15 +32,23 @@ export function AuthScreen() {
 
     if (mode === "forgot") {
       try {
-        await fetch("/api/auth/forgot-password", {
+        const res = await fetch("/api/auth/forgot-password", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email }),
         });
-        setForgotSent(true);
+        if (res.status === 429) {
+          // Rate limited — show the actual error so the user knows to wait.
+          // This doesn't leak user existence (the limit fires before any
+          // email lookup happens).
+          const data = await res.json().catch(() => ({}));
+          setError(data.error || "Too many requests. Please try again later.");
+        } else {
+          setForgotSent(true);
+        }
       } catch {
-        // Still show the success message — we deliberately don't leak
-        // whether the request actually reached the server.
+        // Network failure — still show the generic success message so we
+        // don't leak whether the request actually reached the server.
         setForgotSent(true);
       }
       setLoading(false);

@@ -5,12 +5,31 @@ import {
   setAuthCookie,
   type AuthUser,
 } from "@/lib/auth";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+  RATE_LIMITS,
+} from "@/lib/rateLimit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = await checkRateLimit(RATE_LIMITS.login, ip);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many login attempts. Try again in ${Math.ceil(
+            limit.retryAfterSeconds / 60
+          )} minute(s).`,
+        },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {

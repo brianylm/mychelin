@@ -4,6 +4,12 @@ import { db } from "@/db";
 import { passwordResetTokens, users } from "@/db/schema";
 import { hashPassword } from "@/lib/auth";
 import { hashToken } from "@/lib/tokens";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+  RATE_LIMITS,
+} from "@/lib/rateLimit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -39,6 +45,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = await checkRateLimit(RATE_LIMITS.resetPassword, ip);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many requests. Try again in ${Math.ceil(
+            limit.retryAfterSeconds / 60
+          )} minute(s).`,
+        },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const { token, password } = await request.json();
 
     if (!token || !password) {
