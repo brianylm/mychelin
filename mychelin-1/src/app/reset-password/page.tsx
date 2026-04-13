@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@radix-ui/themes";
 
@@ -14,7 +14,39 @@ type Status =
 const fieldClass =
   "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
 
+function ResetPasswordShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-surface px-4">
+      <div className="w-full max-w-sm animate-fade-in">
+        <div className="mb-8 text-center">
+          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
+            <img src="/icons/icon-96.png" alt="Mychelin" className="h-10 w-10 rounded-lg" />
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight">Mychelin</h1>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <ResetPasswordShell>
+          <h2 className="mb-2 text-base font-semibold">Checking your link…</h2>
+          <p className="text-sm text-neutral-500">One moment.</p>
+        </ResetPasswordShell>
+      }
+    >
+      <ResetPasswordInner />
+    </Suspense>
+  );
+}
+
+function ResetPasswordInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
@@ -96,17 +128,8 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4">
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
-            <img src="/icons/icon-96.png" alt="Mychelin" className="h-10 w-10 rounded-lg" />
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight">Mychelin</h1>
-        </div>
-
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
-          {status.kind === "checking" && (
+    <ResetPasswordShell>
+      {status.kind === "checking" && (
             <>
               <h2 className="mb-2 text-base font-semibold">Checking your link…</h2>
               <p className="text-sm text-neutral-500">One moment.</p>
@@ -183,25 +206,23 @@ export default function ResetPasswordPage() {
             </form>
           )}
 
-          {status.kind === "success" && (
-            <>
-              <h2 className="mb-2 text-base font-semibold">Password updated</h2>
-              <p className="mb-4 text-sm text-neutral-600">
-                Your password has been reset. Sign in with your new password.
-              </p>
-              <Button
-                type="button"
-                variant="solid"
-                size="3"
-                className="w-full"
-                onClick={() => router.replace("/")}
-              >
-                Sign in
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+      {status.kind === "success" && (
+        <>
+          <h2 className="mb-2 text-base font-semibold">Password updated</h2>
+          <p className="mb-4 text-sm text-neutral-600">
+            Your password has been reset. Sign in with your new password.
+          </p>
+          <Button
+            type="button"
+            variant="solid"
+            size="3"
+            className="w-full"
+            onClick={() => router.replace("/")}
+          >
+            Sign in
+          </Button>
+        </>
+      )}
+    </ResetPasswordShell>
   );
 }
