@@ -101,8 +101,13 @@ export function ProfileView() {
     [currentPassword, newPassword, confirmPassword, addToast, resetPasswordForm]
   );
 
-  // Fetch user preferences on mount
+  // Fetch user preferences when the logged-in user changes. Depending on
+  // user.id (not just mount) ensures that logging out of account A and
+  // into account B — without remounting the component — refetches the
+  // correct preferences instead of showing stale data from A.
   useEffect(() => {
+    if (!user?.id) return;
+    setIsLoading(true);
     async function fetchPreferences() {
       try {
         const response = await fetch("/api/user/preferences");
@@ -123,7 +128,7 @@ export function ProfileView() {
       }
     }
     fetchPreferences();
-  }, []);
+  }, [user?.id]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
