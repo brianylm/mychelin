@@ -32,6 +32,19 @@ export const passwordResetTokens = sqliteTable("password_reset_tokens", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Auth Rate Limits ──────────────────────────────────────
+// Fixed-window rate limiter for auth endpoints. One row per rate-limit key
+// (e.g. "login:1.2.3.4"). On each check, we either start a new window or
+// increment the count within the existing window.
+export const authRateLimits = sqliteTable("auth_rate_limits", {
+  key: text("key").primaryKey(), // e.g. "login:1.2.3.4" or "forgot:bob@example.com"
+  count: integer("count").notNull().default(0),
+  windowStart: text("window_start").notNull(), // ISO string — start of current window
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Recipes ───────────────────────────────────────────────
 export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -453,3 +466,5 @@ export type BookTip = typeof bookTips.$inferSelect;
 export type NewBookTip = typeof bookTips.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+export type AuthRateLimit = typeof authRateLimits.$inferSelect;
+export type NewAuthRateLimit = typeof authRateLimits.$inferInsert;

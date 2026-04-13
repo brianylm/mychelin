@@ -4,6 +4,12 @@ import { passwordResetTokens } from "@/db/schema";
 import { getUserFromDb } from "@/lib/auth";
 import { generateResetToken, hashToken } from "@/lib/tokens";
 import { sendPasswordResetEmail } from "@/lib/email";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+  RATE_LIMITS,
+} from "@/lib/rateLimit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -35,6 +41,22 @@ export async function POST(request: NextRequest) {
   const genericResponse = NextResponse.json({ success: true });
 
   try {
+    // Rate limit by IP to prevent email flooding. Returns 429 on breach —
+    // this doesn't leak user existence (the 429 fires before we ever look
+    // up the email), but it does stop someone from pounding the endpoint.
+    const ip = getClientIp(request);
+    const limit = await checkRateLimit(RATE_LIMITS.forgotPassword, ip);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many requests. Try again in ${Math.ceil(
+            limit.retryAfterSeconds / 60
+          )} minute(s).`,
+        },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const { email } = await request.json();
     if (!email || typeof email !== "string") {
       return genericResponse;

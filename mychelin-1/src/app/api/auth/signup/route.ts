@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { hashPassword, setAuthCookie, type AuthUser } from "@/lib/auth";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitHeaders,
+  RATE_LIMITS,
+} from "@/lib/rateLimit";
 import { eq } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -9,6 +15,19 @@ export const preferredRegion = "hnd1";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const limit = await checkRateLimit(RATE_LIMITS.signup, ip);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many signup attempts. Try again in ${Math.ceil(
+            limit.retryAfterSeconds / 60
+          )} minute(s).`,
+        },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
+    }
+
     const { name, email, password } = await request.json();
 
     if (!name || !email || !password) {
