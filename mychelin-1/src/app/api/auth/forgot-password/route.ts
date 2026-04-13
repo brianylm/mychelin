@@ -12,9 +12,16 @@ export const preferredRegion = "hnd1";
 const TOKEN_LIFETIME_MS = 60 * 60 * 1000;
 
 function getBaseUrl(request: NextRequest): string {
-  const envUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (envUrl) return envUrl.replace(/\/$/, "");
-  // Fall back to the current request origin so this works in preview deploys.
+  // On preview deploys, always use the request origin so email links point
+  // at the preview URL (where the /reset-password page actually exists) and
+  // not at production. NEXT_PUBLIC_BASE_URL is canonical only for production.
+  const isPreview = process.env.VERCEL_ENV === "preview";
+
+  if (!isPreview) {
+    const envUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (envUrl) return envUrl.replace(/\/$/, "");
+  }
+
   const origin = request.headers.get("origin");
   if (origin) return origin;
   const host = request.headers.get("host");
