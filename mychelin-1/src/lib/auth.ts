@@ -5,8 +5,23 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-const JWT_SECRET_STRING = process.env.JWT_SECRET || "mychelin-dev-secret-change-in-prod";
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
+// Lazily resolve JWT_SECRET so a missing env var doesn't crash at module
+// import time (mirrors the db client lazy-init pattern). The check fires
+// on first token sign/verify instead, so importing this module is safe.
+// NOTE: no dev fallback — if you hit this in dev, add JWT_SECRET to
+// .env.local. Silently falling back to a known secret in production would
+// let anyone forge tokens.
+let _jwtSecret: Uint8Array | null = null;
+function getJwtSecret(): Uint8Array {
+  if (_jwtSecret) return _jwtSecret;
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET environment variable is not set");
+  }
+  _jwtSecret = new TextEncoder().encode(secret);
+  return _jwtSecret;
+}
+
 const COOKIE_NAME = "mychelin_token";
 const TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
@@ -32,12 +47,12 @@ export async function createToken(user: AuthUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${TOKEN_EXPIRY_SECONDS}s`)
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyToken(token: string): Promise<AuthUser | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return {
       id: payload.id as number,
       name: payload.name as string,
