@@ -153,4 +153,14 @@ export const RATE_LIMITS = {
     limit: 10,
     windowSeconds: 60 * 60,
   },
+
+  // 5 change-password attempts per hour per user. Since the route is
+  // authenticated, we scope by user id rather than IP — a household sharing
+  // a NAT won't get cross-locked, and an attacker targeting a specific user
+  // is still throttled.
+  changePassword: {
+    name: "change_password",
+    limit: 5,
+    windowSeconds: 60 * 60,
+  },
 } as const;

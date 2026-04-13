@@ -8,6 +8,11 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
+import {
+  checkRateLimit,
+  rateLimitHeaders,
+  RATE_LIMITS,
+} from "@/lib/rateLimit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -17,6 +22,22 @@ export async function POST(request: NextRequest) {
     const authUser = await getCurrentUser();
     if (!authUser) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Rate limit per user id (not IP) since the route is already authenticated.
+    const limit = await checkRateLimit(
+      RATE_LIMITS.changePassword,
+      String(authUser.id)
+    );
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many change-password attempts. Try again in ${Math.ceil(
+            limit.retryAfterSeconds / 60
+          )} minute(s).`,
+        },
+        { status: 429, headers: rateLimitHeaders(limit) }
+      );
     }
 
     const { currentPassword, newPassword } = await request.json();
