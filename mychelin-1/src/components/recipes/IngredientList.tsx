@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { Button, IconButton } from "@radix-ui/themes";
 import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
+import { IngredientTypeahead } from "@/components/ui/IngredientTypeahead";
 import type { Ingredient } from "@/db/schema";
 import { formatScaledQuantity } from "./ServingScaler";
 
@@ -172,20 +173,27 @@ export function IngredientList({
 
       {isAdding ? (
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-          {/* Name first, full width */}
-          <input
-            value={draft.name}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, name: e.target.value }))
-            }
-            placeholder="Ingredient name"
-            className={`mb-2 w-full ${fieldBase}`}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAdd();
-              if (e.key === "Escape") setIsAdding(false);
-            }}
-          />
+          {/* Name first, full width — with typeahead */}
+          <div className="mb-2">
+            <IngredientTypeahead
+              value={draft.name}
+              onChange={(name) => setDraft((d) => ({ ...d, name }))}
+              onSelectSuggestion={(s) => {
+                // Pre-fill unit if the suggestion has one and the user
+                // hasn't already set one (don't clobber their typing).
+                setDraft((d) => ({
+                  ...d,
+                  name: s.name,
+                  unit: d.unit || s.unit || "",
+                }));
+              }}
+              placeholder="Ingredient name"
+              className={`w-full ${fieldBase}`}
+              autoFocus
+              onSubmit={handleAdd}
+              onCancel={() => setIsAdding(false)}
+            />
+          </div>
           {/* Qty + Unit side by side */}
           <div className="mb-3 flex gap-2">
             <input
