@@ -93,7 +93,7 @@ export function AuthScreen() {
                 type="button"
                 variant="solid"
                 size="3"
-                className="w-full"
+                style={{ width: "100%" }}
                 onClick={() => switchMode("login")}
               >
                 Back to sign in
@@ -175,7 +175,8 @@ export function AuthScreen() {
                 type="submit"
                 variant="solid"
                 size="3"
-                className="mt-6 w-full"
+                className="mt-6"
+                style={{ width: "100%" }}
                 disabled={loading}
               >
                 {loading
