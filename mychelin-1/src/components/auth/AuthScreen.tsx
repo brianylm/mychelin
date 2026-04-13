@@ -175,8 +175,7 @@ export function AuthScreen() {
                 type="submit"
                 variant="solid"
                 size="3"
-                className="mt-6"
-                style={{ width: "100%" }}
+                style={{ width: "100%", marginTop: "32px" }}
                 disabled={loading}
               >
                 {loading
