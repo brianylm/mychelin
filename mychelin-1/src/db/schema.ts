@@ -18,6 +18,20 @@ export const users = sqliteTable("users", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Password Reset Tokens ─────────────────────────────────
+export const passwordResetTokens = sqliteTable("password_reset_tokens", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: text("expires_at").notNull(), // ISO string
+  usedAt: text("used_at"), // ISO string, null until consumed
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Recipes ───────────────────────────────────────────────
 export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -437,3 +451,5 @@ export type RecipeVersion = typeof recipeVersions.$inferSelect;
 export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
 export type BookTip = typeof bookTips.$inferSelect;
 export type NewBookTip = typeof bookTips.$inferInsert;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
