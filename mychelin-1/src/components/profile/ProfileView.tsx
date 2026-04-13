@@ -44,6 +44,63 @@ export function ProfileView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Change-password panel state
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const resetPasswordForm = useCallback(() => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError(null);
+  }, []);
+
+  const handleChangePassword = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setPasswordError(null);
+
+      if (newPassword.length < 6) {
+        setPasswordError("New password must be at least 6 characters");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setPasswordError("New passwords don't match");
+        return;
+      }
+      if (currentPassword === newPassword) {
+        setPasswordError("New password must be different from current password");
+        return;
+      }
+
+      setIsChangingPassword(true);
+      try {
+        const res = await fetch("/api/auth/change-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setPasswordError(data.error || "Failed to change password");
+          return;
+        }
+        addToast("Password updated", "success");
+        resetPasswordForm();
+        setShowPasswordForm(false);
+      } catch {
+        setPasswordError("Something went wrong. Please try again.");
+      } finally {
+        setIsChangingPassword(false);
+      }
+    },
+    [currentPassword, newPassword, confirmPassword, addToast, resetPasswordForm]
+  );
+
   // Fetch user preferences on mount
   useEffect(() => {
     async function fetchPreferences() {
@@ -210,6 +267,99 @@ export function ProfileView() {
               </label>
             ))}
           </div>
+        </div>
+
+        {/* Security */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-neutral-800">Security</h2>
+            {!showPasswordForm && (
+              <button
+                type="button"
+                onClick={() => setShowPasswordForm(true)}
+                className="text-sm font-medium text-amber-700 hover:underline"
+              >
+                Change password
+              </button>
+            )}
+          </div>
+
+          {showPasswordForm && (
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  Current password
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Your current password"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  New password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  Confirm new password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your new password"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {passwordError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {passwordError}
+                </p>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <Button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  size="3"
+                  style={{ marginTop: "8px" }}
+                >
+                  {isChangingPassword ? "Updating…" : "Update password"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="3"
+                  onClick={() => {
+                    resetPasswordForm();
+                    setShowPasswordForm(false);
+                  }}
+                  disabled={isChangingPassword}
+                  style={{ marginTop: "8px" }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Actions */}
