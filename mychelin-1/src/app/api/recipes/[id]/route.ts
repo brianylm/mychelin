@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipes, ingredients, instructions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -143,6 +144,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         );
       }
     }
+
+    // Auto-promote the recipe from draft to active if it now qualifies.
+    // Relevant when the caller updated the title — if the title just became
+    // real and the recipe already had ingredients/instructions, promote it.
+    await maybePromoteDraftToActive(recipeId);
 
     // Return updated recipe
     const updatedRecipe = await db.query.recipes.findFirst({

@@ -99,6 +99,13 @@
       "when": 1776164518515,
       "tag": "0013_omniscient_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1776180000000,
+      "tag": "0014_expand_ingredient_catalog",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { ingredients, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
+import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
         sortOrder: nextOrder,
       })
       .returning();
+
+    // Auto-promote the recipe from draft to active if it now qualifies.
+    await maybePromoteDraftToActive(recipeId);
 
     return NextResponse.json(newIngredient, { status: 201 });
   } catch (error) {

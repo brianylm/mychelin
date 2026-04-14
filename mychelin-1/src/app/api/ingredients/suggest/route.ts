@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         q
           ? and(
               eq(recipes.userId, user.id),
-              like(sql`lower(${ingredients.name})`, `${q}%`)
+              like(sql`lower(${ingredients.name})`, `%${q}%`)
             )
           : eq(recipes.userId, user.id)
       )
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
           defaultUnit: ingredientCatalog.defaultUnit,
         })
         .from(ingredientCatalog)
-        .where(like(sql`lower(${ingredientCatalog.name})`, `${q}%`))
+        .where(like(sql`lower(${ingredientCatalog.name})`, `%${q}%`))
         .orderBy(ingredientCatalog.name)
         .limit(MAX_RESULTS);
 
