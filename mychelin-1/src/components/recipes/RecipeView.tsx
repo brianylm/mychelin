@@ -7,12 +7,14 @@ import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
-import { RecipeHeader } from "./RecipeHeader";
+import { RecipeTitleCard } from "./RecipeTitleCard";
+import { RecipeDetailsCard } from "./RecipeDetailsCard";
 import { BookSelector } from "./BookSelector";
 import { IngredientList } from "./IngredientList";
 import { RecipeSteps } from "./RecipeSteps";
 import { StorySection } from "./StorySection";
 import { RatingSection } from "./RatingSection";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
 import { PhotoUploadSection, type RecipePhoto } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
@@ -812,6 +814,34 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     savingCookTime ||
     savingYield;
 
+  // Progressive disclosure — badges show how many fields in each collapsed
+  // tier have content. Helps users see at a glance that there's data tucked
+  // away without having to open the section.
+  //
+  // Details (6 fields): description, cuisine, prep time, cook time, yield, book
+  const detailsFilled = [
+    selectedRecipe.description,
+    selectedRecipe.cuisine,
+    selectedRecipe.prepTime,
+    selectedRecipe.cookTime,
+    selectedRecipe.yield,
+    selectedRecipe.bookId,
+  ].filter((v) => v !== null && v !== undefined && v !== "").length;
+
+  // Heritage (9 fields): story, origin, dialect, occasion, familyMember,
+  // generation, authenticityRating, tasteRating, nostalgiaRating
+  const heritageFilled = [
+    selectedRecipe.story,
+    selectedRecipe.origin,
+    selectedRecipe.dialect,
+    selectedRecipe.occasion,
+    selectedRecipe.familyMember,
+    selectedRecipe.generation,
+    selectedRecipe.authenticityRating,
+    selectedRecipe.tasteRating,
+    selectedRecipe.nostalgiaRating,
+  ].filter((v) => v !== null && v !== undefined && v !== "").length;
+
   const handleSaveNow = () => {
     // Blur whatever is currently focused — fires any pending onBlur
     // autosave handlers so in-progress edits get persisted without
@@ -886,28 +916,15 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             </div>
           )}
 
-        {/* Core recipe info */}
-        <RecipeHeader
+        {/* ─── Core tier — always visible ──────────────── */}
+
+        {/* Title */}
+        <RecipeTitleCard
           recipe={selectedRecipe}
           title={title}
           onTitleChange={setTitle}
-          description={description}
-          onDescriptionChange={setDescription}
-          cuisine={cuisine}
-          onCuisineChange={setCuisine}
-          prepTime={prepTime}
-          onPrepTimeChange={setPrepTime}
-          cookTime={cookTime}
-          onCookTimeChange={setCookTime}
-          recipeYield={recipeYield}
-          onYieldChange={setRecipeYield}
-          onBlur={handleBlur}
-          savingTitle={savingTitle}
-          savingDescription={savingDescription}
-          savingCuisine={savingCuisine}
-          savingPrepTime={savingPrepTime}
-          savingCookTime={savingCookTime}
-          savingYield={savingYield}
+          onBlur={() => handleBlur("title")}
+          isSaving={savingTitle}
           autoFocusTitle={
             !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
           }
@@ -920,12 +937,6 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             onNavigate={(id) => selectRecipe(id)}
           />
         )}
-
-        {/* Book */}
-        <BookSelector
-          currentBookId={selectedRecipe.bookId ?? null}
-          onSave={handleBookChange}
-        />
 
         {/* Photos */}
         <PhotoUploadSection
@@ -975,46 +986,79 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           onDelete={deleteInstruction}
         />
 
-        {/* Heritage section */}
-        <div className="space-y-4">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Heritage & Culture
-          </h2>
+        {/* ─── Details tier — collapsed by default ───────── */}
+        <CollapsibleSection
+          title="Details"
+          subtitle="Description, cuisine, timing, yield, book"
+          badge={`${detailsFilled}/6`}
+        >
+          <div className="grid gap-4">
+            <RecipeDetailsCard
+              description={description}
+              onDescriptionChange={setDescription}
+              cuisine={cuisine}
+              onCuisineChange={setCuisine}
+              prepTime={prepTime}
+              onPrepTimeChange={setPrepTime}
+              cookTime={cookTime}
+              onCookTimeChange={setCookTime}
+              recipeYield={recipeYield}
+              onYieldChange={setRecipeYield}
+              onBlur={handleBlur}
+              savingDescription={savingDescription}
+              savingCuisine={savingCuisine}
+              savingPrepTime={savingPrepTime}
+              savingCookTime={savingCookTime}
+              savingYield={savingYield}
+            />
+            <BookSelector
+              currentBookId={selectedRecipe.bookId ?? null}
+              onSave={handleBookChange}
+            />
+          </div>
+        </CollapsibleSection>
 
-          <StorySection
-            story={selectedRecipe.story ?? ""}
-            onSave={handleStorySave}
-          />
+        {/* ─── Heritage & Family tier — collapsed by default ── */}
+        <CollapsibleSection
+          title="Heritage & Family"
+          subtitle="Story, cultural context, voice recordings, ratings"
+          badge={`${heritageFilled}/9`}
+        >
+          <div className="grid gap-4">
+            <StorySection
+              story={selectedRecipe.story ?? ""}
+              onSave={handleStorySave}
+            />
 
-          <CulturalContextCard
-            origin={selectedRecipe.origin ?? ""}
-            dialect={selectedRecipe.dialect ?? ""}
-            occasion={selectedRecipe.occasion ?? ""}
-            familyMember={selectedRecipe.familyMember ?? ""}
-            generation={selectedRecipe.generation ?? ""}
-            onSave={handleCulturalSave}
-          />
+            <CulturalContextCard
+              origin={selectedRecipe.origin ?? ""}
+              dialect={selectedRecipe.dialect ?? ""}
+              occasion={selectedRecipe.occasion ?? ""}
+              familyMember={selectedRecipe.familyMember ?? ""}
+              generation={selectedRecipe.generation ?? ""}
+              onSave={handleCulturalSave}
+            />
 
-          <VoiceRecording
-            recordings={(selectedRecipe.voiceRecordings ?? []).map((v) => ({
-              id: String(v.id),
-              url: v.blobUrl,
-              duration: v.duration,
-              label: v.label ?? undefined,
-              createdAt: v.createdAt,
-            }))}
-            onSaveRecording={handleVoiceSave}
-            onDeleteRecording={handleVoiceDelete}
-          />
-        </div>
+            <VoiceRecording
+              recordings={(selectedRecipe.voiceRecordings ?? []).map((v) => ({
+                id: String(v.id),
+                url: v.blobUrl,
+                duration: v.duration,
+                label: v.label ?? undefined,
+                createdAt: v.createdAt,
+              }))}
+              onSaveRecording={handleVoiceSave}
+              onDeleteRecording={handleVoiceDelete}
+            />
 
-        {/* Ratings */}
-        <RatingSection
-          authenticityRating={selectedRecipe.authenticityRating ?? null}
-          tasteRating={selectedRecipe.tasteRating ?? null}
-          nostalgiaRating={selectedRecipe.nostalgiaRating ?? null}
-          onSave={handleRatingSave}
-        />
+            <RatingSection
+              authenticityRating={selectedRecipe.authenticityRating ?? null}
+              tasteRating={selectedRecipe.tasteRating ?? null}
+              nostalgiaRating={selectedRecipe.nostalgiaRating ?? null}
+              onSave={handleRatingSave}
+            />
+          </div>
+        </CollapsibleSection>
 
         {/* Version History */}
         <div className="space-y-3">
