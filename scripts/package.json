@@ -1,0 +1,9 @@
+{
+  "name": "mychelin-db-migrate-runner",
+  "private": true,
+  "type": "module",
+  "description": "Isolated dependency bundle for the GitHub Actions db-migrate workflow. Kept here so CI doesn't have to install the full root package.json just to run one script.",
+  "dependencies": {
+    "@libsql/client": "^0.17.2"
+  }
+}

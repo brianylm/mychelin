@@ -1,0 +1,41 @@
+name: DB migrate
+
+# Applies pending Turso migrations on push to main.
+#
+# - Triggered automatically when anything under mychelin-1/drizzle/
+#   changes on main (i.e. when a migration PR is merged)
+# - Also available as workflow_dispatch for manual retries
+# - Uses scripts/db-migrate.mjs which is idempotent and handles
+#   partially-applied state gracefully
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mychelin-1/drizzle/**.sql"
+      - "scripts/db-migrate.mjs"
+      - ".github/workflows/db-migrate.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install libsql client
+        working-directory: scripts
+        run: npm install --silent
+
+      - name: Run migrations
+        working-directory: scripts
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: node db-migrate.mjs
