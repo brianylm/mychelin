@@ -42,17 +42,25 @@ export function RecipeListItem({
     });
   };
 
+  const isDraft = recipe.status === "draft";
+
   return (
     <li
       className={cn(
         "group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition-colors",
-        isSelected ? "bg-amber-50" : "hover:bg-neutral-100"
+        isSelected ? "bg-amber-50" : "hover:bg-neutral-100",
+        isDraft && !isSelected && "opacity-70"
       )}
       onClick={() => onSelect(recipe.id)}
       onPointerEnter={handlePointerEnter}
     >
       {/* Thumbnail placeholder */}
-      <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-amber-50">
+      <div
+        className={cn(
+          "relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-amber-50",
+          isDraft && "border border-dashed border-amber-300 bg-amber-50/60"
+        )}
+      >
         {recipe.imageUrl ? (
           <img
             src={recipe.imageUrl}
@@ -60,14 +68,18 @@ export function RecipeListItem({
             className="h-full w-full object-cover"
           />
         ) : (
-          <span className="text-base">🍳</span>
+          <span className="text-base">{isDraft ? "✏️" : "🍳"}</span>
         )}
       </div>
 
       {/* Name + cuisine (or matched ingredient context during search) */}
       <div className="flex min-w-0 flex-1 flex-col">
         <span
-          className={cn("truncate text-sm", isSelected && "font-medium")}
+          className={cn(
+            "truncate text-sm",
+            isSelected && "font-medium",
+            isDraft && !isSelected && "italic text-neutral-600"
+          )}
         >
           {recipe.title}
         </span>
@@ -76,6 +88,8 @@ export function RecipeListItem({
             ingredient:{" "}
             <span className="font-medium">{matchedIngredient}</span>
           </span>
+        ) : isDraft ? (
+          <span className="truncate text-[11px] text-neutral-400">Draft</span>
         ) : (
           recipe.cuisine && (
             <span className="truncate text-xs text-neutral-500">

@@ -144,6 +144,17 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
       matchedIngredientById.set(r.recipe.id, r.matchedIngredient);
   }
 
+  // Split drafts from active recipes. Drafts get their own collapsible
+  // section above "All Recipes" so in-progress captures don't pollute
+  // the main list. When the user is searching, skip the split — search
+  // results appear as a flat list regardless of status.
+  const draftRecipes = hasQuery
+    ? []
+    : filteredRecipes.filter((r) => r.status === "draft");
+  const activeRecipes = hasQuery
+    ? filteredRecipes
+    : filteredRecipes.filter((r) => r.status !== "draft");
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -276,19 +287,54 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
             )}
           </div>
 
-          {/* All recipes */}
-          {books.length > 0 && (
-            <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-              All Recipes
+          {/* Drafts — only shown when there's at least one. Deliberately
+              above "All Recipes" so in-progress captures are never out of
+              sight. */}
+          {draftRecipes.length > 0 && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between px-3 pb-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                  Drafts
+                </span>
+                <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700">
+                  {draftRecipes.length}
+                </span>
+              </div>
+              <ul className="space-y-0.5">
+                {draftRecipes.map((recipe) => (
+                  <RecipeListItem
+                    key={recipe.id}
+                    recipe={recipe}
+                    isSelected={selectedRecipeId === recipe.id}
+                    onSelect={(id) => {
+                      selectRecipe(id);
+                      onClose();
+                    }}
+                    onDelete={deleteRecipe}
+                    matchedIngredient={matchedIngredientById.get(recipe.id)}
+                  />
+                ))}
+              </ul>
             </div>
           )}
-          {filteredRecipes.length === 0 && !loading && !searching ? (
+
+          {/* All recipes */}
+          {(books.length > 0 || draftRecipes.length > 0) && (
+            <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              {hasQuery ? "Search Results" : "All Recipes"}
+            </div>
+          )}
+          {activeRecipes.length === 0 && !loading && !searching ? (
             <p className="px-3 py-6 text-center text-sm text-neutral-500">
-              {query ? "No recipes match your search." : "No recipes yet. Create one!"}
+              {query
+                ? "No recipes match your search."
+                : draftRecipes.length > 0
+                  ? "All your recipes are drafts. Add ingredients or steps to save them as complete recipes."
+                  : "No recipes yet. Create one!"}
             </p>
           ) : (
             <ul className="space-y-0.5">
-              {filteredRecipes.map((recipe) => (
+              {activeRecipes.map((recipe) => (
                 <RecipeListItem
                   key={recipe.id}
                   recipe={recipe}

@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       title,
+      status,
       description,
       cuisine,
       yield: recipeYield,
@@ -79,11 +80,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate status if provided. Default is "active" (matches schema).
+    if (status !== undefined && status !== "active" && status !== "draft") {
+      return NextResponse.json(
+        { error: "status must be 'active' or 'draft'" },
+        { status: 400 }
+      );
+    }
+
     // Insert recipe
     const [newRecipe] = await db
       .insert(recipes)
       .values({
         title,
+        status: status ?? "active",
         description,
         cuisine,
         yield: recipeYield,
