@@ -217,11 +217,15 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   // finish the capture. This removes the biggest friction point in the
   // "capture first, structure later" input flow.
 
-  // Auto-promote a draft to active once it has real content. The rule: a
-  // draft becomes "active" (and moves from the Drafts section into the
-  // main recipe list) as soon as it has a non-placeholder title AND at
-  // least one ingredient or instruction. Fires transparently without a
-  // user action — they just notice the recipe showed up in the main list.
+  // Auto-promote a draft to active once it has ANY signal of real intent.
+  // Rule: a draft becomes "active" (and moves from the Drafts section into
+  // the main recipe list) as soon as EITHER a non-placeholder title is set
+  // OR at least one ingredient or instruction is added. Either signal is
+  // enough — if the user typed a title, they meant to save a recipe; if
+  // they pasted ingredients, same thing. Drafts are reserved for the
+  // fully-empty "clicked New Recipe by mistake" state. This client-side
+  // effect is a fallback; the server also runs the same check on every
+  // ingredient/instruction insert and PATCH to /api/recipes/:id.
   const selectedId = selectedRecipe?.id;
   const selectedStatus = selectedRecipe?.status;
   const selectedTitle = selectedRecipe?.title;
@@ -234,7 +238,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       selectedTitle.trim() !== "" &&
       selectedTitle !== "Untitled recipe";
     const hasContent = selectedIngredientCount > 0 || selectedInstructionCount > 0;
-    if (!hasRealTitle || !hasContent) return;
+    if (!hasRealTitle && !hasContent) return;
 
     // Fire-and-forget PATCH. If it fails, the draft just stays a draft —
     // the effect re-fires when the user edits again.

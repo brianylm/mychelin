@@ -51,16 +51,20 @@ export async function maybePromoteDraftToActive(recipeId: number): Promise<void>
       return;
     }
 
+    // Promote if EITHER a real title is set OR the recipe has content.
+    // Either signal is enough — a user who types a title but walks away
+    // still gets a real recipe they can find, and a user who drops in
+    // ingredients before typing a title also gets promoted immediately.
+    // Drafts are reserved for the fully-empty case (placeholder title AND
+    // no content), which is basically "clicked New Recipe by mistake".
     const title = (recipe.title ?? "").trim();
     const hasRealTitle = title !== "" && title !== "Untitled recipe";
-    if (!hasRealTitle) {
-      console.log(`[promote] recipe=${recipeId} skip: no real title`);
-      return;
-    }
-
     const hasContent = ingredientCount > 0 || instructionCount > 0;
-    if (!hasContent) {
-      console.log(`[promote] recipe=${recipeId} skip: no content`);
+
+    if (!hasRealTitle && !hasContent) {
+      console.log(
+        `[promote] recipe=${recipeId} skip: no real title and no content`
+      );
       return;
     }
 
