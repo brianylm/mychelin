@@ -101,13 +101,22 @@ export async function POST(request: NextRequest) {
       await db.insert(ingredients).values(
         ingredientsList.map(
           (
-            ing: { name: string; quantity?: number; unit?: string; notes?: string },
+            ing: {
+              name: string;
+              quantity?: number;
+              unit?: string;
+              approximate?: boolean;
+              quantityText?: string;
+              notes?: string;
+            },
             idx: number
           ) => ({
             recipeId: newRecipe.id,
             name: ing.name,
             quantity: ing.quantity,
             unit: ing.unit,
+            approximate: Boolean(ing.approximate),
+            quantityText: ing.quantityText ?? null,
             notes: ing.notes,
             sortOrder: idx,
           })

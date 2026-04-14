@@ -36,6 +36,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
         name: body.name,
         quantity: body.quantity ?? null,
         unit: body.unit ?? null,
+        approximate: Boolean(body.approximate),
+        quantityText: body.quantityText ?? null,
         notes: body.notes ?? null,
         sortOrder: nextOrder,
       })

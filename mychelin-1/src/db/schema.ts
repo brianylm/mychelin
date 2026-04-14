@@ -126,6 +126,15 @@ export const ingredients = sqliteTable("ingredients", {
   name: text("name").notNull(), // free text for backward compat
   quantity: real("quantity"),
   unit: text("unit"), // e.g. "tbsp", "cup", "g"
+  // When approximate=true, the structured quantity/unit fields are
+  // replaced by quantityText (e.g. "a handful", "agak-agak", "to taste")
+  // for traditional Singapore cooking that doesn't fit gram-precise
+  // measurements. Both representations persist independently so toggling
+  // back and forth doesn't destroy data.
+  approximate: integer("approximate", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  quantityText: text("quantity_text"),
   notes: text("notes"), // e.g. "finely chopped"
   sortOrder: integer("sort_order").default(0),
 });

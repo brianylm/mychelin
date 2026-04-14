@@ -85,13 +85,22 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         await db.insert(ingredients).values(
           ingredientsList.map(
             (
-              ing: { name: string; quantity?: number; unit?: string; notes?: string },
+              ing: {
+                name: string;
+                quantity?: number;
+                unit?: string;
+                approximate?: boolean;
+                quantityText?: string;
+                notes?: string;
+              },
               idx: number
             ) => ({
               recipeId,
               name: ing.name,
               quantity: ing.quantity,
               unit: ing.unit,
+              approximate: Boolean(ing.approximate),
+              quantityText: ing.quantityText ?? null,
               notes: ing.notes,
               sortOrder: idx,
             })
@@ -205,13 +214,22 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       await db.insert(ingredients).values(
         ingredientsList.map(
           (
-            ing: { name: string; quantity?: number; unit?: string; notes?: string },
+            ing: {
+              name: string;
+              quantity?: number;
+              unit?: string;
+              approximate?: boolean;
+              quantityText?: string;
+              notes?: string;
+            },
             idx: number
           ) => ({
             recipeId,
             name: ing.name,
             quantity: ing.quantity,
             unit: ing.unit,
+            approximate: Boolean(ing.approximate),
+            quantityText: ing.quantityText ?? null,
             notes: ing.notes,
             sortOrder: idx,
           })

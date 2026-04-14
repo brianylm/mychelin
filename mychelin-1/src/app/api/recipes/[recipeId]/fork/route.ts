@@ -75,6 +75,8 @@ export async function POST(
               name: ing.name,
               quantity: ing.quantity,
               unit: ing.unit,
+              approximate: ing.approximate,
+              quantityText: ing.quantityText,
               notes: ing.notes,
             }))
           ),
@@ -146,6 +148,8 @@ export async function POST(
           name: ing.name,
           quantity: ing.quantity,
           unit: ing.unit,
+          approximate: ing.approximate,
+          quantityText: ing.quantityText,
           notes: ing.notes,
           sortOrder: ing.sortOrder,
         }))
@@ -180,6 +184,8 @@ export async function POST(
             name: ing.name,
             quantity: ing.quantity,
             unit: ing.unit,
+            approximate: ing.approximate,
+            quantityText: ing.quantityText,
             notes: ing.notes,
           }))
         ),
