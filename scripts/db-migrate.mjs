@@ -81,18 +81,33 @@ async function main() {
     const fullPath = join(MIGRATIONS_DIR, file);
     const content = await readFile(fullPath, "utf-8");
 
-    // Drizzle separates multi-statement migrations with a comment marker.
-    // Also split on bare semicolons as a fallback, and strip comment-only
-    // lines to avoid "empty statement" errors.
+    // Parse into executable statements. Drizzle separates multi-statement
+    // migrations with a "--> statement-breakpoint" marker; we also split on
+    // bare semicolons as a fallback. For each candidate, strip comment-only
+    // lines from inside the statement so section headers like
+    // `-- ─── Additional vegetables ───` don't cause the underlying SQL to
+    // be dropped. Then trim and keep only non-empty candidates.
     const statements = content
       .split(/-->\s*statement-breakpoint/g)
-      .flatMap((chunk) =>
-        chunk
-          .split(/;\s*$/m)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0 && !/^--/.test(s.split("\n")[0]))
+      .flatMap((chunk) => chunk.split(/;\s*$/m))
+      .map((stmt) =>
+        stmt
+          .split("\n")
+          .filter((line) => !/^\s*--/.test(line))
+          .join("\n")
+          .trim()
       )
       .filter((s) => s.length > 0);
+
+    // Defensive guard: if a migration parses to zero statements, don't
+    // record it as applied. That would be a parser bug — we want the next
+    // run (after a fix is deployed) to pick it up fresh.
+    if (statements.length === 0) {
+      console.warn(
+        `⚠  ${file}: no executable statements found after parsing. Not recording as applied.`
+      );
+      continue;
+    }
 
     console.log(`→ ${file}: running ${statements.length} statement(s)`);
 
