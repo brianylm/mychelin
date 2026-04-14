@@ -132,7 +132,12 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       fetchJson<Recipe>("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
+        // New recipes start as drafts (F1). They get auto-promoted to
+        // "active" in RecipeView as soon as they have a real title and
+        // at least one ingredient or instruction — until then, they sit
+        // in the Drafts section of the sidebar instead of polluting the
+        // main recipe list.
+        body: JSON.stringify({ title, status: "draft" }),
       }),
     onSuccess: (data: Recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });

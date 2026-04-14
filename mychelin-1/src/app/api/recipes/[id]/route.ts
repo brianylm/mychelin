@@ -67,6 +67,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       ...recipeFields
     } = body;
 
+    // Validate status if included in the update.
+    if (
+      recipeFields.status !== undefined &&
+      recipeFields.status !== "active" &&
+      recipeFields.status !== "draft"
+    ) {
+      return NextResponse.json(
+        { error: "status must be 'active' or 'draft'" },
+        { status: 400 }
+      );
+    }
+
     // Update recipe fields if any provided
     if (Object.keys(recipeFields).length > 0) {
       await db

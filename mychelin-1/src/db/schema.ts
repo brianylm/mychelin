@@ -50,6 +50,11 @@ export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
+  // Draft vs active state for progressive capture. Drafts are tucked into a
+  // separate sidebar section so quick-capture leftovers don't pollute the
+  // main recipe list. Auto-promoted to "active" when the recipe has a title
+  // and at least one ingredient or instruction.
+  status: text("status").notNull().default("active"),
   description: text("description"),
   cuisine: text("cuisine"),
   yield: text("yield"), // e.g. "4 servings"

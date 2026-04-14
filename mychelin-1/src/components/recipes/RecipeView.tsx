@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -210,35 +210,57 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     }
   }, [justCreatedRecipeId, selectedRecipe, clearJustCreated]);
 
-  // Auto-delete pristine just-created recipes when the user navigates
-  // away without editing anything. Criteria: the recipe the user is
-  // leaving must be the one they just created, AND it still has the
-  // default title, AND has no ingredients, AND has no instructions.
-  // This keeps the DB from filling up with "Untitled recipe" entries
-  // every time someone clicks New Recipe and then bails.
-  const prevSelectedRecipeRef = useRef<typeof selectedRecipe>(null);
-  useEffect(() => {
-    const prev = prevSelectedRecipeRef.current;
-    prevSelectedRecipeRef.current = selectedRecipe;
+  // Draft model (F1): empty recipes are no longer silently deleted when the
+  // user navigates away. They persist as drafts (status='draft' on the row,
+  // tucked into the Drafts sidebar section). The user can manually delete
+  // them from the recipe page, or let them sit until they come back to
+  // finish the capture. This removes the biggest friction point in the
+  // "capture first, structure later" input flow.
 
-    if (
-      prev &&
-      prev.id !== selectedRecipe?.id &&
-      prev.id === justCreatedRecipeId &&
-      (prev.title === "Untitled recipe" || !prev.title.trim()) &&
-      (prev.ingredients?.length ?? 0) === 0 &&
-      (prev.instructions?.length ?? 0) === 0
-    ) {
-      const idToDelete = prev.id;
-      fetch(`/api/recipes/${idToDelete}`, { method: "DELETE" })
-        .then(() => {
-          qc.invalidateQueries({ queryKey: ["recipes"] });
-        })
-        .catch(() => {
-          /* best-effort cleanup — silent on failure */
-        });
-    }
-  }, [selectedRecipe, justCreatedRecipeId, qc]);
+  // Auto-promote a draft to active once it has real content. The rule: a
+  // draft becomes "active" (and moves from the Drafts section into the
+  // main recipe list) as soon as it has a non-placeholder title AND at
+  // least one ingredient or instruction. Fires transparently without a
+  // user action — they just notice the recipe showed up in the main list.
+  const selectedId = selectedRecipe?.id;
+  const selectedStatus = selectedRecipe?.status;
+  const selectedTitle = selectedRecipe?.title;
+  const selectedIngredientCount = selectedRecipe?.ingredients?.length ?? 0;
+  const selectedInstructionCount = selectedRecipe?.instructions?.length ?? 0;
+  useEffect(() => {
+    if (!selectedId || selectedStatus !== "draft") return;
+    const hasRealTitle =
+      !!selectedTitle &&
+      selectedTitle.trim() !== "" &&
+      selectedTitle !== "Untitled recipe";
+    const hasContent = selectedIngredientCount > 0 || selectedInstructionCount > 0;
+    if (!hasRealTitle || !hasContent) return;
+
+    // Fire-and-forget PATCH. If it fails, the draft just stays a draft —
+    // the effect re-fires when the user edits again.
+    fetch(`/api/recipes/${selectedId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "active" }),
+    })
+      .then((res) => {
+        if (!res.ok) return;
+        qc.invalidateQueries({ queryKey: ["recipes"] });
+        qc.invalidateQueries({ queryKey: ["recipe", selectedId] });
+        addToast("Draft saved as recipe", "success");
+      })
+      .catch(() => {
+        /* silent */
+      });
+  }, [
+    selectedId,
+    selectedStatus,
+    selectedTitle,
+    selectedIngredientCount,
+    selectedInstructionCount,
+    qc,
+    addToast,
+  ]);
 
   const handleBlur = useCallback(
     async (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => {
