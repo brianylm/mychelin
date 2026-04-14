@@ -3,10 +3,8 @@
 import { EditableField } from "@/components/ui/EditableField";
 import { Combobox } from "@/components/ui/Combobox";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
-import { formatDateTime } from "@/lib/utils";
-import type { Recipe } from "@/db/schema";
 
-const CUISINE_OPTIONS = [
+export const CUISINE_OPTIONS = [
   // Singapore Heritage
   { value: "Hokkien", label: "Hokkien", group: "Singapore Heritage" },
   { value: "Teochew", label: "Teochew", group: "Singapore Heritage" },
@@ -58,10 +56,7 @@ const CUISINE_OPTIONS = [
   { value: "Other", label: "Other", group: "Other" },
 ];
 
-interface RecipeHeaderProps {
-  recipe: Recipe;
-  title: string;
-  onTitleChange: (title: string) => void;
+interface RecipeDetailsCardProps {
   description: string;
   onDescriptionChange: (desc: string) => void;
   cuisine: string;
@@ -72,23 +67,23 @@ interface RecipeHeaderProps {
   onCookTimeChange: (cookTime: string) => void;
   recipeYield: string;
   onYieldChange: (recipeYield: string) => void;
-  onBlur: (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => void;
-  savingTitle: boolean;
+  onBlur: (field: "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => void;
   savingDescription: boolean;
   savingCuisine: boolean;
   savingPrepTime: boolean;
   savingCookTime: boolean;
   savingYield: boolean;
-  autoFocusTitle?: boolean;
 }
 
 const inputClass =
   "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
 
-export function RecipeHeader({
-  recipe,
-  title,
-  onTitleChange,
+/**
+ * The "details" tier of progressive disclosure — description, cuisine,
+ * timing, and yield. Rendered inside a CollapsibleSection in RecipeView
+ * so it's tucked away by default and doesn't overwhelm quick capture.
+ */
+export function RecipeDetailsCard({
   description,
   onDescriptionChange,
   cuisine,
@@ -100,26 +95,14 @@ export function RecipeHeader({
   recipeYield,
   onYieldChange,
   onBlur,
-  savingTitle,
   savingDescription,
   savingCuisine,
   savingPrepTime,
   savingCookTime,
   savingYield,
-  autoFocusTitle = false,
-}: RecipeHeaderProps) {
+}: RecipeDetailsCardProps) {
   return (
-    <section className="grid gap-4 rounded-2xl border border-neutral-200 bg-white p-5">
-      <EditableField
-        label="Recipe name"
-        value={title}
-        onChange={onTitleChange}
-        placeholder="e.g. Grandma's Laksa"
-        onBlur={() => onBlur("title")}
-        isSaving={savingTitle}
-        autoFocusAndSelect={autoFocusTitle}
-      />
-
+    <div className="grid gap-4">
       <EditableField
         label="Description"
         value={description}
@@ -143,7 +126,6 @@ export function RecipeHeader({
         isSaving={savingCuisine}
       />
 
-      {/* Timing and Yield */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
@@ -197,10 +179,6 @@ export function RecipeHeader({
           className={inputClass}
         />
       </div>
-
-      <span className="text-xs text-neutral-400">
-        Last updated {formatDateTime(recipe.updatedAt)}
-      </span>
-    </section>
+    </div>
   );
 }
