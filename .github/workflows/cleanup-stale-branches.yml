@@ -1,0 +1,80 @@
+name: Cleanup stale branches
+
+# One-off maintenance workflow to delete stale feature branches that have
+# been merged into main (via squash merge) or are obsolete.
+#
+# All branches listed below have been audited — their content is either
+# identical to main on the files they touched, or they are pure ancestors
+# of main. See PR #34 description for the audit details.
+#
+# Trigger manually from the Actions tab. Safe to delete this workflow
+# file after running it once.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  delete-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete stale branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          branches=(
+            "claude/add-google-api-key-OtAiU"
+            "claude/password-change-and-jwt-hardening"
+            "claude/auth-rate-limiting"
+            "claude/change-password-rate-limit"
+            "claude/cache-bust-and-profile-fix"
+            "claude/ingredient-autocomplete"
+            "claude/agak-agak-mode"
+            "claude/recipe-fork-book-tips-Egj9y"
+            "claude/debug-mychelin-loading-lag-aVp0D"
+            "master"
+            "main-archive"
+            "feat/versioning"
+          )
+
+          failed=()
+          deleted=()
+          skipped=()
+
+          for branch in "${branches[@]}"; do
+            # URL-encode slashes in branch names for the API path
+            encoded=$(echo "$branch" | sed 's|/|%2F|g')
+            echo "Deleting $branch..."
+            if gh api \
+              --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/git/refs/heads/$encoded" 2>/tmp/err; then
+              echo "  ✓ deleted"
+              deleted+=("$branch")
+            else
+              err=$(cat /tmp/err)
+              if echo "$err" | grep -q "Reference does not exist"; then
+                echo "  - already gone"
+                skipped+=("$branch")
+              else
+                echo "  ✗ failed: $err"
+                failed+=("$branch")
+              fi
+            fi
+          done
+
+          echo ""
+          echo "=== Summary ==="
+          echo "Deleted: ${#deleted[@]}"
+          for b in "${deleted[@]}"; do echo "  - $b"; done
+          echo "Already gone: ${#skipped[@]}"
+          for b in "${skipped[@]}"; do echo "  - $b"; done
+          echo "Failed: ${#failed[@]}"
+          for b in "${failed[@]}"; do echo "  - $b"; done
+
+          if [ ${#failed[@]} -gt 0 ]; then
+            exit 1
+          fi
