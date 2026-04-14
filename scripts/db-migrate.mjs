@@ -55,6 +55,47 @@ async function main() {
     )
   `);
 
+  // Self-heal for PR #40 fallout: migration 0014_expand_ingredient_catalog
+  // was falsely recorded as applied by the previous (buggy) parser, even
+  // though zero statements actually ran. Detect the stale state by checking
+  // whether "Sweet potato" — a canary row from the first INSERT block in
+  // that migration — is present in ingredient_catalog. If the migration is
+  // recorded but the canary is missing, clear the stale record so the
+  // (now-fixed) parser re-runs it on the current invocation.
+  //
+  // This block is idempotent: once 0014 has been properly applied, the
+  // canary check returns true and the DELETE is skipped. Safe to leave in
+  // place long-term; not a one-shot hack.
+  try {
+    const stale = await client.execute({
+      sql: `
+        SELECT 1
+        FROM schema_migrations m
+        WHERE m.name = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM ingredient_catalog WHERE name = 'Sweet potato'
+          )
+        LIMIT 1
+      `,
+      args: ["0014_expand_ingredient_catalog.sql"],
+    });
+    if (stale.rows.length > 0) {
+      await client.execute({
+        sql: "DELETE FROM schema_migrations WHERE name = ?",
+        args: ["0014_expand_ingredient_catalog.sql"],
+      });
+      console.log(
+        "🩹 self-heal: cleared stale 0014_expand_ingredient_catalog.sql record (canary 'Sweet potato' was missing)"
+      );
+    }
+  } catch (err) {
+    // ingredient_catalog may not exist yet on a very fresh DB. Safe to ignore.
+    console.warn(
+      "self-heal skipped:",
+      err instanceof Error ? err.message : err
+    );
+  }
+
   // Read already-applied migration names.
   const appliedResult = await client.execute("SELECT name FROM schema_migrations");
   const applied = new Set(appliedResult.rows.map((r) => r.name));
