@@ -186,6 +186,9 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       }),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+      // Also refresh the sidebar list — the server may have auto-promoted
+      // this recipe from draft to active on insert.
+      qc.invalidateQueries({ queryKey: ["recipes"] });
     },
   });
 
@@ -241,6 +244,10 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       }),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
+      // Also refresh the sidebar list — the server may have auto-promoted
+      // this recipe from draft to active on insert, and the list needs to
+      // reflect that so the recipe moves out of the Drafts section.
+      qc.invalidateQueries({ queryKey: ["recipes"] });
     },
   });
 

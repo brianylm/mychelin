@@ -320,8 +320,15 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
 
           {/* All recipes */}
           {(books.length > 0 || draftRecipes.length > 0) && (
-            <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-              {hasQuery ? "Search Results" : "All Recipes"}
+            <div className="flex items-center justify-between px-3 pb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                {hasQuery ? "Search Results" : "All Recipes"}
+              </span>
+              {!hasQuery && activeRecipes.length > 0 && (
+                <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700">
+                  {activeRecipes.length}
+                </span>
+              )}
             </div>
           )}
           {activeRecipes.length === 0 && !loading && !searching ? (
