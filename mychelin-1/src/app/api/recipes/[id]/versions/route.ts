@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { recipeVersions, recipes } from "@/db/schema";
 import { eq, desc, max, inArray } from "drizzle-orm";
 import { ensureVersionLabelColumn } from "@/db/ensure-schema";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -16,8 +18,20 @@ type RouteContext = { params: Promise<{ id: string }> };
 // the root, then walks down to collect every descendant.
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const startRecipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, startRecipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
 
     // Walk up to the root ancestor. Cap at 20 hops to defend against
     // accidental cycles from bad data.
@@ -100,9 +114,22 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 // ─── POST /api/recipes/:id/versions ────────────────────────
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await ensureVersionLabelColumn();
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
 
     const {

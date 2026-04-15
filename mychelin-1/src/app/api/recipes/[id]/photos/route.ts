@@ -3,6 +3,8 @@ import { put } from "@vercel/blob";
 import { db } from "@/db";
 import { recipePhotos, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -10,7 +12,17 @@ export const preferredRegion = "hnd1";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await context.params;
+
+  if (!(await canUserAccessRecipe(currentUser.id, Number(id)))) {
+    return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+  }
+
   const photos = await db.query.recipePhotos.findMany({
     where: eq(recipePhotos.recipeId, Number(id)),
     orderBy: (p, { asc }) => [asc(p.sortOrder)],
@@ -21,8 +33,18 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 // PATCH — set a photo as the recipe cover image
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
     const { photoUrl } = await request.json();
 
     if (!photoUrl) {
@@ -43,8 +65,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
 
     // Verify recipe exists
     const recipe = await db.query.recipes.findFirst({

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeVersions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -26,8 +28,21 @@ interface IngredientDiff {
 // ─── GET /api/recipes/:id/versions/compare?base=X&compare=Y
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const baseParam = searchParams.get("base");
     const compareParam = searchParams.get("compare");

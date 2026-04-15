@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeVersions, recipes } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -11,9 +13,21 @@ type RouteContext = { params: Promise<{ id: string; versionId: string }> };
 // ─── POST /api/recipes/:id/versions/:versionId/rollback ────
 export async function POST(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id, versionId } = await context.params;
     const recipeId = Number(id);
     const verId = Number(versionId);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Version not found" },
+        { status: 404 }
+      );
+    }
 
     // Verify version belongs to recipe
     const version = await db.query.recipeVersions.findFirst({

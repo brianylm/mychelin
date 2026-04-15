@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { instructions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -12,7 +14,20 @@ type RouteContext = {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id, instructionId } = await context.params;
+
+    if (!(await canUserAccessRecipe(currentUser.id, Number(id)))) {
+      return NextResponse.json(
+        { error: "Instruction not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
 
     const [updated] = await db
@@ -45,7 +60,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id, instructionId } = await context.params;
+
+    if (!(await canUserAccessRecipe(currentUser.id, Number(id)))) {
+      return NextResponse.json(
+        { error: "Instruction not found" },
+        { status: 404 }
+      );
+    }
 
     const [deleted] = await db
       .delete(instructions)

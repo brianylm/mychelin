@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipes, ingredients } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { eq, inArray, desc, sql } from "drizzle-orm";
+import { recipesVisibleTo } from "@/lib/recipe-access";
+import { and, eq, inArray, desc, sql } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -19,10 +20,9 @@ export const preferredRegion = "hnd1";
 //    "Broccoli" without any explicit LOWER() wrapping. We ALSO match
 //    the lowercased query as a second pattern to handle any CJK or
 //    case oddities.
-//  - Intentionally NOT scoped by user_id — the existing POST
-//    /api/recipes route never sets user_id on new recipes, so every
-//    row has user_id = NULL and filtering by it returns zero. Main
-//    GET /api/recipes is also unscoped. Search mirrors that.
+//  - Scoped by access via recipesVisibleTo(): only matches recipes the
+//    current user owns or has access to via book membership. This
+//    matches the gating on GET /api/recipes.
 //  - When ?debug=1 is passed, the response includes counts of rows
 //    in the recipes / ingredients tables plus a sample of ingredient
 //    names. Useful for diagnosing "search returns nothing" when the
@@ -44,12 +44,17 @@ export async function GET(request: NextRequest) {
     const pattern = `%${q}%`;
     const patternLower = `%${q.toLowerCase()}%`;
 
+    const visible = recipesVisibleTo(user.id);
+
     // Title matches — raw SQL with two LIKE patterns (original + lower).
     const titleMatches = await db
       .select({ id: recipes.id })
       .from(recipes)
       .where(
-        sql`${recipes.title} LIKE ${pattern} OR ${recipes.title} LIKE ${patternLower}`
+        and(
+          sql`${recipes.title} LIKE ${pattern} OR ${recipes.title} LIKE ${patternLower}`,
+          visible
+        )
       );
 
     // Ingredient matches. Join via recipe id for hydration later.
@@ -61,7 +66,10 @@ export async function GET(request: NextRequest) {
       .from(ingredients)
       .innerJoin(recipes, eq(recipes.id, ingredients.recipeId))
       .where(
-        sql`${ingredients.name} LIKE ${pattern} OR ${ingredients.name} LIKE ${patternLower}`
+        and(
+          sql`${ingredients.name} LIKE ${pattern} OR ${ingredients.name} LIKE ${patternLower}`,
+          visible
+        )
       );
 
     // Record the first matching ingredient per recipe for UI context.
@@ -108,7 +116,7 @@ export async function GET(request: NextRequest) {
     const matchedRecipes = await db
       .select()
       .from(recipes)
-      .where(inArray(recipes.id, Array.from(allIds)))
+      .where(and(inArray(recipes.id, Array.from(allIds)), visible))
       .orderBy(desc(recipes.updatedAt));
 
     const results = matchedRecipes.map((r) => ({
