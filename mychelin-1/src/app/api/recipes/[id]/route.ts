@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { recipes, ingredients, instructions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -12,8 +14,20 @@ type RouteContext = { params: Promise<{ id: string }> };
 // ─── GET /api/recipes/:id ──────────────────────────────────
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
 
     const recipe = await db.query.recipes.findFirst({
       where: eq(recipes.id, recipeId),
@@ -46,8 +60,21 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 // Update a recipe (partial update supported)
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
 
     // Check recipe exists
@@ -173,8 +200,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // Full replacement of a recipe
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
 
     const existing = await db.query.recipes.findFirst({
@@ -296,8 +336,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // ─── DELETE /api/recipes/:id ───────────────────────────────
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
 
     const existing = await db.query.recipes.findFirst({
       where: eq(recipes.id, recipeId),

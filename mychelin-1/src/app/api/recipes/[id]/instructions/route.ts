@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { instructions, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
+import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -11,8 +13,18 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const recipeId = Number(id);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
     const body = await request.json();
 
     const recipe = await db.query.recipes.findFirst({

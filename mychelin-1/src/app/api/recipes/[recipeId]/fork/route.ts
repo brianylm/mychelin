@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipes, ingredients, instructions, recipeVersions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { eq, desc } from "drizzle-orm";
 import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 
@@ -27,6 +28,10 @@ export async function POST(
 
     const { recipeId } = await params;
     const recipeIdNum = parseInt(recipeId);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeIdNum))) {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
 
     // Fetch original recipe with ingredients and instructions
     const original = await db.query.recipes.findFirst({
