@@ -90,7 +90,7 @@ Guidelines:
 - Do NOT wrap the JSON in markdown code fences.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,6 +101,13 @@ Guidelines:
             maxOutputTokens: 4096,
             responseMimeType: "application/json",
           },
+          // Disable the thinking phase — this task is pure extraction,
+          // not reasoning. Without this, 2.5-flash can spend 10-20s
+          // thinking before producing output, which risks hitting
+          // Vercel's 25s edge timeout on longer recipes.
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
         }),
       }
     );
@@ -108,15 +115,25 @@ Guidelines:
     if (!geminiRes.ok) {
       const body = await geminiRes.text();
       console.error("Gemini paste-extract error:", geminiRes.status, body);
+      // Surface the upstream error so the client can show why it failed
+      let detail = "Extraction failed";
+      try {
+        const parsed = JSON.parse(body);
+        detail = parsed?.error?.message || detail;
+      } catch { /* keep default */ }
       return NextResponse.json(
-        { error: "Extraction failed" },
+        { error: detail },
         { status: 502 }
       );
     }
 
     const data = await geminiRes.json();
-    const generatedText: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    // Gemini 2.5 may include a thinking block before the text part.
+    // Walk the parts array to find the first text part.
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => typeof p.text === "string");
+    const generatedText: string | undefined = textPart?.text;
     if (!generatedText) {
       return NextResponse.json(
         { error: "Empty response from extractor" },
