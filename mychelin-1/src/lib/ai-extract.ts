@@ -1,0 +1,178 @@
+// Shared extraction helper — tries Gemini first (cheap, fast), then
+// falls back to MiniMax if Gemini exhausts its retries / hits overload.
+// Both paths end up returning the raw JSON string produced by the
+// model, which the caller parses into the recipe shape.
+
+export interface ExtractResult {
+  text: string;
+  provider: "gemini" | "minimax";
+  model: string;
+}
+
+export interface ExtractError {
+  message: string;
+  status: number;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// ─── Gemini ─────────────────────────────────────────────
+async function callGemini(
+  apiKey: string,
+  model: string,
+  prompt: string
+): Promise<{ ok: true; text: string } | { ok: false; status: number; body: string }> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 4096,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    return { ok: false, status: res.status, body: await res.text() };
+  }
+
+  const data = await res.json();
+  // 2.5 may include a thinking part before the text part
+  const parts: Array<{ text?: string }> =
+    data?.candidates?.[0]?.content?.parts ?? [];
+  const text = parts.find((p) => typeof p.text === "string")?.text;
+  if (!text) {
+    return { ok: false, status: 502, body: "Gemini returned no text part" };
+  }
+  return { ok: true, text };
+}
+
+// ─── MiniMax (OpenAI-compatible chat completions) ──────
+// Docs: https://www.minimaxi.com/en/document/guides/chat-model
+// Default international endpoint: https://api.minimaxi.com
+// Default model: MiniMax-Text-01 (override with MINIMAX_MODEL env var)
+async function callMiniMax(
+  apiKey: string,
+  model: string,
+  baseUrl: string,
+  prompt: string
+): Promise<{ ok: true; text: string } | { ok: false; status: number; body: string }> {
+  const res = await fetch(`${baseUrl}/v1/text/chatcompletion_v2`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a recipe extraction assistant. Return only valid JSON matching the schema in the user message. No prose, no markdown fences.",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.1,
+      max_tokens: 4096,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!res.ok) {
+    return { ok: false, status: res.status, body: await res.text() };
+  }
+
+  const data = await res.json();
+  // MiniMax uses OpenAI-compatible shape: choices[0].message.content
+  const text: string | undefined = data?.choices?.[0]?.message?.content;
+  if (!text) {
+    return { ok: false, status: 502, body: "MiniMax returned no content" };
+  }
+  return { ok: true, text };
+}
+
+// ─── Main dispatcher ────────────────────────────────────
+export async function extractRecipeText(
+  prompt: string
+): Promise<{ ok: true; result: ExtractResult } | { ok: false; error: ExtractError }> {
+  const geminiKey =
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_AI_API_KEY ||
+    process.env.GEMINI_API_KEY;
+  const minimaxKey = process.env.MINIMAX_API_KEY;
+  const minimaxModel = process.env.MINIMAX_MODEL || "MiniMax-Text-01";
+  const minimaxBase =
+    process.env.MINIMAX_BASE_URL || "https://api.minimaxi.com";
+
+  let lastStatus = 0;
+  let lastBody = "";
+
+  // 1. Try Gemini models (2.5-flash primary, 2.0-flash fallback) with
+  //    one retry each on transient errors. 600ms backoff to stay well
+  //    under Vercel's 25s edge timeout.
+  if (geminiKey) {
+    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const r = await callGemini(geminiKey, model, prompt);
+        if (r.ok) {
+          return {
+            ok: true,
+            result: { text: r.text, provider: "gemini", model },
+          };
+        }
+        lastStatus = r.status;
+        lastBody = r.body;
+        const isTransient = r.status === 429 || r.status >= 500;
+        if (!isTransient) break; // fall through to next model
+        if (attempt === 0) await sleep(600);
+      }
+    }
+  }
+
+  // 2. Gemini exhausted (or no key) — try MiniMax if configured.
+  if (minimaxKey) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await callMiniMax(minimaxKey, minimaxModel, minimaxBase, prompt);
+      if (r.ok) {
+        return {
+          ok: true,
+          result: { text: r.text, provider: "minimax", model: minimaxModel },
+        };
+      }
+      lastStatus = r.status;
+      lastBody = r.body;
+      const isTransient = r.status === 429 || r.status >= 500;
+      if (!isTransient) break;
+      if (attempt === 0) await sleep(600);
+    }
+  }
+
+  // 3. Everything exhausted — surface the last upstream error.
+  if (!geminiKey && !minimaxKey) {
+    return {
+      ok: false,
+      error: {
+        message:
+          "No AI provider is configured. Set GOOGLE_API_KEY (Gemini) or MINIMAX_API_KEY (MiniMax) in Vercel environment variables.",
+        status: 503,
+      },
+    };
+  }
+
+  let detail = "Extraction failed";
+  try {
+    const parsed = JSON.parse(lastBody);
+    detail = parsed?.error?.message || parsed?.base_resp?.status_msg || detail;
+  } catch {
+    /* keep default */
+  }
+  console.error("AI extract exhausted all providers:", lastStatus, lastBody);
+  return { ok: false, error: { message: detail, status: 502 } };
+}
