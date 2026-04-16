@@ -90,7 +90,7 @@ Guidelines:
 - Do NOT wrap the JSON in markdown code fences.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -121,8 +121,12 @@ Guidelines:
     }
 
     const data = await geminiRes.json();
+    // Gemini 2.5 may include a thinking part before the text part —
+    // walk the parts array to find the actual text output.
+    const parts: Array<{ text?: string }> =
+      data?.candidates?.[0]?.content?.parts ?? [];
     const generatedText: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      parts.find((p) => typeof p.text === "string")?.text;
     if (!generatedText) {
       return NextResponse.json(
         { error: "Empty response from extractor" },
