@@ -148,11 +148,15 @@ export function PasteRecipeModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        // Only close if the mousedown started on the backdrop itself —
+        // not when the user drags a text selection out of the textarea
+        // and releases on the backdrop.
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="flex h-full w-full flex-col bg-white sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
