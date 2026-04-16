@@ -89,35 +89,72 @@ Guidelines:
 - If the text clearly isn't a recipe (random article, etc.), still try to return the shape but with empty fields.
 - Do NOT wrap the JSON in markdown code fences.`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 4096,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
+    // Try models in order of preference. If a model returns "overloaded"
+    // (503) or "rate limited" (429), fall through to the next one.
+    // gemini-2.5-flash is the primary model (confirmed available on this
+    // project's API key). gemini-2.0-flash is a secondary fallback that
+    // tends to be less loaded.
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    const requestBody = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 4096,
+        responseMimeType: "application/json",
+      },
+    });
 
-    if (!geminiRes.ok) {
-      const body = await geminiRes.text();
-      console.error("Gemini paste-extract error:", geminiRes.status, body);
-      // Surface the upstream error so the client can show why it failed
+    let geminiRes: Response | null = null;
+    let lastErrorBody = "";
+    let lastErrorStatus = 0;
+
+    for (const model of modelsToTry) {
+      // Retry this model up to 2 times on transient overload before
+      // falling through to the next model. Short backoff to stay well
+      // under Vercel's 25s edge timeout.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: requestBody,
+          }
+        );
+
+        if (res.ok) {
+          geminiRes = res;
+          break;
+        }
+
+        lastErrorStatus = res.status;
+        lastErrorBody = await res.text();
+
+        // Only retry on transient errors (429 rate limit, 5xx overload)
+        const isTransient = res.status === 429 || res.status >= 500;
+        if (!isTransient) break;
+
+        if (attempt === 0) {
+          // Quick 600ms backoff before the second attempt
+          await new Promise((r) => setTimeout(r, 600));
+        }
+      }
+
+      if (geminiRes) break;
+    }
+
+    if (!geminiRes) {
+      console.error(
+        "Gemini paste-extract exhausted all models:",
+        lastErrorStatus,
+        lastErrorBody
+      );
       let detail = "Extraction failed";
       try {
-        const parsed = JSON.parse(body);
+        const parsed = JSON.parse(lastErrorBody);
         detail = parsed?.error?.message || detail;
       } catch { /* keep default */ }
-      return NextResponse.json(
-        { error: detail },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: detail }, { status: 502 });
     }
 
     const data = await geminiRes.json();
