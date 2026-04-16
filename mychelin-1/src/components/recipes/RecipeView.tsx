@@ -879,72 +879,17 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-5 py-4 md:gap-8 md:py-6">
         <RecipeSaveStatus
           isSaving={anyFieldSaving}
           updatedAt={selectedRecipe.updatedAt}
           onSaveNow={handleSaveNow}
         />
 
-        {/* Empty-state CTAs — two ways to populate a fresh recipe.
-            Hidden once the user has ingredients or instructions so
-            they stop taking up space. */}
-        {(selectedRecipe.ingredients?.length ?? 0) === 0 &&
-          (selectedRecipe.instructions?.length ?? 0) === 0 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {/* Capture from conversation */}
-              <button
-                onClick={() => setShowCaptureModal(true)}
-                className="group flex w-full items-start gap-3 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
-              >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl transition-transform group-hover:scale-110">
-                  🎙️
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-amber-900">
-                      Capture from a conversation
-                    </h3>
-                    <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
-                      AI
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-neutral-600 leading-relaxed">
-                    Talk with a parent or grandparent in their own dialect.
-                    We&apos;ll transcribe and extract the recipe.
-                  </p>
-                </div>
-              </button>
-
-              {/* Paste from anywhere */}
-              <button
-                onClick={() => setShowPasteModal(true)}
-                className="group flex w-full items-start gap-3 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
-              >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl transition-transform group-hover:scale-110">
-                  📋
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-amber-900">
-                      Paste from anywhere
-                    </h3>
-                    <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
-                      AI
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-neutral-600 leading-relaxed">
-                    Copy a recipe from a webpage, a message, or a photo.
-                    We&apos;ll structure it for you.
-                  </p>
-                </div>
-              </button>
-            </div>
-          )}
-
         {/* ─── Core tier — always visible ──────────────── */}
 
-        {/* Title */}
+        {/* Title — first so it's always reachable on mobile
+            even with the keyboard raised */}
         <RecipeTitleCard
           recipe={selectedRecipe}
           title={title}
@@ -955,6 +900,59 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
           }
         />
+
+        {/* Empty-state CTAs — two ways to populate a fresh recipe.
+            Compact pill-buttons on mobile so they don't eat half
+            the viewport when the keyboard is up. Hidden once the
+            recipe has ingredients or instructions. */}
+        {(selectedRecipe.ingredients?.length ?? 0) === 0 &&
+          (selectedRecipe.instructions?.length ?? 0) === 0 && (
+            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:gap-3">
+              {/* Capture from conversation */}
+              <button
+                onClick={() => setShowCaptureModal(true)}
+                className="group flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+              >
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
+                  🎙️
+                </div>
+                <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
+                  <h3 className="text-sm font-semibold text-amber-900">
+                    Capture from a conversation
+                  </h3>
+                  <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
+                    AI
+                  </span>
+                  <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
+                    Talk with a parent or grandparent in their own dialect.
+                    We&apos;ll transcribe and extract the recipe.
+                  </p>
+                </div>
+              </button>
+
+              {/* Paste from anywhere */}
+              <button
+                onClick={() => setShowPasteModal(true)}
+                className="group flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+              >
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
+                  📋
+                </div>
+                <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
+                  <h3 className="text-sm font-semibold text-amber-900">
+                    Paste from anywhere
+                  </h3>
+                  <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
+                    AI
+                  </span>
+                  <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
+                    Copy a recipe from a webpage, a message, or a photo.
+                    We&apos;ll structure it for you.
+                  </p>
+                </div>
+              </button>
+            </div>
+          )}
 
         {/* Forked from badge */}
         {selectedRecipe.forkedFrom && (
