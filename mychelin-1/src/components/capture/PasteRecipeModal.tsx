@@ -35,12 +35,25 @@ interface PasteRecipeModalProps {
   onRecipeUpdated?: () => void;
 }
 
-type Step = "paste" | "processing";
+type Step = "paste" | "processing" | "saving";
+
+// Try to pull a short title from the first non-blank line of pasted
+// text. Falls back to "Quick capture" if the text is too long or
+// looks like a URL / code block.
+function inferTitle(raw: string): string {
+  const firstLine = raw.split("\n").find((l) => l.trim().length > 0)?.trim();
+  if (!firstLine) return "Quick capture";
+  // If the first line is short and doesn't look like a URL, use it
+  if (firstLine.length <= 80 && !/^https?:\/\//i.test(firstLine)) {
+    return firstLine;
+  }
+  return "Quick capture";
+}
 
 // Paste a blob of recipe text from anywhere (webpage, WhatsApp, photo
 // OCR, etc.), have Gemini extract it, and PATCH the result into the
-// current recipe. Lives alongside ConversationCapture as a second way
-// to seed a new empty recipe.
+// current recipe. If extraction fails or the user opts out, the raw
+// text is saved as a pre-recipe draft (description) so it's never lost.
 export function PasteRecipeModal({
   recipeId,
   onClose,
@@ -49,6 +62,29 @@ export function PasteRecipeModal({
   const [text, setText] = useState("");
   const [step, setStep] = useState<Step>("paste");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Save raw text to the recipe as a pre-recipe draft. Used both as a
+  // fallback when extraction fails and as a direct "save draft" action.
+  const saveDraft = async (rawText: string) => {
+    const trimmed = rawText.trim();
+    if (!trimmed) return;
+    try {
+      await fetch(`/api/recipes/${recipeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: inferTitle(trimmed),
+          description: trimmed,
+        }),
+      });
+      onRecipeUpdated?.();
+      onClose();
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+      // Last resort — at least close so the user isn't stuck
+      onClose();
+    }
+  };
 
   const handleExtract = async () => {
     const trimmed = text.trim();
@@ -96,14 +132,18 @@ export function PasteRecipeModal({
       onClose();
     } catch (err: any) {
       console.error("Paste extract failed:", err);
-      setErrorMessage(err?.message || "Failed to extract recipe");
-      setStep("paste");
+      // Extraction failed — save the raw text so it's not lost.
+      setStep("saving");
+      await saveDraft(trimmed);
     }
   };
 
-  const isSetupError =
-    errorMessage != null &&
-    /not configured|google_api_key|gemini_api_key/i.test(errorMessage);
+  const handleSaveDraft = () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setStep("saving");
+    saveDraft(trimmed);
+  };
 
   return (
     <div
@@ -120,12 +160,13 @@ export function PasteRecipeModal({
             <span className="text-lg">📋</span>
             <div>
               <h2 className="text-sm font-semibold text-neutral-900">
-                Paste a recipe
+                Quick capture
               </h2>
               <p className="text-[11px] text-neutral-500">
                 {step === "paste" &&
-                  "Copy from anywhere — a webpage, a message, a photo — and the AI will structure it"}
+                  "Paste anything — a URL, a message, a photo OCR, whatever"}
                 {step === "processing" && "Extracting recipe…"}
+                {step === "saving" && "Saving your text…"}
               </p>
             </div>
           </div>
@@ -140,58 +181,30 @@ export function PasteRecipeModal({
         {step === "paste" && (
           <>
             <div className="flex-1 overflow-y-auto px-4 py-4">
-              <label
-                htmlFor="paste-recipe-text"
-                className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500"
-              >
-                Recipe text
-              </label>
               <textarea
                 id="paste-recipe-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={`Paste anything — ingredients, steps, a whole blog post.\n\nExample:\n\nGrandma's Laksa\nServes 4\n\n500g prawns\n200g rice noodles\n2 tbsp laksa paste...\n\n1. Boil the stock\n2. Add the paste...`}
+                placeholder={`Paste anything — ingredients, steps, a blog post URL, a WhatsApp message…\n\nThe AI will try to structure it into a recipe. If it can't, your text is saved as a draft so nothing is lost.`}
                 rows={14}
                 className="w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
                 autoFocus
               />
               <p className="mt-2 text-[11px] text-neutral-400">
-                {text.length.toLocaleString()} characters. Max ~20,000.
+                {text.length.toLocaleString()} characters
               </p>
             </div>
-
-            {errorMessage && !isSetupError && (
-              <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
-                {errorMessage}
-              </div>
-            )}
-            {isSetupError && (
-              <div className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
-                <div className="mb-1 flex items-center gap-1.5 font-semibold">
-                  <span>⚙️</span>
-                  <span>Paste extraction needs a Gemini API key</span>
-                </div>
-                <p className="leading-relaxed text-amber-800">
-                  Add a{" "}
-                  <code className="rounded bg-amber-100 px-1">GOOGLE_API_KEY</code>{" "}
-                  environment variable in Vercel → Project Settings →
-                  Environment Variables, then redeploy. Free key at{" "}
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    aistudio.google.com/apikey
-                  </a>
-                  .
-                </p>
-              </div>
-            )}
 
             <div className="flex items-center gap-2 border-t border-neutral-200 bg-white px-4 py-3">
               <Button variant="soft" color="gray" onClick={onClose}>
                 Cancel
+              </Button>
+              <Button
+                variant="soft"
+                onClick={handleSaveDraft}
+                disabled={!text.trim()}
+              >
+                Save draft
               </Button>
               <Button
                 onClick={handleExtract}
@@ -205,15 +218,19 @@ export function PasteRecipeModal({
           </>
         )}
 
-        {step === "processing" && (
+        {(step === "processing" || step === "saving") && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
             <p className="text-center text-sm text-neutral-700">
-              Reading the text and structuring the recipe…
+              {step === "processing"
+                ? "Reading the text and structuring the recipe…"
+                : "Saving your text as a draft…"}
             </p>
-            <p className="text-center text-xs text-neutral-400">
-              This usually takes 5–15 seconds.
-            </p>
+            {step === "processing" && (
+              <p className="text-center text-xs text-neutral-400">
+                This usually takes 5–15 seconds.
+              </p>
+            )}
           </div>
         )}
       </div>
