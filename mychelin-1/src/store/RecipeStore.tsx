@@ -155,9 +155,14 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
-    onSuccess: (_data, vars) => {
+    onSuccess: (data, vars) => {
+      // Immediately update the detail cache with the PATCH response so
+      // updatedAt (and any other changed fields) are visible in the
+      // same render cycle as isSaving→false. Without this, the UI
+      // briefly shows the old timestamp because the background refetch
+      // triggered by invalidateQueries hasn't completed yet.
+      qc.setQueryData(["recipe", vars.id], data);
       qc.invalidateQueries({ queryKey: ["recipes"] });
-      qc.invalidateQueries({ queryKey: ["recipe", vars.id] });
     },
   });
 
