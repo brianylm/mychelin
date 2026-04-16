@@ -35,25 +35,17 @@ interface PasteRecipeModalProps {
   onRecipeUpdated?: () => void;
 }
 
-type Step = "paste" | "processing" | "saving";
+type Step = "paste" | "processing" | "saving" | "error";
 
-// Try to pull a short title from the first non-blank line of pasted
-// text. Falls back to "Quick capture" if the text is too long or
-// looks like a URL / code block.
 function inferTitle(raw: string): string {
   const firstLine = raw.split("\n").find((l) => l.trim().length > 0)?.trim();
   if (!firstLine) return "Quick capture";
-  // If the first line is short and doesn't look like a URL, use it
   if (firstLine.length <= 80 && !/^https?:\/\//i.test(firstLine)) {
     return firstLine;
   }
   return "Quick capture";
 }
 
-// Paste a blob of recipe text from anywhere (webpage, WhatsApp, photo
-// OCR, etc.), have Gemini extract it, and PATCH the result into the
-// current recipe. If extraction fails or the user opts out, the raw
-// text is saved as a pre-recipe draft (description) so it's never lost.
 export function PasteRecipeModal({
   recipeId,
   onClose,
@@ -63,11 +55,10 @@ export function PasteRecipeModal({
   const [step, setStep] = useState<Step>("paste");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Save raw text to the recipe as a pre-recipe draft. Used both as a
-  // fallback when extraction fails and as a direct "save draft" action.
   const saveDraft = async (rawText: string) => {
     const trimmed = rawText.trim();
     if (!trimmed) return;
+    setStep("saving");
     try {
       await fetch(`/api/recipes/${recipeId}`, {
         method: "PATCH",
@@ -81,7 +72,6 @@ export function PasteRecipeModal({
       onClose();
     } catch (err) {
       console.error("Failed to save draft:", err);
-      // Last resort — at least close so the user isn't stuck
       onClose();
     }
   };
@@ -92,7 +82,6 @@ export function PasteRecipeModal({
     setErrorMessage(null);
     setStep("processing");
     try {
-      // 1. Ask Gemini to parse the blob into a structured recipe.
       const pasteRes = await fetch("/api/capture/paste", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,11 +89,14 @@ export function PasteRecipeModal({
       });
       if (!pasteRes.ok) {
         const body = await pasteRes.json().catch(() => ({}));
-        throw new Error(body.error || "Could not extract recipe from text");
+        throw new Error(body.error || `Extraction failed (${pasteRes.status})`);
       }
       const { recipe } = (await pasteRes.json()) as { recipe: ExtractedRecipe };
 
-      // 2. PATCH the current recipe with the extracted fields.
+      if (!recipe) {
+        throw new Error("Gemini returned an empty recipe object");
+      }
+
       const patchRes = await fetch(`/api/recipes/${recipeId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -125,23 +117,22 @@ export function PasteRecipeModal({
         }),
       });
       if (!patchRes.ok) {
-        throw new Error("Failed to update recipe with extracted data");
+        const body = await patchRes.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to save extracted recipe");
       }
 
       onRecipeUpdated?.();
       onClose();
     } catch (err: any) {
       console.error("Paste extract failed:", err);
-      // Extraction failed — save the raw text so it's not lost.
-      setStep("saving");
-      await saveDraft(trimmed);
+      setErrorMessage(err?.message || "Unknown error");
+      setStep("error");
     }
   };
 
   const handleSaveDraft = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    setStep("saving");
     saveDraft(trimmed);
   };
 
@@ -149,9 +140,6 @@ export function PasteRecipeModal({
     <div
       className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
       onMouseDown={(e) => {
-        // Only close if the mousedown started on the backdrop itself —
-        // not when the user drags a text selection out of the textarea
-        // and releases on the backdrop.
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -171,6 +159,7 @@ export function PasteRecipeModal({
                   "Paste anything — a URL, a message, a photo OCR, whatever"}
                 {step === "processing" && "Extracting recipe…"}
                 {step === "saving" && "Saving your text…"}
+                {step === "error" && "Extraction didn\u2019t work"}
               </p>
             </div>
           </div>
@@ -235,6 +224,43 @@ export function PasteRecipeModal({
                 This usually takes 5–15 seconds.
               </p>
             )}
+          </div>
+        )}
+
+        {step === "error" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
+            <span className="text-3xl">⚠️</span>
+            <p className="text-center text-sm font-medium text-neutral-800">
+              Extraction failed
+            </p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs text-red-700">
+              {errorMessage}
+            </p>
+            <p className="text-center text-xs text-neutral-500">
+              You can try again or save the raw text as a draft.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="soft"
+                onClick={() => {
+                  setErrorMessage(null);
+                  setStep("paste");
+                }}
+              >
+                Back to edit
+              </Button>
+              <Button
+                variant="soft"
+                color="amber"
+                onClick={handleSaveDraft}
+              >
+                Save as draft
+              </Button>
+              <Button onClick={handleExtract}>
+                <MagicWandIcon />
+                Retry
+              </Button>
+            </div>
           </div>
         )}
       </div>
