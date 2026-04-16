@@ -90,7 +90,7 @@ Guidelines:
 - Do NOT wrap the JSON in markdown code fences.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,13 +100,6 @@ Guidelines:
             temperature: 0.1,
             maxOutputTokens: 4096,
             responseMimeType: "application/json",
-          },
-          // Disable the thinking phase — this task is pure extraction,
-          // not reasoning. Without this, 2.5-flash can spend 10-20s
-          // thinking before producing output, which risks hitting
-          // Vercel's 25s edge timeout on longer recipes.
-          thinkingConfig: {
-            thinkingBudget: 0,
           },
         }),
       }
@@ -128,12 +121,8 @@ Guidelines:
     }
 
     const data = await geminiRes.json();
-
-    // Gemini 2.5 may include a thinking block before the text part.
-    // Walk the parts array to find the first text part.
-    const parts = data?.candidates?.[0]?.content?.parts ?? [];
-    const textPart = parts.find((p: any) => typeof p.text === "string");
-    const generatedText: string | undefined = textPart?.text;
+    const generatedText: string | undefined =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!generatedText) {
       return NextResponse.json(
         { error: "Empty response from extractor" },
