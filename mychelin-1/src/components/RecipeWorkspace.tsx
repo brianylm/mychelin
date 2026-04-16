@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { RecipeStoreProvider, useRecipeStore } from "@/store/RecipeStore";
@@ -17,6 +17,7 @@ import { DiscoverView } from "@/components/discover/DiscoverView";
 import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 import { RecipeSearchModal } from "@/components/search/RecipeSearchModal";
+import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -78,13 +79,74 @@ function RecipeWorkspaceContent({
     setCurrentView(view);
   }, [selectRecipe, setCurrentView]);
 
-  const handleCreateBlankRecipe = useCallback(async () => {
+  // ── FAB speed-dial state ─────────────────────────────────
+  const [fabOpen, setFabOpen] = useState(false);
+  const [pasteRecipeId, setPasteRecipeId] = useState<number | null>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
+
+  // Close speed-dial on outside tap
+  useEffect(() => {
+    if (!fabOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
+        setFabOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [fabOpen]);
+
+  // Close speed-dial on Escape
+  useEffect(() => {
+    if (!fabOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFabOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [fabOpen]);
+
+  const handleFromScratch = useCallback(async () => {
+    setFabOpen(false);
     try {
       await createRecipe();
     } catch (err) {
       console.error("Failed to create recipe:", err);
     }
   }, [createRecipe]);
+
+  const handleQuickCapture = useCallback(async () => {
+    setFabOpen(false);
+    try {
+      // Create a blank draft, then open the paste-extract modal on it.
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Untitled recipe", status: "draft" }),
+      });
+      if (!res.ok) throw new Error("Failed to create recipe");
+      const recipe = await res.json();
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      selectRecipe(recipe.id);
+      setPasteRecipeId(recipe.id);
+    } catch (err) {
+      console.error("Quick capture failed:", err);
+    }
+  }, [qc, selectRecipe]);
+
+  const handlePasteModalClose = useCallback(() => {
+    setPasteRecipeId(null);
+  }, []);
+
+  const handlePasteModalDone = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    if (pasteRecipeId) {
+      qc.invalidateQueries({ queryKey: ["recipe", pasteRecipeId] });
+    }
+    setPasteRecipeId(null);
+  }, [qc, pasteRecipeId]);
+
+  const showFab = currentView === "recipes" && !isSidebarOpen;
 
   return (
     <>
@@ -126,35 +188,93 @@ function RecipeWorkspaceContent({
         {currentView === "profile" && <ProfileView />}
       </div>
 
-      {/* Mobile new-recipe FAB. Sits above the BottomNav (h-16) and
-          respects the iOS safe-area inset. Only shown on the Recipes
-          view — other tabs have their own flows. Desktop users already
-          have the "New Recipe" button in the sidebar, so we hide this
-          at md+. Also hidden while the mobile sidebar is open so it
-          doesn't visually overlap the slide-in drawer. */}
-      {currentView === "recipes" && !isSidebarOpen && (
-        <button
-          type="button"
-          onClick={handleCreateBlankRecipe}
-          aria-label="New recipe"
-          className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-white shadow-lg ring-1 ring-amber-700/50 transition-transform active:scale-95 md:hidden"
-          style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* ── Mobile FAB speed-dial ─────────────────────────────
+          Two-option popup: "Quick capture" (paste text → AI extract)
+          and "From scratch" (blank recipe). Only on the Recipes tab,
+          only on mobile, hidden when the sidebar drawer is open. */}
+      {showFab && (
+        <>
+          {/* Scrim behind speed-dial when open */}
+          {fabOpen && (
+            <div className="fixed inset-0 z-40 bg-neutral-950/20 md:hidden" />
+          )}
+
+          <div
+            ref={fabRef}
+            className="fixed right-5 z-50 flex flex-col items-end gap-3 md:hidden"
+            style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
           >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
+            {/* Speed-dial options */}
+            {fabOpen && (
+              <div className="mb-1 flex flex-col items-end gap-2">
+                {/* Quick capture */}
+                <button
+                  type="button"
+                  onClick={handleQuickCapture}
+                  className="flex items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
+                >
+                  <span className="text-sm font-medium text-neutral-800">
+                    Quick capture
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/>
+                    </svg>
+                  </span>
+                </button>
+
+                {/* From scratch */}
+                <button
+                  type="button"
+                  onClick={handleFromScratch}
+                  className="flex items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
+                >
+                  <span className="text-sm font-medium text-neutral-800">
+                    From scratch
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* Main FAB button */}
+            <button
+              type="button"
+              onClick={() => setFabOpen((v) => !v)}
+              aria-label={fabOpen ? "Close menu" : "New recipe"}
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-white shadow-lg ring-1 ring-amber-700/50 transition-transform active:scale-95"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform duration-200 ${fabOpen ? "rotate-45" : ""}`}
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Paste-extract modal for Quick Capture flow */}
+      {pasteRecipeId != null && (
+        <PasteRecipeModal
+          recipeId={pasteRecipeId}
+          onClose={handlePasteModalClose}
+          onRecipeUpdated={handlePasteModalDone}
+        />
       )}
 
       <BottomNav current={currentView} onChange={handleViewChange} />
