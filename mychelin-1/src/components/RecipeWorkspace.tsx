@@ -211,9 +211,9 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={handleQuickCapture}
-                  className="flex items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
+                  className="flex w-48 items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
                 >
-                  <span className="text-sm font-medium text-neutral-800">
+                  <span className="flex-1 text-sm font-medium text-neutral-800">
                     Quick capture
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-700">
@@ -227,9 +227,9 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={handleFromScratch}
-                  className="flex items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
+                  className="flex w-48 items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
                 >
-                  <span className="text-sm font-medium text-neutral-800">
+                  <span className="flex-1 text-sm font-medium text-neutral-800">
                     From scratch
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
