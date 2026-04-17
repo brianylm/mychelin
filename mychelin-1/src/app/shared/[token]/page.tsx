@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { ServingScaler, formatScaledQuantity } from "@/components/recipes/ServingScaler";
 import { SignupNudge } from "@/components/sharing/SignupNudge";
@@ -39,6 +39,76 @@ type SharedData =
   | { type: "recipe"; permission: string; data: SharedRecipe }
   | { type: "book"; permission: string; data: SharedBook };
 
+// ─── Save to Mychelin button (logged-in users) ────────────
+function SaveRecipeButton({ token }: { token: string }) {
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [savedId, setSavedId] = useState<number | null>(null);
+
+  const handleSave = async () => {
+    setState("saving");
+    try {
+      const res = await fetch(`/api/share/${token}/save`, { method: "POST" });
+      if (res.status === 409) {
+        setState("saved");
+        return;
+      }
+      if (!res.ok) throw new Error("Failed to save");
+      const data = await res.json();
+      setSavedId(data.id);
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  };
+
+  if (state === "saved") {
+    return (
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-200 bg-emerald-50 px-4 py-3 shadow-lg">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <span className="text-xl">✓</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-emerald-900">Saved to your Mychelin!</p>
+            <p className="text-[11px] text-emerald-700">This recipe is now in your collection.</p>
+          </div>
+          <a
+            href="/"
+            className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+          >
+            Open my recipes
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-200 bg-gradient-to-br from-amber-50 to-white px-4 py-3 shadow-lg">
+      <div className="mx-auto flex max-w-3xl items-center gap-3">
+        <span className="hidden text-2xl sm:inline">📖</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-amber-900">
+            Like this recipe?
+          </p>
+          <p className="text-[11px] text-neutral-600 truncate">
+            Save it to your collection and make it your own.
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={state === "saving"}
+          className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-amber-700 disabled:opacity-60"
+        >
+          {state === "saving" ? "Saving…" : "Save to my Mychelin"}
+        </button>
+        {state === "error" && (
+          <span className="text-[10px] text-red-600">Failed — try again</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Recipe detail view ────────────────────────────────────
 function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; permission: string; onBack?: () => void }) {
   const r = recipe;
   const [scale, setScale] = useState(1);
@@ -192,13 +262,14 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         )}
 
         <div className="mt-12 pb-8 text-center text-xs text-neutral-400">
-          Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> · preserving family recipe heritage
+          Made with <a href="/" className="text-amber-600 hover:underline">Mychelin</a> · preserving family recipe heritage
         </div>
       </div>
     </div>
   );
 }
 
+// ─── Main page component ───────────────────────────────────
 export default function SharedPage() {
   const params = useParams();
   const token = params.token as string;
@@ -207,6 +278,7 @@ export default function SharedPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState<SharedRecipe | null>(null);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     fetch(`/api/share/${token}`)
@@ -217,6 +289,13 @@ export default function SharedPage() {
       .then(setShared)
       .catch(() => setError("This share link is invalid or has been removed."))
       .finally(() => setLoading(false));
+
+    // Lightweight auth check — don't block rendering
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (res.ok) setIsLoggedIn(true);
+      })
+      .catch(() => {});
   }, [token]);
 
   const openRecipe = useCallback(async (recipeId: number) => {
@@ -263,7 +342,11 @@ export default function SharedPage() {
           permission={shared.permission}
           onBack={selectedRecipe ? () => setSelectedRecipe(null) : undefined}
         />
-        <SignupNudge context="recipe" resourceName={recipe.title} />
+        {isLoggedIn ? (
+          <SaveRecipeButton token={token} />
+        ) : (
+          <SignupNudge context="recipe" resourceName={recipe.title} />
+        )}
       </>
     );
   }
@@ -333,7 +416,7 @@ export default function SharedPage() {
         )}
 
         <div className="mt-12 pb-8 text-center text-xs text-neutral-400">
-          Shared via <a href="/" className="text-amber-600 hover:underline">Mychelin</a> · preserving family recipe heritage
+          Made with <a href="/" className="text-amber-600 hover:underline">Mychelin</a> · preserving family recipe heritage
         </div>
       </div>
       <SignupNudge context="book" resourceName={b.title} />
