@@ -46,8 +46,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
           columns: { forkedFrom: true, userId: true },
         });
       // forkedFrom may be "57" (legacy) or "57:Recipe Title" (new format)
-      const rawParent = row?.forkedFrom;
-      const parentId = rawParent ? parseInt(rawParent) : NaN;
+      const rawParent: string | null | undefined = row?.forkedFrom;
+      const parentId: number = rawParent ? parseInt(rawParent) : NaN;
       if (!Number.isNaN(parentId) && parentId > 0) {
         // Check the parent belongs to the same user before crossing
         const parentRow: { userId: number | null } | undefined =
