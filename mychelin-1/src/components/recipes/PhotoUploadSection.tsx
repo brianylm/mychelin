@@ -84,9 +84,12 @@ export function PhotoUploadSection({
 
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        await onUpload(file);
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      // Upload each selected file sequentially so the server isn't
+      // hammered and the UI shows progress accurately.
+      for (let i = 0; i < files.length; i++) {
+        await onUpload(files[i]);
       }
       e.target.value = "";
     },
@@ -174,6 +177,7 @@ export function PhotoUploadSection({
                   ref={inputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleFileSelect}
                   disabled={isUploading}
