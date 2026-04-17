@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { extractRecipeText } from "@/lib/ai-extract";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
-const FETCH_TIMEOUT_MS = 8_000;
-const MAX_REDIRECTS = 3;
+const FETCH_TIMEOUT_MS = 10_000;
 
 // Many recipe blogs embed structured data in JSON-LD <script> tags
-// (schema.org/Recipe). This is the richest, most reliable source of
-// recipe content — no HTML parsing ambiguity, no JS-rendering issues.
+// (schema.org/Recipe). This is the richest, most reliable source —
+// no HTML parsing ambiguity, no JS-rendering issues.
 function extractJsonLdRecipe(html: string): string | null {
   const ldMatches = html.match(
     /<script[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
@@ -21,14 +21,11 @@ function extractJsonLdRecipe(html: string): string | null {
     const inner = match.replace(/<script[^>]*>|<\/script>/gi, "").trim();
     try {
       const parsed = JSON.parse(inner);
-      // Could be a single object or an array
       const items = Array.isArray(parsed) ? parsed : [parsed];
       for (const item of items) {
-        // Direct Recipe type
         if (item["@type"] === "Recipe" || item["@type"]?.includes?.("Recipe")) {
           return JSON.stringify(item, null, 2);
         }
-        // Nested in @graph
         if (item["@graph"]) {
           const recipe = item["@graph"].find(
             (g: any) => g["@type"] === "Recipe" || g["@type"]?.includes?.("Recipe")
@@ -47,7 +44,9 @@ function stripHtmlToText(html: string): string {
   let text = html;
 
   // Remove script/style/noscript blocks entirely
-  text = text.replace(/<(script|style|noscript|svg|head)[^>]*>[\s\S]*?<\/\1>/gi, "");
+  text = text.replace(/<(script|style|noscript|svg)[^>]*>[\s\S]*?<\/\1>/gi, "");
+  // Remove <head> but keep <header> (which often has the article title)
+  text = text.replace(/<head[\s>][\s\S]*?<\/head>/gi, "");
 
   // Convert common block elements to newlines
   text = text.replace(/<\/(p|div|li|h[1-6]|tr|blockquote|section|article)>/gi, "\n");
@@ -76,12 +75,6 @@ function stripHtmlToText(html: string): string {
   return text.trim();
 }
 
-// POST /api/capture/url
-//
-// Fetches a URL, strips HTML to readable text, and (optionally) pipes
-// it through Gemini to extract a structured recipe. Returns both the
-// raw stripped text and the extracted recipe so the client can preview
-// before applying.
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -99,10 +92,7 @@ export async function POST(request: NextRequest) {
     try {
       parsed = new URL(rawUrl);
     } catch {
-      return NextResponse.json(
-        { error: "Invalid URL" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
     if (!["http:", "https:"].includes(parsed.protocol)) {
@@ -112,13 +102,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the page with timeout and redirect limit
+    // Fetch with a browser-like UA so sites serve full content
     let response: Response;
     try {
       response = await fetch(parsed.href, {
         headers: {
-          "User-Agent": "Mychelin/1.0 (recipe importer)",
-          Accept: "text/html, application/xhtml+xml, */*;q=0.8",
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
         },
         redirect: "follow",
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
@@ -143,7 +136,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify we got something resembling HTML
     const contentType = response.headers.get("content-type") ?? "";
     if (
       !contentType.includes("text/html") &&
@@ -153,14 +145,6 @@ export async function POST(request: NextRequest) {
         { error: "URL did not return an HTML page" },
         { status: 422 }
       );
-    }
-
-    // Check redirects didn't go past the limit
-    if (response.redirected) {
-      const finalUrl = new URL(response.url);
-      if (finalUrl.origin !== parsed.origin) {
-        // Cross-origin redirect — still allow, just note it
-      }
     }
 
     // Read body with size limit
@@ -199,9 +183,7 @@ export async function POST(request: NextRequest) {
           }, new Uint8Array())
     );
 
-    // Prefer JSON-LD structured data (schema.org/Recipe) — most recipe
-    // blogs include it for SEO and it's far more reliable than scraping
-    // the rendered HTML, which may require JS to populate.
+    // Prefer JSON-LD structured data (schema.org/Recipe)
     const jsonLd = extractJsonLdRecipe(html);
     const text = jsonLd || stripHtmlToText(html);
 
@@ -212,25 +194,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Truncate to the paste endpoint's limit so Gemini doesn't choke
     const trimmedText = text.length > 20000 ? text.slice(0, 20000) : text;
 
-    // Now pipe through Gemini for structured extraction (same as /api/capture/paste)
-    const apiKey =
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_AI_API_KEY ||
-      process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      // No Gemini key — return raw text only, client can still save as draft
-      return NextResponse.json({
-        text: trimmedText,
-        sourceUrl: parsed.href,
-        recipe: null,
-      });
-    }
-
-    const prompt = `You are extracting a structured recipe from text that was scraped from a webpage. The text will contain navigation, ads, comments, and other non-recipe content — ignore everything that isn't part of the recipe itself.
+    const prompt = `You are extracting a structured recipe from text that was scraped from a webpage (${parsed.hostname}). The text may contain navigation, ads, comments, and other non-recipe content — ignore everything that isn't part of the recipe itself.
 
 SCRAPED TEXT:
 """
@@ -272,41 +238,13 @@ Guidelines:
 - Preserve the original language and script — if the recipe is in Chinese characters, keep it in Chinese.
 - Use null for missing numeric values, empty string for missing text.
 - Step numbers should start at 1 and increment.
-- If the text clearly isn't a recipe (random article, etc.), still try to return the shape but with empty fields.
+- If the text clearly isn't a recipe (random article, etc.), return the shape with empty fields.
 - Do NOT wrap the JSON in markdown code fences.`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 4096,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
+    // Use the shared extraction helper (Gemini with retry + MiniMax fallback)
+    const extracted = await extractRecipeText(prompt);
 
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.text();
-      console.error("Gemini URL-extract error:", geminiRes.status, errBody);
-      // Still return the raw text so the client can save as draft
-      return NextResponse.json({
-        text: trimmedText,
-        sourceUrl: parsed.href,
-        recipe: null,
-      });
-    }
-
-    const data = await geminiRes.json();
-    const generatedText: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!generatedText) {
+    if (!extracted.ok) {
       return NextResponse.json({
         text: trimmedText,
         sourceUrl: parsed.href,
@@ -316,10 +254,16 @@ Guidelines:
 
     let extractedRecipe;
     try {
-      const cleaned = generatedText.replace(/```json\n?|\n?```/g, "").trim();
+      const cleaned = extracted.result.text
+        .replace(/```json\n?|\n?```/g, "")
+        .trim();
       extractedRecipe = JSON.parse(cleaned);
     } catch {
-      console.error("Failed to parse Gemini URL-extract JSON:", generatedText);
+      console.error(
+        "Failed to parse URL-extract JSON:",
+        extracted.result.provider,
+        extracted.result.text
+      );
       return NextResponse.json({
         text: trimmedText,
         sourceUrl: parsed.href,
@@ -327,15 +271,12 @@ Guidelines:
       });
     }
 
-    // Validate that the extraction actually found something meaningful.
-    // Many pages are JS-rendered or behind bot-detection so Gemini gets
-    // empty text and returns a hollow recipe object. Treat that as a
-    // failed extraction so the client can fall back to saving raw text.
-    const hasTitle = !!extractedRecipe?.title?.trim();
+    // Require at least ingredients or instructions — a title alone
+    // (e.g. scraped from page chrome) isn't a real extraction.
     const hasIngredients = (extractedRecipe?.ingredients?.length ?? 0) > 0;
     const hasInstructions = (extractedRecipe?.instructions?.length ?? 0) > 0;
 
-    if (!hasTitle && !hasIngredients && !hasInstructions) {
+    if (!hasIngredients && !hasInstructions) {
       return NextResponse.json({
         text: trimmedText,
         sourceUrl: parsed.href,
