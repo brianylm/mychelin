@@ -43,10 +43,16 @@ async function callGemini(
   }
 
   const data = await res.json();
-  // 2.5 may include a thinking part before the text part
-  const parts: Array<{ text?: string }> =
+  // Gemini 2.5 may include a thinking part (with "thought": true) before
+  // the actual text part. Pick the last text part — that's the response.
+  const parts: Array<{ text?: string; thought?: boolean }> =
     data?.candidates?.[0]?.content?.parts ?? [];
-  const text = parts.find((p) => typeof p.text === "string")?.text;
+  const responseParts = parts.filter(
+    (p) => typeof p.text === "string" && !p.thought
+  );
+  const text = responseParts.length > 0
+    ? responseParts[responseParts.length - 1].text
+    : parts.find((p) => typeof p.text === "string")?.text;
   if (!text) {
     return { ok: false, status: 502, body: "Gemini returned no text part" };
   }
@@ -166,13 +172,29 @@ export async function extractRecipeText(
     };
   }
 
-  let detail = "Extraction failed";
+  let detail = "";
   try {
     const parsed = JSON.parse(lastBody);
-    detail = parsed?.error?.message || parsed?.base_resp?.status_msg || detail;
+    detail =
+      parsed?.error?.message ||
+      parsed?.error?.status ||
+      parsed?.base_resp?.status_msg ||
+      "";
   } catch {
-    /* keep default */
+    // Response wasn't JSON — use a truncated snippet
+    detail = lastBody?.slice(0, 120) || "";
   }
+  const statusHint =
+    lastStatus === 429
+      ? "Rate limited"
+      : lastStatus === 403
+        ? "API key invalid or expired"
+        : lastStatus >= 500
+          ? "AI service overloaded"
+          : `HTTP ${lastStatus}`;
+  const message = detail
+    ? `${statusHint}: ${detail}`
+    : `${statusHint} — extraction failed after retrying all providers`;
   console.error("AI extract exhausted all providers:", lastStatus, lastBody);
-  return { ok: false, error: { message: detail, status: 502 } };
+  return { ok: false, error: { message, status: 502 } };
 }
