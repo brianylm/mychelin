@@ -20,6 +20,7 @@ interface SharedRecipe {
   occasion: string | null;
   familyMember: string | null;
   generation: string | null;
+  sourceUrl: string | null;
   ingredients: { name: string; quantity: number | null; unit: string | null; notes: string | null }[];
   instructions: { stepNumber: number; content: string; tip: string | null }[];
   photos: { blobUrl: string; sortOrder: number }[];
@@ -83,6 +84,21 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         )}
         {r.description && (
           <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{r.description}</p>
+        )}
+
+        {/* Source URL attribution */}
+        {r.sourceUrl && (
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-sky-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span>Imported from{" "}
+              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2 hover:text-sky-800">
+                {(() => { try { return new URL(r.sourceUrl).hostname.replace(/^www\./, ""); } catch { return r.sourceUrl; } })()}
+              </a>
+            </span>
+          </div>
         )}
 
         {/* Times */}
