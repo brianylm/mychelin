@@ -40,19 +40,21 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     let cursor: number | null = startRecipeId;
     for (let i = 0; i < 20 && cursor != null && !seenUp.has(cursor); i++) {
       seenUp.add(cursor);
-      const row = await db.query.recipes.findFirst({
-        where: eq(recipes.id, cursor),
-        columns: { forkedFrom: true, userId: true },
-      });
+      const row: { forkedFrom: string | null; userId: number | null } | undefined =
+        await db.query.recipes.findFirst({
+          where: eq(recipes.id, cursor),
+          columns: { forkedFrom: true, userId: true },
+        });
       // forkedFrom may be "57" (legacy) or "57:Recipe Title" (new format)
       const rawParent = row?.forkedFrom;
       const parentId = rawParent ? parseInt(rawParent) : NaN;
       if (!Number.isNaN(parentId) && parentId > 0) {
         // Check the parent belongs to the same user before crossing
-        const parentRow = await db.query.recipes.findFirst({
-          where: eq(recipes.id, parentId),
-          columns: { userId: true },
-        });
+        const parentRow: { userId: number | null } | undefined =
+          await db.query.recipes.findFirst({
+            where: eq(recipes.id, parentId),
+            columns: { userId: true },
+          });
         if (parentRow && parentRow.userId === currentUser.id) {
           rootId = parentId;
           cursor = parentId;
