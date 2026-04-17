@@ -60,7 +60,16 @@ export function AuthScreen() {
         ? await login(email, password)
         : await signup(name, email, password);
 
-    if (result) setError(result);
+    if (result) {
+      setError(result);
+    } else {
+      // Login/signup succeeded — check for returnTo param (e.g. from shared page)
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get("returnTo");
+      if (returnTo && returnTo.startsWith("/shared/")) {
+        window.location.href = returnTo;
+      }
+    }
     setLoading(false);
   };
 
