@@ -1,7 +1,6 @@
-// Shared extraction helper — tries Gemini first (cheap, fast), then
-// falls back to MiniMax if Gemini exhausts its retries / hits overload.
-// Both paths end up returning the raw JSON string produced by the
-// model, which the caller parses into the recipe shape.
+// Shared extraction helper — tries Gemini first, then falls back to
+// MiniMax if Gemini exhausts its retries / hits overload. Both paths
+// return the raw JSON string produced by the model.
 
 export interface ExtractResult {
   text: string;
@@ -44,7 +43,7 @@ async function callGemini(
 
   const data = await res.json();
   // Gemini 2.5 may include a thinking part (with "thought": true) before
-  // the actual text part. Pick the last text part — that's the response.
+  // the actual text part. Pick the last non-thinking text part.
   const parts: Array<{ text?: string; thought?: boolean }> =
     data?.candidates?.[0]?.content?.parts ?? [];
   const responseParts = parts.filter(
@@ -60,9 +59,6 @@ async function callGemini(
 }
 
 // ─── MiniMax (OpenAI-compatible chat completions) ──────
-// Docs: https://www.minimaxi.com/en/document/guides/chat-model
-// Default international endpoint: https://api.minimaxi.com
-// Default model: MiniMax-Text-01 (override with MINIMAX_MODEL env var)
 async function callMiniMax(
   apiKey: string,
   model: string,
@@ -97,9 +93,14 @@ async function callMiniMax(
 
   const data = await res.json();
   // MiniMax uses OpenAI-compatible shape: choices[0].message.content
-  const text: string | undefined = data?.choices?.[0]?.message?.content;
+  // but also check output.choices and other known shapes
+  const text: string | undefined =
+    data?.choices?.[0]?.message?.content ||
+    data?.output?.choices?.[0]?.message?.content ||
+    data?.reply;
   if (!text) {
-    return { ok: false, status: 502, body: "MiniMax returned no content" };
+    console.error("MiniMax unexpected response shape:", JSON.stringify(data).slice(0, 500));
+    return { ok: false, status: 502, body: `MiniMax returned no content. Keys: ${Object.keys(data || {}).join(",")}` };
   }
   return { ok: true, text };
 }
@@ -120,11 +121,10 @@ export async function extractRecipeText(
   let lastStatus = 0;
   let lastBody = "";
 
-  // 1. Try Gemini models (2.5-flash primary, 2.0-flash fallback) with
-  //    one retry each on transient errors. 600ms backoff to stay well
-  //    under Vercel's 25s edge timeout.
+  // Try Gemini models — 2.0-flash first (most stable), then 2.5-flash
+  // (smarter but more often overloaded). One retry each on transient errors.
   if (geminiKey) {
-    for (const model of ["gemini-2.5-flash", "gemini-2.0-flash"]) {
+    for (const model of ["gemini-2.0-flash", "gemini-2.5-flash"]) {
       for (let attempt = 0; attempt < 2; attempt++) {
         const r = await callGemini(geminiKey, model, prompt);
         if (r.ok) {
@@ -135,14 +135,15 @@ export async function extractRecipeText(
         }
         lastStatus = r.status;
         lastBody = r.body;
+        console.error(`Gemini ${model} attempt ${attempt + 1} failed:`, r.status, r.body.slice(0, 200));
         const isTransient = r.status === 429 || r.status >= 500;
-        if (!isTransient) break; // fall through to next model
+        if (!isTransient) break;
         if (attempt === 0) await sleep(600);
       }
     }
   }
 
-  // 2. Gemini exhausted (or no key) — try MiniMax if configured.
+  // Gemini exhausted (or no key) — try MiniMax if configured.
   if (minimaxKey) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const r = await callMiniMax(minimaxKey, minimaxModel, minimaxBase, prompt);
@@ -154,13 +155,14 @@ export async function extractRecipeText(
       }
       lastStatus = r.status;
       lastBody = r.body;
+      console.error(`MiniMax attempt ${attempt + 1} failed:`, r.status, r.body.slice(0, 200));
       const isTransient = r.status === 429 || r.status >= 500;
       if (!isTransient) break;
       if (attempt === 0) await sleep(600);
     }
   }
 
-  // 3. Everything exhausted — surface the last upstream error.
+  // Everything exhausted — surface the last upstream error.
   if (!geminiKey && !minimaxKey) {
     return {
       ok: false,
@@ -181,7 +183,6 @@ export async function extractRecipeText(
       parsed?.base_resp?.status_msg ||
       "";
   } catch {
-    // Response wasn't JSON — use a truncated snippet
     detail = lastBody?.slice(0, 120) || "";
   }
   const statusHint =
