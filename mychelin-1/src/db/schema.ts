@@ -76,6 +76,9 @@ export const recipes = sqliteTable("recipes", {
   activeVersionId: integer("active_version_id"), // pointer to current best version
   forkedFrom: text("forked_from"),
   bookId: integer("book_id").references(() => books.id, { onDelete: "set null" }),
+  // URL the recipe was imported from (F5). Shown as an attribution link on
+  // the recipe view and public share page. Null for recipes typed from scratch.
+  sourceUrl: text("source_url"),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

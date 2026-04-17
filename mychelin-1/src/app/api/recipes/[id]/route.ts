@@ -238,6 +238,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       story,
       imageUrl,
       isPublic,
+      sourceUrl,
       ingredients: ingredientsList,
       instructions: instructionsList,
     } = body;
@@ -262,6 +263,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         story: story ?? null,
         imageUrl: imageUrl ?? null,
         isPublic: isPublic ?? false,
+        sourceUrl: sourceUrl ?? null,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(recipes.id, recipeId));
