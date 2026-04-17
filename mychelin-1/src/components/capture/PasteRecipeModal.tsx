@@ -140,7 +140,10 @@ export function PasteRecipeModal({
         }
         const { recipe, sourceUrl, text: rawText } = await urlRes.json();
 
-        if (recipe) {
+        const hasContent = recipe &&
+          (recipe.title?.trim() || recipe.ingredients?.length || recipe.instructions?.length);
+
+        if (hasContent) {
           setProcessingLabel("Saving recipe…");
           await patchRecipe(recipe, sourceUrl);
           onRecipeUpdated?.();
@@ -148,13 +151,14 @@ export function PasteRecipeModal({
           return;
         }
 
+        // Extraction returned empty/hollow data — save raw text as draft
         if (rawText) {
           setStep("saving");
           await saveDraft(rawText, sourceUrl);
           return;
         }
 
-        throw new Error("No content extracted from the page");
+        throw new Error("Could not extract a recipe from this page. The site may require JavaScript to load its content.");
       } catch (err: any) {
         console.error("URL import failed:", err);
         setErrorMessage(err?.message || "Failed to import from URL");

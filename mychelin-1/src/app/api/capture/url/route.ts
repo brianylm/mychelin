@@ -8,6 +8,41 @@ const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_REDIRECTS = 3;
 
+// Many recipe blogs embed structured data in JSON-LD <script> tags
+// (schema.org/Recipe). This is the richest, most reliable source of
+// recipe content — no HTML parsing ambiguity, no JS-rendering issues.
+function extractJsonLdRecipe(html: string): string | null {
+  const ldMatches = html.match(
+    /<script[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+  );
+  if (!ldMatches) return null;
+
+  for (const match of ldMatches) {
+    const inner = match.replace(/<script[^>]*>|<\/script>/gi, "").trim();
+    try {
+      const parsed = JSON.parse(inner);
+      // Could be a single object or an array
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        // Direct Recipe type
+        if (item["@type"] === "Recipe" || item["@type"]?.includes?.("Recipe")) {
+          return JSON.stringify(item, null, 2);
+        }
+        // Nested in @graph
+        if (item["@graph"]) {
+          const recipe = item["@graph"].find(
+            (g: any) => g["@type"] === "Recipe" || g["@type"]?.includes?.("Recipe")
+          );
+          if (recipe) return JSON.stringify(recipe, null, 2);
+        }
+      }
+    } catch {
+      // Malformed JSON-LD, skip
+    }
+  }
+  return null;
+}
+
 function stripHtmlToText(html: string): string {
   let text = html;
 
@@ -164,7 +199,11 @@ export async function POST(request: NextRequest) {
           }, new Uint8Array())
     );
 
-    const text = stripHtmlToText(html);
+    // Prefer JSON-LD structured data (schema.org/Recipe) — most recipe
+    // blogs include it for SEO and it's far more reliable than scraping
+    // the rendered HTML, which may require JS to populate.
+    const jsonLd = extractJsonLdRecipe(html);
+    const text = jsonLd || stripHtmlToText(html);
 
     if (text.length < 20) {
       return NextResponse.json(
@@ -281,6 +320,22 @@ Guidelines:
       extractedRecipe = JSON.parse(cleaned);
     } catch {
       console.error("Failed to parse Gemini URL-extract JSON:", generatedText);
+      return NextResponse.json({
+        text: trimmedText,
+        sourceUrl: parsed.href,
+        recipe: null,
+      });
+    }
+
+    // Validate that the extraction actually found something meaningful.
+    // Many pages are JS-rendered or behind bot-detection so Gemini gets
+    // empty text and returns a hollow recipe object. Treat that as a
+    // failed extraction so the client can fall back to saving raw text.
+    const hasTitle = !!extractedRecipe?.title?.trim();
+    const hasIngredients = (extractedRecipe?.ingredients?.length ?? 0) > 0;
+    const hasInstructions = (extractedRecipe?.instructions?.length ?? 0) > 0;
+
+    if (!hasTitle && !hasIngredients && !hasInstructions) {
       return NextResponse.json({
         text: trimmedText,
         sourceUrl: parsed.href,
