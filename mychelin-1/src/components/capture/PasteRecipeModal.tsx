@@ -151,14 +151,12 @@ export function PasteRecipeModal({
           return;
         }
 
-        // Extraction returned empty/hollow data — save raw text as draft
-        if (rawText) {
-          setStep("saving");
-          await saveDraft(rawText, sourceUrl);
-          return;
-        }
-
-        throw new Error("Could not extract a recipe from this page. The site may require JavaScript to load its content.");
+        // Site blocked our fetch or returned no recipe content.
+        // Don't save garbage HTML as a draft — prompt user to paste instead.
+        throw new Error(
+          `Couldn't extract recipe content from ${hostnameFrom(trimmed)}. ` +
+          `Try copying the recipe text from the page and pasting it here instead.`
+        );
       } catch (err: any) {
         console.error("URL import failed:", err);
         setErrorMessage(err?.message || "Failed to import from URL");
@@ -343,26 +341,38 @@ export function PasteRecipeModal({
             <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs text-red-700">
               {errorMessage}
             </p>
-            <p className="text-center text-xs text-neutral-500">
-              You can try again or save the raw text as a draft.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="soft"
-                onClick={() => {
-                  setErrorMessage(null);
-                  setStep("paste");
-                }}
-              >
-                Back to edit
-              </Button>
-              <Button
-                variant="soft"
-                color="amber"
-                onClick={handleSaveDraft}
-              >
-                Save as draft
-              </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              {isUrl ? (
+                <Button
+                  variant="soft"
+                  onClick={() => {
+                    setText("");
+                    setErrorMessage(null);
+                    setStep("paste");
+                  }}
+                >
+                  Paste text instead
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="soft"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setStep("paste");
+                    }}
+                  >
+                    Back to edit
+                  </Button>
+                  <Button
+                    variant="soft"
+                    color="amber"
+                    onClick={handleSaveDraft}
+                  >
+                    Save as draft
+                  </Button>
+                </>
+              )}
               <Button onClick={handleExtract}>
                 <MagicWandIcon />
                 Retry
