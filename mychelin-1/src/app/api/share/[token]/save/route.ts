@@ -86,7 +86,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         familyMember: original.familyMember,
         generation: original.generation,
         sourceUrl: original.sourceUrl,
-        forkedFrom: String(original.id),
+        forkedFrom: `${original.id}:${original.title}`,
         status: "active",
         createdAt: now,
         updatedAt: now,

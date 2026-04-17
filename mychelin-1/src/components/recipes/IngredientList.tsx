@@ -204,7 +204,7 @@ export function IngredientList({
                       onChange={(e) =>
                         handleFieldBlur(ing, "unit", e.target.value || null)
                       }
-                      className="w-[70px] rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                      className="w-[85px] rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                     >
                       <option value="">unit</option>
                       {UNIT_OPTIONS.filter(Boolean).map((u) => (
