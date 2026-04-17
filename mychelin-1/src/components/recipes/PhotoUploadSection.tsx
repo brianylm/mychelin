@@ -41,6 +41,7 @@ export function PhotoUploadSection({
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   const canAddMore = photos.length < MAX_PHOTOS;
 
@@ -126,7 +127,36 @@ export function PhotoUploadSection({
               </button>
             ))}
 
-            {/* Upload button */}
+            {/* Camera button (mobile) */}
+            {canAddMore && (
+              <label className="flex h-20 w-20 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50 md:hidden">
+                {isUploading ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                    <span className="text-[10px] text-neutral-500">...</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
+                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                      <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                    <span className="text-[10px] text-neutral-500">Camera</span>
+                  </div>
+                )}
+                <input
+                  ref={cameraRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  disabled={isUploading}
+                />
+              </label>
+            )}
+
+            {/* Gallery / file upload button */}
             {canAddMore && (
               <label className="flex h-20 w-20 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50">
                 {isUploading ? (
@@ -137,7 +167,7 @@ export function PhotoUploadSection({
                 ) : (
                   <div className="flex flex-col items-center gap-1">
                     <PlusIcon className="h-5 w-5 text-neutral-400" />
-                    <span className="text-[10px] text-neutral-500">Add</span>
+                    <span className="text-[10px] text-neutral-500">Gallery</span>
                   </div>
                 )}
                 <input
