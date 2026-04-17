@@ -6,6 +6,8 @@ import { useRecipeStore } from "@/store/RecipeStore";
 import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
+import { ShareModal } from "@/components/sharing/ShareModal";
+import type { Recipe } from "@/db/schema";
 
 interface Book {
   id: number;
@@ -38,6 +40,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
 
   const [query, setQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [shareTarget, setShareTarget] = useState<{ id: number; name: string } | null>(null);
 
   // Books state
   const [books, setBooks] = useState<Book[]>([]);
@@ -310,6 +313,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                       selectRecipe(id);
                       onClose();
                     }}
+                    onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
                     onDelete={deleteRecipe}
                     matchedIngredient={matchedIngredientById.get(recipe.id)}
                   />
@@ -358,6 +362,15 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
           )}
         </div>
       </aside>
+
+      {shareTarget && (
+        <ShareModal
+          resourceType="recipe"
+          resourceId={shareTarget.id}
+          resourceName={shareTarget.name}
+          onClose={() => setShareTarget(null)}
+        />
+      )}
     </>
   );
 }

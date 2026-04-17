@@ -7,21 +7,36 @@ interface ForkedFromBadgeProps {
   onNavigate?: (recipeId: number) => void;
 }
 
+// forkedFrom can be:
+//   "57"            — legacy format (just the ID)
+//   "57:Nasi Lemak" — new format (ID + original title, for cross-user saves)
+function parseForkedFrom(raw: string): { id: number; title: string | null } {
+  const colonIdx = raw.indexOf(":");
+  if (colonIdx > 0) {
+    const id = parseInt(raw.slice(0, colonIdx));
+    const title = raw.slice(colonIdx + 1).trim();
+    return { id: id || 0, title: title || null };
+  }
+  return { id: parseInt(raw) || 0, title: null };
+}
+
 export function ForkedFromBadge({ forkedFrom, onNavigate }: ForkedFromBadgeProps) {
-  const [originalTitle, setOriginalTitle] = useState<string | null>(null);
-  const originalId = parseInt(forkedFrom);
+  const { id: originalId, title: embeddedTitle } = parseForkedFrom(forkedFrom);
+  const [fetchedTitle, setFetchedTitle] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!originalId) return;
+    if (!originalId || embeddedTitle) return;
     fetch(`/api/recipes/${originalId}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.title) setOriginalTitle(data.title);
+        if (data?.title) setFetchedTitle(data.title);
       })
       .catch(() => {});
-  }, [originalId]);
+  }, [originalId, embeddedTitle]);
 
   if (!originalId) return null;
+
+  const displayTitle = embeddedTitle || fetchedTitle || `Recipe #${originalId}`;
 
   return (
     <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
@@ -32,16 +47,16 @@ export function ForkedFromBadge({ forkedFrom, onNavigate }: ForkedFromBadgeProps
         <path d="M18 9v2a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/>
         <line x1="12" y1="12" x2="12" y2="15"/>
       </svg>
-      <span>Forked from{" "}</span>
+      <span>Saved from{" "}</span>
       {onNavigate ? (
         <button
           onClick={() => onNavigate(originalId)}
           className="font-medium underline underline-offset-2 hover:text-amber-900"
         >
-          {originalTitle ?? `Recipe #${originalId}`}
+          {displayTitle}
         </button>
       ) : (
-        <span className="font-medium">{originalTitle ?? `Recipe #${originalId}`}</span>
+        <span className="font-medium">{displayTitle}</span>
       )}
     </div>
   );

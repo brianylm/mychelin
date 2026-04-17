@@ -6,6 +6,7 @@ import {
   DotsVerticalIcon,
   DrawingPinFilledIcon,
   DrawingPinIcon,
+  Share1Icon,
 } from "@radix-ui/react-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface RecipeListItemProps {
   isSelected: boolean;
   onSelect: (id: number) => void;
   onTogglePin?: (id: number) => void;
+  onShare?: (recipe: Recipe) => void;
   onDelete?: (id: number) => void;
   // Optional "ingredient: X" hint shown under the title when this item
   // is a search hit matched on an ingredient name.
@@ -27,6 +29,7 @@ export function RecipeListItem({
   isSelected,
   onSelect,
   onTogglePin,
+  onShare,
   onDelete,
   matchedIngredient,
 }: RecipeListItemProps) {
@@ -114,6 +117,17 @@ export function RecipeListItem({
             </IconButton>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
+            {onShare && !isDraft && (
+              <DropdownMenu.Item
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare(recipe);
+                }}
+              >
+                <Share1Icon />
+                Share
+              </DropdownMenu.Item>
+            )}
             {onDelete && (
               <DropdownMenu.Item
                 color="red"

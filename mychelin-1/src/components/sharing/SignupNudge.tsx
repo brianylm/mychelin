@@ -72,8 +72,9 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   if (dismissed) return null;
 
   const noun = context === "book" ? "cookbook" : "recipe";
-  const signupHref = `/?signup=1`;
-  const loginHref = `/`;
+  const returnTo = typeof window !== "undefined" ? window.location.pathname : "";
+  const signupHref = `/?signup=1${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`;
+  const loginHref = `/${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`;
 
   return (
     <>

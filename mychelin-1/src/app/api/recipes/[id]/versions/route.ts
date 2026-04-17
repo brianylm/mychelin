@@ -33,22 +33,33 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Walk up to the root ancestor. Cap at 20 hops to defend against
-    // accidental cycles from bad data.
+    // Walk up to the root ancestor. Stop at user boundaries so shared-page
+    // saves don't leak another user's version history. Cap at 20 hops.
     let rootId = startRecipeId;
     const seenUp = new Set<number>();
     let cursor: number | null = startRecipeId;
     for (let i = 0; i < 20 && cursor != null && !seenUp.has(cursor); i++) {
       seenUp.add(cursor);
-      const row: { forkedFrom: string | null } | undefined =
-        await db.query.recipes.findFirst({
-          where: eq(recipes.id, cursor),
-          columns: { forkedFrom: true },
+      const row = await db.query.recipes.findFirst({
+        where: eq(recipes.id, cursor),
+        columns: { forkedFrom: true, userId: true },
+      });
+      // forkedFrom may be "57" (legacy) or "57:Recipe Title" (new format)
+      const rawParent = row?.forkedFrom;
+      const parentId = rawParent ? parseInt(rawParent) : NaN;
+      if (!Number.isNaN(parentId) && parentId > 0) {
+        // Check the parent belongs to the same user before crossing
+        const parentRow = await db.query.recipes.findFirst({
+          where: eq(recipes.id, parentId),
+          columns: { userId: true },
         });
-      const parent: number | null = row?.forkedFrom ? Number(row.forkedFrom) : null;
-      if (parent !== null && !Number.isNaN(parent)) {
-        rootId = parent;
-        cursor = parent;
+        if (parentRow && parentRow.userId === currentUser.id) {
+          rootId = parentId;
+          cursor = parentId;
+        } else {
+          rootId = cursor;
+          cursor = null;
+        }
       } else {
         rootId = cursor;
         cursor = null;
