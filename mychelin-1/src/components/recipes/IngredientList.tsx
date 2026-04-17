@@ -331,13 +331,13 @@ export function IngredientList({
             onClick={() =>
               setDraft((d) => ({ ...d, approximate: !d.approximate }))
             }
-            className={`mb-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+            className={`mb-3 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${
               draft.approximate
                 ? "border-amber-300 bg-amber-50 text-amber-700"
-                : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:text-neutral-700"
+                : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300 hover:text-neutral-500"
             }`}
           >
-            <span className="text-sm leading-none">≈</span>
+            <span className="text-xs leading-none">≈</span>
             {draft.approximate ? "Approximate" : "Use approximate"}
           </button>
 
