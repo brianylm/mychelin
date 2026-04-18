@@ -7,6 +7,7 @@ import {
   DrawingPinFilledIcon,
   DrawingPinIcon,
   Share1Icon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -136,6 +137,7 @@ export function RecipeListItem({
                   onDelete(recipe.id);
                 }}
               >
+                <TrashIcon />
                 Delete
               </DropdownMenu.Item>
             )}
