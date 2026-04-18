@@ -354,6 +354,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                     selectRecipe(id);
                     onClose();
                   }}
+                  onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
                   onDelete={deleteRecipe}
                   matchedIngredient={matchedIngredientById.get(recipe.id)}
                 />
