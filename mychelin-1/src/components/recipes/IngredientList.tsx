@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button, IconButton } from "@radix-ui/themes";
 import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
@@ -73,28 +73,46 @@ export function IngredientList({
     quantityText: "",
   });
   const [savingId, setSavingId] = useState<number | null>(null);
+  const addingRef = useRef(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const handleAdd = useCallback(async () => {
-    if (!draft.name.trim()) return;
-    await onAdd(recipeId, {
-      name: draft.name.trim(),
-      quantity:
-        !draft.approximate && draft.quantity
-          ? parseFloat(draft.quantity)
-          : undefined,
-      unit: !draft.approximate ? draft.unit || undefined : undefined,
-      approximate: draft.approximate,
-      quantityText: draft.approximate ? draft.quantityText.trim() : undefined,
-    });
-    setDraft({
-      name: "",
-      quantity: "",
-      unit: "",
-      approximate: false,
-      quantityText: "",
-    });
-    // Keep adding mode open for quick entry
+    if (!draft.name.trim() || addingRef.current) return;
+    addingRef.current = true;
+    try {
+      await onAdd(recipeId, {
+        name: draft.name.trim(),
+        quantity:
+          !draft.approximate && draft.quantity
+            ? parseFloat(draft.quantity)
+            : undefined,
+        unit: !draft.approximate ? draft.unit || undefined : undefined,
+        approximate: draft.approximate,
+        quantityText: draft.approximate ? draft.quantityText.trim() : undefined,
+      });
+      setDraft({
+        name: "",
+        quantity: "",
+        unit: "",
+        approximate: false,
+        quantityText: "",
+      });
+    } finally {
+      addingRef.current = false;
+    }
   }, [draft, onAdd, recipeId]);
+
+  // Auto-add when focus leaves the entire ingredient form
+  const handleFormBlur = useCallback(
+    (e: React.FocusEvent<HTMLDivElement>) => {
+      // If focus is moving to another element inside the form, don't add yet
+      if (formRef.current?.contains(e.relatedTarget as Node)) return;
+      if (draft.name.trim()) {
+        handleAdd();
+      }
+    },
+    [draft.name, handleAdd]
+  );
 
   const handleFieldBlur = useCallback(
     async (
@@ -256,7 +274,11 @@ export function IngredientList({
       )}
 
       {isAdding ? (
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+        <div
+          ref={formRef}
+          onBlur={handleFormBlur}
+          className="rounded-lg border border-neutral-200 bg-neutral-50 p-3"
+        >
           {/* Name first, full width — with typeahead */}
           <div className="mb-2">
             <IngredientTypeahead

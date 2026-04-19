@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button, IconButton } from "@radix-ui/themes";
 import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import type { Instruction } from "@/db/schema";
@@ -22,6 +22,39 @@ interface RecipeStepsProps {
 
 const fieldBase =
   "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
+
+function autoResize(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+
+function AutoTextarea({
+  defaultValue,
+  onBlur,
+  className,
+  placeholder,
+}: {
+  defaultValue: string;
+  onBlur: (value: string) => void;
+  className: string;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (ref.current) autoResize(ref.current);
+  }, []);
+  return (
+    <textarea
+      ref={ref}
+      defaultValue={defaultValue}
+      onBlur={(e) => onBlur(e.target.value.trim())}
+      onInput={(e) => autoResize(e.currentTarget)}
+      className={className}
+      placeholder={placeholder}
+      rows={1}
+    />
+  );
+}
 
 export function RecipeSteps({
   instructions,
@@ -69,20 +102,17 @@ export function RecipeSteps({
               <span className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
                 {idx + 1}
               </span>
-              <textarea
+              <AutoTextarea
                 defaultValue={step.content}
-                onBlur={(e) => {
-                  const value = e.target.value.trim();
+                onBlur={(value) => {
                   if (value === step.content) return;
                   if (value === "") {
-                    // Empty → delete the step
                     onDelete(recipeId, step.id);
                     return;
                   }
                   onUpdate(recipeId, step.id, { content: value });
                 }}
                 className="flex-1 min-w-0 resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
-                rows={2}
               />
               <IconButton
                 variant="ghost"
