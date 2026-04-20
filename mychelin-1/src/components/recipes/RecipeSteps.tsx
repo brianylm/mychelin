@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Button, IconButton } from "@radix-ui/themes";
-import { Cross2Icon, PlusIcon, ChevronUpIcon, ChevronDownIcon } from "@radix-ui/react-icons";
+import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import type { Instruction } from "@/db/schema";
 
 interface RecipeStepsProps {
@@ -85,6 +85,26 @@ function AutoTextarea({
   );
 }
 
+function GripIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+    >
+      <circle cx="9" cy="5" r="1.5" />
+      <circle cx="15" cy="5" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="19" r="1.5" />
+      <circle cx="15" cy="19" r="1.5" />
+    </svg>
+  );
+}
+
 export function RecipeSteps({
   instructions,
   recipeId,
@@ -94,6 +114,12 @@ export function RecipeSteps({
 }: RecipeStepsProps) {
   const [newStep, setNewStep] = useState("");
   const addingRef = useRef(false);
+
+  // Drag state
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const listRef = useRef<HTMLOListElement>(null);
+  const itemRefs = useRef<Map<number, HTMLLIElement>>(new Map());
 
   const sorted = [...instructions].sort(
     (a, b) => a.stepNumber - b.stepNumber
@@ -111,19 +137,81 @@ export function RecipeSteps({
     }
   }, [newStep, onAdd, recipeId]);
 
-  const handleMoveStep = useCallback(
+  const commitReorder = useCallback(
     async (fromIdx: number, toIdx: number) => {
-      if (toIdx < 0 || toIdx >= sorted.length) return;
-      const from = sorted[fromIdx];
-      const to = sorted[toIdx];
-      // Swap step numbers
-      await Promise.all([
-        onUpdate(recipeId, from.id, { stepNumber: to.stepNumber }),
-        onUpdate(recipeId, to.id, { stepNumber: from.stepNumber }),
-      ]);
+      if (fromIdx === toIdx || toIdx < 0 || toIdx >= sorted.length) return;
+      // Build the new order: remove the item from fromIdx, insert at toIdx
+      const reordered = [...sorted];
+      const [moved] = reordered.splice(fromIdx, 1);
+      reordered.splice(toIdx, 0, moved);
+      // Update stepNumbers for all affected items
+      const updates: Promise<void>[] = [];
+      reordered.forEach((step, i) => {
+        const newNum = i + 1;
+        if (step.stepNumber !== newNum) {
+          updates.push(
+            onUpdate(recipeId, step.id, { stepNumber: newNum })
+          );
+        }
+      });
+      await Promise.all(updates);
     },
     [sorted, onUpdate, recipeId]
   );
+
+  // Pointer-based drag and drop
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, idx: number) => {
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      setDragIdx(idx);
+      setOverIdx(idx);
+    },
+    []
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (dragIdx === null) return;
+      // Find which item the pointer is over by checking Y positions
+      const y = e.clientY;
+      let closest = dragIdx;
+      let minDist = Infinity;
+      itemRefs.current.forEach((el, i) => {
+        const rect = el.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        const dist = Math.abs(y - mid);
+        if (dist < minDist) {
+          minDist = dist;
+          closest = i;
+        }
+      });
+      setOverIdx(closest);
+    },
+    [dragIdx]
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (dragIdx !== null && overIdx !== null && dragIdx !== overIdx) {
+      commitReorder(dragIdx, overIdx);
+    }
+    setDragIdx(null);
+    setOverIdx(null);
+  }, [dragIdx, overIdx, commitReorder]);
+
+  // Compute display order during drag
+  const displayOrder = (() => {
+    if (dragIdx === null || overIdx === null || dragIdx === overIdx) {
+      return sorted.map((s, i) => ({ step: s, displayIdx: i }));
+    }
+    const reordered = [...sorted];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(overIdx, 0, moved);
+    return reordered.map((s, i) => ({
+      step: s,
+      displayIdx: i,
+    }));
+  })();
 
   const cycleHeat = useCallback(
     (step: Instruction) => {
@@ -146,37 +234,46 @@ export function RecipeSteps({
       </div>
 
       {sorted.length > 0 && (
-        <ol className="mb-3 space-y-2">
-          {sorted.map((step, idx) => {
+        <ol
+          ref={listRef}
+          className="mb-3 space-y-2"
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          {displayOrder.map(({ step, displayIdx }) => {
             const { heat } = parseHeatFromTip(step.tip);
+            const isDragging =
+              dragIdx !== null &&
+              step.id === sorted[dragIdx]?.id;
             return (
               <li
                 key={step.id}
-                className="group flex gap-2 rounded-lg border border-neutral-100 bg-neutral-50/50 px-3 py-2"
+                ref={(el) => {
+                  if (el) itemRefs.current.set(displayIdx, el);
+                }}
+                className={`group flex gap-2 rounded-lg border px-3 py-2 transition-all ${
+                  isDragging
+                    ? "border-amber-300 bg-amber-50 shadow-md scale-[1.02] z-10 relative"
+                    : "border-neutral-100 bg-neutral-50/50"
+                }`}
               >
-                {/* Step number + reorder buttons */}
-                <div className="flex flex-col items-center gap-0.5 pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => handleMoveStep(idx, idx - 1)}
-                    disabled={idx === 0}
-                    className="text-neutral-300 hover:text-neutral-600 disabled:invisible"
-                    aria-label="Move step up"
+                {/* Drag handle + step number */}
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <div
+                    onPointerDown={(e) =>
+                      handlePointerDown(
+                        e,
+                        sorted.findIndex((s) => s.id === step.id)
+                      )
+                    }
+                    className="flex cursor-grab touch-none items-center gap-1 rounded px-0.5 py-1 text-neutral-300 transition hover:text-neutral-500 active:cursor-grabbing active:text-amber-600"
+                    title="Drag to reorder"
                   >
-                    <ChevronUpIcon className="h-3.5 w-3.5" />
-                  </button>
+                    <GripIcon />
+                  </div>
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
-                    {idx + 1}
+                    {displayIdx + 1}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleMoveStep(idx, idx + 1)}
-                    disabled={idx === sorted.length - 1}
-                    className="text-neutral-300 hover:text-neutral-600 disabled:invisible"
-                    aria-label="Move step down"
-                  >
-                    <ChevronDownIcon className="h-3.5 w-3.5" />
-                  </button>
                 </div>
 
                 {/* Content + heat */}
@@ -211,10 +308,7 @@ export function RecipeSteps({
                         <span>{HEAT_CONFIG[heat].label} heat</span>
                       </>
                     ) : (
-                      <>
-                        <span className="text-xs">🍳</span>
-                        <span>Heat</span>
-                      </>
+                      <span>No heat</span>
                     )}
                   </button>
                 </div>
