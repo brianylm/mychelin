@@ -42,6 +42,7 @@ export function PhotoUploadSection({
   const [rotation, setRotation] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const canAddMore = photos.length < MAX_PHOTOS;
 
@@ -86,8 +87,6 @@ export function PhotoUploadSection({
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
-      // Upload each selected file sequentially so the server isn't
-      // hammered and the UI shows progress accurately.
       for (let i = 0; i < files.length; i++) {
         await onUpload(files[i]);
       }
@@ -96,102 +95,167 @@ export function PhotoUploadSection({
     [onUpload]
   );
 
+  // Cover image — find from photos list
+  const coverPhoto = coverUrl
+    ? photos.find((p) => p.url === coverUrl)
+    : null;
+
   return (
     <>
-      <section className="rounded-2xl border border-neutral-200 bg-white p-4">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-neutral-800">Photos</h3>
-            <p className="truncate text-xs text-neutral-500">
-              {photos.length}/{MAX_PHOTOS}
-            </p>
+      <section className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+        {/* Cover / hero image */}
+        {coverUrl ? (
+          <div className="relative group">
+            <img
+              src={coverUrl}
+              alt="Recipe cover"
+              className="w-full h-48 sm:h-56 object-cover"
+            />
+            {/* Overlay controls */}
+            <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/50 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100">
+              <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white">
+                Cover photo
+              </span>
+              <div className="flex gap-1.5">
+                {canAddMore && (
+                  <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60">
+                    Change
+                    <input
+                      ref={coverInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                  </label>
+                )}
+                {coverPhoto && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = photos.findIndex(
+                        (p) => p.url === coverUrl
+                      );
+                      if (idx >= 0) openGallery(idx);
+                    }}
+                    className="flex h-8 items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-
-          {/* Thumbnail strip */}
-          <div className="flex max-w-[calc(100%-120px)] items-center gap-2 overflow-x-auto py-1">
-            {photos.map((photo, index) => (
-              <button
-                key={photo.id}
-                type="button"
-                onClick={() => openGallery(index)}
-                className={`relative flex-shrink-0 h-20 w-20 overflow-hidden rounded-lg border-2 transition-colors hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
-                  photo.url === coverUrl ? "border-amber-400" : "border-neutral-200"
-                }`}
-              >
-                <img
-                  src={photo.url}
-                  alt={`Recipe photo ${index + 1}`}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-                {photo.url === coverUrl && (
-                  <span className="absolute bottom-0.5 right-0.5 text-[10px]">⭐</span>
-                )}
-              </button>
-            ))}
-
-            {/* Camera button (mobile) */}
-            {canAddMore && (
-              <label className="flex h-20 w-20 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50 md:hidden">
-                {isUploading ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
-                    <span className="text-[10px] text-neutral-500">...</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
-                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                      <circle cx="12" cy="13" r="3"/>
-                    </svg>
-                    <span className="text-[10px] text-neutral-500">Camera</span>
-                  </div>
-                )}
-                <input
-                  ref={cameraRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  disabled={isUploading}
-                />
-              </label>
-            )}
-
-            {/* Gallery / file upload button */}
-            {canAddMore && (
-              <label className="flex h-20 w-20 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50">
-                {isUploading ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
-                    <span className="text-[10px] text-neutral-500">...</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <PlusIcon className="h-5 w-5 text-neutral-400" />
-                    <span className="text-[10px] text-neutral-500">Gallery</span>
-                  </div>
-                )}
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  disabled={isUploading}
-                />
-              </label>
-            )}
-          </div>
-        </div>
-
-        {uploadError && (
-          <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
-            {uploadError}
-          </p>
+        ) : (
+          <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-amber-50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            <span className="text-xs font-medium text-neutral-400">
+              Add cover photo
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+          </label>
         )}
+
+        {/* Photos strip + add buttons */}
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-neutral-800">Photos</h3>
+              <p className="truncate text-xs text-neutral-500">
+                {photos.length}/{MAX_PHOTOS}
+              </p>
+            </div>
+
+            <div className="flex max-w-[calc(100%-120px)] items-center gap-2 overflow-x-auto py-1">
+              {photos.map((photo, index) => (
+                <button
+                  key={photo.id}
+                  type="button"
+                  onClick={() => openGallery(index)}
+                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+                    photo.url === coverUrl ? "border-amber-400" : "border-neutral-200"
+                  }`}
+                >
+                  <img
+                    src={photo.url}
+                    alt={`Recipe photo ${index + 1}`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  {photo.url === coverUrl && (
+                    <span className="absolute bottom-0 right-0 rounded-tl bg-amber-500 px-1 py-0.5 text-[8px] font-bold text-white">
+                      COVER
+                    </span>
+                  )}
+                </button>
+              ))}
+
+              {/* Camera (mobile) */}
+              {canAddMore && (
+                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50 md:hidden">
+                  {isUploading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                        <circle cx="12" cy="13" r="3"/>
+                      </svg>
+                      <span className="text-[9px] text-neutral-500">Camera</span>
+                    </div>
+                  )}
+                  <input
+                    ref={cameraRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    disabled={isUploading}
+                  />
+                </label>
+              )}
+
+              {/* Gallery */}
+              {canAddMore && (
+                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50">
+                  {isUploading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-0.5">
+                      <PlusIcon className="h-4 w-4 text-neutral-400" />
+                      <span className="text-[9px] text-neutral-500">Gallery</span>
+                    </div>
+                  )}
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    disabled={isUploading}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {uploadError && (
+            <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+              {uploadError}
+            </p>
+          )}
+        </div>
       </section>
 
       {/* Gallery modal */}
@@ -208,7 +272,7 @@ export function PhotoUploadSection({
             onClick={closeGallery}
           />
 
-          {/* Nav arrows */}
+          {/* Swipe area for mobile */}
           {photos.length > 1 && (
             <>
               <button
@@ -227,17 +291,20 @@ export function PhotoUploadSection({
           )}
 
           {/* Toolbar */}
-          <div className="absolute right-4 top-4 z-20 flex gap-2">
+          <div className="absolute right-4 top-4 z-20 flex flex-wrap gap-2">
             {onSetCover && photos[galleryIndex].url !== coverUrl && (
               <button
-                onClick={() => {
-                  onSetCover(photos[galleryIndex].url);
-                }}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-black/40 px-3 text-xs font-medium text-white transition-colors hover:bg-black/60"
+                onClick={() => onSetCover(photos[galleryIndex].url)}
+                className="flex h-9 items-center gap-1.5 rounded-full bg-amber-600/90 px-3 text-xs font-medium text-white transition-colors hover:bg-amber-600"
                 title="Set as cover"
               >
-                ⭐ Cover
+                Set as cover
               </button>
+            )}
+            {photos[galleryIndex].url === coverUrl && (
+              <span className="flex h-9 items-center gap-1.5 rounded-full bg-amber-600 px-3 text-xs font-medium text-white">
+                Current cover
+              </span>
             )}
             <button
               onClick={rotatePhoto}
