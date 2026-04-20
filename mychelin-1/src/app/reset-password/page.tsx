@@ -58,7 +58,7 @@ function ResetPasswordInner() {
 
   useEffect(() => {
     if (!token) {
-      router.replace("/");
+      router.replace("/app");
       return;
     }
     let cancelled = false;
@@ -145,7 +145,7 @@ function ResetPasswordInner() {
                 variant="solid"
                 size="3"
                 style={{ width: "100%" }}
-                onClick={() => router.replace("/")}
+                onClick={() => router.replace("/app")}
               >
                 Back to sign in
               </Button>
@@ -217,7 +217,7 @@ function ResetPasswordInner() {
             variant="solid"
             size="3"
             style={{ width: "100%" }}
-            onClick={() => router.replace("/")}
+            onClick={() => router.replace("/app")}
           >
             Sign in
           </Button>

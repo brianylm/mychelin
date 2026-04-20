@@ -290,6 +290,19 @@ export const bookActivityLog = sqliteTable("book_activity_log", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Waitlist ──────────────────────────────────────────────
+// Landing-page signups. Email is lowercased + unique — resubmissions
+// are idempotent (the API swallows the conflict). `source` lets us
+// attribute referrers later (e.g. ?ref=instagram).
+export const waitlist = sqliteTable("waitlist", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  source: text("source"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Share Links ───────────────────────────────────────────
 export const shareLinks = sqliteTable("share_links", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -485,3 +498,5 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
 export type AuthRateLimit = typeof authRateLimits.$inferSelect;
 export type NewAuthRateLimit = typeof authRateLimits.$inferInsert;
+export type Waitlist = typeof waitlist.$inferSelect;
+export type NewWaitlist = typeof waitlist.$inferInsert;

@@ -11,6 +11,35 @@
 import { createClient } from "@libsql/client/web";
 
 let versionLabelEnsured = false;
+let waitlistEnsured = false;
+
+export async function ensureWaitlistTable(): Promise<void> {
+  if (waitlistEnsured) return;
+
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) return;
+
+  const client = createClient({ url, authToken });
+  try {
+    await client.execute(
+      `CREATE TABLE IF NOT EXISTS waitlist (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        email text NOT NULL,
+        source text,
+        created_at text NOT NULL
+      )`
+    );
+    await client.execute(
+      `CREATE UNIQUE INDEX IF NOT EXISTS waitlist_email_unique ON waitlist (email)`
+    );
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("ensureWaitlistTable:", msg);
+  }
+
+  waitlistEnsured = true;
+}
 
 export async function ensureVersionLabelColumn(): Promise<void> {
   if (versionLabelEnsured) return;

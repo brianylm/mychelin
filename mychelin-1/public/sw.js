@@ -12,14 +12,14 @@
 //
 // On activate, old versioned caches are pruned.
 
-const CACHE_VERSION = "mychelin-v10";
+const CACHE_VERSION = "mychelin-v11";
 const APP_SHELL_CACHE = CACHE_VERSION + "-shell";
 const DYNAMIC_CACHE = CACHE_VERSION + "-dynamic";
 
 // Pre-cached on install for instant offline loads. Keep minimal —
 // Next.js chunk URLs are hashed and cached on first fetch at runtime.
 var PRECACHE_URLS = [
-  "/",
+  "/app",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -90,7 +90,7 @@ self.addEventListener("fetch", function (event) {
         })
         .catch(function () {
           return caches.match(event.request).then(function (cached) {
-            return cached || caches.match("/");
+            return cached || caches.match("/app");
           });
         })
     );

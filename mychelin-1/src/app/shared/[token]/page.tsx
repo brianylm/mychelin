@@ -71,7 +71,7 @@ function SaveRecipeButton({ token }: { token: string }) {
             <p className="text-[11px] text-emerald-700">This recipe is now in your collection.</p>
           </div>
           <a
-            href="/"
+            href="/app"
             className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
           >
             Open my recipes
