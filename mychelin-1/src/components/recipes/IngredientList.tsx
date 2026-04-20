@@ -56,6 +56,11 @@ interface IngredientListProps {
 const fieldBase =
   "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
 
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export function IngredientList({
   ingredients,
   recipeId,
@@ -81,7 +86,7 @@ export function IngredientList({
     addingRef.current = true;
     try {
       await onAdd(recipeId, {
-        name: draft.name.trim(),
+        name: capitalize(draft.name.trim()),
         quantity:
           !draft.approximate && draft.quantity
             ? parseFloat(draft.quantity)
@@ -174,7 +179,7 @@ export function IngredientList({
                 <input
                   defaultValue={ing.name}
                   onBlur={(e) =>
-                    handleFieldBlur(ing, "name", e.target.value)
+                    handleFieldBlur(ing, "name", capitalize(e.target.value.trim()))
                   }
                   className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
                   placeholder="ingredient"
