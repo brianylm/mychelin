@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
-type RouteContext = { params: Promise<{ bookId: string }> };
+type RouteContext = { params: Promise<{ id: string }> };
 
 // ─── GET /api/books/[bookId]/tips ──────────────────────────
 // List cooking principles/tips for a book, ordered by created_at desc, with author info
@@ -22,8 +22,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bookId } = await params;
-    const bookIdNum = parseInt(bookId);
+    const { id } = await params;
+    const bookIdNum = parseInt(id);
 
     // Check membership
     const membership = await db
@@ -55,7 +55,7 @@ export async function GET(
 
     return NextResponse.json(tips);
   } catch (error) {
-    console.error("GET /api/books/[bookId]/tips error:", error);
+    console.error("GET /api/books/[id]/tips error:", error);
     return NextResponse.json({ error: "Failed to fetch tips" }, { status: 500 });
   }
 }
@@ -72,8 +72,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bookId } = await params;
-    const bookIdNum = parseInt(bookId);
+    const { id } = await params;
+    const bookIdNum = parseInt(id);
 
     // Check membership
     const membership = await db
@@ -111,7 +111,7 @@ export async function POST(
       authorName: currentUser.name,
     }, { status: 201 });
   } catch (error) {
-    console.error("POST /api/books/[bookId]/tips error:", error);
+    console.error("POST /api/books/[id]/tips error:", error);
     return NextResponse.json({ error: "Failed to add tip" }, { status: 500 });
   }
 }

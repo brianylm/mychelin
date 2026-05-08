@@ -7,7 +7,7 @@ import { eq, and } from "drizzle-orm";
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
-type RouteContext = { params: Promise<{ bookId: string; tipId: string }> };
+type RouteContext = { params: Promise<{ id: string; tipId: string }> };
 
 // ─── DELETE /api/books/[bookId]/tips/[tipId] ───────────────
 // Delete a tip (author or book owner only)
@@ -21,8 +21,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bookId, tipId } = await params;
-    const bookIdNum = parseInt(bookId);
+    const { id, tipId } = await params;
+    const bookIdNum = parseInt(id);
 
     // Fetch the tip
     const [tip] = await db
@@ -55,7 +55,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("DELETE /api/books/[bookId]/tips/[tipId] error:", error);
+    console.error("DELETE /api/books/[id]/tips/[tipId] error:", error);
     return NextResponse.json({ error: "Failed to delete tip" }, { status: 500 });
   }
 }

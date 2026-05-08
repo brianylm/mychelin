@@ -9,7 +9,7 @@ import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
-type RouteContext = { params: Promise<{ recipeId: string }> };
+type RouteContext = { params: Promise<{ id: string }> };
 
 // ─── POST /api/recipes/[recipeId]/fork ─────────────────────
 // Fork a recipe — copies recipe + ingredients + instructions to a new recipe
@@ -26,8 +26,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { recipeId } = await params;
-    const recipeIdNum = parseInt(recipeId);
+    const { id } = await params;
+    const recipeIdNum = parseInt(id);
 
     if (!(await canUserAccessRecipe(currentUser.id, recipeIdNum))) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
@@ -217,7 +217,7 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error("POST /api/recipes/[recipeId]/fork error:", error);
+    console.error("POST /api/recipes/[id]/fork error:", error);
     return NextResponse.json({ error: "Failed to fork recipe" }, { status: 500 });
   }
 }

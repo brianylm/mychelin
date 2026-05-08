@@ -22,7 +22,7 @@ export const preferredRegion = "hnd1";
 // Empty array if there aren't enough recipes to draw a pattern.
 export async function POST(
   _request: NextRequest,
-  { params }: { params: Promise<{ bookId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -44,7 +44,7 @@ export async function POST(
       );
     }
 
-    const { bookId: bookIdParam } = await params;
+    const { id: bookIdParam } = await params;
     const bookId = parseInt(bookIdParam);
     if (!bookId || Number.isNaN(bookId)) {
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
@@ -222,7 +222,7 @@ ${recipeBlocks.join("\n\n---\n\n")}`;
 
     return NextResponse.json({ principles });
   } catch (error) {
-    console.error("POST /api/books/[bookId]/analyze-principles error:", error);
+    console.error("POST /api/books/[id]/analyze-principles error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
