@@ -1,179 +1,6 @@
 import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
-/*  App Mockup Components (pure CSS, no external images)              */
-/* ------------------------------------------------------------------ */
-
-function PhoneFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative mx-auto w-[280px] sm:w-[320px]">
-      <div className="rounded-[2.5rem] border-4 border-[#e8e8e3] bg-[#1a1a1a] p-3 shadow-2xl">
-        <div className="relative overflow-hidden rounded-[2rem] bg-white">
-          {/* Notch */}
-          <div className="absolute left-1/2 top-0 z-10 h-6 w-28 -translate-x-1/2 rounded-b-2xl bg-[#1a1a1a]" />
-          {children}
-          {/* Home indicator */}
-          <div className="absolute bottom-1 left-1/2 z-10 h-1 w-24 -translate-x-1/2 rounded-full bg-neutral-900/20" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MockupConversation() {
-  return (
-    <div className="flex h-[640px] flex-col bg-neutral-50 pt-10">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🎙️</span>
-          <div>
-            <p className="text-sm font-semibold text-neutral-900">Heritage capture</p>
-            <p className="text-[11px] text-neutral-500">Recording — speak naturally</p>
-          </div>
-        </div>
-        <button className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700">
-          <span className="text-lg leading-none">×</span>
-        </button>
-      </div>
-
-      {/* Chat */}
-      <div className="flex-1 space-y-4 overflow-hidden px-4 py-4">
-        {/* Left bubble */}
-        <div className="flex w-full justify-start">
-          <div className="max-w-[80%]">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-xs font-medium text-neutral-500">Me</span>
-              <span className="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] font-mono uppercase text-neutral-600">
-                auto
-              </span>
-            </div>
-            <div className="rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-900 shadow-sm">
-              How much soy sauce for the chicken rice?
-            </div>
-            <span className="mt-1 block text-right text-[10px] text-neutral-400">10:02</span>
-          </div>
-        </div>
-
-        {/* Right bubble */}
-        <div className="flex w-full justify-end">
-          <div className="max-w-[80%]">
-            <div className="mb-1 flex items-center justify-end gap-2">
-              <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-mono uppercase text-amber-700">
-                auto
-              </span>
-              <span className="text-xs font-medium text-amber-700">Mum</span>
-            </div>
-            <div className="rounded-2xl bg-amber-100 px-4 py-3 text-sm text-amber-900 shadow-sm">
-              Two tablespoons light, one dark. Don&apos;t forget the pandan!
-            </div>
-            <span className="mt-1 block text-right text-[10px] text-amber-600">10:02</span>
-          </div>
-        </div>
-
-        {/* Left bubble */}
-        <div className="flex w-full justify-start">
-          <div className="max-w-[80%]">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-xs font-medium text-neutral-500">Me</span>
-              <span className="rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] font-mono uppercase text-neutral-600">
-                auto
-              </span>
-            </div>
-            <div className="rounded-2xl bg-neutral-100 px-4 py-3 text-sm text-neutral-900 shadow-sm">
-              And the ginger? Do I pound or slice?
-            </div>
-            <span className="mt-1 block text-right text-[10px] text-neutral-400">10:03</span>
-          </div>
-        </div>
-
-        {/* Right bubble */}
-        <div className="flex w-full justify-end">
-          <div className="max-w-[80%]">
-            <div className="mb-1 flex items-center justify-end gap-2">
-              <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-mono uppercase text-amber-700">
-                auto
-              </span>
-              <span className="text-xs font-medium text-amber-700">Mum</span>
-            </div>
-            <div className="rounded-2xl bg-amber-100 px-4 py-3 text-sm text-amber-900 shadow-sm">
-              Slice thin, then pound half. Makes the paste smoother.
-            </div>
-            <span className="mt-1 block text-right text-[10px] text-amber-600">10:03</span>
-          </div>
-        </div>
-
-        {/* Transcribing indicator */}
-        <div className="flex justify-center py-2">
-          <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
-            </span>
-            Transcribing the last few seconds…
-          </div>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="border-t border-neutral-200 bg-white px-4 py-4">
-        <div className="flex items-center justify-center gap-3">
-          <button className="flex items-center gap-2 rounded-full bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
-            </span>
-            Start conversation
-          </button>
-        </div>
-        <p className="mt-2 text-center text-[11px] text-neutral-500">
-          The AI auto-detects the language — including Cantonese, Hokkien, Mandarin, and English.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function MockupRecipeCard() {
-  return (
-    <div className="w-[260px] rounded-2xl border border-[#e8e8e3] bg-white p-4 shadow-sm">
-      <div className="mb-3 h-32 w-full rounded-xl bg-gradient-to-br from-amber-100 to-orange-50" />
-      <h4 className="text-base font-semibold text-[#1a1a1a]">Hainanese Chicken Rice</h4>
-      <p className="mt-1 text-xs text-[#9b9b9b]">From Mum • 45 mins</p>
-      <div className="mt-3 flex gap-2">
-        <span className="rounded-full bg-[#fafaf8] px-2.5 py-1 text-xs text-[#6b6b6b]">4 servings</span>
-        <span className="rounded-full bg-[#fafaf8] px-2.5 py-1 text-xs text-[#6b6b6b]">Medium</span>
-      </div>
-    </div>
-  );
-}
-
-function MockupMealPlan() {
-  return (
-    <div className="w-[260px] rounded-2xl border border-[#e8e8e3] bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-[#1a1a1a]">This week</h4>
-        <span className="text-xs text-[#9b9b9b]">May 5–11</span>
-      </div>
-      <div className="space-y-2">
-        {["Mon", "Tue", "Wed", "Thu", "Fri"].map((day, i) => (
-          <div key={day} className="flex items-center gap-3">
-            <span className="w-8 text-xs font-medium text-[#9b9b9b]">{day}</span>
-            <div className={`flex-1 rounded-lg px-3 py-2 text-xs ${i === 1 ? "bg-[#d97706] text-white" : "bg-[#fafaf8] text-[#1a1a1a]"}`}>
-              {i === 0 && "Chicken Rice"}
-              {i === 1 && "Mee Goreng"}
-              {i === 2 && "Laksa"}
-              {i === 3 && "Leftovers"}
-              {i === 4 && "Fish Curry"}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  Landing Page                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -216,45 +43,41 @@ export default function PreviewLandingPage() {
 
       {/* ==================== HERO ==================== */}
       <section className="mx-auto max-w-5xl px-6 pt-16 sm:pt-24">
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <div className="max-w-xl">
-            <h1
-              className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.5rem]"
-              style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+        <div className="max-w-3xl">
+          <h1
+            className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.5rem]"
+            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+          >
+            Pass down your recipes.{" "}
+            <span className="font-normal italic text-[#9b9b9b]">
+              Bridge the language gap.
+            </span>
+          </h1>
+          <p className="mt-6 text-lg leading-relaxed text-[#6b6b6b]">
+            Your grandkids want to learn your cooking — but they don&apos;t speak
+            Hokkien, Cantonese, or Teochew the way you do. Mychelin&apos;s AI
+            sits in your conversations, transcribes every detail across
+            languages, and asks the questions your grandkids forget to ask.
+            No recipe is lost in translation.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/login"
+              className="rounded-full bg-[#1a1a1a] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#333]"
             >
-              The taste of home,{" "}
-              <span className="font-normal italic text-[#9b9b9b]">wherever you are.</span>
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-[#6b6b6b]">
-              You just moved out. Mum&apos;s chicken rice, Dad&apos;s mee goreng,
-              Grandma&apos;s dumplings — they&apos;re all just a conversation away.
-              Capture your family&apos;s recipes as you cook together, and build a
-              system that keeps you fed in your new life.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/login"
-                className="rounded-full bg-[#1a1a1a] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#333]"
-              >
-                Start for free
-              </Link>
-              <a
-                href="#how-it-works"
-                className="rounded-full border border-[#d4d4cf] bg-white px-7 py-3.5 text-sm font-medium text-[#1a1a1a] transition hover:border-[#9b9b9b]"
-              >
-                See how it works
-              </a>
-            </div>
-            <p className="mt-4 text-xs text-[#9b9b9b]">
-              No credit card required. Free forever for your first 50 recipes.
-            </p>
+              Start preserving your legacy
+            </Link>
+            <a
+              href="#how-it-works"
+              className="rounded-full border border-[#d4d4cf] bg-white px-7 py-3.5 text-sm font-medium text-[#1a1a1a] transition hover:border-[#9b9b9b]"
+            >
+              See how it works
+            </a>
           </div>
-
-          <div className="flex justify-center lg:justify-end">
-            <PhoneFrame>
-              <MockupConversation />
-            </PhoneFrame>
-          </div>
+          <p className="mt-4 text-xs text-[#9b9b9b]">
+            Free forever for your first 50 family recipes. No credit card
+            required.
+          </p>
         </div>
       </section>
 
@@ -266,25 +89,31 @@ export default function PreviewLandingPage() {
               className="text-2xl leading-snug tracking-tight sm:text-3xl"
               style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
             >
-              &ldquo;How much soy sauce again? Do I pound the ginger or slice it?&rdquo;
+              &ldquo;How do you teach &lsquo;agak-agak&rsquo; to someone who
+              grew up measuring in grams?&rdquo;
             </p>
             <p className="mt-6 leading-relaxed text-[#6b6b6b]">
-              We&apos;ve all been there. Standing in a new kitchen, phone on loudspeaker,
-              parents walking us through a dish we&apos;ve eaten a hundred times but
-              never truly learned. The fear isn&apos;t just that dinner might flop —
-              it&apos;s that one day, when we finally want to pass it on, the recipe
-              will have faded.
+              Your grandkids love your laksa, your bak kut teh, your mee siam.
+              But when they ask you how to cook it, something gets lost. They
+              don&apos;t understand the dialect. They can&apos;t read your
+              handwriting. And they don&apos;t know which questions to ask.
             </p>
             <p className="mt-4 leading-relaxed text-[#6b6b6b]">
-              Mychelin is for that moment. The conversation becomes the cookbook.
-              The cookbook becomes your routine.
+              The secret ingredient in every family dish isn&apos;t listed in
+              any cookbook — it&apos;s the story. Why you pound the ginger
+              instead of slicing it. Why this dish is only cooked during Lunar
+              New Year. Why your mother never used a recipe and neither do you.
+              Mychelin captures what cookbooks can&apos;t.
             </p>
           </div>
         </div>
       </section>
 
       {/* ==================== HOW IT WORKS ==================== */}
-      <section id="how-it-works" className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
+      <section
+        id="how-it-works"
+        className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32"
+      >
         <div className="text-center">
           <h2
             className="text-3xl tracking-tight sm:text-4xl"
@@ -293,7 +122,7 @@ export default function PreviewLandingPage() {
             How it works
           </h2>
           <p className="mt-3 text-[#6b6b6b]">
-            Three simple steps from phone call to dinner plate.
+            From family conversation to a recipe they can actually cook.
           </p>
         </div>
 
@@ -301,18 +130,18 @@ export default function PreviewLandingPage() {
           {[
             {
               step: "01",
-              title: "Talk & Capture",
-              body: "Call your parents. Ask them how to cook the dish. Our AI listens and turns the conversation into a structured recipe — ingredients, steps, and all those little tips they always forget to write down.",
+              title: "Speak naturally, in any tongue",
+              body: "Cook together over a call or in person. The AI listens and transcribes everything — whether you're explaining in Hokkien, Cantonese, Mandarin, or English. Your grandkids follow along in the language they understand best.",
             },
             {
               step: "02",
-              title: "Build Your Library",
-              body: "Every recipe is saved with its story. Who taught it to you. When you first nailed it. The substitutions you figured out. It becomes more than a cookbook — it becomes a living history.",
+              title: "Ask the questions they forget",
+              body: "The AI gently prompts for specifics: exact measurements, substitution options, and the stories behind each dish. Every pinch of salt and every family memory is preserved — not just the steps, but the why.",
             },
             {
               step: "03",
-              title: "Plan & Cook",
-              body: "Turn recipes into weekly meal plans. Generate shopping lists. Scale servings up or down. Walk through step-by-step instructions in the kitchen. Build a system that actually fits your new life.",
+              title: "From heritage to dinner table",
+              body: "Once saved, the app helps your grandkids plan weekly meals, discover recipes based on ingredients they already have, randomise choices to beat decision fatigue, and generate grocery lists with calendar reminders that factor in prep and cook time.",
             },
           ].map((item) => (
             <div
@@ -343,7 +172,7 @@ export default function PreviewLandingPage() {
             className="text-3xl tracking-tight sm:text-4xl"
             style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
           >
-            Everything you need to cook like home
+            Everything your family needs to keep the tradition alive
           </h2>
         </div>
 
@@ -351,27 +180,27 @@ export default function PreviewLandingPage() {
           {[
             {
               title: "AI Conversation Capture",
-              body: "Voice or text — just talk through the recipe naturally. Our AI extracts ingredients, instructions, and tips in real time.",
+              body: "Voice or text across dialects — Hokkien, Cantonese, Mandarin, English, and more. The AI transcribes and structures the conversation into a real recipe in real time.",
             },
             {
-              title: "Recipe Books",
-              body: "Organise dishes by family member, cuisine, or occasion. Create shared books that your siblings can contribute to.",
+              title: "Smart Clarifying Prompts",
+              body: "The AI asks what young cooks don't know to ask: exact quantities, substitution options, and technique details. No more guessing what 'a little while' means.",
             },
             {
-              title: "Meal Planner",
-              body: "Plan your week in minutes. Drag recipes into days, reschedule with a tap, and never wonder what's for dinner again.",
+              title: "Heritage & Story Tracking",
+              body: "Save the origin, meaning, and memories behind every dish. Who taught it to you, when it's traditionally served, and why it matters to your family.",
             },
             {
-              title: "Shopping Lists",
-              body: "Generate a shopping list from any meal plan. Check items off as you shop. Share the list with your flatmates.",
+              title: "Meal Planner & Calendar",
+              body: "Plan the week ahead with drag-and-drop simplicity. Calendar integration reserves cooking time slots that factor in both prep and cook time.",
             },
             {
-              title: "Version History",
-              body: "Iterated on Mum's recipe and made it better? Every change is tracked. Roll back anytime, or fork a new version.",
+              title: "Ingredient Suggestions & Randomiser",
+              body: "Propose recipes based on what's already in the fridge, or randomise the weekly menu to beat decision fatigue. Cooking becomes effortless.",
             },
             {
-              title: "Cultural Context",
-              body: "Save the stories behind the dishes. The origin, the meaning, the memories. So the next generation knows why it matters.",
+              title: "Auto Shopping Lists",
+              body: "Generate a grocery list automatically from any meal plan. Check items off as you shop. Never forget the belacan again.",
             },
           ].map((f) => (
             <div
@@ -389,36 +218,23 @@ export default function PreviewLandingPage() {
         </div>
       </section>
 
-      {/* ==================== VISUALS ==================== */}
+      {/* ==================== QUOTE ==================== */}
       <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
         <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 sm:px-14 sm:py-20">
-          <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-            <div>
-              <h2
-                className="text-3xl tracking-tight sm:text-4xl"
-                style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-              >
-                From phone call to meal plan{" "}
-                <span className="italic text-[#9b9b9b]">in minutes.</span>
-              </h2>
-              <p className="mt-5 leading-relaxed text-[#6b6b6b]">
-                The conversation with your parents becomes a recipe. The recipe
-                becomes part of your weekly plan. The plan becomes a shopping list.
-                And before you know it, you&apos;re eating like home again.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  href="/login"
-                  className="rounded-full bg-[#1a1a1a] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#333]"
-                >
-                  Start cooking
-                </Link>
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
-              <MockupRecipeCard />
-              <MockupMealPlan />
-            </div>
+          <div className="mx-auto max-w-2xl text-center">
+            <p
+              className="text-2xl leading-snug tracking-tight sm:text-3xl"
+              style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            >
+              A recipe is more than ingredients and steps. It is the voice of
+              the person who taught it to you.
+            </p>
+            <p className="mt-6 leading-relaxed text-[#6b6b6b]">
+              Mychelin makes sure that voice is never lost — not to time, not
+              to distance, and not to the gap between dialects. Your grandkids
+              will know how to cook like you. More importantly, they will know
+              why it matters.
+            </p>
           </div>
         </div>
       </section>
@@ -427,26 +243,29 @@ export default function PreviewLandingPage() {
       <section className="mx-auto mt-24 max-w-5xl px-6 pb-6 sm:mt-32">
         <div className="rounded-3xl bg-[#1a1a1a] px-8 py-16 text-center sm:px-14 sm:py-24">
           <h2
-            className="text-3xl text-white tracking-tight sm:text-4xl"
+            className="text-3xl tracking-tight text-white sm:text-4xl"
             style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
           >
             Don&apos;t let the recipes fade.
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-[#9b9b9b]">
-            Start building your family cookbook today. The first 50 recipes are
-            free — forever. No credit card required.
+            Start building your family cookbook today. The first 50 recipes
+            are free — forever. No credit card required.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Link
               href="/login"
               className="rounded-full bg-white px-8 py-3.5 text-sm font-medium text-[#1a1a1a] transition hover:bg-[#f0f0eb]"
             >
-              Start for free
+              Start preserving your legacy
             </Link>
           </div>
           <p className="mt-4 text-xs text-[#6b6b6b]">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#9b9b9b] underline hover:text-white">
+            <Link
+              href="/login"
+              className="text-[#9b9b9b] underline hover:text-white"
+            >
               Log in
             </Link>
           </p>
@@ -465,7 +284,7 @@ export default function PreviewLandingPage() {
             Mychelin
           </div>
           <p className="text-xs text-[#9b9b9b]">
-            Preserving Singapore&apos;s food heritage, one conversation at a time.
+            Preserving family recipes and heritage, one conversation at a time.
           </p>
           <div className="flex gap-6">
             <Link
