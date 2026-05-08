@@ -48,18 +48,16 @@ export default function PreviewLandingPage() {
             className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.5rem]"
             style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Cook like home,{" "}
+            Your family recipes,{" "}
             <span className="font-normal italic text-[#9b9b9b]">
-              even when you never learned how.
+              finally written down.
             </span>
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-[#6b6b6b]">
-            You want your parents&apos; and grandparents&apos; recipes — but
-            you don&apos;t speak Hokkien, Cantonese, or Teochew the way they
-            do. They cook by feel, not by measuring cups. Mychelin sits in your
-            conversations, transcribes every detail across languages, and asks
-            the questions you don&apos;t know to ask. So you capture the dish,
-            and the story behind it.
+            Mychelin is a free app that captures your parents&apos; and
+            grandparents&apos; recipes as you cook together over the phone. The
+            AI transcribes across dialects, asks the questions you forget, and
+            saves every story — so you can actually cook like home.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
@@ -76,35 +74,32 @@ export default function PreviewLandingPage() {
             </a>
           </div>
           <p className="mt-4 text-xs text-[#9b9b9b]">
-            Free forever for your first 50 family recipes. No credit card
-            required.
+            Free forever for your first 50 recipes. No credit card required.
           </p>
         </div>
       </section>
 
-      {/* ==================== STORY ==================== */}
+      {/* ==================== PROBLEM ==================== */}
       <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
         <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 sm:px-14 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <p
-              className="text-2xl leading-snug tracking-tight sm:text-3xl"
-              style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            <h2
+              className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl"
+              style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
             >
-              &ldquo;How much soy sauce again? Do I pound the ginger or slice
-              it?&rdquo;
-            </p>
+              Learning their cooking shouldn&apos;t feel like a language exam.
+            </h2>
             <p className="mt-6 leading-relaxed text-[#6b6b6b]">
-              You&apos;ve been there. Phone on loudspeaker, parent or grandparent
-              walking you through a dish you&apos;ve eaten a hundred times. But
-              they&apos;re speaking too fast, using words you half-understand,
-              and skipping steps because &ldquo;you just know&rdquo; — except you
-              don&apos;t. The real fear isn&apos;t dinner flopping. It&apos;s
-              that one day, when you finally want to pass it on, the recipe and
-              its story will have faded.
+              Most of us try to learn our parents&apos; recipes over a phone
+              call. They explain in Hokkien or Cantonese. You nod along,
+              scribble notes, and hope you got it right. Then you hang up and
+              realise you never asked how much soy sauce, whether the ginger
+              gets pounded or sliced, or why this dish is only cooked during
+              Lunar New Year.
             </p>
             <p className="mt-4 leading-relaxed text-[#6b6b6b]">
-              Mychelin is for that moment. The conversation becomes the
-              cookbook. The cookbook becomes your routine.
+              You&apos;ve already done the hard part — getting them to talk.
+              The rest should be easy.
             </p>
           </div>
         </div>
@@ -117,13 +112,14 @@ export default function PreviewLandingPage() {
       >
         <div className="text-center">
           <h2
-            className="text-3xl tracking-tight sm:text-4xl"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            className="text-3xl font-bold tracking-tight sm:text-4xl"
+            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            How it works
+            Three steps from phone call to dinner plate.
           </h2>
           <p className="mt-3 text-[#6b6b6b]">
-            From family conversation to a recipe you can actually cook.
+            Mychelin is designed to be as simple as the voice memo you&apos;re
+            using now. No setup headaches, no learning curve.
           </p>
         </div>
 
@@ -131,18 +127,18 @@ export default function PreviewLandingPage() {
           {[
             {
               step: "01",
-              title: "Talk naturally, in any language",
-              body: "Call your parents or grandparents and cook together. The AI listens and transcribes everything — whether they're explaining in Hokkien, Cantonese, Mandarin, or English. You get a structured recipe in real time, in the language you actually understand.",
+              title: "Start the conversation",
+              body: "Call your parents or grandparents and cook together. Open Mychelin and hit record. The AI listens and transcribes everything — Hokkien, Cantonese, Mandarin, English, or a mix — and structures it into a real recipe as you talk.",
             },
             {
               step: "02",
-              title: "Let the AI ask the questions you forget",
-              body: "The AI gently prompts for the specifics you'd never think to ask: exact measurements, substitution options, and the stories behind each dish. Every pinch of salt, every family memory — captured, not lost.",
+              title: "Let the AI fill the gaps",
+              body: "The AI asks the questions you don't know to ask: exact measurements, substitution options, and the stories behind each dish. Every pinch of salt and every family memory is captured — not lost to translation.",
             },
             {
               step: "03",
-              title: "From heritage to dinner table",
-              body: "Once saved, plan your week with drag-and-drop ease. Get recipe suggestions based on what's already in your fridge. Randomise the menu when you can't decide. Generate grocery lists, with calendar reminders that factor in prep and cook time.",
+              title: "Cook, plan, and shop",
+              body: "Your saved recipes become a living cookbook. Plan your week, get suggestions based on what you already have, randomise the menu when you can't decide, and generate grocery lists with calendar reminders that factor in prep and cook time.",
             },
           ].map((item) => (
             <div
@@ -152,10 +148,7 @@ export default function PreviewLandingPage() {
               <span className="text-xs font-semibold tracking-widest text-[#d97706]">
                 {item.step}
               </span>
-              <h3
-                className="mt-3 text-xl tracking-tight"
-                style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-              >
+              <h3 className="mt-3 text-lg font-semibold text-[#1a1a1a]">
                 {item.title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-[#6b6b6b]">
@@ -170,10 +163,10 @@ export default function PreviewLandingPage() {
       <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
         <div className="text-center">
           <h2
-            className="text-3xl tracking-tight sm:text-4xl"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            className="text-3xl font-bold tracking-tight sm:text-4xl"
+            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Everything you need to cook like home
+            Everything you need to cook like home.
           </h2>
         </div>
 
@@ -181,27 +174,33 @@ export default function PreviewLandingPage() {
           {[
             {
               title: "AI Conversation Capture",
-              body: "Voice or text across dialects — Hokkien, Cantonese, Mandarin, English, and more. The AI transcribes and structures the conversation into a real recipe while you talk.",
+              subtitle: "Transcribes as they speak",
+              body: "Voice or text across dialects — Hokkien, Cantonese, Mandarin, English, and more. The AI structures the conversation into a real recipe while you talk.",
             },
             {
               title: "Smart Clarifying Prompts",
-              body: "The AI asks what you'd never think to ask: exact quantities, substitution options, and technique details. No more guessing what 'a little while' means.",
+              subtitle: "Asks what you'd forget",
+              body: "Exact quantities, substitution options, and technique details. No more guessing what 'a little while' or 'agak-agak' means.",
             },
             {
               title: "Heritage & Story Tracking",
-              body: "Save the origin, meaning, and memories behind every dish. Who taught it, when it's served, and why it matters. The recipe becomes a living family history.",
+              subtitle: "The why behind every dish",
+              body: "Save the origin, meaning, and memories behind every recipe. Who taught it, when it's served, and why it matters to your family.",
             },
             {
               title: "Meal Planner & Calendar",
-              body: "Plan your week ahead with drag-and-drop simplicity. Calendar integration reserves cooking time slots that factor in both prep and cook time.",
+              subtitle: "Your week, planned",
+              body: "Drag recipes into days. Calendar integration reserves cooking time slots that factor in both prep and cook time.",
             },
             {
               title: "Ingredient Suggestions & Randomiser",
-              body: "Discover recipes based on what's already in your fridge, or randomise the weekly menu to beat decision fatigue. Cooking becomes effortless.",
+              subtitle: "Use what you have",
+              body: "Discover recipes based on what's already in your fridge, or randomise the weekly menu to beat decision fatigue.",
             },
             {
               title: "Auto Shopping Lists",
-              body: "Generate a grocery list automatically from any meal plan. Check items off as you shop. Never forget the belacan again.",
+              subtitle: "Never forget the belacan",
+              body: "Generate a grocery list automatically from any meal plan. Check items off as you shop.",
             },
           ].map((f) => (
             <div
@@ -211,6 +210,9 @@ export default function PreviewLandingPage() {
               <h3 className="text-base font-semibold text-[#1a1a1a]">
                 {f.title}
               </h3>
+              <p className="mt-0.5 text-xs font-medium text-[#d97706]">
+                {f.subtitle}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-[#6b6b6b]">
                 {f.body}
               </p>
@@ -219,23 +221,37 @@ export default function PreviewLandingPage() {
         </div>
       </section>
 
-      {/* ==================== QUOTE ==================== */}
+      {/* ==================== TRUST ==================== */}
       <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
-        <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 sm:px-14 sm:py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <p
-              className="text-2xl leading-snug tracking-tight sm:text-3xl"
-              style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-            >
-              A recipe is more than ingredients and steps. It is the voice of
-              the person who taught it to you.
-            </p>
-            <p className="mt-6 leading-relaxed text-[#6b6b6b]">
-              Mychelin makes sure that voice is never lost — not to time, not
-              to distance, and not to the gap between dialects. You will know
-              how to cook like them. More importantly, you will know why it
-              matters.
-            </p>
+        <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 text-center sm:px-14 sm:py-20">
+          <h2
+            className="text-2xl font-bold tracking-tight sm:text-3xl"
+            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+          >
+            Free forever. No catch.
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg leading-relaxed text-[#6b6b6b]">
+            We built Mychelin because we believe family recipes deserve better
+            than a half-filled notebook. No surprise fees — just everything you
+            need, free.
+          </p>
+
+          <div className="mx-auto mt-10 grid max-w-xl gap-3 text-left">
+            {[
+              "Unlimited AI conversation capture",
+              "Multi-dialect transcription & translation",
+              "Smart clarifying prompts for every recipe",
+              "Heritage & story tracking",
+              "Weekly meal planner with calendar sync",
+              "Ingredient-based recipe suggestions",
+              "Recipe randomiser for decision fatigue",
+              "Auto-generated shopping lists",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <span className="text-[#d97706]">✓</span>
+                <span className="text-sm text-[#1a1a1a]">{item}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -244,14 +260,14 @@ export default function PreviewLandingPage() {
       <section className="mx-auto mt-24 max-w-5xl px-6 pb-6 sm:mt-32">
         <div className="rounded-3xl bg-[#1a1a1a] px-8 py-16 text-center sm:px-14 sm:py-24">
           <h2
-            className="text-3xl tracking-tight text-white sm:text-4xl"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
+            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Don&apos;t let the recipes fade.
+            Stop guessing. Start cooking.
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-[#9b9b9b]">
-            Start building your family cookbook today. The first 50 recipes are
-            free — forever. No credit card required.
+            Join Mychelin and be among the first to capture your family recipes
+            the right way — before the stories fade.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Link
@@ -262,13 +278,7 @@ export default function PreviewLandingPage() {
             </Link>
           </div>
           <p className="mt-4 text-xs text-[#6b6b6b]">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-[#9b9b9b] underline hover:text-white"
-            >
-              Log in
-            </Link>
+            No credit card required · Free forever
           </p>
         </div>
       </section>
