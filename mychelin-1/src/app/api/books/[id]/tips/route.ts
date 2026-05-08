@@ -50,7 +50,7 @@ export async function GET(
         authorName: sql<string>`(SELECT name FROM users WHERE CAST(id AS TEXT) = ${bookTips.addedBy})`,
       })
       .from(bookTips)
-      .where(eq(bookTips.bookId, bookId))
+      .where(eq(bookTips.bookId, id))
       .orderBy(desc(bookTips.createdAt));
 
     return NextResponse.json(tips);
@@ -98,7 +98,7 @@ export async function POST(
 
     const newTip = {
       id: uuidv4(),
-      bookId: bookId,
+      bookId: id,
       content: content.trim(),
       addedBy: String(currentUser.id),
       createdAt: Math.floor(Date.now() / 1000),
