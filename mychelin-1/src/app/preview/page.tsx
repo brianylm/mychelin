@@ -48,24 +48,25 @@ export default function PreviewLandingPage() {
             className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.5rem]"
             style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Pass down your recipes.{" "}
+            Cook like home,{" "}
             <span className="font-normal italic text-[#9b9b9b]">
-              Bridge the language gap.
+              even when you never learned how.
             </span>
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-[#6b6b6b]">
-            Your grandkids want to learn your cooking — but they don&apos;t speak
-            Hokkien, Cantonese, or Teochew the way you do. Mychelin&apos;s AI
-            sits in your conversations, transcribes every detail across
-            languages, and asks the questions your grandkids forget to ask.
-            No recipe is lost in translation.
+            You want your parents&apos; and grandparents&apos; recipes — but
+            you don&apos;t speak Hokkien, Cantonese, or Teochew the way they
+            do. They cook by feel, not by measuring cups. Mychelin sits in your
+            conversations, transcribes every detail across languages, and asks
+            the questions you don&apos;t know to ask. So you capture the dish,
+            and the story behind it.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
               href="/login"
               className="rounded-full bg-[#1a1a1a] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#333]"
             >
-              Start preserving your legacy
+              Start capturing recipes
             </Link>
             <a
               href="#how-it-works"
@@ -89,21 +90,21 @@ export default function PreviewLandingPage() {
               className="text-2xl leading-snug tracking-tight sm:text-3xl"
               style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
             >
-              &ldquo;How do you teach &lsquo;agak-agak&rsquo; to someone who
-              grew up measuring in grams?&rdquo;
+              &ldquo;How much soy sauce again? Do I pound the ginger or slice
+              it?&rdquo;
             </p>
             <p className="mt-6 leading-relaxed text-[#6b6b6b]">
-              Your grandkids love your laksa, your bak kut teh, your mee siam.
-              But when they ask you how to cook it, something gets lost. They
-              don&apos;t understand the dialect. They can&apos;t read your
-              handwriting. And they don&apos;t know which questions to ask.
+              You&apos;ve been there. Phone on loudspeaker, parent or grandparent
+              walking you through a dish you&apos;ve eaten a hundred times. But
+              they&apos;re speaking too fast, using words you half-understand,
+              and skipping steps because &ldquo;you just know&rdquo; — except you
+              don&apos;t. The real fear isn&apos;t dinner flopping. It&apos;s
+              that one day, when you finally want to pass it on, the recipe and
+              its story will have faded.
             </p>
             <p className="mt-4 leading-relaxed text-[#6b6b6b]">
-              The secret ingredient in every family dish isn&apos;t listed in
-              any cookbook — it&apos;s the story. Why you pound the ginger
-              instead of slicing it. Why this dish is only cooked during Lunar
-              New Year. Why your mother never used a recipe and neither do you.
-              Mychelin captures what cookbooks can&apos;t.
+              Mychelin is for that moment. The conversation becomes the
+              cookbook. The cookbook becomes your routine.
             </p>
           </div>
         </div>
@@ -122,7 +123,7 @@ export default function PreviewLandingPage() {
             How it works
           </h2>
           <p className="mt-3 text-[#6b6b6b]">
-            From family conversation to a recipe they can actually cook.
+            From family conversation to a recipe you can actually cook.
           </p>
         </div>
 
@@ -130,18 +131,18 @@ export default function PreviewLandingPage() {
           {[
             {
               step: "01",
-              title: "Speak naturally, in any tongue",
-              body: "Cook together over a call or in person. The AI listens and transcribes everything — whether you're explaining in Hokkien, Cantonese, Mandarin, or English. Your grandkids follow along in the language they understand best.",
+              title: "Talk naturally, in any language",
+              body: "Call your parents or grandparents and cook together. The AI listens and transcribes everything — whether they're explaining in Hokkien, Cantonese, Mandarin, or English. You get a structured recipe in real time, in the language you actually understand.",
             },
             {
               step: "02",
-              title: "Ask the questions they forget",
-              body: "The AI gently prompts for specifics: exact measurements, substitution options, and the stories behind each dish. Every pinch of salt and every family memory is preserved — not just the steps, but the why.",
+              title: "Let the AI ask the questions you forget",
+              body: "The AI gently prompts for the specifics you'd never think to ask: exact measurements, substitution options, and the stories behind each dish. Every pinch of salt, every family memory — captured, not lost.",
             },
             {
               step: "03",
               title: "From heritage to dinner table",
-              body: "Once saved, the app helps your grandkids plan weekly meals, discover recipes based on ingredients they already have, randomise choices to beat decision fatigue, and generate grocery lists with calendar reminders that factor in prep and cook time.",
+              body: "Once saved, plan your week with drag-and-drop ease. Get recipe suggestions based on what's already in your fridge. Randomise the menu when you can't decide. Generate grocery lists, with calendar reminders that factor in prep and cook time.",
             },
           ].map((item) => (
             <div
@@ -172,7 +173,7 @@ export default function PreviewLandingPage() {
             className="text-3xl tracking-tight sm:text-4xl"
             style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
           >
-            Everything your family needs to keep the tradition alive
+            Everything you need to cook like home
           </h2>
         </div>
 
@@ -180,23 +181,23 @@ export default function PreviewLandingPage() {
           {[
             {
               title: "AI Conversation Capture",
-              body: "Voice or text across dialects — Hokkien, Cantonese, Mandarin, English, and more. The AI transcribes and structures the conversation into a real recipe in real time.",
+              body: "Voice or text across dialects — Hokkien, Cantonese, Mandarin, English, and more. The AI transcribes and structures the conversation into a real recipe while you talk.",
             },
             {
               title: "Smart Clarifying Prompts",
-              body: "The AI asks what young cooks don't know to ask: exact quantities, substitution options, and technique details. No more guessing what 'a little while' means.",
+              body: "The AI asks what you'd never think to ask: exact quantities, substitution options, and technique details. No more guessing what 'a little while' means.",
             },
             {
               title: "Heritage & Story Tracking",
-              body: "Save the origin, meaning, and memories behind every dish. Who taught it to you, when it's traditionally served, and why it matters to your family.",
+              body: "Save the origin, meaning, and memories behind every dish. Who taught it, when it's served, and why it matters. The recipe becomes a living family history.",
             },
             {
               title: "Meal Planner & Calendar",
-              body: "Plan the week ahead with drag-and-drop simplicity. Calendar integration reserves cooking time slots that factor in both prep and cook time.",
+              body: "Plan your week ahead with drag-and-drop simplicity. Calendar integration reserves cooking time slots that factor in both prep and cook time.",
             },
             {
               title: "Ingredient Suggestions & Randomiser",
-              body: "Propose recipes based on what's already in the fridge, or randomise the weekly menu to beat decision fatigue. Cooking becomes effortless.",
+              body: "Discover recipes based on what's already in your fridge, or randomise the weekly menu to beat decision fatigue. Cooking becomes effortless.",
             },
             {
               title: "Auto Shopping Lists",
@@ -231,9 +232,9 @@ export default function PreviewLandingPage() {
             </p>
             <p className="mt-6 leading-relaxed text-[#6b6b6b]">
               Mychelin makes sure that voice is never lost — not to time, not
-              to distance, and not to the gap between dialects. Your grandkids
-              will know how to cook like you. More importantly, they will know
-              why it matters.
+              to distance, and not to the gap between dialects. You will know
+              how to cook like them. More importantly, you will know why it
+              matters.
             </p>
           </div>
         </div>
@@ -249,15 +250,15 @@ export default function PreviewLandingPage() {
             Don&apos;t let the recipes fade.
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-[#9b9b9b]">
-            Start building your family cookbook today. The first 50 recipes
-            are free — forever. No credit card required.
+            Start building your family cookbook today. The first 50 recipes are
+            free — forever. No credit card required.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Link
               href="/login"
               className="rounded-full bg-white px-8 py-3.5 text-sm font-medium text-[#1a1a1a] transition hover:bg-[#f0f0eb]"
             >
-              Start preserving your legacy
+              Start capturing recipes
             </Link>
           </div>
           <p className="mt-4 text-xs text-[#6b6b6b]">
