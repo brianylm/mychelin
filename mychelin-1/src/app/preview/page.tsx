@@ -48,16 +48,16 @@ export default function PreviewLandingPage() {
             className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.5rem]"
             style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Your family recipes,{" "}
+            Turn family conversations into recipes{" "}
             <span className="font-normal italic text-[#9b9b9b]">
-              finally written down.
+              — in any dialect.
             </span>
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-[#6b6b6b]">
-            Mychelin is a free app that captures your parents&apos; and
-            grandparents&apos; recipes as you cook together over the phone. The
-            AI transcribes across dialects, asks the questions you forget, and
-            saves every story — so you can actually cook like home.
+            Mychelin is the only app that joins your phone calls with parents
+            and grandparents, transcribes across Hokkien, Cantonese, Mandarin,
+            and English, and turns the chaos into a structured recipe — complete
+            with ingredients, steps, and the stories behind every dish.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
@@ -87,19 +87,20 @@ export default function PreviewLandingPage() {
               className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl"
               style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
             >
-              Learning their cooking shouldn&apos;t feel like a language exam.
+              You want their recipes. The language gap won&apos;t let you have
+              them.
             </h2>
             <p className="mt-6 leading-relaxed text-[#6b6b6b]">
-              Most of us try to learn our parents&apos; recipes over a phone
-              call. They explain in Hokkien or Cantonese. You nod along,
-              scribble notes, and hope you got it right. Then you hang up and
-              realise you never asked how much soy sauce, whether the ginger
-              gets pounded or sliced, or why this dish is only cooked during
-              Lunar New Year.
+              Your grandmother explains her laksa in Hokkien. Your mother
+              describes her mee goreng in Cantonese. You understand enough to
+              nod along, but not enough to write it down accurately. They cook
+              by feel — &ldquo;a little while,&rdquo; &ldquo;agak-agak,&rdquo;
+              &ldquo;until it smells right&rdquo; — and you don&apos;t know
+              which questions to ask to fill in the blanks.
             </p>
             <p className="mt-4 leading-relaxed text-[#6b6b6b]">
-              You&apos;ve already done the hard part — getting them to talk.
-              The rest should be easy.
+              By the time you hang up, half the details are gone. And so is the
+              story of why this dish matters.
             </p>
           </div>
         </div>
@@ -115,11 +116,10 @@ export default function PreviewLandingPage() {
             className="text-3xl font-bold tracking-tight sm:text-4xl"
             style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Three steps from phone call to dinner plate.
+            How it works
           </h2>
           <p className="mt-3 text-[#6b6b6b]">
-            Mychelin is designed to be as simple as the voice memo you&apos;re
-            using now. No setup headaches, no learning curve.
+            Three steps from phone call to saved recipe.
           </p>
         </div>
 
@@ -127,18 +127,18 @@ export default function PreviewLandingPage() {
           {[
             {
               step: "01",
-              title: "Start the conversation",
-              body: "Call your parents or grandparents and cook together. Open Mychelin and hit record. The AI listens and transcribes everything — Hokkien, Cantonese, Mandarin, English, or a mix — and structures it into a real recipe as you talk.",
+              title: "Cook together",
+              body: "Call your parents or grandparents and cook together. Open Mychelin, hit record, and talk naturally. The AI listens in real time — no matter which language or dialect the conversation flows through.",
             },
             {
               step: "02",
-              title: "Let the AI fill the gaps",
-              body: "The AI asks the questions you don't know to ask: exact measurements, substitution options, and the stories behind each dish. Every pinch of salt and every family memory is captured — not lost to translation.",
+              title: "The AI captures everything",
+              body: "As you talk, the AI transcribes, structures ingredients and steps, and asks clarifying questions you'd never think to ask: exact measurements, substitution options, and the stories behind each dish.",
             },
             {
               step: "03",
-              title: "Cook, plan, and shop",
-              body: "Your saved recipes become a living cookbook. Plan your week, get suggestions based on what you already have, randomise the menu when you can't decide, and generate grocery lists with calendar reminders that factor in prep and cook time.",
+              title: "Keep the recipe forever",
+              body: "Every recipe is saved with its full story — who taught it, when it's served, and why it matters. No more half-remembered phone notes. No more recipes lost to time.",
             },
           ].map((item) => (
             <div
@@ -159,48 +159,41 @@ export default function PreviewLandingPage() {
         </div>
       </section>
 
-      {/* ==================== FEATURES ==================== */}
+      {/* ==================== WHAT MAKES IT DIFFERENT ==================== */}
       <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
         <div className="text-center">
           <h2
             className="text-3xl font-bold tracking-tight sm:text-4xl"
             style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            Everything you need to cook like home.
+            What makes Mychelin different
           </h2>
+          <p className="mt-3 text-[#6b6b6b]">
+            Not just a recipe app. A bridge between generations.
+          </p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2">
           {[
             {
-              title: "AI Conversation Capture",
-              subtitle: "Transcribes as they speak",
-              body: "Voice or text across dialects — Hokkien, Cantonese, Mandarin, English, and more. The AI structures the conversation into a real recipe while you talk.",
+              title: "Cross-dialect transcription",
+              subtitle: "They speak Hokkien. You read English.",
+              body: "The AI transcribes and structures conversations across Hokkien, Cantonese, Mandarin, Teochew, and English — even when everyone is speaking a different language.",
             },
             {
-              title: "Smart Clarifying Prompts",
-              subtitle: "Asks what you'd forget",
-              body: "Exact quantities, substitution options, and technique details. No more guessing what 'a little while' or 'agak-agak' means.",
+              title: "Smart clarifying prompts",
+              subtitle: "Asks what you'd never think to ask",
+              body: "The AI gently interrupts to pin down the specifics: exact quantities, substitution options, and technique details. No more guessing what 'a little while' means.",
             },
             {
-              title: "Heritage & Story Tracking",
-              subtitle: "The why behind every dish",
-              body: "Save the origin, meaning, and memories behind every recipe. Who taught it, when it's served, and why it matters to your family.",
+              title: "Heritage & story tracking",
+              subtitle: "The recipe is just the beginning",
+              body: "Every dish is saved with its full context — who taught it, when it's traditionally served, and why it matters to your family. The recipe becomes a living memory.",
             },
             {
-              title: "Meal Planner & Calendar",
-              subtitle: "Your week, planned",
-              body: "Drag recipes into days. Calendar integration reserves cooking time slots that factor in both prep and cook time.",
-            },
-            {
-              title: "Ingredient Suggestions & Randomiser",
-              subtitle: "Use what you have",
-              body: "Discover recipes based on what's already in your fridge, or randomise the weekly menu to beat decision fatigue.",
-            },
-            {
-              title: "Auto Shopping Lists",
-              subtitle: "Never forget the belacan",
-              body: "Generate a grocery list automatically from any meal plan. Check items off as you shop.",
+              title: "Voice-first capture",
+              subtitle: "No typing while your hands are covered in oil",
+              body: "Record naturally while you cook together. The AI handles the hard part of turning unstructured conversation into a recipe you can actually follow.",
             },
           ].map((f) => (
             <div
@@ -221,6 +214,57 @@ export default function PreviewLandingPage() {
         </div>
       </section>
 
+      {/* ==================== LOGISTICS ==================== */}
+      <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
+        <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 sm:px-14 sm:py-20">
+          <div className="text-center">
+            <h2
+              className="text-2xl font-bold tracking-tight sm:text-3xl"
+              style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+            >
+              And once you have the recipes?
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-[#6b6b6b]">
+              Mychelin doesn&apos;t just preserve your family&apos;s cooking —
+              it helps you actually cook it.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                title: "Meal Planner",
+                body: "Plan your week with drag-and-drop simplicity. Calendar integration reserves cooking time slots with prep and cook time factored in.",
+              },
+              {
+                title: "Ingredient Suggestions",
+                body: "Discover recipes based on what's already in your fridge. No more buying ingredients you already have.",
+              },
+              {
+                title: "Recipe Randomiser",
+                body: "Beat decision fatigue with one-tap randomisation. Let the app pick dinner when you can't decide.",
+              },
+              {
+                title: "Auto Shopping Lists",
+                body: "Generate a grocery list automatically from any meal plan. Check items off as you shop.",
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="rounded-xl border border-[#e8e8e3] bg-[#fafaf8] px-5 py-6"
+              >
+                <h3 className="text-sm font-semibold text-[#1a1a1a]">
+                  {f.title}
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-[#6b6b6b]">
+                  {f.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ==================== TRUST ==================== */}
       <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
         <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 text-center sm:px-14 sm:py-20">
@@ -231,8 +275,8 @@ export default function PreviewLandingPage() {
             Free forever. No catch.
           </h2>
           <p className="mx-auto mt-4 max-w-lg leading-relaxed text-[#6b6b6b]">
-            We built Mychelin because we believe family recipes deserve better
-            than a half-filled notebook. No surprise fees — just everything you
+            We built Mychelin because family recipes shouldn&apos;t die with the
+            generation that cooked them. No surprise fees — just everything you
             need, free.
           </p>
 
@@ -266,8 +310,8 @@ export default function PreviewLandingPage() {
             Stop guessing. Start cooking.
           </h2>
           <p className="mx-auto mt-5 max-w-lg text-[#9b9b9b]">
-            Join Mychelin and be among the first to capture your family recipes
-            the right way — before the stories fade.
+            Your family&apos;s recipes are one conversation away. Capture them
+            before the stories fade.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Link
