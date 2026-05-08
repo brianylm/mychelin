@@ -28,7 +28,7 @@ export async function DELETE(
     const [tip] = await db
       .select()
       .from(bookTips)
-      .where(and(eq(bookTips.id, tipId), eq(bookTips.bookId, bookId)))
+      .where(and(eq(bookTips.id, tipId), eq(bookTips.bookId, id)))
       .limit(1);
 
     if (!tip) {
