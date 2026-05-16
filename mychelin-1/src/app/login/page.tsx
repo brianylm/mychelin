@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
+  const [mode, setMode] = useState<"login" | "signup">("login");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setMode(params.get("mode") === "signup" ? "signup" : "login");
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -30,5 +38,5 @@ export default function LoginPage() {
     );
   }
 
-  return <AuthScreen />;
+  return <AuthScreen defaultMode={mode} />;
 }

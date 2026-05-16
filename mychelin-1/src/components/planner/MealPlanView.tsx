@@ -9,6 +9,8 @@ import {
   Cross2Icon,
 } from "@radix-ui/react-icons";
 import { useToast } from "@/context/ToastContext";
+import { CalendarExport } from "@/components/CalendarExport";
+import { getMealDateTime, getDefaultMealEndTime, CalendarEvent } from "@/lib/calendar";
 
 interface MealPlan {
   id: number;
@@ -120,6 +122,9 @@ export function MealPlanView() {
     mealType: string;
   } | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportEvents, setExportEvents] = useState<CalendarEvent[]>([]);
+  const [exportTitle, setExportTitle] = useState("");
 
   // Get current date range based on view type
   const getCurrentDates = useCallback(() => {
@@ -283,6 +288,20 @@ export function MealPlanView() {
   const getPlansForDate = (date: string) =>
     plans.filter((p) => p.date === date);
 
+  const buildCalendarEvents = (mealPlans: MealPlan[]): CalendarEvent[] => {
+    return mealPlans.map((plan) => {
+      const start = getMealDateTime(plan.date, plan.mealType);
+      const end = getDefaultMealEndTime(start);
+      return {
+        id: String(plan.id),
+        title: `${plan.recipe?.title || "Meal"} (${plan.mealType})`,
+        startDate: start,
+        endDate: end,
+        description: `Planned meal: ${plan.recipe?.title || "Meal"}`,
+      };
+    });
+  };
+
   const switchToWeekView = (targetDate: string) => {
     const target = new Date(targetDate + "T00:00:00");
     const now = new Date();
@@ -368,8 +387,22 @@ export function MealPlanView() {
             </IconButton>
           </div>
 
-          <div className="hidden">
-          </div>
+          {plans.length > 0 && (
+            <div className="mt-4 flex justify-center">
+              <Button
+                variant="soft"
+                color="amber"
+                onClick={() => {
+                  setExportEvents(buildCalendarEvents(plans));
+                  setExportTitle(currentDateRange.title);
+                  setShowExportModal(true);
+                }}
+              >
+                <span className="mr-1">📤</span>
+                Send to Calendar
+              </Button>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -606,6 +639,13 @@ export function MealPlanView() {
               </div>
             </div>
           </>
+        )}
+        {showExportModal && (
+          <CalendarExport
+            events={exportEvents}
+            title={exportTitle}
+            onClose={() => setShowExportModal(false)}
+          />
         )}
       </div>
     </div>

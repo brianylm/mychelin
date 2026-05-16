@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@radix-ui/themes";
 import { useAuth } from "@/context/AuthContext";
 
@@ -9,9 +9,13 @@ type Mode = "login" | "signup" | "forgot";
 const fieldClass =
   "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
 
-export function AuthScreen() {
+export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   const { login, signup } = useAuth();
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Mode>(defaultMode);
+
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

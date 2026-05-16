@@ -1,0 +1,25 @@
+{
+  "name": "Mychelin - Family Recipe Keeper",
+  "short_name": "Mychelin",
+  "description": "Preserve and share your family's culinary traditions across generations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCF3EF",
+  "theme_color": "#C2714F",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -111,7 +111,14 @@ h2,
 h3,
 h4,
 h5,
-h6 {
+h6,
+.radix-themes h1,
+.radix-themes h2,
+.radix-themes h3,
+.radix-themes h4,
+.radix-themes h5,
+.radix-themes h6 {
+  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif !important;
   font-weight: 600;
   letter-spacing: -0.01em;
 }

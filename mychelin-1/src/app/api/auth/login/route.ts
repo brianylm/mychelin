@@ -61,7 +61,8 @@ export async function POST(request: NextRequest) {
       email: user.email,
     };
 
-    await setAuthCookie(authUser);
+    const host = request.headers.get("host") || undefined;
+    await setAuthCookie(authUser, host);
 
     return NextResponse.json({ user: authUser });
   } catch (error) {

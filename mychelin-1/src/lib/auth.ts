@@ -63,21 +63,70 @@ export async function verifyToken(token: string): Promise<AuthUser | null> {
   }
 }
 
-export async function setAuthCookie(user: AuthUser): Promise<void> {
+function getCookieDomain(host: string): string | undefined {
+  if (!host || host.includes("localhost") || host.includes("127.0.0.1")) {
+    return undefined;
+  }
+
+  // Allow explicit override via env var
+  if (process.env.COOKIE_DOMAIN) {
+    return process.env.COOKIE_DOMAIN;
+  }
+
+  const hostname = host.split(":")[0];
+
+  // For Vercel deployments, share across subdomains of the project domain
+  if (hostname.endsWith(".vercel.app")) {
+    const parts = hostname.split(".");
+    if (parts.length >= 3) {
+      return `.${parts.slice(-3).join(".")}`;
+    }
+  }
+
+  // For custom domains, use the root domain (last two parts)
+  const parts = hostname.split(".");
+  if (parts.length > 2) {
+    return `.${parts.slice(-2).join(".")}`;
+  }
+
+  return `.${hostname}`;
+}
+
+export async function setAuthCookie(
+  user: AuthUser,
+  host?: string
+): Promise<void> {
   const token = await createToken(user);
   const cookieStore = await cookies();
+  const domain = host ? getCookieDomain(host) : undefined;
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: TOKEN_EXPIRY_SECONDS,
     path: "/",
+    ...(domain ? { domain } : {}),
   });
 }
 
-export async function clearAuthCookie(): Promise<void> {
+export async function clearAuthCookie(host?: string): Promise<void> {
   const cookieStore = await cookies();
+  const domain = host ? getCookieDomain(host) : undefined;
+
+  // Delete cookie without domain (covers legacy cookies)
   cookieStore.delete(COOKIE_NAME);
+
+  // Also clear with explicit domain to remove subdomain-scoped cookies
+  if (domain) {
+    cookieStore.set(COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
+      path: "/",
+      domain,
+    });
+  }
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {

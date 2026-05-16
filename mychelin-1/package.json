@@ -24,6 +24,7 @@
     "drizzle-orm": "^0.45.1",
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.14.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

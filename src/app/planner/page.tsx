@@ -4,7 +4,9 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { RecipeSearchInput } from "@/components/RecipeSearchInput";
 import { SaveMealPlanModal } from "@/components/SaveMealPlanModal";
-import { Calendar, Shuffle } from "lucide-react";
+import { CalendarExport } from "@/components/CalendarExport";
+import { Calendar, Shuffle, Share2 } from "lucide-react";
+import { getMealDateTime, getDefaultMealEndTime, CalendarEvent } from "@/lib/calendar";
 
 interface MealEntry {
   id: string;
@@ -55,6 +57,20 @@ function getWeekDays(date: Date): Date[] {
   return days;
 }
 
+function buildCalendarEvents(meals: MealEntry[]): CalendarEvent[] {
+  return meals.map((meal) => {
+    const start = getMealDateTime(meal.date, meal.meal);
+    const end = getDefaultMealEndTime(start);
+    return {
+      id: meal.id,
+      title: `${meal.title} (${meal.meal})`,
+      startDate: start,
+      endDate: end,
+      description: `Planned meal: ${meal.title}`,
+    };
+  });
+}
+
 type ViewMode = "month" | "week";
 
 export default function PlannerPage() {
@@ -71,6 +87,9 @@ export default function PlannerPage() {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [lastSavedMeals, setLastSavedMeals] = useState<MealEntry[]>([]);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportEvents, setExportEvents] = useState<CalendarEvent[]>([]);
+  const [exportTitle, setExportTitle] = useState("");
 
   const today = useMemo(() => new Date(), []);
 
@@ -353,7 +372,7 @@ export default function PlannerPage() {
         <button
           onClick={randomiseRange}
           disabled={noRecipes || shuffling}
-          className={`ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
             noRecipes
               ? "bg-purple-100 text-purple-400 border border-purple-200 cursor-not-allowed"
               : shuffling
@@ -364,6 +383,36 @@ export default function PlannerPage() {
           <Shuffle className="w-4 h-4" />
           {shuffling ? "Shuffling..." : `Randomise ${viewMode === "week" ? "(Week)" : "(Month)"}`}
         </button>
+
+        {meals.length > 0 && (
+          <button
+            onClick={() => {
+              let periodMeals: MealEntry[];
+              let title: string;
+              if (viewMode === "week") {
+                periodMeals = meals.filter((m) => weekDays.some((d) => formatDateKey(d) === m.date));
+                title = `Week of ${weekDays[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+              } else {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                const monthDates: string[] = [];
+                for (let d = 1; d <= lastDay; d++) {
+                  monthDates.push(formatDateKey(new Date(year, month, d)));
+                }
+                periodMeals = meals.filter((m) => monthDates.includes(m.date));
+                title = `${MONTH_NAMES[month]} ${year}`;
+              }
+              setExportEvents(buildCalendarEvents(periodMeals));
+              setExportTitle(title);
+              setShowExportModal(true);
+            }}
+            className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-terracotta/10 text-terracotta border border-terracotta/20 hover:bg-terracotta/20 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+            Send to Calendar
+          </button>
+        )}
       </div>
 
       {/* Calendar */}
@@ -472,15 +521,17 @@ export default function PlannerPage() {
             <h3 className="text-xl font-bold text-stone-900">
               {selectedDateObj.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </h3>
-            <button
-              onClick={() => surpriseDay(selectedDate)}
-              disabled={noRecipes}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
-                noRecipes ? "bg-purple-100 text-purple-300 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
-              }`}
-            >
-              <Shuffle className="w-3 h-3" /> Surprise whole day
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => surpriseDay(selectedDate)}
+                disabled={noRecipes}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  noRecipes ? "bg-purple-100 text-purple-300 cursor-not-allowed" : "bg-purple-600 text-white hover:bg-purple-700 hover:scale-105"
+                }`}
+              >
+                <Shuffle className="w-3 h-3" /> Surprise whole day
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -610,6 +661,14 @@ export default function PlannerPage() {
             </Link> to unlock the &quot;Surprise Me&quot; feature!
           </p>
         </div>
+      )}
+
+      {showExportModal && (
+        <CalendarExport
+          events={exportEvents}
+          title={exportTitle}
+          onClose={() => setShowExportModal(false)}
+        />
       )}
 
       <SaveMealPlanModal
