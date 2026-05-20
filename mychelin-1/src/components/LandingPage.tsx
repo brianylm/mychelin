@@ -242,5 +242,4 @@ export function LandingPage() {
   );
 }
 // deploy trigger: 15:42:56
-// auto-deploy trigger: vercel git connected, testing deploy
-// last deploy test: 16:01:55 - no auto-deploy, webhook missing
+// auto-deploy fixed: $(date -u +%H:%M:%S)
