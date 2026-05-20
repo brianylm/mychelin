@@ -31,3 +31,35 @@ Root cause is still unknown — possibly a Vercel bundling issue specific to thi
 
 ## Service Worker
 Active (`public/sw.js`). Caches the app shell (HTML, JS, CSS, icons) for fast loads and basic offline support. **API routes (`/api/*`) are always network-only** — never cached. Non-GET requests (POST, PATCH, DELETE) are never intercepted. Cache is versioned via `CACHE_VERSION` in `sw.js` — bump it on breaking changes to bust stale assets. The previous SW was self-destructing because it cached everything including POST requests; the current one is explicit about what to cache and what to pass through.
+
+---
+
+## Archived Copy — Story Blurb
+
+### Moving out means missing home cooking
+
+> Moving out means missing home cooking. Bringing a taste of home with you shouldn't be this hard.
+>
+> You call your parents or grandparents for the recipe. They try their best to explain — sometimes in Hokkien or Cantonese. You understand enough to nod along, but not enough to write it down. These seasoned home cooks go by feel — "agak-agak," "a little while" — and you're left guessing what that actually means.
+>
+> Even when you do nail a dish, the weekly grind sets in. What should you cook? What ingredients do we need to buy? How long will it take? It's easier to order in — and slowly, the taste of home fades.
+
+Removed from landing page 2026-05-20. Keep for marketing / future reference.
+
+## Archived Copy — Feature List
+
+### Free. No catch.
+
+> We built Mychelin because moving out is hard enough. Eating like home shouldn't be. No surprise fees — just everything you need, free.
+
+Feature list:
+- Unlimited AI conversation capture
+- Multi-dialect transcription & translation
+- Smart clarifying prompts for every recipe
+- Heritage & story tracking
+- Weekly meal planner with calendar sync
+- Ingredient-based recipe suggestions
+- Recipe randomiser for decision fatigue
+- Auto-generated shopping lists
+
+Removed from landing page 2026-05-20. Keep for marketing / future reference.

@@ -11,7 +11,12 @@ export function LandingPage() {
         <nav className="flex items-center gap-4 px-5 py-3 rounded-full bg-white/70 backdrop-blur-xl ring-1 ring-stone-200/60 [box-shadow:inset_0_1px_1px_rgba(255,255,255,0.8),0_4px_24px_rgba(0,0,0,0.06)]">
           <a href="#" className="flex items-center gap-2 shrink-0">
             <span className="text-lg">🍳</span>
-            <span className="text-lg font-bold text-stone-800">Mychelin</span>
+            <span
+              className="text-lg font-bold tracking-tight text-stone-800"
+              style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+            >
+              Mychelin
+            </span>
           </a>
           <div className="w-px h-5 bg-stone-200 hidden md:block" />
           <div className="hidden md:flex items-center gap-4">
@@ -20,12 +25,6 @@ export function LandingPage() {
               className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
             >
               How it works
-            </a>
-            <a
-              href="#story"
-              className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
-            >
-              Story
             </a>
             <a
               href="#final"
@@ -37,9 +36,15 @@ export function LandingPage() {
           <div className="w-px h-5 bg-stone-200 hidden md:block" />
           <Link
             href="/login"
-            className="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors shrink-0"
+            className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors shrink-0"
           >
             Sign in
+          </Link>
+          <Link
+            href="/login?mode=signup"
+            className="rounded-full bg-[#1a1a1a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#333] shrink-0"
+          >
+            Get started
           </Link>
         </nav>
       </header>
@@ -102,33 +107,7 @@ export function LandingPage() {
       </section>
 
       {/* ==================== PROBLEM / STORY ==================== */}
-      <section id="story" className="mx-auto mt-16 max-w-5xl px-6 sm:mt-20">
-        <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 sm:px-14 sm:py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2
-              className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl"
-              style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
-            >
-              Moving out means missing home cooking. Bringing a taste of home
-              with you shouldn&apos;t be this hard.
-            </h2>
-            <p className="mt-6 leading-relaxed text-[#6b6b6b]">
-              You call your parents or grandparents for the recipe. They try
-              their best to explain — sometimes in Hokkien or Cantonese. You
-              understand enough to nod along, but not enough to write it down.
-              These seasoned home cooks go by feel — &ldquo;agak-agak,&rdquo;
-              &ldquo;a little while&rdquo; — and you&apos;re left guessing what
-              that actually means.
-            </p>
-            <p className="mt-4 leading-relaxed text-[#6b6b6b]">
-              Even when you do nail a dish, the weekly grind sets in. What
-              should you cook? What ingredients do we need to buy? How long will
-              it take? It&apos;s easier to order in — and slowly, the taste of
-              home fades.
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Archived — see MYCHELIN.md */}
 
       {/* ==================== HOW IT WORKS ==================== */}
       <section
@@ -214,39 +193,7 @@ export function LandingPage() {
       </section>
 
       {/* ==================== TRUST ==================== */}
-      <section className="mx-auto mt-24 max-w-5xl px-6 sm:mt-32">
-        <div className="rounded-3xl border border-[#e8e8e3] bg-white px-8 py-14 text-center sm:px-14 sm:py-20">
-          <h2
-            className="text-2xl font-bold tracking-tight sm:text-3xl"
-            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
-          >
-            Free. No catch.
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg leading-relaxed text-[#6b6b6b]">
-            We built Mychelin because moving out is hard enough. Eating like
-            home shouldn&apos;t be. No surprise fees — just everything you need,
-            free.
-          </p>
-
-          <div className="mx-auto mt-10 grid max-w-xl gap-3 text-left">
-            {[
-              "Unlimited AI conversation capture",
-              "Multi-dialect transcription & translation",
-              "Smart clarifying prompts for every recipe",
-              "Heritage & story tracking",
-              "Weekly meal planner with calendar sync",
-              "Ingredient-based recipe suggestions",
-              "Recipe randomiser for decision fatigue",
-              "Auto-generated shopping lists",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <span className="text-[#9b9b9b]">•</span>
-                <span className="text-sm text-[#1a1a1a]">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Archived — see MYCHELIN.md */}
 
       {/* ==================== FINAL CTA ==================== */}
       <section id="final" className="mx-auto mt-16 max-w-5xl px-6 pb-6 sm:mt-20">
