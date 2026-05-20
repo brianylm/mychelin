@@ -1,9 +1,17 @@
+import { Libre_Baskerville } from "next/font/google";
 import Link from "next/link";
+
+const libreBaskerville = Libre_Baskerville({
+  subsets: ["latin"],
+  weight: ["700"],
+  style: ["normal"],
+  variable: "--font-libre-baskerville",
+});
 
 export function LandingPage() {
   return (
     <div
-      className="min-h-screen bg-[#fafaf8] text-[#1a1a1a]"
+      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${libreBaskerville.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -14,7 +22,7 @@ export function LandingPage() {
             <span
               className="text-lg font-bold tracking-tight"
               style={{
-                fontFamily: "'Ingeborg', 'Scotch Roman', 'Miller Text', 'Georgia', serif",
+                fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif",
                 fontWeight: 700,
                 letterSpacing: "-0.015em",
                 textTransform: "lowercase",
