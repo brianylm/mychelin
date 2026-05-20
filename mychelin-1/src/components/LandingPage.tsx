@@ -104,16 +104,16 @@ export function LandingPage() {
               Moving out usually means missing home-cooked meals. Mychelin helps
               you bring a taste of home with you.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-wrap gap-6">
               <Link
                 href="/login?mode=signup"
-                className="rounded-full bg-[#1a1a1a] px-7 py-3.5 text-sm font-medium text-white transition hover:bg-[#333]"
+                className="text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors"
               >
-                Try it now
+                Try it now →
               </Link>
               <a
                 href="#how-it-works"
-                className="rounded-full border border-[#c4c4bf] bg-white/80 px-7 py-3.5 text-sm font-medium text-[#1a1a1a] backdrop-blur-sm transition hover:bg-white hover:border-[#9b9b9b]"
+                className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
               >
                 See how it works
               </a>
@@ -224,12 +224,12 @@ export function LandingPage() {
             Your family&apos;s recipes are one conversation away. Capture them,
             cook them, and make them part of your new routine.
           </p>
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-8 flex justify-center gap-6">
             <Link
               href="/login?mode=signup"
-              className="rounded-full bg-white px-8 py-3.5 text-sm font-medium text-[#1a1a1a] transition hover:bg-[#f0f0eb]"
+              className="text-sm font-semibold text-white hover:text-[#800020] transition-colors"
             >
-              Start cooking like home
+              Start cooking like home →
             </Link>
           </div>
           <p className="mt-4 text-xs text-[#6b6b6b]">
