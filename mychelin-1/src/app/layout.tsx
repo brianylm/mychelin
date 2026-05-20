@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, EB_Garamond } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { PWARegister } from "@/components/PWARegister";
 import { InstallPrompt } from "@/components/InstallPrompt";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const ebGaramond = EB_Garamond({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-eb-garamond",
-  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -44,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${ebGaramond.variable}`}>
+    <html lang="en" className={`${dmSans.variable}`}>
       <body className="min-h-screen bg-surface text-foreground antialiased">
         <AppProviders>
           <PWARegister />

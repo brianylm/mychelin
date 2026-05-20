@@ -27,7 +27,7 @@
   --color-accent-light: rgb(var(--accent-light));
   --color-accent-dark: rgb(var(--accent-dark));
 
-  --font-sans: var(--font-inter, "Inter"), system-ui, -apple-system,
+  --font-sans: var(--font-dm-sans, "DM Sans"), system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Animations */
@@ -118,7 +118,7 @@ h6,
 .radix-themes h4,
 .radix-themes h5,
 .radix-themes h6 {
-  font-family: var(--font-eb-garamond), "EB Garamond", Georgia, serif !important;
+  font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif !important;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
