@@ -1,17 +1,9 @@
 import Link from "next/link";
-import { PT_Serif } from "next/font/google";
-
-const ptSerif = PT_Serif({
-  subsets: ["latin"],
-  weight: ["700"],
-  style: ["normal"],
-  variable: "--font-ptserif-nav",
-});
 
 export function LandingPage() {
   return (
     <div
-      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${ptSerif.variable}`}
+      className="min-h-screen bg-[#fafaf8] text-[#1a1a1a]"
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -21,10 +13,17 @@ export function LandingPage() {
             <span className="text-lg">🍳</span>
             <span
               className="text-lg font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-ptserif-nav), 'PT Serif', Georgia, serif" }}
+              style={{
+                fontFamily: "'Ingeborg', 'Scotch Roman', 'Miller Text', 'Georgia', serif",
+                fontWeight: 700,
+                letterSpacing: "-0.015em",
+                textTransform: "lowercase",
+                WebkitFontSmoothing: "antialiased",
+                MozOsxFontSmoothing: "grayscale",
+              }}
             >
-              <span className="text-red-600">My</span>
-              <span className="text-stone-800">chelin</span>
+              <span style={{ color: "#7A1C22" }}>my</span>
+              <span style={{ color: "#262626" }}>chelin</span>
             </span>
           </a>
           <div className="w-px h-5 bg-stone-200 hidden md:block" />
