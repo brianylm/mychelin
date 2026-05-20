@@ -1,9 +1,16 @@
 import Link from "next/link";
+import { Montserrat } from "next/font/google";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-montserrat-nav",
+});
 
 export function LandingPage() {
   return (
     <div
-      className="min-h-screen bg-[#fafaf8] text-[#1a1a1a]"
+      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${montserrat.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -12,10 +19,11 @@ export function LandingPage() {
           <a href="#" className="flex items-center gap-2 shrink-0">
             <span className="text-lg">🍳</span>
             <span
-              className="text-lg font-bold tracking-tight text-stone-800"
-              style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+              className="text-lg font-bold tracking-tight"
+              style={{ fontFamily: "var(--font-montserrat-nav), 'Montserrat', system-ui, sans-serif" }}
             >
-              Mychelin
+              <span className="text-red-600">My</span>
+              <span className="text-stone-800">chelin</span>
             </span>
           </a>
           <div className="w-px h-5 bg-stone-200 hidden md:block" />
