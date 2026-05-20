@@ -56,12 +56,12 @@ export function LandingPage() {
           >
             Sign in
           </Link>
-          <Link
-            href="/login?mode=signup"
-            className="rounded-full bg-[#1a1a1a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#333] shrink-0"
-          >
-            Get started
-          </Link>
+              <Link
+                href="/login?mode=signup"
+                className="text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors shrink-0"
+              >
+                Get started
+              </Link>
         </nav>
       </header>
 
