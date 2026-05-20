@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { Montserrat } from "next/font/google";
+import { Playfair_Display } from "next/font/google";
 
-const montserrat = Montserrat({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["700"],
-  variable: "--font-montserrat-nav",
+  variable: "--font-playfair-nav",
 });
 
 export function LandingPage() {
   return (
     <div
-      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${montserrat.variable}`}
+      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${playfair.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -20,7 +20,7 @@ export function LandingPage() {
             <span className="text-lg">🍳</span>
             <span
               className="text-lg font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-montserrat-nav), 'Montserrat', system-ui, sans-serif" }}
+              style={{ fontFamily: "var(--font-playfair-nav), 'Playfair Display', Georgia, serif" }}
             >
               <span className="text-red-600">My</span>
               <span className="text-stone-800">chelin</span>
