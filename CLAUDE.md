@@ -9,7 +9,7 @@
 
 ## Project: Mychelin
 - **Live site**: mychelin-sg.vercel.app
-- **Repo**: brianylmorg/mychelin
+- **Repo**: brianylm/mychelin
 - **Primary app**: `mychelin-1/` subfolder (this is what Vercel deploys — Vercel Root Directory is set to `mychelin-1`)
 - **Database**: Turso (libsql) at `libsql://mychelin-brianylm.aws-ap-northeast-1.turso.io`
 - **Region**: hnd1 (Tokyo) on Vercel
