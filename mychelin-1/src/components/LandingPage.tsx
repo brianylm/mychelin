@@ -22,7 +22,7 @@ export function LandingPage() {
                 MozOsxFontSmoothing: "grayscale",
               }}
             >
-              <span style={{ color: "#7A1C22" }}>my</span>
+              <span style={{ color: "#800020" }}>my</span>
               <span style={{ color: "#262626" }}>chelin</span>
             </span>
           </a>
