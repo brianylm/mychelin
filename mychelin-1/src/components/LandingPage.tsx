@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { Playfair_Display } from "next/font/google";
+import { PT_Serif } from "next/font/google";
 
-const playfair = Playfair_Display({
+const ptSerif = PT_Serif({
   subsets: ["latin"],
   weight: ["700"],
-  variable: "--font-playfair-nav",
+  style: ["normal"],
+  variable: "--font-ptserif-nav",
 });
 
 export function LandingPage() {
   return (
     <div
-      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${playfair.variable}`}
+      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${ptSerif.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -20,7 +21,7 @@ export function LandingPage() {
             <span className="text-lg">🍳</span>
             <span
               className="text-lg font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-playfair-nav), 'Playfair Display', Georgia, serif" }}
+              style={{ fontFamily: "var(--font-ptserif-nav), 'PT Serif', Georgia, serif" }}
             >
               <span className="text-red-600">My</span>
               <span className="text-stone-800">chelin</span>
