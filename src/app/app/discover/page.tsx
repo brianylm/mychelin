@@ -100,7 +100,7 @@ export default function DiscoverPage() {
 
           <div className="flex gap-4 justify-center">
             <Link
-              href={`/recipes/${randomRecipe.id}`}
+              href={`/app/recipes/${randomRecipe.id}`}
               className="px-8 py-4 bg-terracotta text-white rounded-xl text-xl font-semibold hover:bg-terracotta-600 transition-colors"
             >
               Let&apos;s Cook This!
@@ -121,7 +121,7 @@ export default function DiscoverPage() {
           <h2 className="text-2xl font-bold text-stone-800 mb-2">No recipes yet!</h2>
           <p className="text-stone-500 mb-6 text-lg">Add some recipes first, then come back for a surprise</p>
           <Link
-            href="/recipes/new"
+            href="/app/recipes/new"
             className="inline-block px-8 py-4 bg-terracotta text-white rounded-xl text-xl font-semibold hover:bg-terracotta-600 transition-colors"
           >
             Add Your First Recipe

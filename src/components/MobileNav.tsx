@@ -14,10 +14,10 @@ export function MobileNav() {
 
   const navItems = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/recipes", label: "Recipes", icon: BookOpen },
-    { href: "/fridge", label: "Fridge", icon: Box },
-    { href: "/planner", label: "Planner", icon: Calendar },
-    { href: "/profile", label: "Profile", icon: User },
+    { href: "/app/recipes", label: "Recipes", icon: BookOpen },
+    { href: "/app/fridge", label: "Fridge", icon: Box },
+    { href: "/app/planner", label: "Planner", icon: Calendar },
+    { href: "/app/profile", label: "Profile", icon: User },
   ];
 
   return (

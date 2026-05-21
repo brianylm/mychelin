@@ -492,7 +492,7 @@ export default function LiveRecipeConversationPage() {
         </AnimatePresence>
 
         <div className="flex items-center gap-2 mb-8">
-          <button onClick={() => router.push("/recipes")} className="text-stone-400 hover:text-stone-600 transition-colors">
+          <button onClick={() => router.push("/app/recipes")} className="text-stone-400 hover:text-stone-600 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <Sparkles className="w-6 h-6 text-purple-600" />
@@ -748,7 +748,7 @@ export default function LiveRecipeConversationPage() {
           {pageState === "saving" && (
             <div className="bg-white rounded-b-2xl border-t border-stone-200 px-5 py-4 flex items-center gap-3 shrink-0">
               <button
-                onClick={() => router.push("/recipes")}
+                onClick={() => router.push("/app/recipes")}
                 className="px-5 py-2.5 border border-stone-300 text-stone-600 rounded-xl font-medium hover:bg-stone-50 transition-colors"
               >
                 Discard

@@ -609,7 +609,7 @@ export default function PlannerPage() {
 
           <div className="mt-6 pt-4 border-t border-stone-200 flex flex-wrap gap-3">
             <Link 
-              href="/discover" 
+              href="/app/discover" 
               onClick={(e) => handleLinkClick(e, "/discover")}
               className="inline-flex items-center gap-1 text-terracotta hover:text-terracotta-600 text-sm font-medium"
             >
@@ -653,7 +653,7 @@ export default function PlannerPage() {
         <div className="mt-4 bg-stone-50 rounded-xl p-4 border border-stone-200 text-center">
           <p className="text-stone-600 text-sm">
             💡 <Link 
-              href="/recipes/new"
+              href="/app/recipes/new"
               onClick={(e) => handleLinkClick(e, "/recipes/new")}
               className="font-semibold underline"
             >

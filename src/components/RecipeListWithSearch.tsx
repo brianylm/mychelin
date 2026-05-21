@@ -85,7 +85,7 @@ export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
           {filteredRecipes.map((recipe) => (
             <Link
               key={recipe.id}
-              href={`/recipes/${recipe.id}`}
+              href={`/app/recipes/${recipe.id}`}
               className="bg-white rounded-2xl overflow-hidden shadow-md border border-stone-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
             >
               <div className="h-48 bg-gradient-to-br from-stone-200 to-stone-100 flex items-center justify-center">
@@ -140,7 +140,7 @@ export function RecipeListWithSearch({ recipes }: { recipes: Recipe[] }) {
           <h2 className="text-2xl font-bold text-stone-800 mb-2">No recipes yet</h2>
           <p className="text-stone-500 mb-6 text-lg">Add your family&apos;s special dishes</p>
           <Link
-            href="/recipes/new"
+            href="/app/recipes/new"
             className="inline-flex items-center gap-2 bg-terracotta text-white px-8 py-4 rounded-xl text-xl font-semibold hover:bg-terracotta-600 transition-colors"
           >
             Add Your First Recipe

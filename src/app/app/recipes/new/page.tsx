@@ -159,7 +159,7 @@ function RecipeForm() {
       if (res.ok) {
         const data = await res.json();
         setToast({ show: true, message: recipeId ? "Recipe updated successfully! 🎉" : "Recipe saved successfully! 🎉", type: "success" });
-        setTimeout(() => router.push(`/recipes/${data.id || recipeId}`), 1500);
+        setTimeout(() => router.push(`/app/recipes/${data.id || recipeId}`), 1500);
       } else {
         setToast({ show: true, message: "Failed to save recipe. Please try again.", type: "error" });
       }
@@ -192,7 +192,7 @@ function RecipeForm() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/capture"
+                href="/app/capture"
                 className="inline-flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl text-lg font-semibold hover:bg-purple-700 transition-colors"
               >
                 <span className="text-xl">🎙️</span>

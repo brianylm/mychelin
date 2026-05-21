@@ -32,7 +32,7 @@ export function AddRecipeMenu() {
       {open && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <Link
-            href="/recipes/new"
+            href="/app/recipes/new"
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-5 py-4 hover:bg-stone-50 transition-colors border-b border-stone-100"
           >
@@ -43,7 +43,7 @@ export function AddRecipeMenu() {
             </div>
           </Link>
           <Link
-            href="/capture"
+            href="/app/capture"
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-5 py-4 hover:bg-stone-50 transition-colors"
           >

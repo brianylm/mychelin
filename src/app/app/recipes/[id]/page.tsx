@@ -46,7 +46,7 @@ export default async function RecipeDetailPage({
     <div className="max-w-3xl mx-auto">
       {/* Back button */}
       <Link
-        href="/recipes"
+        href="/app/recipes"
         className="inline-flex items-center gap-2 text-amber-600 hover:text-amber-800 mb-6 text-lg"
       >
         ← Back to Recipes
@@ -66,7 +66,7 @@ export default async function RecipeDetailPage({
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-amber-900">{recipe.title}</h1>
             <Link
-              href={`/recipes/new?id=${recipe.id}`}
+              href={`/app/recipes/new?id=${recipe.id}`}
               className="px-4 py-2 bg-blue-600 text-white rounded-xl text-lg font-semibold hover:bg-blue-700"
             >
               ✏️ Edit Recipe
