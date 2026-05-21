@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes that require authentication
-const PROTECTED_APP_ROUTES = ["/app"];
-
 // Old flat routes to redirect to /app/*
 const REDIRECTS: Record<string, string> = {
   "/recipes": "/app/recipes",
@@ -14,47 +11,34 @@ const REDIRECTS: Record<string, string> = {
   "/discover": "/app/discover",
 };
 
-// Also redirect /recipes/[id] and /recipes/new
-function getRedirectPath(pathname: string): string | null {
-  // Exact matches
-  if (REDIRECTS[pathname]) {
-    return REDIRECTS[pathname];
-  }
-
-  // /recipes/[id] → /app/recipes/[id]
-  if (pathname.match(/^\/recipes\/[^/]+$/)) {
-    return pathname.replace("/recipes/", "/app/recipes/");
-  }
-
-  // /recipes/new → /app/recipes/new
-  if (pathname === "/recipes/new") {
-    return "/app/recipes/new";
-  }
-
-  return null;
-}
-
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Debug: add header to prove middleware is running
+  const response = NextResponse.next();
+  response.headers.set("x-middleware-debug", "running");
+
   // Redirect old flat routes
-  const redirectPath = getRedirectPath(pathname);
-  if (redirectPath) {
-    return NextResponse.redirect(new URL(redirectPath, request.url));
+  if (REDIRECTS[pathname]) {
+    return NextResponse.redirect(new URL(REDIRECTS[pathname], request.url));
+  }
+
+  // Redirect /recipes/[id] and /recipes/new
+  if (pathname.startsWith("/recipes/")) {
+    return NextResponse.redirect(new URL(pathname.replace("/recipes/", "/app/recipes/"), request.url));
   }
 
   // Protect /app/* routes — check for auth cookie
-  const isAppRoute = pathname.startsWith("/app");
-  if (isAppRoute) {
+  if (pathname.startsWith("/app")) {
     const authCookie = request.cookies.get("auth-token");
     if (!authCookie?.value) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.json|.*\\.).*)"],
+  matcher: "/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.ico$|.*\\.svg$).*)"
 };
