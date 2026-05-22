@@ -35,3 +35,5 @@ Vercel project: `mychelin` (`prj_keoeCPZKShPgjPWLR5gpWxWIlfCt`)
 Vercel Root Directory: `app`
 
 Do **not** deploy from inside `app/`; the root `.vercel/` link points to the correct production project.
+
+For full deployment verification and production smoke-test steps, see [`DEPLOYMENT.md`](./DEPLOYMENT.md).
