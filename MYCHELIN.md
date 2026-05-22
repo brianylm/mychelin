@@ -10,7 +10,7 @@
 ## Project: Mychelin
 - **Live site**: mychelin-sg.vercel.app
 - **Repo**: brianylm/mychelin
-- **Primary app**: `mychelin-1/` subfolder (this is what Vercel deploys — Vercel Root Directory is set to `mychelin-1`)
+- **Primary app**: `app/` subfolder (this is what Vercel deploys — Vercel Root Directory is set to `app`)
 - **Database**: Turso (libsql) at `libsql://mychelin-brianylm.aws-ap-northeast-1.turso.io`
 - **Region**: hnd1 (Tokyo) on Vercel
 - **Auth**: JWT cookie (`mychelin_token`), bcrypt passwords, 30-day expiry, uses `jose` (not `jsonwebtoken`) for edge compatibility

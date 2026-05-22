@@ -9,13 +9,13 @@ Built a marketing landing page applying mikeoss.com design patterns to Mychelin.
 
 ### Code location (critical)
 
-The **deployed code** lives in `mychelin-1/src/` — NOT the root `src/`. Vercel is configured to build from the `mychelin-1/` subdirectory.
+The **deployed code** lives in `app/src/` — NOT the root `src/`. Vercel is configured to build from the `app/` subdirectory.
 
 | File | Purpose |
 |---|---|
-| `mychelin-1/src/app/page.tsx` | Auth dispatch: LandingPage for guests, RecipeWorkspace for logged-in |
-| `mychelin-1/src/components/LandingPage.tsx` | Full landing page component (~280 lines) |
-| `mychelin-1/src/app/layout.tsx` | Root layout — Inter font, AppProviders, `bg-surface` theme |
+| `app/src/app/page.tsx` | Auth dispatch: LandingPage for guests, RecipeWorkspace for logged-in |
+| `app/src/components/LandingPage.tsx` | Full landing page component (~280 lines) |
+| `app/src/app/layout.tsx` | Root layout — Inter font, AppProviders, `bg-surface` theme |
 
 Root `src/` was a prototype shell and is **not deployed**. Changes there do not go to production.
 
@@ -51,7 +51,7 @@ Root `src/` was a prototype shell and is **not deployed**. Changes there do not 
 ### Auth dispatch logic
 
 ```tsx
-// mychelin-1/src/app/page.tsx
+// app/src/app/page.tsx
 const user = await getCurrentUser(); // checks "mychelin_token" cookie
 if (!user) return <LandingPage />;
 return <RecipeWorkspace />;
@@ -59,7 +59,7 @@ return <RecipeWorkspace />;
 
 `dynamic = "force-dynamic"` because of cookie read. Landing page is a static component but the page-level auth check makes the route dynamic.
 
-### Design system (mychelin-1)
+### Design system (app)
 
 - **Font:** Inter (body) + EB Garamond (headings) — same pairing as mikeoss.com
 - **Accent:** amber-600/700 (matches app theme)
@@ -73,7 +73,7 @@ return <RecipeWorkspace />;
 1. Get hero watercolour painting (2560×1440) — swap in via the `style` prop on the hero `<section>`
 2. Get 7 feature screenshots (800×500) — replace the "Screenshot" placeholder spans
 3. Add floating glassmorphism nav to landing page (optional — current app Header may conflict)
-4. Create `/signup` page in mychelin-1 (currently only `/login` exists)
+4. Create `/signup` page in app (currently only `/login` exists)
 5. Add video demo section (high effort, needs filming)
 
 ### Deploy command

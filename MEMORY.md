@@ -6,12 +6,12 @@ There are **two Vercel projects** and **one codebase**. This has caused repeated
 
 | Vercel Project | Project ID | Deploys To | Root Directory (Vercel Dashboard) |
 |---|---|---|---|
-| `mychelin` | `prj_keoeCPZKShPgjPWLR5gpWxWIlfCt` | **`mychelin-sg.vercel.app`** ✅ | `mychelin-1` |
-| `mychelin-1` | `prj_IBU2ghU2Kr2D5pGDluKsLow5tSp2` | `mychelin-1.vercel.app` | (root of its own project) |
+| `mychelin` | `prj_keoeCPZKShPgjPWLR5gpWxWIlfCt` | **`mychelin-sg.vercel.app`** ✅ | `app` |
+| `app` | `prj_IBU2ghU2Kr2D5pGDluKsLow5tSp2` | `mychelin-1.vercel.app` | (root of its own project) |
 
 ## The Correct Way to Deploy
 
-**Always deploy from the ROOT directory**, NOT from `mychelin-1/`:
+**Always deploy from the ROOT directory**, NOT from `app/`:
 
 ```bash
 cd /home/cluser/projects/mychelin
@@ -19,15 +19,15 @@ vercel --prod        # production
 vercel               # preview
 ```
 
-The `mychelin` Vercel project is configured in the Vercel dashboard to build from the `mychelin-1/` subdirectory. So even though you deploy from root, it compiles the code inside `mychelin-1/`.
+The `mychelin` Vercel project is configured in the Vercel dashboard to build from the `app/` subdirectory. So even though you deploy from root, it compiles the code inside `app/`.
 
-**Do NOT deploy from `mychelin-1/` directly** — that pushes to the wrong Vercel project (`mychelin-1.vercel.app`), which is NOT the live production site.
+**Do NOT deploy from `app/` directly** — that pushes to the wrong Vercel project (`mychelin-1.vercel.app`), which is NOT the live production site.
 
 ## Where the Code Lives
 
-All application code lives in **`/projects/mychelin/mychelin-1/src/`**.
+All application code lives in **`/projects/mychelin/app/src/`**.
 
-The root `/projects/mychelin/` has its own `package.json` and `src/`, but those are **NOT used in production**. The root project is just a shell that Vercel uses to reach the `mychelin-1/` subdirectory.
+The root `/projects/mychelin/` has its own `package.json` and `src/`, but those are **NOT used in production**. The root project is just a shell that Vercel uses to reach the `app/` subdirectory.
 
 ## Quick Reference
 
