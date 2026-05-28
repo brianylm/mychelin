@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Newsreader } from "next/font/google";
+import { Libre_Baskerville, Newsreader } from "next/font/google";
 import Link from "next/link";
 
 const brandSerif = Newsreader({
@@ -9,6 +9,13 @@ const brandSerif = Newsreader({
   weight: ["400", "500"],
   style: ["normal"],
   variable: "--font-brand-serif",
+});
+
+const logoSerif = Libre_Baskerville({
+  subsets: ["latin"],
+  weight: ["700"],
+  style: ["normal"],
+  variable: "--font-logo-serif",
 });
 
 const featurePages = [
@@ -37,7 +44,7 @@ export function LandingPage() {
 
   return (
     <div
-      className={`landing-content min-h-screen bg-white text-[#1A1A1A] ${brandSerif.variable}`}
+      className={`landing-content min-h-screen bg-white text-[#1A1A1A] ${brandSerif.variable} ${logoSerif.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -46,11 +53,11 @@ export function LandingPage() {
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <span className="text-lg">🍳</span>
             <span
-              className="landing-serif text-xl tracking-tight"
+              className="text-lg font-bold tracking-tight"
               style={{
-                fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif",
-                fontWeight: 400,
-                letterSpacing: "-0.03em",
+                fontFamily: "var(--font-logo-serif), 'Libre Baskerville', Georgia, serif",
+                fontWeight: 700,
+                letterSpacing: "-0.015em",
                 textTransform: "lowercase",
                 WebkitFontSmoothing: "antialiased",
                 MozOsxFontSmoothing: "grayscale",
