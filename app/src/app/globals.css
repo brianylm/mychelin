@@ -155,6 +155,16 @@ h6,
   font-weight: 400 !important;
 }
 
+.landing-hero-image {
+  object-position: right bottom;
+}
+
+@media (min-width: 640px) {
+  .landing-hero-image {
+    object-position: 68% center;
+  }
+}
+
 input,
 textarea,
 select,

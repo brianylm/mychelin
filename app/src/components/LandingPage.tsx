@@ -96,8 +96,7 @@ export function LandingPage() {
         <img
           src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
-          className="absolute inset-x-0 bottom-0 h-[62%] w-full object-contain object-right-bottom sm:inset-0 sm:h-full sm:object-cover"
-          style={{ objectPosition: "62% center" }}
+          className="landing-hero-image absolute inset-x-0 bottom-0 h-[62%] w-full object-contain sm:inset-0 sm:h-full sm:object-cover"
         />
         {/* Gradient overlay — stronger on left where text sits */}
         <div
