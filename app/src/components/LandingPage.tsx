@@ -69,7 +69,12 @@ export function LandingPage() {
       <header className="fixed top-4 left-1/2 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">
         <nav className="relative flex items-center justify-between gap-3 overflow-hidden rounded-full border border-white/45 bg-white/[0.26] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-18px_34px_rgba(255,255,255,0.16),0_18px_55px_rgba(40,26,19,0.14)] backdrop-blur-2xl backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-4 before:top-0 before:h-px before:bg-white/80 supports-[backdrop-filter]:bg-white/[0.18] sm:px-5 sm:py-3">
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
-            <span className="text-lg">🍳</span>
+            <img
+              src="/images/mychelin-icon.png"
+              alt=""
+              aria-hidden="true"
+              className="h-7 w-7 shrink-0 object-contain"
+            />
             <span
               className="logo-serif text-lg font-bold tracking-tight"
               style={{
