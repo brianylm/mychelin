@@ -290,9 +290,19 @@ export function LandingPage() {
                           {feature.title}
                         </h3>
                       </div>
-                      <span className="rounded-full border border-[#d8d8d2] px-3 py-1 text-xs text-[#6b6b6b]">
-                        {isActive ? "Spotlight" : "View"}
-                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span className="rounded-full border border-[#d8d8d2] px-3 py-1 text-xs text-[#6b6b6b]">
+                          {index + 1} / {featurePages.length}
+                        </span>
+                        <div className="flex gap-1.5" aria-hidden="true">
+                          {featurePages.map((dotFeature, dotIndex) => (
+                            <span
+                              key={dotFeature.title}
+                              className={`h-1.5 rounded-full transition-all ${dotIndex === index ? "w-5 bg-[#800020]" : "w-1.5 bg-[#d8d8d2]"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
                     <p className="mt-4 max-w-xl text-sm leading-6 text-[#5f6368]">
