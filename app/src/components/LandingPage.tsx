@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Libre_Baskerville, Newsreader } from "next/font/google";
 import Link from "next/link";
 
@@ -41,6 +41,24 @@ const featurePages = [
 
 export function LandingPage() {
   const [activeFeature, setActiveFeature] = useState(0);
+  const swipeStartX = useRef<number | null>(null);
+
+  const showFeature = useCallback((index: number) => {
+    setActiveFeature((index + featurePages.length) % featurePages.length);
+  }, []);
+
+  const showNextFeature = useCallback(() => {
+    setActiveFeature((current) => (current + 1) % featurePages.length);
+  }, []);
+
+  const showPreviousFeature = useCallback(() => {
+    setActiveFeature((current) => (current - 1 + featurePages.length) % featurePages.length);
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(showNextFeature, 10000);
+    return () => window.clearInterval(interval);
+  }, [activeFeature, showNextFeature]);
 
   return (
     <div
@@ -221,7 +239,23 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div className="relative min-h-[34rem] overflow-hidden border-t border-[#d8d8d2] pt-8 lg:border-t-0 lg:pt-0">
+          <div
+            className="relative min-h-[34rem] touch-pan-y overflow-hidden border-t border-[#d8d8d2] pt-8 lg:border-t-0 lg:pt-0"
+            onPointerDown={(event) => {
+              swipeStartX.current = event.clientX;
+            }}
+            onPointerUp={(event) => {
+              if (swipeStartX.current === null) return;
+              const deltaX = event.clientX - swipeStartX.current;
+              swipeStartX.current = null;
+              if (Math.abs(deltaX) < 45) return;
+              if (deltaX < 0) showNextFeature();
+              else showPreviousFeature();
+            }}
+            onPointerCancel={() => {
+              swipeStartX.current = null;
+            }}
+          >
             <div className="relative h-[25rem] sm:h-[28rem]">
               {featurePages.map((feature, index) => {
                 const offset = index - activeFeature;
@@ -230,7 +264,7 @@ export function LandingPage() {
                   <button
                     key={feature.title}
                     type="button"
-                    onClick={() => setActiveFeature(index)}
+                    onClick={() => showFeature(index)}
                     className="absolute left-1/2 top-0 w-[min(100%,25rem)] origin-bottom rounded-[2rem] border border-[#d8d8d2] bg-white p-5 text-left shadow-[0_22px_70px_rgba(26,26,26,0.10)] transition-all duration-500 ease-out"
                     style={{
                       transform: `translateX(calc(-50% + ${offset * 2.2}rem)) translateY(${Math.abs(offset) * 1.15}rem) rotate(${offset * 4}deg) scale(${isActive ? 1 : 0.92})`,
@@ -288,7 +322,7 @@ export function LandingPage() {
                 <button
                   key={feature.title}
                   type="button"
-                  onClick={() => setActiveFeature(index)}
+                  onClick={() => showFeature(index)}
                   className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
                   aria-label={`Show ${feature.title}`}
                 />
