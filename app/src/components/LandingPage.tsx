@@ -141,8 +141,8 @@ export function LandingPage() {
             },
             {
               step: "02",
-              title: "Turn it into a usable card",
-              body: "AI structures ingredients, method, timing, substitutions, and the family story — then asks what is missing before it gets lost.",
+              title: "Turn it into a usable recipe",
+              body: "AI structures ingredients, method, timing, quantities, substitutions, and the family story — then asks what is missing before it gets lost.",
             },
             {
               step: "03",
