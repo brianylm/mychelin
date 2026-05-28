@@ -36,16 +36,16 @@ export function LandingPage() {
           </a>
           <div className="flex flex-1 items-center justify-end gap-1">
             <a
-              href="#features"
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
-            >
-              Features
-            </a>
-            <a
               href="#how-it-works"
               className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
             >
               How it works
+            </a>
+            <a
+              href="#features"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
+            >
+              Features
             </a>
             <Link
               href="/login?mode=signup"
