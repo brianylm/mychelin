@@ -43,7 +43,7 @@ export function ServingScaler({ baseYield, onScaleChange }: ServingScalerProps) 
         {isScaled && (
           <button
             onClick={() => handleChange(baseServings)}
-            className="text-[10px] font-medium text-amber-600 hover:text-amber-700 transition-colors"
+            className="text-[10px] font-medium text-[#800020] hover:text-[#800020] transition-colors"
           >
             Reset
           </button>
@@ -57,7 +57,7 @@ export function ServingScaler({ baseYield, onScaleChange }: ServingScalerProps) 
         >
           −
         </button>
-        <span className={`min-w-[4rem] text-center text-sm font-semibold tabular-nums ${isScaled ? "text-amber-700" : "text-neutral-800"}`}>
+        <span className={`min-w-[4rem] text-center text-sm font-semibold tabular-nums ${isScaled ? "text-[#800020]" : "text-neutral-800"}`}>
           {currentServings} {yieldLabel}
         </span>
         <button

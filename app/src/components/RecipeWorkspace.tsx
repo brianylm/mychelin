@@ -18,6 +18,7 @@ import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 import { RecipeSearchModal } from "@/components/search/RecipeSearchModal";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
+import { ClipboardPaste, Link, PencilLine } from "lucide-react";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -82,6 +83,7 @@ function RecipeWorkspaceContent({
   // ── FAB speed-dial state ─────────────────────────────────
   const [fabOpen, setFabOpen] = useState(false);
   const [pasteRecipeId, setPasteRecipeId] = useState<number | null>(null);
+  const [pasteMode, setPasteMode] = useState<"paste" | "url">("paste");
   const fabRef = useRef<HTMLDivElement>(null);
 
   // Close speed-dial on outside tap
@@ -115,10 +117,9 @@ function RecipeWorkspaceContent({
     }
   }, [createRecipe]);
 
-  const handleQuickCapture = useCallback(async () => {
+  const createDraftForCapture = useCallback(async (mode: "paste" | "url") => {
     setFabOpen(false);
     try {
-      // Create a blank draft, then open the paste-extract modal on it.
       const res = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -128,11 +129,20 @@ function RecipeWorkspaceContent({
       const recipe = await res.json();
       qc.invalidateQueries({ queryKey: ["recipes"] });
       selectRecipe(recipe.id);
+      setPasteMode(mode);
       setPasteRecipeId(recipe.id);
     } catch (err) {
-      console.error("Quick capture failed:", err);
+      console.error("Recipe capture failed:", err);
     }
   }, [qc, selectRecipe]);
+
+  const handleQuickCapture = useCallback(() => {
+    createDraftForCapture("paste");
+  }, [createDraftForCapture]);
+
+  const handleImportUrl = useCallback(() => {
+    createDraftForCapture("url");
+  }, [createDraftForCapture]);
 
   const handlePasteModalClose = useCallback(() => {
     setPasteRecipeId(null);
@@ -170,7 +180,7 @@ function RecipeWorkspaceContent({
         />
       )}
 
-      <div className="flex h-[calc(100dvh-50px)] w-full bg-surface text-foreground">
+      <div className="flex h-[calc(100dvh-60px)] w-full bg-transparent text-foreground">
         {currentView === "recipes" && (
           <>
             <RecipeSidebar
@@ -189,14 +199,14 @@ function RecipeWorkspaceContent({
       </div>
 
       {/* ── Mobile FAB speed-dial ─────────────────────────────
-          Two-option popup: "Quick capture" (paste text → AI extract)
-          and "From scratch" (blank recipe). Only on the Recipes tab,
-          only on mobile, hidden when the sidebar drawer is open. */}
+          Three entry routes: import URL, paste text, or start from
+          scratch. Only on the Recipes tab, only on mobile, hidden when
+          the sidebar drawer is open. */}
       {showFab && (
         <>
           {/* Scrim behind speed-dial when open */}
           {fabOpen && (
-            <div className="fixed inset-0 z-40 bg-neutral-950/20 md:hidden" />
+            <div className="fixed inset-0 z-40 bg-stone-950/20 backdrop-blur-[2px] md:hidden" />
           )}
 
           <div
@@ -207,35 +217,42 @@ function RecipeWorkspaceContent({
             {/* Speed-dial options */}
             {fabOpen && (
               <div className="mb-1 flex flex-col items-end gap-2">
-                {/* Quick capture */}
                 <button
                   type="button"
-                  onClick={handleQuickCapture}
-                  className="flex w-48 items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
+                  onClick={handleImportUrl}
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
-                    Quick capture
+                    Import URL
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/>
-                    </svg>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                    <Link className="h-[18px] w-[18px]" />
                   </span>
                 </button>
 
-                {/* From scratch */}
+                <button
+                  type="button"
+                  onClick={handleQuickCapture}
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                >
+                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                    Paste text
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                    <ClipboardPaste className="h-[18px] w-[18px]" />
+                  </span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleFromScratch}
-                  className="flex w-48 items-center gap-2.5 rounded-full bg-white py-2 pl-4 pr-3 shadow-lg ring-1 ring-neutral-200 transition-transform active:scale-95"
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     From scratch
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                    </svg>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                    <PencilLine className="h-[18px] w-[18px]" />
                   </span>
                 </button>
               </div>
@@ -246,7 +263,7 @@ function RecipeWorkspaceContent({
               type="button"
               onClick={() => setFabOpen((v) => !v)}
               aria-label={fabOpen ? "Close menu" : "New recipe"}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-white shadow-lg ring-1 ring-amber-700/50 transition-transform active:scale-95"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-[#17131f] text-white shadow-[0_18px_40px_rgba(23,19,31,0.24)] ring-1 ring-white/20 transition-transform hover:bg-[#800020] active:scale-95"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -274,6 +291,7 @@ function RecipeWorkspaceContent({
           recipeId={pasteRecipeId}
           onClose={handlePasteModalClose}
           onRecipeUpdated={handlePasteModalDone}
+          initialMode={pasteMode}
         />
       )}
 

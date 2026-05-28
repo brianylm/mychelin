@@ -148,7 +148,7 @@ export function VoiceRecording({
                   onClick={() => playClip(clip)}
                   className={
                     playingId === clip.id
-                      ? "bg-amber-100 text-amber-700"
+                      ? "bg-[#800020]/10 text-[#800020]"
                       : ""
                   }
                 >

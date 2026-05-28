@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans } from "next/font/google";
+import { DM_Sans, Libre_Baskerville, Newsreader } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { PWARegister } from "@/components/PWARegister";
@@ -9,6 +9,18 @@ const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
   weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+const brandSerif = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-brand-serif",
+  weight: ["400", "500", "600"],
+});
+
+const logoSerif = Libre_Baskerville({
+  subsets: ["latin"],
+  variable: "--font-logo-serif",
+  weight: ["700"],
 });
 
 export const metadata: Metadata = {
@@ -34,7 +46,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   interactiveWidget: "resizes-content",
-  themeColor: "#d97706",
+  themeColor: "#800020",
 };
 
 export default function RootLayout({
@@ -43,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${dmSans.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${brandSerif.variable} ${logoSerif.variable}`}>
       <body className="min-h-screen bg-surface text-foreground antialiased">
         <AppProviders>
           <PWARegister />

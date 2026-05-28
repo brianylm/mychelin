@@ -99,6 +99,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [versionTimelineKey, setVersionTimelineKey] = useState(0);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pasteMode, setPasteMode] = useState<"paste" | "url">("paste");
   // "Surprise me by..." state for the inline book view. When the user
   // opens the filter popover we show an input; typing narrows the
   // random pool to recipes whose title or an ingredient matches.
@@ -460,7 +461,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           value={surpriseByQuery}
           onChange={(e) => setSurpriseByQuery(e.target.value)}
           placeholder="Search by ingredient, cuisine, or keyword…"
-          className="mb-4 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+          className="mb-4 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
         />
         <div className="flex gap-2">
           <Button
@@ -471,7 +472,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             Cancel
           </Button>
           <Button
-            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+            className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
             onClick={async () => {
               const q = surpriseByQuery.trim();
               if (!q) {
@@ -595,7 +596,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       {activeBook && (
                         <button
                           onClick={() => setShowShareModal({ type: "book", id: activeBook.id, name: activeBook.title })}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-amber-600"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-[#800020]"
                           title="Share book"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -614,7 +615,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 {/* Book's recipes as cards */}
                 {loadingBookRecipes ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
                   </div>
                 ) : activeBookRecipes.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-neutral-400">
@@ -628,9 +629,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       <button
                         key={recipe.id}
                         onClick={() => selectRecipe(recipe.id)}
-                        className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-left transition-all hover:border-amber-300 hover:shadow-md"
+                        className="group flex flex-col rounded-2xl border border-[#800020]/10 bg-white/80 p-0 text-left shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#800020]/25 hover:shadow-[0_22px_55px_rgba(60,43,25,0.14)]"
                       >
-                        <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+                        <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
                           {recipe.imageUrl ? (
                             <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
                           ) : (
@@ -638,9 +639,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                           )}
                         </div>
                         <div className="flex flex-1 flex-col p-4">
-                          <h3 className="font-semibold text-neutral-800 group-hover:text-amber-800">{recipe.title}</h3>
+                          <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
                           {recipe.cuisine && (
-                            <span className="mt-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
+                            <span className="mt-1 text-xs font-medium text-[#800020] bg-[#800020]/5 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
                           )}
                         </div>
                       </button>
@@ -653,7 +654,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                     user who can see this book can read the tips; only
                     members with edit rights can add them. */}
                 {activeBookId != null && (
-                  <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+                  <div className="mt-10 rounded-2xl border border-[#800020]/10 bg-white/80 p-5 shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70">
                     <CookingPrinciples
                       bookId={activeBookId}
                       canEdit={true}
@@ -679,7 +680,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   {recipes.length > 0 && (
                     <DropdownMenu.Root>
                       <DropdownMenu.Trigger>
-                        <Button variant="soft" color="amber" size="2">
+                        <Button variant="soft"  size="2">
                           🎲 Surprise me
                         </Button>
                       </DropdownMenu.Trigger>
@@ -727,7 +728,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                     </h3>
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
-                      className="text-xs font-medium text-amber-600 hover:text-amber-700"
+                      className="text-xs font-medium text-[#800020] hover:text-[#800020]"
                     >
                       + Create Book
                     </button>
@@ -735,18 +736,18 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                     {books.map((book) => {
                       const bgMap: Record<string, string> = {
-                        amber: "from-amber-50 to-amber-100/50",
-                        rose: "from-rose-50 to-rose-100/50",
-                        emerald: "from-emerald-50 to-emerald-100/50",
-                        sky: "from-sky-50 to-sky-100/50",
-                        violet: "from-violet-50 to-violet-100/50",
-                        slate: "from-slate-50 to-slate-100/50",
+                        amber: "from-[#800020]/5 to-[#800020]/10",
+                        rose: "from-[#800020]/10 to-[#f6f2eb]",
+                        emerald: "from-[#800020]/10 to-[#f6f2eb]",
+                        sky: "from-[#800020]/10 to-[#f6f2eb]",
+                        violet: "from-[#800020]/10 to-[#f6f2eb]",
+                        slate: "from-[#800020]/10 to-[#f6f2eb]",
                       };
-                      const bgClass = bgMap[book.coverColor] || "from-amber-50 to-amber-100/50";
+                      const bgClass = bgMap[book.coverColor] || "from-[#800020]/5 to-[#800020]/10";
                       return (
                         <div
                           key={book.id}
-                          className="group relative flex flex-col items-center gap-2 rounded-2xl border border-neutral-200 bg-gradient-to-br p-4 text-center transition-all hover:border-amber-300 hover:shadow-md cursor-pointer"
+                          className="group relative flex flex-col items-center gap-2 rounded-2xl border border-[#800020]/10 bg-gradient-to-br p-4 shadow-[0_12px_32px_rgba(60,43,25,0.07)] ring-1 ring-white/70 text-center transition-all hover:border-[#800020]/30 hover:shadow-md cursor-pointer"
                           style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
                           onClick={() => handleOpenBook(book.id)}
                         >
@@ -754,7 +755,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                           <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${bgClass} text-2xl`}>
                             {book.coverEmoji}
                           </div>
-                          <span className="text-sm font-semibold text-neutral-800 group-hover:text-amber-800 truncate w-full">
+                          <span className="text-sm font-semibold text-neutral-800 group-hover:text-[#521224] truncate w-full">
                             {book.title}
                           </span>
                           <span className="text-[10px] text-neutral-400">
@@ -766,9 +767,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                     {/* Create book card */}
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
-                      className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-neutral-200 p-4 text-center transition-all hover:border-amber-300 hover:bg-amber-50/30"
+                      className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#800020]/15 bg-white/50 p-4 text-center transition-all hover:border-[#800020]/30 hover:bg-[#800020]/5"
                     >
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-neutral-100 text-2xl text-neutral-400">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#800020]/5 text-2xl text-[#800020]/45">
                         +
                       </div>
                       <span className="text-sm font-medium text-neutral-400">New Book</span>
@@ -786,9 +787,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   <button
                     key={recipe.id}
                     onClick={() => selectRecipe(recipe.id)}
-                    className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-0 text-left transition-all hover:border-amber-300 hover:shadow-md"
+                    className="group flex flex-col rounded-2xl border border-[#800020]/10 bg-white/80 p-0 text-left shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#800020]/25 hover:shadow-[0_22px_55px_rgba(60,43,25,0.14)]"
                   >
-                    <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+                    <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
                       {recipe.imageUrl ? (
                         <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
                       ) : (
@@ -805,9 +806,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       )}
                     </div>
                     <div className="flex flex-1 flex-col p-4">
-                      <h3 className="font-semibold text-neutral-800 group-hover:text-amber-800">{recipe.title}</h3>
+                      <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
                       {recipe.cuisine && (
-                        <span className="mt-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
+                        <span className="mt-1 text-xs font-medium text-[#800020] bg-[#800020]/5 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
                       )}
                       {recipe.description && (
                         <p className="mt-2 line-clamp-2 text-xs text-neutral-500 leading-relaxed">{recipe.description}</p>
@@ -901,26 +902,26 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           }
         />
 
-        {/* Empty-state CTAs — two ways to populate a fresh recipe.
+        {/* Empty-state CTAs — fast ways to populate a fresh recipe.
             Compact pill-buttons on mobile so they don't eat half
             the viewport when the keyboard is up. Hidden once the
             recipe has ingredients or instructions. */}
         {(selectedRecipe.ingredients?.length ?? 0) === 0 &&
           (selectedRecipe.instructions?.length ?? 0) === 0 && (
-            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2 sm:gap-3">
+            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
               {/* Capture from conversation */}
               <button
                 onClick={() => setShowCaptureModal(true)}
-                className="group flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
                   🎙️
                 </div>
                 <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
-                  <h3 className="text-sm font-semibold text-amber-900">
+                  <h3 className="text-sm font-semibold text-[#241017]">
                     Capture from a conversation
                   </h3>
-                  <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
+                  <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
                     AI
                   </span>
                   <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
@@ -930,24 +931,50 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 </div>
               </button>
 
-              {/* Paste from anywhere */}
+              {/* Import from URL */}
               <button
-                onClick={() => setShowPasteModal(true)}
-                className="group flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+                onClick={() => {
+                  setPasteMode("url");
+                  setShowPasteModal(true);
+                }}
+                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
-                  📋
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
+                  🔗
                 </div>
                 <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
-                  <h3 className="text-sm font-semibold text-amber-900">
-                    Paste from anywhere
+                  <h3 className="text-sm font-semibold text-[#241017]">
+                    Import from URL
                   </h3>
-                  <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-800">
+                  <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
                     AI
                   </span>
                   <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
-                    Copy a recipe from a webpage, a message, or a photo.
-                    We&apos;ll structure it for you.
+                    Paste a recipe page link and we&apos;ll pull out the ingredients and steps.
+                  </p>
+                </div>
+              </button>
+
+              {/* Paste from anywhere */}
+              <button
+                onClick={() => {
+                  setPasteMode("paste");
+                  setShowPasteModal(true);
+                }}
+                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+              >
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
+                  📋
+                </div>
+                <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
+                  <h3 className="text-sm font-semibold text-[#241017]">
+                    Paste text
+                  </h3>
+                  <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
+                    AI
+                  </span>
+                  <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
+                    Use notes from a message, cookbook OCR, or a family call.
                   </p>
                 </div>
               </button>
@@ -964,7 +991,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
         {/* Source URL attribution */}
         {selectedRecipe.sourceUrl && (
-          <div className="flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
+          <div className="flex items-center gap-1.5 rounded-lg border border-[#800020]/15 bg-[#800020]/5 px-3 py-2 text-sm text-[#521224]">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
@@ -974,7 +1001,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               href={selectedRecipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium underline underline-offset-2 hover:text-sky-900"
+              className="font-medium underline underline-offset-2 hover:text-[#241017]"
             >
               {(() => { try { return new URL(selectedRecipe.sourceUrl).hostname.replace(/^www\./, ""); } catch { return selectedRecipe.sourceUrl; } })()}
             </a>
@@ -1111,7 +1138,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             </h2>
             <button
               onClick={() => setShowCookAlong(true)}
-              className="flex items-center gap-1 rounded-xl bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-200"
+              className="flex items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15"
             >
               👨‍🍳 Cook Along
             </button>
@@ -1142,7 +1169,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           )}
           <button
             onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-amber-300 hover:bg-amber-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-[#800020]/30 hover:bg-[#800020]/5"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="18" cy="5" r="3" />
@@ -1238,10 +1265,11 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         <PasteRecipeModal
           recipeId={selectedRecipe.id}
           onClose={() => setShowPasteModal(false)}
+          initialMode={pasteMode}
           onRecipeUpdated={() => {
             qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
             qc.invalidateQueries({ queryKey: ["recipes"] });
-            addToast("Recipe extracted from pasted text!", "success");
+            addToast(pasteMode === "url" ? "Recipe imported from URL!" : "Recipe extracted from pasted text!", "success");
           }}
         />
       )}

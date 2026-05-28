@@ -112,7 +112,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
         <div className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
             </div>
           )}
 
@@ -142,9 +142,9 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
                 <li key={recipe.id}>
                   <button
                     onClick={() => handlePick(recipe.id)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-amber-50"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#800020]/5"
                   >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-amber-50">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#800020]/5">
                       {recipe.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -164,14 +164,14 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
                         {matchedIngredient ? (
                           <>
                             Found in ingredients:{" "}
-                            <span className="font-medium text-amber-700">
+                            <span className="font-medium text-[#800020]">
                               {matchedIngredient}
                             </span>
                           </>
                         ) : (
                           <>
                             {recipe.cuisine && (
-                              <span className="mr-1 text-amber-700">
+                              <span className="mr-1 text-[#800020]">
                                 {recipe.cuisine}
                               </span>
                             )}

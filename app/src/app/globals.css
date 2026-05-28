@@ -4,19 +4,19 @@
 :root {
   color-scheme: light;
 
-  /* Surface colors */
-  --surface: 246 246 245;
+  /* Surface colors — aligned with the landing page's warm editorial canvas */
+  --surface: 250 250 248;
   --surface-card: 255 255 254;
-  --foreground: 28 28 30;
+  --foreground: 26 26 26;
 
-  /* Mychelin accent — warm amber/gold */
-  --accent: 217 119 6;
-  --accent-light: 252 211 77;
-  --accent-dark: 180 83 9;
+  /* Mychelin accent — landing-page burgundy */
+  --accent: 128 0 32;
+  --accent-light: 244 231 234;
+  --accent-dark: 82 18 36;
 
   /* Semantic */
-  --background: #f6f6f5;
-  --color-foreground: #1c1c1e;
+  --background: #fafaf8;
+  --color-foreground: #1a1a1a;
 }
 
 @theme inline {
@@ -103,7 +103,9 @@ html {
 
 body {
   min-height: 100vh;
-  background-color: rgb(var(--surface));
+  background:
+    radial-gradient(circle at 16% 4%, rgba(128, 0, 32, 0.08), transparent 26rem),
+    linear-gradient(180deg, #fafaf8 0%, #f6f2eb 100%);
   color: rgb(var(--foreground));
   font-feature-settings:
     "rlig" 1,
@@ -132,6 +134,18 @@ h6,
 .brand-serif h2,
 .brand-serif h3 {
   font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
+}
+
+.logo-serif,
+.logo-serif span {
+  font-family: var(--font-logo-serif), "Libre Baskerville", Georgia, serif !important;
+  font-weight: 700 !important;
+}
+
+.app-editorial-title {
+  font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.04em;
 }
 
 .landing-content,
@@ -182,31 +196,31 @@ button {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Radix theme overrides for Mychelin amber accent */
+/* Radix theme overrides for Mychelin burgundy accent */
 .radix-themes {
   --cursor-button: pointer;
-  --accent-1: #fffbeb;
-  --accent-2: #fef3c7;
-  --accent-3: #fde68a;
-  --accent-4: #fcd34d;
-  --accent-5: #fbbf24;
-  --accent-6: #f59e0b;
-  --accent-7: #d97706;
-  --accent-8: #b45309;
-  --accent-9: #d97706;
-  --accent-10: #b45309;
-  --accent-11: #92400e;
-  --accent-12: #451a03;
-  --accent-a1: rgba(217, 119, 6, 0.05);
-  --accent-a2: rgba(217, 119, 6, 0.1);
-  --accent-a3: rgba(217, 119, 6, 0.15);
-  --accent-a4: rgba(217, 119, 6, 0.2);
-  --accent-a5: rgba(217, 119, 6, 0.3);
-  --accent-a6: rgba(217, 119, 6, 0.4);
-  --accent-a7: rgba(217, 119, 6, 0.5);
-  --accent-a8: rgba(217, 119, 6, 0.6);
-  --accent-a9: rgba(217, 119, 6, 0.7);
-  --accent-a10: rgba(217, 119, 6, 0.8);
-  --accent-a11: rgba(217, 119, 6, 0.9);
-  --accent-a12: rgba(217, 119, 6, 0.95);
+  --accent-1: #fffafb;
+  --accent-2: #f9eef1;
+  --accent-3: #f1dce2;
+  --accent-4: #e4bdc8;
+  --accent-5: #d89caf;
+  --accent-6: #c6758f;
+  --accent-7: #ad4d70;
+  --accent-8: #963557;
+  --accent-9: #800020;
+  --accent-10: #6d001b;
+  --accent-11: #800020;
+  --accent-12: #241017;
+  --accent-a1: rgba(128, 0, 32, 0.04);
+  --accent-a2: rgba(128, 0, 32, 0.08);
+  --accent-a3: rgba(128, 0, 32, 0.13);
+  --accent-a4: rgba(128, 0, 32, 0.2);
+  --accent-a5: rgba(128, 0, 32, 0.3);
+  --accent-a6: rgba(128, 0, 32, 0.42);
+  --accent-a7: rgba(128, 0, 32, 0.55);
+  --accent-a8: rgba(128, 0, 32, 0.66);
+  --accent-a9: rgba(128, 0, 32, 0.78);
+  --accent-a10: rgba(128, 0, 32, 0.86);
+  --accent-a11: rgba(128, 0, 32, 0.92);
+  --accent-a12: rgba(128, 0, 32, 0.96);
 }

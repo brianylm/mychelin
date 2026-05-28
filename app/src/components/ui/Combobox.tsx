@@ -155,7 +155,7 @@ export function Combobox({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 pr-8 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400 ${
+          className={`w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 pr-8 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400 ${
             !value && !isOpen ? "text-neutral-400" : "text-neutral-900"
           }`}
         />
@@ -200,7 +200,7 @@ export function Combobox({
               {query ? (
                 <button
                   type="button"
-                  className="w-full text-left text-amber-700 hover:underline"
+                  className="w-full text-left text-[#800020] hover:underline"
                   onClick={() => selectOption({ label: query, value: query })}
                 >
                   Use &ldquo;{query}&rdquo;
@@ -226,7 +226,7 @@ export function Combobox({
                       data-combobox-option
                       className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
                         idx === highlightIdx
-                          ? "bg-amber-50 text-amber-800"
+                          ? "bg-[#800020]/5 text-[#521224]"
                           : value === opt.value
                             ? "bg-neutral-50 font-medium text-neutral-900"
                             : "text-neutral-700 hover:bg-neutral-50"
@@ -238,7 +238,7 @@ export function Combobox({
                     >
                       {opt.label}
                       {value === opt.value && (
-                        <svg className="ml-auto h-3.5 w-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <svg className="ml-auto h-3.5 w-3.5 text-[#800020]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}

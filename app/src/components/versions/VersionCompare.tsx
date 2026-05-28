@@ -41,7 +41,7 @@ interface VersionCompareProps {
 const STATUS_CONFIG: Record<string, { bg: string; text: string; Icon: any }> = {
   added: { bg: "bg-emerald-50", text: "text-emerald-700", Icon: PlusIcon },
   removed: { bg: "bg-red-50", text: "text-red-700", Icon: MinusIcon },
-  changed: { bg: "bg-amber-50", text: "text-amber-700", Icon: ReloadIcon },
+  changed: { bg: "bg-[#800020]/5", text: "text-[#800020]", Icon: ReloadIcon },
   unchanged: { bg: "bg-white", text: "text-neutral-500", Icon: null },
 };
 
@@ -51,7 +51,7 @@ function ClosenessStars({ rating }: { rating: number | null }) {
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) =>
         star <= rating
-          ? <StarFilledIcon key={star} className="h-2.5 w-2.5 text-amber-400" />
+          ? <StarFilledIcon key={star} className="h-2.5 w-2.5 text-[#800020]/70" />
           : <StarIcon key={star} className="h-2.5 w-2.5 text-neutral-300" />
       )}
     </div>
@@ -80,7 +80,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <span className="text-amber-600">⇄</span>
+            <span className="text-[#800020]">⇄</span>
             <h3 className="text-sm font-semibold text-neutral-800">Compare Versions</h3>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100">
@@ -90,7 +90,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
           </div>
         ) : data ? (
           <div>
@@ -113,7 +113,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
               {(["ingredients", "instructions", "notes"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
                   className={`flex-1 py-2.5 text-xs font-medium capitalize transition-colors ${
-                    tab === t ? "border-b-2 border-amber-500 text-amber-700" : "text-neutral-500 hover:text-neutral-700"
+                    tab === t ? "border-b-2 border-amber-500 text-[#800020]" : "text-neutral-500 hover:text-neutral-700"
                   }`}>{t}</button>
               ))}
             </div>
@@ -167,7 +167,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
                         <ol className="space-y-2">
                           {col.items.map((inst: any, i: number) => (
                             <li key={i} className="text-xs leading-relaxed text-neutral-700">
-                              <span className="mr-1 font-semibold text-amber-600">{inst.step ?? i + 1}.</span>
+                              <span className="mr-1 font-semibold text-[#800020]">{inst.step ?? i + 1}.</span>
                               {inst.content ?? inst.text}
                             </li>
                           ))}
@@ -202,7 +202,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
                     return (<>
                       {added > 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">+{added} added</span>}
                       {removed > 0 && <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-700">-{removed} removed</span>}
-                      {changed > 0 && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">~{changed} changed</span>}
+                      {changed > 0 && <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[#800020]">~{changed} changed</span>}
                     </>);
                   })()}
                 </div>

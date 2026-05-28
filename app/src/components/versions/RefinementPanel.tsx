@@ -156,8 +156,8 @@ Return ONLY the JSON array, no other text.`,
 
         {/* Context */}
         <div className="border-b border-neutral-100 px-4 py-3">
-          <div className="rounded-xl bg-amber-50 p-3">
-            <div className="flex items-center gap-2 text-xs text-amber-700">
+          <div className="rounded-xl bg-[#800020]/5 p-3">
+            <div className="flex items-center gap-2 text-xs text-[#800020]">
               <span>Based on v{labelOf(version)} cook-along</span>
               {version.closenessRating && (
                 <div className="flex items-center gap-0.5">
@@ -170,7 +170,7 @@ Return ONLY the JSON array, no other text.`,
               )}
             </div>
             {version.closenessNotes && (
-              <p className="mt-1 text-xs text-amber-600 italic">&quot;{version.closenessNotes}&quot;</p>
+              <p className="mt-1 text-xs text-[#800020] italic">&quot;{version.closenessNotes}&quot;</p>
             )}
           </div>
         </div>
@@ -179,7 +179,7 @@ Return ONLY the JSON array, no other text.`,
         <div className="px-4 py-3">
           {loading ? (
             <div className="flex flex-col items-center gap-2 py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
               <p className="text-xs text-neutral-500">Generating suggestions…</p>
             </div>
           ) : suggestions.length === 0 ? (
@@ -193,10 +193,10 @@ Return ONLY the JSON array, no other text.`,
               {suggestions.map((suggestion, i) => (
                 <button key={i} onClick={() => toggleSuggestion(i)}
                   className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
-                    selectedSuggestions.has(i) ? "border-amber-400 bg-amber-50/50" : "border-neutral-200 hover:border-neutral-300"
+                    selectedSuggestions.has(i) ? "border-[#800020]/45 bg-[#800020]/5" : "border-neutral-200 hover:border-neutral-300"
                   }`}>
                   <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-                    selectedSuggestions.has(i) ? "border-amber-500 bg-amber-500" : "border-neutral-300"
+                    selectedSuggestions.has(i) ? "border-amber-500 bg-[#800020]/50" : "border-neutral-300"
                   }`}>
                     {selectedSuggestions.has(i) && <CheckIcon className="h-3 w-3 text-white" />}
                   </div>
@@ -205,7 +205,7 @@ Return ONLY the JSON array, no other text.`,
                     <div className="mt-0.5 flex items-center gap-1 text-xs">
                       <span className="text-neutral-400">{suggestion.currentAmount}</span>
                       <ChevronRightIcon className="h-2.5 w-2.5 text-neutral-300" />
-                      <span className="font-medium text-amber-700">{suggestion.suggestedAmount}</span>
+                      <span className="font-medium text-[#800020]">{suggestion.suggestedAmount}</span>
                     </div>
                     <p className="mt-0.5 text-[11px] text-neutral-500">{suggestion.reason}</p>
                   </div>
@@ -223,7 +223,7 @@ Return ONLY the JSON array, no other text.`,
               <ReloadIcon className="h-3 w-3" /> Regenerate
             </button>
             <button onClick={handleApply} disabled={saving || selectedSuggestions.size === 0}
-              className="flex items-center gap-1 rounded-xl bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
+              className="flex items-center gap-1 rounded-xl bg-[#800020]/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#17131f] disabled:opacity-50">
               {saving ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <span>✨</span>}
               Apply {selectedSuggestions.size} Suggestion{selectedSuggestions.size !== 1 ? "s" : ""}
             </button>

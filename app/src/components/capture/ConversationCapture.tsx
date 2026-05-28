@@ -70,13 +70,13 @@ function isSetupError(message: string): boolean {
 function ErrorBanner({ message }: { message: string }) {
   if (isSetupError(message)) {
     return (
-      <div className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+      <div className="border-t border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs text-[#241017]">
         <div className="mb-1 flex items-center gap-1.5 font-semibold">
           <span>⚙️</span>
           <span>AI capture needs a Gemini API key</span>
         </div>
-        <p className="leading-relaxed text-amber-800">
-          Add a <code className="rounded bg-amber-100 px-1">GOOGLE_API_KEY</code>{" "}
+        <p className="leading-relaxed text-[#521224]">
+          Add a <code className="rounded bg-[#800020]/10 px-1">GOOGLE_API_KEY</code>{" "}
           environment variable in Vercel → Project Settings → Environment
           Variables, then redeploy. Get a free key at{" "}
           <a
@@ -453,10 +453,10 @@ export function ConversationCapture({
 
               {isRecording && processingChunks > 0 && (
                 <div className="flex justify-center py-2">
-                  <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
+                  <div className="flex items-center gap-2 rounded-full bg-[#800020]/5 px-3 py-1 text-[11px] text-[#800020]">
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#800020]/50" />
                     </span>
                     Transcribing the last few seconds…
                   </div>
@@ -482,7 +482,7 @@ export function ConversationCapture({
                   <button
                     onClick={startRecording}
                     disabled={connecting}
-                    className="flex items-center gap-2 rounded-full bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-amber-700 active:scale-95 disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#800020] active:scale-95 disabled:opacity-60"
                   >
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
@@ -498,7 +498,7 @@ export function ConversationCapture({
                 {messages.length > 0 && !isRecording && (
                   <Button
                     onClick={goToNaming}
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    className="bg-[#17131f] hover:bg-[#800020] text-white"
                   >
                     <MagicWandIcon />
                     Done
@@ -550,7 +550,7 @@ export function ConversationCapture({
                           }))
                         }
                         placeholder="e.g. Ah Ma, Me, Grandpa"
-                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white"
+                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white"
                       />
                       {preview && (
                         <p className="mt-2 line-clamp-2 text-xs text-neutral-500 italic">
@@ -571,7 +571,7 @@ export function ConversationCapture({
               </Button>
               <Button
                 onClick={saveConversation}
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
                 disabled={uniqueSpeakerLabels.some(
                   (l) => !speakerNameMap[l]?.trim()
                 )}
@@ -585,7 +585,7 @@ export function ConversationCapture({
 
         {step === "processing" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#800020]/15 border-t-[#800020]" />
             <p className="text-center text-sm text-neutral-700">
               Extracting the recipe from your conversation…
             </p>

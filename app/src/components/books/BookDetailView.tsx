@@ -61,7 +61,7 @@ interface BookDetailViewProps {
 type Tab = "recipes" | "members" | "activity" | "principles";
 
 const COLORS = [
-  { name: "amber", label: "Amber", class: "bg-amber-100 border-amber-200" },
+  { name: "amber", label: "Amber", class: "bg-[#800020]/10 border-[#800020]/15" },
   { name: "rose", label: "Rose", class: "bg-rose-100 border-rose-200" },
   { name: "emerald", label: "Emerald", class: "bg-emerald-100 border-emerald-200" },
   { name: "sky", label: "Sky", class: "bg-sky-100 border-sky-200" },
@@ -286,14 +286,14 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
 
   const getColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
-      amber: "bg-amber-100",
+      amber: "bg-[#800020]/10",
       rose: "bg-rose-100",
       emerald: "bg-emerald-100",
       sky: "bg-sky-100",
       violet: "bg-violet-100",
       slate: "bg-slate-100",
     };
-    return colorMap[color] || "bg-amber-100";
+    return colorMap[color] || "bg-[#800020]/10";
   };
 
   if (loading && !bookDetail) {
@@ -327,7 +327,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
           </div>
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#800020] border-t-transparent"></div>
               <p className="mt-3 text-sm text-neutral-400">Loading recipes…</p>
             </div>
           </div>
@@ -343,7 +343,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
           <p className="text-neutral-600">Book not found</p>
           <button
             onClick={onBack}
-            className="mt-4 rounded-xl bg-amber-600 px-4 py-2 text-white"
+            className="mt-4 rounded-xl bg-[#17131f] px-4 py-2 text-white"
           >
             Go Back
           </button>
@@ -424,7 +424,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                 </button>
                 <button
                   onClick={handleUpdateBook}
-                  className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white"
+                  className="rounded-lg bg-[#17131f] px-4 py-2 text-sm font-medium text-white"
                 >
                   Save
                 </button>
@@ -465,7 +465,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? "bg-white text-amber-700 shadow-sm"
+                  ? "bg-white text-[#800020] shadow-sm"
                   : "text-neutral-600 hover:text-neutral-900"
               }`}
             >
@@ -483,7 +483,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                 {canEdit && (
                   <button 
                     onClick={() => setShowRecipePicker(true)}
-                    className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 transition-colors"
+                    className="rounded-lg bg-[#17131f] px-4 py-2 text-sm font-medium text-white hover:bg-[#800020] transition-colors"
                   >
                     Add Recipe
                   </button>
@@ -499,11 +499,11 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                   {bookDetail.recipes.map((recipe) => (
                     <div
                       key={recipe.id}
-                      className="group rounded-xl border border-neutral-200 p-4 hover:border-amber-200 hover:shadow-sm transition-all"
+                      className="group rounded-xl border border-neutral-200 p-4 hover:border-[#800020]/15 hover:shadow-sm transition-all"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h3
-                          className="font-medium text-neutral-900 cursor-pointer hover:text-amber-700 transition-colors flex-1"
+                          className="font-medium text-neutral-900 cursor-pointer hover:text-[#800020] transition-colors flex-1"
                           onClick={() => handleRecipeClick(recipe.id)}
                         >
                           {recipe.title}
@@ -529,7 +529,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                         </div>
                       </div>
                       {recipe.forkedFrom && (
-                        <div className="mb-2 flex items-center gap-1 text-xs text-amber-600">
+                        <div className="mb-2 flex items-center gap-1 text-xs text-[#800020]">
                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="12" cy="18" r="3"/>
                             <circle cx="6" cy="6" r="3"/>
@@ -563,7 +563,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                 {bookDetail.isOwner && (
                   <button 
                     onClick={() => setShowInviteMember(true)}
-                    className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 transition-colors"
+                    className="rounded-lg bg-[#17131f] px-4 py-2 text-sm font-medium text-white hover:bg-[#800020] transition-colors"
                   >
                     Invite Member
                   </button>
@@ -583,7 +583,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           member.role === "owner"
-                            ? "bg-amber-50 text-amber-700"
+                            ? "bg-[#800020]/5 text-[#800020]"
                             : member.role === "editor"
                             ? "bg-blue-50 text-blue-700"
                             : "bg-gray-50 text-gray-700"

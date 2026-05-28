@@ -137,7 +137,7 @@ export function FridgeView() {
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-all",
                 filter === loc.id
-                  ? "bg-amber-600 text-white shadow-sm"
+                  ? "bg-[#17131f] text-white shadow-sm"
                   : "text-neutral-600 hover:bg-neutral-100"
               )}
             >
@@ -156,7 +156,7 @@ export function FridgeView() {
                 value={draft.name}
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                 placeholder="Item name"
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
                 autoFocus
               />
               <div className="flex gap-2">
@@ -167,7 +167,7 @@ export function FridgeView() {
                   }
                   placeholder="Qty"
                   type="number"
-                  className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
+                  className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
                 />
                 <input
                   value={draft.unit}
@@ -175,7 +175,7 @@ export function FridgeView() {
                     setDraft((d) => ({ ...d, unit: e.target.value }))
                   }
                   placeholder="Unit (g, ml, pcs)"
-                  className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
+                  className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
                 />
               </div>
               <select
@@ -183,7 +183,7 @@ export function FridgeView() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, location: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
               >
                 <option value="fridge">🧊 Fridge</option>
                 <option value="freezer">❄️ Freezer</option>
@@ -195,7 +195,7 @@ export function FridgeView() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, expiryDate: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
                 placeholder="Expiry date"
               />
             </div>
@@ -243,7 +243,7 @@ export function FridgeView() {
                     expired
                       ? "border-red-200 bg-red-50/50"
                       : expiring
-                        ? "border-amber-200 bg-amber-50/50"
+                        ? "border-[#800020]/15 bg-[#800020]/5"
                         : "border-neutral-200"
                   )}
                 >
@@ -270,7 +270,7 @@ export function FridgeView() {
                             expired
                               ? "font-medium text-red-600"
                               : expiring
-                                ? "font-medium text-amber-600"
+                                ? "font-medium text-[#800020]"
                                 : ""
                           )}
                         >

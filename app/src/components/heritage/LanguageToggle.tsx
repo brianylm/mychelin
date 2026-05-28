@@ -23,7 +23,7 @@ export function LanguageToggle({
           onClick={() => onToggle(lang)}
           className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
             currentLang === lang
-              ? "bg-amber-600 text-white shadow-sm"
+              ? "bg-[#17131f] text-white shadow-sm"
               : "text-neutral-600 hover:bg-neutral-100"
           }`}
         >

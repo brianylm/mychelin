@@ -53,7 +53,7 @@ export function BookSelector({ currentBookId, onSave }: BookSelectorProps) {
       <select
         value={selectedId ?? ""}
         onChange={handleChange}
-        className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white"
+        className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white"
       >
         <option value="">No book</option>
         {books.map((book) => (

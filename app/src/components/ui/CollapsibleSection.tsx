@@ -47,7 +47,7 @@ export function CollapsibleSection({
           </div>
         </div>
         {badge !== undefined && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-700">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
             {badge}
           </span>
         )}

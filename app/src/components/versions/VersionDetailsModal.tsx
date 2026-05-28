@@ -89,7 +89,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
         <div className="space-y-5 px-4 py-4">
           {/* Meta */}
           {(version.changeNote || version.closenessRating !== null) && (
-            <div className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+            <div className="rounded-xl bg-[#800020]/5 p-3 text-xs text-[#521224]">
               {version.changeNote && (
                 <p className="font-medium">{version.changeNote}</p>
               )}
@@ -157,12 +157,12 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
               <ol className="space-y-2">
                 {version.instructions.map((inst, i) => (
                   <li key={i} className="text-sm leading-relaxed text-neutral-700">
-                    <span className="mr-1.5 font-semibold text-amber-600">
+                    <span className="mr-1.5 font-semibold text-[#800020]">
                       {inst.step ?? i + 1}.
                     </span>
                     {inst.content ?? inst.text}
                     {inst.tip && (
-                      <div className="mt-1 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-700">
+                      <div className="mt-1 rounded-lg bg-[#800020]/5 px-2 py-1 text-xs text-[#800020]">
                         💡 {inst.tip}
                       </div>
                     )}
@@ -186,7 +186,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           {canRefine && onRefine && (
             <button
               onClick={onRefine}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-amber-700"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#17131f] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#800020]"
             >
               ✨ Refine with AI
             </button>

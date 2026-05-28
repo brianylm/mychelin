@@ -19,12 +19,12 @@ const FOOD_EMOJIS = [
 ];
 
 const COLORS = [
-  { name: "amber", label: "Amber", class: "bg-amber-100 border-amber-200" },
-  { name: "rose", label: "Rose", class: "bg-rose-100 border-rose-200" },
-  { name: "emerald", label: "Emerald", class: "bg-emerald-100 border-emerald-200" },
-  { name: "sky", label: "Sky", class: "bg-sky-100 border-sky-200" },
-  { name: "violet", label: "Violet", class: "bg-violet-100 border-violet-200" },
-  { name: "slate", label: "Slate", class: "bg-slate-100 border-slate-200" },
+  { name: "amber", label: "Amber", class: "bg-[#800020]/10 border-[#800020]/15" },
+  { name: "rose", label: "Blush", class: "bg-[#800020]/10 border-[#800020]/15" },
+  { name: "emerald", label: "Sage", class: "bg-[#f6f2eb] border-[#800020]/15" },
+  { name: "sky", label: "Parchment", class: "bg-[#fafaf8] border-[#800020]/15" },
+  { name: "violet", label: "Mulberry", class: "bg-[#800020]/15 border-[#800020]/20" },
+  { name: "slate", label: "Ink", class: "bg-[#17131f]/10 border-[#17131f]/15" },
 ];
 
 export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps) {
@@ -53,11 +53,11 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/55 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-2xl bg-white p-6">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-[#fffdfb] p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-neutral-900">Create Recipe Book</h2>
           <button
@@ -73,7 +73,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
           <div className="flex items-center gap-3">
             <div
               className={`flex h-16 w-16 items-center justify-center rounded-xl text-2xl border-2 ${
-                COLORS.find(c => c.name === coverColor)?.class || "bg-amber-100 border-amber-200"
+                COLORS.find(c => c.name === coverColor)?.class || "bg-[#800020]/10 border-[#800020]/15"
               }`}
             >
               {coverEmoji}
@@ -98,7 +98,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="My Recipe Collection"
-              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-100"
+              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-[#800020]/45 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/10"
               required
             />
           </div>
@@ -113,7 +113,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
               onChange={(e) => setDescription(e.target.value)}
               placeholder="A collection of my favorite family recipes..."
               rows={3}
-              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-amber-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-100 resize-none"
+              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-[#800020]/45 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/10 resize-none"
             />
           </div>
 
@@ -130,7 +130,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   onClick={() => setCoverEmoji(emoji)}
                   className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl transition-all ${
                     coverEmoji === emoji
-                      ? "bg-amber-100 ring-2 ring-amber-400"
+                      ? "bg-[#800020]/10 ring-2 ring-[#800020]/35"
                       : "hover:bg-neutral-100"
                   }`}
                 >
@@ -153,7 +153,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   onClick={() => setCoverColor(color.name)}
                   className={`flex items-center gap-2 rounded-lg border-2 p-3 transition-all ${
                     coverColor === color.name
-                      ? "ring-2 ring-amber-400"
+                      ? "ring-2 ring-[#800020]/35"
                       : "border-neutral-200 hover:border-neutral-300"
                   } ${color.class}`}
                 >
@@ -177,7 +177,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
             <button
               type="submit"
               disabled={!title.trim() || submitting}
-              className="flex-1 rounded-xl bg-amber-600 px-4 py-3 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 rounded-xl bg-[#17131f] px-4 py-3 font-medium text-white transition-colors hover:bg-[#800020] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Creating..." : "Create Book"}
             </button>

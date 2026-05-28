@@ -114,7 +114,7 @@ export function RecipeReview({
           <Button
             onClick={() => onSave(editedRecipe)}
             disabled={isSaving || !editedRecipe.title.trim()}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="bg-[#17131f] hover:bg-[#800020] text-white"
           >
             {isSaving ? "Saving..." : (
               <>
@@ -237,7 +237,7 @@ export function RecipeReview({
           <div className="space-y-3">
             {editedRecipe.instructions.map((instruction, index) => (
               <div key={index} className="flex gap-3 items-start">
-                <div className="flex-shrink-0 w-6 h-6 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center text-sm font-medium">
+                <div className="flex-shrink-0 w-6 h-6 bg-[#800020]/10 text-[#800020] rounded-full flex items-center justify-center text-sm font-medium">
                   {index + 1}
                 </div>
                 <div className="flex-1 space-y-2">

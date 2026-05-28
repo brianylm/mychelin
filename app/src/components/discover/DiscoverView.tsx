@@ -109,10 +109,10 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
         </div>
 
         {/* Narrow-by filter */}
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+        <div className="rounded-2xl border border-[#800020]/15 bg-[#800020]/5 p-4">
           <label
             htmlFor="surprise-filter"
-            className="mb-2 block text-xs font-semibold uppercase tracking-wide text-amber-800"
+            className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#521224]"
           >
             Surprise me by…
           </label>
@@ -122,15 +122,15 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
             placeholder="chicken, Italian, soup… (leave blank for all recipes)"
-            className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+            className="w-full rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
           />
-          <p className="mt-2 text-[11px] leading-relaxed text-amber-700">
+          <p className="mt-2 text-[11px] leading-relaxed text-[#800020]">
             Narrow the randomiser by an ingredient, cuisine, or keyword.
             Matches recipe titles AND ingredient lists. e.g.{" "}
             <button
               type="button"
               onClick={() => setFilterQuery("chicken")}
-              className="underline underline-offset-2 hover:text-amber-900"
+              className="underline underline-offset-2 hover:text-[#241017]"
             >
               chicken
             </button>
@@ -138,7 +138,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             <button
               type="button"
               onClick={() => setFilterQuery("italian")}
-              className="underline underline-offset-2 hover:text-amber-900"
+              className="underline underline-offset-2 hover:text-[#241017]"
             >
               italian
             </button>
@@ -146,13 +146,13 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             <button
               type="button"
               onClick={() => setFilterQuery("soup")}
-              className="underline underline-offset-2 hover:text-amber-900"
+              className="underline underline-offset-2 hover:text-[#241017]"
             >
               soup
             </button>
           </p>
           {isFiltered && !poolLoading && (
-            <p className="mt-1 text-[11px] text-amber-800">
+            <p className="mt-1 text-[11px] text-[#521224]">
               {pool.length === 0
                 ? `No recipes match "${filterQuery.trim()}"`
                 : `Picking from ${pool.length} matching recipe${
@@ -168,7 +168,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             onClick={pickRandomRecipe}
             disabled={!canRoll}
             size="4"
-            className="bg-amber-600 hover:bg-amber-700 text-lg px-8 py-4"
+            className="bg-[#17131f] hover:bg-[#800020] text-lg px-8 py-4"
           >
             {isRolling
               ? "🎲 Rolling..."
@@ -188,7 +188,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
                 {randomRecipe.title}
               </h3>
               {randomRecipe.cuisine && (
-                <span className="inline-block bg-amber-100 text-amber-800 text-sm px-3 py-1 rounded-full">
+                <span className="inline-block bg-[#800020]/10 text-[#521224] text-sm px-3 py-1 rounded-full">
                   {randomRecipe.cuisine}
                 </span>
               )}

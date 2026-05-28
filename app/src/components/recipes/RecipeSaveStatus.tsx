@@ -33,8 +33,8 @@ export function RecipeSaveStatus({ isSaving, updatedAt, onSaveNow }: RecipeSaveS
       <div className="flex items-center gap-2 text-xs">
         {isSaving ? (
           <>
-            <ReloadIcon className="h-3 w-3 animate-spin text-amber-600" />
-            <span className="font-medium text-amber-700">Saving…</span>
+            <ReloadIcon className="h-3 w-3 animate-spin text-[#800020]" />
+            <span className="font-medium text-[#800020]">Saving…</span>
           </>
         ) : (
           <>
@@ -58,7 +58,7 @@ export function RecipeSaveStatus({ isSaving, updatedAt, onSaveNow }: RecipeSaveS
       </div>
       <button
         onClick={onSaveNow}
-        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100"
+        className="rounded-lg border border-[#800020]/30 bg-[#800020]/5 px-3 py-1 text-xs font-medium text-[#521224] transition-colors hover:bg-[#800020]/10"
       >
         Save now
       </button>

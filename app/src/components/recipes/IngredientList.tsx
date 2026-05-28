@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { Button, IconButton } from "@radix-ui/themes";
 import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
+import { ClipboardList } from "lucide-react";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import { IngredientTypeahead } from "@/components/ui/IngredientTypeahead";
 import type { Ingredient } from "@/db/schema";
@@ -54,7 +55,125 @@ interface IngredientListProps {
 }
 
 const fieldBase =
-  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-amber-400 focus:ring-1 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
+  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
+
+type IngredientDraft = {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  approximate?: boolean;
+  quantityText?: string;
+  notes?: string;
+};
+
+const UNIT_ALIASES = new Map([
+  ["grams", "g"],
+  ["gram", "g"],
+  ["kilograms", "kg"],
+  ["kilogram", "kg"],
+  ["litre", "L"],
+  ["litres", "L"],
+  ["liter", "L"],
+  ["liters", "L"],
+  ["teaspoon", "tsp"],
+  ["teaspoons", "tsp"],
+  ["tablespoon", "tbsp"],
+  ["tablespoons", "tbsp"],
+  ["cups", "cup"],
+  ["pieces", "pcs"],
+  ["piece", "pcs"],
+  ["cloves", "clove"],
+  ["slices", "slice"],
+  ["sprigs", "sprig"],
+  ["stalks", "stalk"],
+  ["cans", "can"],
+  ["packets", "packet"],
+  ["blocks", "block"],
+  ["bunches", "bunch"],
+]);
+
+const UNIT_SET = new Set(UNIT_OPTIONS.filter(Boolean).map((u) => u.toLowerCase()));
+
+function normalizeUnit(token: string): string | undefined {
+  const clean = token.toLowerCase().replace(/[.,]$/, "");
+  if (UNIT_SET.has(clean)) {
+    return UNIT_OPTIONS.find((u) => u.toLowerCase() === clean);
+  }
+  return UNIT_ALIASES.get(clean);
+}
+
+function parseNumberToken(token: string): number | null {
+  const clean = token.replace(/,/g, "").trim();
+  if (/^\d+(?:\.\d+)?$/.test(clean)) return Number(clean);
+  const fraction = clean.match(/^(\d+)\/(\d+)$/);
+  if (fraction) {
+    const denominator = Number(fraction[2]);
+    if (denominator !== 0) return Number(fraction[1]) / denominator;
+  }
+  return null;
+}
+
+function parseIngredientLine(rawLine: string): IngredientDraft | null {
+  let line = rawLine
+    .replace(/^\s*(?:[-*]|\d+[.)])\s+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!line) return null;
+
+  let notes: string | undefined;
+  const noteMatch = line.match(/\s+\(([^)]+)\)\s*$/);
+  if (noteMatch) {
+    notes = noteMatch[1].trim();
+    line = line.slice(0, noteMatch.index).trim();
+  }
+
+  line = line.replace(/^(\d+\/\d+|\d+(?:\.\d+)?)([a-zA-Z]+)\b/, "$1 $2");
+
+  const namedAmount = line.match(/^(.+?)\s+-\s+(.+)$/);
+  if (namedAmount) {
+    const parsedAmount = parseIngredientLine(`${namedAmount[2]} ${namedAmount[1]}`);
+    return parsedAmount ? { ...parsedAmount, notes: notes ?? parsedAmount.notes } : null;
+  }
+
+  const parts = line.split(" ");
+  const firstQuantity = parseNumberToken(parts[0]);
+  if (firstQuantity !== null) {
+    let quantity = firstQuantity;
+    let index = 1;
+    const secondQuantity = parts[index] ? parseNumberToken(parts[index]) : null;
+    if (secondQuantity !== null && parts[index].includes("/")) {
+      quantity += secondQuantity;
+      index += 1;
+    }
+
+    const unit = parts[index] ? normalizeUnit(parts[index]) : undefined;
+    if (unit) index += 1;
+
+    const name = parts.slice(index).join(" ").replace(/,$/, "").trim();
+    if (name) {
+      return { name: capitalize(name), quantity, unit, notes };
+    }
+  }
+
+  const approx = line.match(/^(a handful|handful|a pinch|pinch|some|a few|few|to taste)\s+(.+)$/i);
+  if (approx) {
+    return {
+      name: capitalize(approx[2].trim().replace(/^of\s+/i, "")),
+      approximate: true,
+      quantityText: approx[1].trim(),
+      notes,
+    };
+  }
+
+  return { name: capitalize(line), notes };
+}
+
+function parseBulkIngredients(text: string): IngredientDraft[] {
+  return text
+    .split(/\r?\n/)
+    .map(parseIngredientLine)
+    .filter((item): item is IngredientDraft => Boolean(item?.name));
+}
 
 function capitalize(s: string): string {
   if (!s) return s;
@@ -70,6 +189,9 @@ export function IngredientList({
   scale = 1,
 }: IngredientListProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [isBulkAdding, setIsBulkAdding] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkSaving, setBulkSaving] = useState(false);
   const [draft, setDraft] = useState({
     name: "",
     quantity: "",
@@ -80,6 +202,10 @@ export function IngredientList({
   const [savingId, setSavingId] = useState<number | null>(null);
   const addingRef = useRef(false);
   const formRef = useRef<HTMLDivElement>(null);
+  const parsedBulkIngredients = useMemo(
+    () => parseBulkIngredients(bulkText),
+    [bulkText]
+  );
 
   const handleAdd = useCallback(async () => {
     if (!draft.name.trim() || addingRef.current) return;
@@ -119,6 +245,21 @@ export function IngredientList({
     [draft.name, handleAdd]
   );
 
+  const handleBulkAdd = useCallback(async () => {
+    const parsed = parseBulkIngredients(bulkText);
+    if (parsed.length === 0 || bulkSaving) return;
+    setBulkSaving(true);
+    try {
+      for (const item of parsed) {
+        await onAdd(recipeId, item);
+      }
+      setBulkText("");
+      setIsBulkAdding(false);
+    } finally {
+      setBulkSaving(false);
+    }
+  }, [bulkSaving, bulkText, onAdd, recipeId]);
+
   const handleFieldBlur = useCallback(
     async (
       ingredient: Ingredient,
@@ -155,10 +296,25 @@ export function IngredientList({
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-700">
-          {ingredients.length}
-        </span>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+            {ingredients.length}
+          </span>
+        </div>
+        {!isBulkAdding && (
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdding(false);
+              setIsBulkAdding(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 transition hover:border-[#800020]/30 hover:text-[#800020]"
+          >
+            <ClipboardList className="h-3.5 w-3.5" />
+            Paste list
+          </button>
+        )}
       </div>
 
       {ingredients.length > 0 && (
@@ -181,7 +337,7 @@ export function IngredientList({
                   onBlur={(e) =>
                     handleFieldBlur(ing, "name", capitalize(e.target.value.trim()))
                   }
-                  className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                  className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                   placeholder="ingredient"
                 />
 
@@ -197,14 +353,14 @@ export function IngredientList({
                         e.target.value || null
                       )
                     }
-                    className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm italic text-neutral-700 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                    className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm italic text-neutral-700 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                     placeholder="a handful, agak-agak, to taste"
                   />
                 ) : (
                   <>
                     {/* Qty */}
                     {scale !== 1 && ing.quantity ? (
-                      <span className="w-14 px-1 text-center text-sm tabular-nums text-amber-700 font-medium">
+                      <span className="w-14 px-1 text-center text-sm tabular-nums text-[#800020] font-medium">
                         {formatScaledQuantity(ing.quantity, scale)}
                       </span>
                     ) : (
@@ -217,7 +373,7 @@ export function IngredientList({
                             e.target.value ? parseFloat(e.target.value) : null
                           )
                         }
-                        className="w-14 rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                        className="w-14 rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                         placeholder="qty"
                       />
                     )}
@@ -227,7 +383,7 @@ export function IngredientList({
                       onChange={(e) =>
                         handleFieldBlur(ing, "unit", e.target.value || null)
                       }
-                      className="w-[85px] rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                      className="w-[85px] rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                     >
                       <option value="">unit</option>
                       {UNIT_OPTIONS.filter(Boolean).map((u) => (
@@ -276,6 +432,52 @@ export function IngredientList({
             </li>
           ))}
         </ul>
+      )}
+
+      {isBulkAdding && (
+        <div className="mb-3 rounded-lg border border-[#800020]/15 bg-[#800020]/5 p-3">
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder={`Paste one ingredient per line:
+2 tbsp light soy sauce
+300 g yellow noodles
+a handful coriander`}
+            rows={5}
+            className="w-full resize-y rounded-lg border border-[#800020]/15 bg-white px-3 py-2 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+            autoFocus
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button
+              size="1"
+              variant="solid"
+              onClick={handleBulkAdd}
+              disabled={parsedBulkIngredients.length === 0 || bulkSaving}
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              {bulkSaving
+                ? "Adding..."
+                : `Add ${parsedBulkIngredients.length || ""} ingredient${parsedBulkIngredients.length === 1 ? "" : "s"}`.trim()}
+            </Button>
+            <Button
+              size="1"
+              variant="soft"
+              color="gray"
+              onClick={() => {
+                setBulkText("");
+                setIsBulkAdding(false);
+              }}
+            >
+              Cancel
+            </Button>
+            {parsedBulkIngredients.length > 0 && (
+              <span className="text-xs text-[#521224]">
+                Preview: {parsedBulkIngredients.slice(0, 3).map((item) => item.name).join(", ")}
+                {parsedBulkIngredients.length > 3 ? "..." : ""}
+              </span>
+            )}
+          </div>
+        </div>
       )}
 
       {isAdding ? (
@@ -360,7 +562,7 @@ export function IngredientList({
             }
             className={`mb-3 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${
               draft.approximate
-                ? "border-amber-300 bg-amber-50 text-amber-700"
+                ? "border-[#800020]/30 bg-[#800020]/5 text-[#800020]"
                 : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300 hover:text-neutral-500"
             }`}
           >
@@ -396,7 +598,10 @@ export function IngredientList({
           size="2"
           variant="soft"
           className="w-full"
-          onClick={() => setIsAdding(true)}
+          onClick={() => {
+            setIsBulkAdding(false);
+            setIsAdding(true);
+          }}
         >
           <PlusIcon className="mr-1 h-4 w-4" />
           {ingredients.length === 0 ? "Add ingredients" : "Add ingredient"}

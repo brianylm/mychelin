@@ -18,10 +18,10 @@ export function Header({
   onSearchClick,
   children,
 }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <header className="sticky left-0 right-0 top-0 z-20 flex h-[50px] items-center justify-between border-b border-neutral-200 bg-white/80 px-4 backdrop-blur-sm">
+    <header className="sticky left-0 right-0 top-0 z-20 flex h-[60px] items-center justify-between border-b border-white/60 bg-white/55 px-4 shadow-[0_18px_55px_rgba(40,26,19,0.08)] backdrop-blur-2xl backdrop-saturate-150">
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}
         {onMenuClick && (
@@ -53,19 +53,19 @@ export function Header({
         {/* Logo */}
         <button
           onClick={onLogoClick}
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/45"
         >
           <img
-            src="/icons/icon-96.png"
+            src="/images/mychelin-icon.png"
             alt="Mychelin"
-            className="h-9 w-9 rounded-lg"
+            className="h-8 w-8 object-contain"
           />
           <div className="flex flex-col text-left">
-            <span className="text-base font-semibold leading-tight tracking-tight">
-              Mychelin
+            <span className="logo-serif text-base font-bold leading-tight tracking-[-0.015em]">
+              <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>
             </span>
-            <span className="text-[10px] leading-tight text-neutral-500">
-              family recipe heritage
+            <span className="text-[10px] leading-tight text-stone-500">
+              cook like home
             </span>
           </div>
         </button>
@@ -105,12 +105,12 @@ export function Header({
         {user && (
           <button
             onClick={onProfileClick}
-            className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-neutral-100"
+            className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/45"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
               {user.name.charAt(0).toUpperCase()}
             </div>
-            <span className="hidden text-sm font-medium text-neutral-700 sm:inline">{user.name}</span>
+            <span className="hidden text-sm font-medium text-stone-700 sm:inline">{user.name}</span>
           </button>
         )}
       </div>

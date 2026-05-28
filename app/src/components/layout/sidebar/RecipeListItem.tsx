@@ -51,8 +51,8 @@ export function RecipeListItem({
   return (
     <li
       className={cn(
-        "group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 transition-colors",
-        isSelected ? "bg-amber-50" : "hover:bg-neutral-100",
+        "group flex cursor-pointer items-center gap-2 rounded-xl px-2 py-2 transition-colors",
+        isSelected ? "bg-[#800020]/10 text-[#521224] ring-1 ring-[#800020]/10" : "hover:bg-[#800020]/5",
         isDraft && !isSelected && "opacity-70"
       )}
       onClick={() => onSelect(recipe.id)}
@@ -61,8 +61,8 @@ export function RecipeListItem({
       {/* Thumbnail placeholder */}
       <div
         className={cn(
-          "relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-amber-50",
-          isDraft && "border border-dashed border-amber-300 bg-amber-50/60"
+          "relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#800020]/10 to-[#f6f2eb] ring-1 ring-[#800020]/10",
+          isDraft && "border border-dashed border-[#800020]/30 bg-[#800020]/5"
         )}
       >
         {recipe.imageUrl ? (
@@ -88,7 +88,7 @@ export function RecipeListItem({
           {recipe.title}
         </span>
         {matchedIngredient ? (
-          <span className="truncate text-[11px] text-amber-700">
+          <span className="truncate text-[11px] text-[#800020]">
             ingredient:{" "}
             <span className="font-medium">{matchedIngredient}</span>
           </span>

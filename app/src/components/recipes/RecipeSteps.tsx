@@ -21,7 +21,7 @@ interface RecipeStepsProps {
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
+  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
 
 const HEAT_LEVELS = [null, "low", "medium", "high"] as const;
 type HeatLevel = (typeof HEAT_LEVELS)[number];
@@ -228,7 +228,7 @@ export function RecipeSteps({
     <section className="rounded-2xl border border-neutral-200 bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-700">
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
           {sorted.length}
         </span>
       </div>
@@ -253,7 +253,7 @@ export function RecipeSteps({
                 }}
                 className={`group flex gap-2 rounded-lg border px-3 py-2 transition-all ${
                   isDragging
-                    ? "border-amber-300 bg-amber-50 shadow-md scale-[1.02] z-10 relative"
+                    ? "border-[#800020]/30 bg-[#800020]/5 shadow-md scale-[1.02] z-10 relative"
                     : "border-neutral-100 bg-neutral-50/50"
                 }`}
               >
@@ -266,12 +266,12 @@ export function RecipeSteps({
                         sorted.findIndex((s) => s.id === step.id)
                       )
                     }
-                    className="flex cursor-grab touch-none items-center gap-1 rounded px-0.5 py-1 text-neutral-300 transition hover:text-neutral-500 active:cursor-grabbing active:text-amber-600"
+                    className="flex cursor-grab touch-none items-center gap-1 rounded px-0.5 py-1 text-neutral-300 transition hover:text-neutral-500 active:cursor-grabbing active:text-[#800020]"
                     title="Drag to reorder"
                   >
                     <GripIcon />
                   </div>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
                     {displayIdx + 1}
                   </span>
                 </div>
@@ -289,7 +289,7 @@ export function RecipeSteps({
                       }
                       onUpdate(recipeId, step.id, { content: capitalized });
                     }}
-                    className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-100"
+                    className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                   />
                   {/* Heat indicator */}
                   <button

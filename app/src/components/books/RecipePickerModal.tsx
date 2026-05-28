@@ -137,7 +137,7 @@ export function RecipePickerModal({
 
         {loading ? (
           <div className="flex h-32 items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent"></div>
           </div>
         ) : recipes.length === 0 ? (
           <div className="py-8 text-center">
@@ -157,7 +157,7 @@ export function RecipePickerModal({
                     type="checkbox"
                     checked={selectedRecipes.has(recipe.id)}
                     onChange={() => handleRecipeToggle(recipe.id)}
-                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                    className="mt-1 h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-amber-500"
                   />
                   <div className="flex-1">
                     <div className="font-medium text-neutral-900">{recipe.title}</div>
@@ -194,7 +194,7 @@ export function RecipePickerModal({
               <button
                 type="submit"
                 disabled={selectedRecipes.size === 0 || submitting}
-                className="flex-1 rounded-xl bg-amber-600 px-4 py-3 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl bg-[#17131f] px-4 py-3 font-medium text-white transition-colors hover:bg-[#800020] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting 
                   ? "Adding..." 

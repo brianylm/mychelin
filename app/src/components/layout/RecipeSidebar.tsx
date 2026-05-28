@@ -171,12 +171,12 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-neutral-200 bg-white shadow-xl transition-transform md:static md:z-auto md:h-full md:w-80 md:translate-x-0 md:shadow-none",
+          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[#800020]/10 bg-[#fffdfb]/95 shadow-[0_24px_80px_rgba(60,43,25,0.16)] backdrop-blur-xl transition-transform md:static md:z-auto md:h-full md:w-80 md:translate-x-0 md:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header + search + toolbar */}
-        <div className="space-y-3 border-b border-neutral-200 px-5 py-3">
+        <div className="space-y-3 border-b border-[#800020]/10 bg-white/45 px-5 py-3">
           <RecipeSearchHeader
             query={query}
             onQueryChange={setQuery}
@@ -186,7 +186,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
           />
 
           {(loading || error) && (
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
+            <div className="rounded-xl border border-[#800020]/10 bg-[#800020]/5 px-3 py-2 text-xs text-[#521224]">
               {loading ? "Loading recipes…" : error}
             </div>
           )}
@@ -199,7 +199,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
           {/* Books section */}
           <div className="mb-3">
             <div className="flex items-center justify-between px-3 pb-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/55">
                 Books
               </span>
               <button
@@ -207,7 +207,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                   // Open create book flow — dispatch custom event
                   window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
-                className="text-[10px] font-medium text-amber-600 hover:text-amber-700"
+                className="text-[10px] font-medium text-[#800020] hover:text-[#800020]"
               >
                 + New
               </button>
@@ -219,8 +219,8 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                     <button
                       onClick={() => toggleBook(book.id)}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-amber-50",
-                        expandedBooks.has(book.id) && "bg-amber-50/60"
+                        "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-[#800020]/5",
+                        expandedBooks.has(book.id) && "bg-[#800020]/10 text-[#521224]"
                       )}
                     >
                       <svg
@@ -267,9 +267,9 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                                   onClose();
                                 }}
                                 className={cn(
-                                  "w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-amber-50",
+                                  "w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-[#800020]/5",
                                   selectedRecipeId === r.id
-                                    ? "bg-amber-100 font-medium text-amber-800"
+                                    ? "bg-[#800020]/10 font-medium text-[#521224]"
                                     : "text-neutral-600"
                                 )}
                               >
@@ -299,7 +299,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
                   Drafts
                 </span>
-                <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700">
+                <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
                   {draftRecipes.length}
                 </span>
               </div>
@@ -329,7 +329,7 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
                 {hasQuery ? "Search Results" : "All Recipes"}
               </span>
               {!hasQuery && activeRecipes.length > 0 && (
-                <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700">
+                <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
                   {activeRecipes.length}
                 </span>
               )}

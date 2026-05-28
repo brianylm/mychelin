@@ -49,7 +49,7 @@ function ClosenessStars({ rating }: { rating: number }) {
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) =>
         star <= rating
-          ? <StarFilledIcon key={star} className="h-3 w-3 text-amber-400" />
+          ? <StarFilledIcon key={star} className="h-3 w-3 text-[#800020]/70" />
           : <StarIcon key={star} className="h-3 w-3 text-neutral-300" />
       )}
     </div>
@@ -122,22 +122,22 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-amber-600">🌿</span>
+          <span className="text-[#800020]">🌿</span>
           <h3 className="text-sm font-semibold text-neutral-800">Version History</h3>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{versions.length}</span>
+          <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-xs font-medium text-[#800020]">{versions.length}</span>
         </div>
         {versions.length >= 2 && (
           <button
             onClick={() => { setCompareMode(!compareMode); setCompareSelection([]); }}
             className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-              compareMode ? "bg-amber-100 text-amber-700" : "text-neutral-500 hover:bg-neutral-100"
+              compareMode ? "bg-[#800020]/10 text-[#800020]" : "text-neutral-500 hover:bg-neutral-100"
             }`}
           >⇄ Compare</button>
         )}
       </div>
 
       {compareMode && (
-        <div className="border-b border-amber-100 bg-amber-50/50 px-4 py-2 text-xs text-amber-700">
+        <div className="border-b border-[#800020]/10 bg-[#800020]/5 px-4 py-2 text-xs text-[#800020]">
           Select two versions to compare ({compareSelection.length}/2)
         </div>
       )}
@@ -152,7 +152,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
             <div
               key={version.id}
               className={`relative px-4 py-3 transition-colors ${
-                isActive ? "bg-amber-50/50" : "hover:bg-neutral-50"
+                isActive ? "bg-[#800020]/5" : "hover:bg-neutral-50"
               } ${compareMode ? "cursor-pointer" : ""} ${
                 compareSelection.includes(version.id) ? "ring-2 ring-inset ring-amber-400" : ""
               }`}
@@ -164,7 +164,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
               <div className="flex items-start gap-3">
                 <div className="mt-1 flex flex-col items-center">
                   <div className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
-                    isActive ? "bg-amber-500 text-white" : "bg-neutral-100 text-neutral-500"
+                    isActive ? "bg-[#800020]/50 text-white" : "bg-neutral-100 text-neutral-500"
                   }`}>
                     {isActive ? <CheckIcon className="h-3.5 w-3.5" /> : labelOf(version)}
                   </div>
@@ -176,7 +176,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                     <span className="text-sm" title={method.label}>{method.icon}</span>
                     <span className="text-sm font-medium text-neutral-800">v{labelOf(version)}</span>
                     {isActive && (
-                      <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">ACTIVE</span>
+                      <span className="rounded-full bg-[#800020]/50 px-1.5 py-0.5 text-[10px] font-semibold text-white">ACTIVE</span>
                     )}
                     {isAncestor && (
                       <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">ANCESTOR</span>

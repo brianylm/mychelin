@@ -147,7 +147,7 @@ export function PhotoUploadSection({
             </div>
           </div>
         ) : (
-          <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-amber-50">
+          <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-[#800020]/5">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
               <circle cx="9" cy="9" r="2"/>
@@ -181,8 +181,8 @@ export function PhotoUploadSection({
                   key={photo.id}
                   type="button"
                   onClick={() => openGallery(index)}
-                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
-                    photo.url === coverUrl ? "border-amber-400" : "border-neutral-200"
+                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-[#800020]/45 focus:outline-none focus:ring-2 focus:ring-[#800020]/40 ${
+                    photo.url === coverUrl ? "border-[#800020]/45" : "border-neutral-200"
                   }`}
                 >
                   <img
@@ -192,7 +192,7 @@ export function PhotoUploadSection({
                     loading="lazy"
                   />
                   {photo.url === coverUrl && (
-                    <span className="absolute bottom-0 right-0 rounded-tl bg-amber-500 px-1 py-0.5 text-[8px] font-bold text-white">
+                    <span className="absolute bottom-0 right-0 rounded-tl bg-[#800020]/50 px-1 py-0.5 text-[8px] font-bold text-white">
                       COVER
                     </span>
                   )}
@@ -201,9 +201,9 @@ export function PhotoUploadSection({
 
               {/* Camera (mobile) */}
               {canAddMore && (
-                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50 md:hidden">
+                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 md:hidden">
                   {isUploading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#800020]/45 border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
@@ -227,9 +227,9 @@ export function PhotoUploadSection({
 
               {/* Gallery */}
               {canAddMore && (
-                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-amber-400 hover:bg-amber-50">
+                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5">
                   {isUploading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#800020]/45 border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
                       <PlusIcon className="h-4 w-4 text-neutral-400" />
@@ -295,14 +295,14 @@ export function PhotoUploadSection({
             {onSetCover && photos[galleryIndex].url !== coverUrl && (
               <button
                 onClick={() => onSetCover(photos[galleryIndex].url)}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-amber-600/90 px-3 text-xs font-medium text-white transition-colors hover:bg-amber-600"
+                className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f]"
                 title="Set as cover"
               >
                 Set as cover
               </button>
             )}
             {photos[galleryIndex].url === coverUrl && (
-              <span className="flex h-9 items-center gap-1.5 rounded-full bg-amber-600 px-3 text-xs font-medium text-white">
+              <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-medium text-white">
                 Current cover
               </span>
             )}

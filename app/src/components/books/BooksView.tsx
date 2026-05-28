@@ -89,14 +89,14 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
 
   const getColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
-      amber: "bg-amber-100",
+      amber: "bg-[#800020]/10",
       rose: "bg-rose-100",
       emerald: "bg-emerald-100",
       sky: "bg-sky-100",
       violet: "bg-violet-100",
       slate: "bg-slate-100",
     };
-    return colorMap[color] || "bg-amber-100";
+    return colorMap[color] || "bg-[#800020]/10";
   };
 
   if (selectedBook) {
@@ -123,7 +123,7 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#800020] border-t-transparent"></div>
       </div>
     );
   }
@@ -141,7 +141,7 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
+            className="flex items-center gap-2 rounded-xl bg-[#17131f] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#800020]"
           >
             <span className="text-lg">+</span>
             Create Book
@@ -160,7 +160,7 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 rounded-xl bg-amber-600 px-6 py-3 font-medium text-white transition-colors hover:bg-amber-700"
+              className="flex items-center gap-2 rounded-xl bg-[#17131f] px-6 py-3 font-medium text-white transition-colors hover:bg-[#800020]"
             >
               <span className="text-lg">+</span>
               Create Your First Book
@@ -172,14 +172,14 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
               <button
                 key={book.id}
                 onClick={() => setSelectedBook(book)}
-                className="group rounded-2xl border border-neutral-200 bg-white p-5 text-left transition-all hover:border-amber-200 hover:shadow-lg"
+                className="group rounded-2xl border border-neutral-200 bg-white p-5 text-left transition-all hover:border-[#800020]/15 hover:shadow-lg"
               >
                 <div
                   className={`mb-3 flex h-16 w-16 items-center justify-center rounded-xl text-2xl ${getColorClass(book.coverColor)}`}
                 >
                   {book.coverEmoji}
                 </div>
-                <h3 className="mb-1 font-semibold text-neutral-900 group-hover:text-amber-700">
+                <h3 className="mb-1 font-semibold text-neutral-900 group-hover:text-[#800020]">
                   {book.title}
                 </h3>
                 {book.description && (
@@ -191,7 +191,7 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
                   <span>{book.recipeCount} recipes</span>
                   <span>{book.memberCount} members</span>
                   {book.isOwner && (
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
+                    <span className="rounded-full bg-[#800020]/5 px-2 py-0.5 text-[#800020]">
                       Owner
                     </span>
                   )}

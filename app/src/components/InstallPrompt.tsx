@@ -117,11 +117,11 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white border border-amber-200 rounded-lg shadow-lg p-4 max-w-sm mx-auto">
+      <div className="bg-white border border-[#800020]/15 rounded-lg shadow-lg p-4 max-w-sm mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#800020]/10 rounded-lg flex items-center justify-center">
               <span className="text-lg">🍽️</span>
             </div>
             <div>
@@ -149,7 +149,7 @@ export function InstallPrompt() {
             // Android Chrome - show install button
             <button
               onClick={handleInstall}
-              className="flex-1 bg-amber-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-700 transition-colors flex items-center justify-center space-x-2"
+              className="flex-1 bg-[#17131f] text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-[#800020] transition-colors flex items-center justify-center space-x-2"
             >
               <PlusIcon />
               <span>Install</span>

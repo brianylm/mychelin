@@ -12,14 +12,14 @@ type Status =
   | { kind: "success" };
 
 const fieldClass =
-  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400";
+  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
 
 function ResetPasswordShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface px-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
+          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#800020]/10">
             <img src="/icons/icon-96.png" alt="Mychelin" className="h-10 w-10 rounded-lg" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">Mychelin</h1>

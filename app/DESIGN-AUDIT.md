@@ -1,215 +1,267 @@
-# Mychelin App Interior — Design Audit
+# Mychelin User Flow Audit — May 2026
 
-## Landing Page Design Language (Reference)
+## Executive Summary
 
-**Palette:** Warm off-white `#fafaf8`, near-black `#1a1a1a`, warm gray `#6b6b6b`, mid-gray `#4a4a4a`, warm borders `#e8e8e3` / `#c4c4bf`. Amber accent `#d97706` used sparingly as punctuation.
-
-**Typography:** DM Sans (light 300 for hero, semibold for headings) + Satoshi for body. Light weight, tight tracking (`tracking-tight`), generous line-height (`leading-relaxed`).
-
-**Cards:** `rounded-2xl` to `rounded-3xl`, `border` in warm stone tones, `bg-white`, minimal/no shadow. Generous padding (`px-8 py-14`+).
-
-**Buttons:** Consistent pill shape (`rounded-full`). Primary: dark fill. Secondary: bordered with `bg-white/80` + backdrop blur.
-
-**Rhythm:** Very generous whitespace between sections (`mt-16` to `mt-24`). Sections feel like "scenes" not stacked boxes.
-
-**Nav:** Floating glass pill — `rounded-full bg-white/70 backdrop-blur-xl ring-1 ring-stone-200/60` with subtle inset highlight.
+Mychelin has solid core functionality but several friction points that block user activation, retention, and sharing. The biggest gaps are in **onboarding clarity**, **recipe creation guidance**, **empty-state handling**, and **social sharing virality**. Most issues are medium-effort, high-impact UX fixes.
 
 ---
 
-## App Interior — Visual Audit
+## 1. Landing Page → Signup Flow
 
-### 1. Typography: Disconnected from Landing
+### Current Flow
+Landing page → "Get started" → `/login?mode=signup` → AuthScreen → Enter name/email/password → Submit → Redirect `/app`
 
-| Landing | App |
-|---------|-----|
-| DM Sans (headings), Satoshi (body) | Inter declared in CSS, but most components fall back to `system-ui` via Tailwind/Radix |
-| Hero at `font-weight: 300` with `tracking-tight` | No light-weight headings anywhere |
-| `EB Garamond` set for `h1-h6` in CSS | Barely used — most headings are `span`/`div` with `font-semibold` or Radix components |
-| Warm body text `#6b6b6b` / `#4a4a4a` | `text-neutral-500` / `text-neutral-400` — cooler, harsher |
+### Issues Found
 
-**Impact:** The app feels like a different product. No elegant heading hierarchy. The warm, editorial voice of the landing is lost.
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 1.1 | **No social proof on landing** — No user count, testimonials, or "trusted by X families" social proof | Conversion | Low |
+| 1.2 | **Hero CTA is weak** — "Preserve your family's food heritage" is abstract. No clear value proposition of *what* the user gets (save recipes? share? discover?) | Conversion | Low |
+| 1.3 | **No preview/demo mode** — User must create account before seeing the app. No "try without signing up" path | Conversion | Medium |
+| 1.4 | **AuthScreen error handling is silent** — `login()` and `signup()` return strings on error, but the form just shows a red line. No inline field-level validation (e.g. "email already exists", "password too short") | Activation | Low |
+| 1.5 | **No password strength indicator** — Users can enter weak passwords with no feedback | Activation | Low |
+| 1.6 | **No email verification** — Users can signup with any email, no verification step. Risk of fake accounts and email bounces | Retention | Medium |
+| 1.7 | **Signup → app redirect is jarring** — After signup, user lands in an empty RecipeWorkspace with no recipes, no tutorial, no "what now?" guidance | Activation | **High** |
+| 1.8 | **ReturnTo param handling is fragile** — `window.location.href = returnTo` does a full page reload instead of client-side navigation. Breaks app state | UX | Low |
 
-### 2. Color Palette: Close but Not Cohesive
+### Recommendations
 
-The app *almost* matches the landing (`bg-surface` = `#f6f6f5` vs landing `#fafaf8`) but then diverges:
-
-- **Borders:** Landing uses `#e8e8e3` and `#c4c4bf`. App uses `neutral-200` (`#e5e5e5`) and `neutral-300` (`#d4d4d4`). Slightly cooler, more generic.
-- **Text:** Landing's `#1a1a1a` vs `neutral-800` (`#262626`), `#6b6b6b` vs `neutral-500` (`#737373`). The landing colors are hand-picked and warmer.
-- **Amber usage:** Landing uses amber *only* for labels ("LEARN", "COOK") and links. App sprinkles amber on badges, buttons, borders, active states — it's louder and less disciplined.
-
-### 3. Card & Container Styling: Functional vs. Polished
-
-**Landing cards:** `rounded-2xl border border-[#e8e8e3] bg-white px-6 py-8` — soft, editorial, no shadow.
-
-**App cards:** `rounded-2xl border border-neutral-200 bg-white p-5` — same structural pattern but:
-- Padding is tighter (`p-5` vs `px-6 py-8`+)
-- Borders are cooler (`neutral-200`)
-- Some cards add `shadow-sm` which the landing avoids
-- The "trust" section is `rounded-3xl` with `px-8 py-14` — the app has no equivalent large-radius moments
-
-**Specific card issues:**
-- `RecipeTitleCard`: `grid gap-2` + `p-5` feels cramped for the most important element on the page
-- `CollapsibleSection`: `p-4` on the button header is tight; the chevron feels bolted-on
-- Sidebar items: `space-y-0.5` is extremely tight — list items feel crammed
-
-### 4. Buttons: Inconsistent Language
-
-The landing commits fully to pill buttons (`rounded-full`). The app uses:
-- Radix `Button` (default `rounded-md`)
-- Custom `rounded-xl` buttons (Share, Delete)
-- Custom `rounded-lg` inputs
-- `rounded-full` only in a few places (surprise-me FAB, user avatar)
-
-This creates visual noise. A recipe app with 15+ interactive elements per screen needs a single button grammar.
-
-### 5. Header & Navigation: Lost Opportunity
-
-**Landing nav:** Floating glass pill with backdrop blur, warm stone ring, inset highlight.
-
-**App header (`Header.tsx`):** `h-[50px] border-b border-neutral-200 bg-white/80` — flat, utilitarian, generic. The hamburger icon is a raw SVG. The profile button is a colored circle with a single letter — no warmth.
-
-**BottomNav:** Functional but plain. Active state is `text-amber-700` on a white background. The landing would use a pill or soft filled background for the active tab.
-
-**DesktopNav:** `rounded-lg` segmented control in `bg-neutral-50` — decent, but the active state is `bg-amber-600 text-white` which is high-contrast and loud. Landing's active states are subtler (text color change + soft background).
-
-### 6. Spacing & Rhythm: Dense and Flat
-
-- **Recipe detail:** Sections stack with `gap-4` (`md:gap-8`) — okay but monotonous. No variation in section weight.
-- **Ingredient list items:** `space-y-2` between rows, `px-3 py-2` per item — functional but could use more vertical breathing room
-- **Steps list:** Same density issue
-- **Sidebar:** `px-2 py-3` — extremely tight for a primary navigation surface
-- **No section dividers:** The landing uses `border-t` sparingly and with warmth. The app has no equivalent — sections just stack.
-
-### 7. Empty States: Adequate but Unremarkable
-
-| Location | Current | Landing Equivalent |
-|----------|---------|-------------------|
-| No recipes (sidebar) | "No recipes yet. Create one!" in `text-xs` | Would be a centered card with emoji + warmer text + CTA button |
-| Fridge empty | 🧊 + text-sm text-neutral-500 | Would be a `rounded-3xl` card with more padding and a story-like prompt |
-| Shopping empty | 🛒 + similar | Same issue |
-| Welcome screen | Centered `icon-welcome.png` + `Button` | Actually decent, but the Radix Button clashes |
-
-### 8. Form Inputs: Generic Tailwind
-
-```
-rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2
-```
-
-Used everywhere. Landing doesn't show forms, but if it did they'd likely use:
-- Warmer border (`#e8e8e3`)
-- Slightly more padding
-- `bg-white` not `bg-neutral-50` (neutral-50 feels "disabled")
-- Softer focus ring (`ring-amber-100` is good, but `focus:bg-white` is abrupt)
-
-### 9. Where the Landing Patterns DON'T Work
-
-These areas should stay functional and NOT be over-designed:
-
-- **Ingredient list table:** The name/qty/unit grid must remain scannable. Don't add rounded pills or shadows to each row.
-- **Step drag handles:** The grip icon needs to remain utilitarian. Don't style it into a button.
-- **Sidebar recipe list:** Must stay information-dense. Increasing padding too much would reduce scannability.
-- **Meal planner calendar grid:** The month view needs clean lines and small text. Rounded cards per day would look childish.
-- **Form fields in inline editing:** The `border-transparent → hover:border-neutral-200 → focus:border-amber-400` pattern in RecipeSteps/IngredientList is actually smart — keep it.
+1. **Add a "Take a tour" or "See example cookbook" button** on landing that opens a demo book without requiring signup
+2. **Replace abstract hero copy with concrete value**: "Capture family recipes from voice conversations. Build a shareable cookbook. Preserve heritage for generations."
+3. **Add inline field validation to AuthScreen** — validate email format, password length (≥8), name presence before submit
+4. **Post-signup onboarding modal** — First-time users see: "Welcome! Here's how to capture your first recipe" with 3-step guided walkthrough
+5. **Seed demo recipes** for new users — Create 2-3 sample recipes (e.g. "Ah Ma's Laksa", "Popiah") so the app isn't empty on first login
 
 ---
 
-## Recommendations
+## 2. Recipe Creation & Capture Flows
 
-### Quick Wins (CSS/Tailwind Tweaks — 1-2 hours)
+### Current Flows
+- **From scratch**: FAB → "From scratch" → Blank recipe created → Title auto-focused → User fills fields
+- **Quick capture**: FAB → "Quick capture" → Blank draft → PasteRecipeModal opens → Paste text/URL → AI extracts → Saves to recipe
+- **Conversation capture**: Recipe page → "Record conversation" → ConversationCapture modal → Record audio → Stream to Gemini → Extract recipe → Assign speaker names → Save
 
-1. **Unify text colors** — Replace `text-neutral-500` / `text-neutral-400` in app components with warmer custom values (`#6b6b6b` / `#9b9b9b`) or add them as CSS variables. The `neutral-*` scale is too cool.
+### Issues Found
 
-2. **Unify border colors** — Replace `border-neutral-200` on cards with `border-[#e8e8e3]` (or define `--color-border-warm`). Same for `border-neutral-300` on inputs → slightly warmer.
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 2.1 | **Quick capture failure is silent** — If AI extraction fails or API key missing, user sees "Error processing" with no retry or manual fallback path | Activation | Medium |
+| 2.2 | **ConversationCapture requires Gemini API key** — Most users won't have this configured. The setup error banner is good but the feature is essentially dead for 95% of users | Activation | High |
+| 2.3 | **No "save as draft" vs "publish" distinction** — Recipe status exists in schema but UI doesn't expose it. All recipes are immediately "active" | Content quality | Low |
+| 2.4 | **Ingredient input is tedious** — No bulk paste for ingredients. User must add one at a time via form | Activation | Medium |
+| 2.5 | **No template recipes** — No "Laksa template" or "Chicken rice template" to start from. Every recipe is blank slate | Activation | Medium |
+| 2.6 | **Photo upload has no guidance** — No "Add a photo of the finished dish" placeholder or camera prompt | Content quality | Low |
+| 2.7 | **No autosave indicator** — Users don't know if their edits are saved. SaveIndicator component exists but isn't prominently used | Trust | Low |
+| 2.8 | **RecipeView is overwhelming for new users** — 15+ sections (title, details, ingredients, steps, story, photos, voice, versions, books, share, fork) all visible at once. No progressive disclosure | Activation | Medium |
+| 2.9 | **No "Import from URL" standalone flow** — PasteRecipeModal only opens after creating a blank recipe. No direct "Import from URL" that creates + populates in one step | Activation | Low |
+| 2.10 | **No undo after AI extraction** — If AI gets ingredients wrong, user must manually delete and re-add. No "regenerate" or "edit extraction" mode | Content quality | Medium |
 
-3. **Increase card padding** — Recipe detail cards: `p-5` → `p-6` or `px-6 py-5`. Title card: `p-5` → `p-6`. Small change, more breathing room.
+### Recommendations
 
-4. **Sidebar spacing** — `space-y-0.5` → `space-y-1` and `px-2 py-3` → `px-3 py-4` in the scrollable area. Still dense, but not crammed.
-
-5. **Header warmth** — Change `border-b border-neutral-200` to `border-b border-[#e8e8e3]`. Consider adding `backdrop-blur-xl` instead of `backdrop-blur-sm`. The landing's nav blur is much softer.
-
-6. **Button consistency** — Pick one radius for secondary actions: either all `rounded-xl` (app current) or all `rounded-full` (landing). My recommendation: keep functional buttons `rounded-xl` (forms, actions) but make navigation/pill buttons `rounded-full` (desktop nav active state, FAB, tags).
-
-7. **Empty state polish** — Wrap all empty states in a `rounded-2xl bg-white border border-[#e8e8e3] p-8` card with centered content. Add `text-[#6b6b6b]` instead of `text-neutral-500`.
-
-### Medium Effort (Component Restructuring — Half Day)
-
-8. **Typography hierarchy in recipe detail** — The `RecipeTitleCard` should feel special. Consider:
-   - Using `font-family: DM Sans` (or the existing EB Garamond) for the title
-   - Light weight (`font-light`) for large titles
-   - `text-2xl` instead of inheriting default size
-   - More vertical padding (`py-6`)
-
-9. **Section rhythm in recipe view** — Instead of uniform `gap-4` between every card, use:
-   - `gap-3` for related functional groups (ingredients → steps)
-   - `gap-6` or `gap-8` between logical sections (core → details → heritage)
-   - A subtle `bg-[#fafaf8]` or `bg-neutral-50/30` divider background for the Heritage section to give it visual weight
-
-10. **Desktop nav refinement** — Instead of `bg-amber-600 text-white` for active tabs, try `bg-white ring-1 ring-[#e8e8e3] text-[#1a1a1a]` with a small amber dot or bottom border. The current high-contrast amber fill is jarring against the soft landing aesthetic.
-
-11. **Auth screen alignment** — The `AuthScreen` form card uses `rounded-2xl border-neutral-200` — update to `border-[#e8e8e3]` and slightly more padding. The field labels (`uppercase tracking-wide text-neutral-500`) are fine but could be `text-[#9b9b9b]` for warmth.
-
-12. **BottomNav active state** — Instead of just `text-amber-700`, add a small top indicator or soft background pill. A 2px amber line above the active tab (`before:absolute before:top-0 before:h-0.5 before:w-8 before:bg-amber-600`) would feel more intentional.
-
-### Structural Changes (Architectural — 1-2 Days)
-
-13. **Create a shared `Card` primitive** — Both landing and app use the same card pattern but with different Tailwind classes. Extract a `Card` component that enforces:
-   ```tsx
-   rounded-2xl border border-[#e8e8e3] bg-white
-   ```
-   With variants: `padding: "sm" | "md" | "lg"` and `radius: "2xl" | "3xl"`.
-
-14. **Create a shared `Section` primitive** — The landing's section spacing (`mt-16` to `mt-24`, `max-w-5xl`, `px-6`) should be a reusable layout component. The app's views currently inline their own `max-w-3xl px-4 py-6` — inconsistent.
-
-15. **Font loading strategy** — The landing loads DM Sans and Satoshi (presumably via `<link>` or Next font). The app loads Inter and EB Garamond via `next/font/google` but only EB Garamond is enforced for headings. Consider:
-   - Using EB Garamond for *all* headings in the app (not just semantic `h1-h6`)
-   - Loading DM Sans for the app hero/welcome areas
-   - Or: accept the split and make the app intentionally more utilitarian, but document it
-
-16. **Color token consolidation** — The app currently mixes:
-   - Tailwind `neutral-*` scale
-   - Custom CSS variables (`--surface`, `--accent`)
-   - Radix theme overrides (`--accent-1` through `--accent-12`)
-   - Arbitrary hex values in components (`border-[#e8e8e3]` in landing)
-   
-   Consolidate into a single theme file with warm neutrals:
-   ```css
-   --color-text-primary: #1a1a1a;
-   --color-text-secondary: #6b6b6b;
-   --color-text-muted: #9b9b9b;
-   --color-border: #e8e8e3;
-   --color-border-light: #f0f0eb;
-   --color-surface: #f6f6f5;
-   --color-surface-warm: #fafaf8;
-   ```
+1. **Add "Import from URL" as standalone FAB option** — Creates recipe + fetches + extracts in one action
+2. **Bulk ingredient paste** — Textarea where user pastes "2 cups flour\n1 tsp salt" and it parses into structured ingredients
+3. **Progressive disclosure in RecipeView** — Show only core sections (title, ingredients, steps) by default. Advanced sections (story, voice, versions, cultural context) behind "Add more details" expander
+4. **Template gallery** — "Start from template: Laksa / Hainanese Chicken Rice / Popiah" — pre-fills common ingredients and structure
+5. **Fallback for AI extraction failures** — If Gemini fails, show manual form pre-filled with raw text so user can fix it
+6. **Add autosave toast** — "Recipe saved" briefly shown after 2s of inactivity
 
 ---
 
-## Priority Order
+## 3. Recipe Discovery & Browsing
 
-**Do immediately (today):**
-1. Unify border colors (`neutral-200` → warm custom)
-2. Unify text secondary colors (`neutral-500` → `#6b6b6b`)
-3. Increase card padding slightly
-4. Fix sidebar spacing
+### Current Flow
+RecipeSidebar lists all recipes → Click to view → RecipeView shows full details
 
-**Do this week:**
-5. Create shared `Card` + `Section` primitives
-6. Refine recipe title typography (size, weight, font)
-7. Improve empty states with card wrapper + warmer text
-8. Tone down desktop nav active state
+### Issues Found
 
-**Do when refactoring:**
-9. Full color token consolidation
-10. Font strategy decision (DM Sans vs EB Garamond vs Inter)
-11. Section rhythm in recipe detail (variable gaps)
-12. Header glassmorphism upgrade
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 3.1 | **No empty state for new users** — Sidebar is blank, RecipeView shows "Select a recipe" placeholder. No "Create your first recipe" CTA | Activation | Low |
+| 3.2 | **Sidebar search only matches titles** — Can't search by ingredient (e.g. "chicken" doesn't find "Hainanese Chicken Rice" if user searches "chicken") | Retention | Medium |
+| 3.3 | **No recipe categorization** — No tags, no cuisine filter in sidebar. Schema has cuisine field but sidebar doesn't filter by it | Discovery | Low |
+| 3.4 | **Discover view is buried** — "Surprise me" is under "Plan" tab, not prominent. Most users won't find it | Engagement | Low |
+| 3.5 | **No "Recently cooked" or "Favorites"** — No way to mark recipes as favorites or see cooking history | Retention | Medium |
+| 3.6 | **No related recipes** — When viewing Laksa, no "You might also like: Mee Siam, Mee Rebus" suggestions | Engagement | Medium |
+| 3.7 | **Recipe list has no sorting** — Only alphabetical? No "recently added", "recently cooked", "by cuisine" | Discovery | Low |
+| 3.8 | **Shared page is read-only with no interactivity** — `/shared/[token]` shows recipe but no "I cooked this" or "Add to my collection" for logged-in users beyond the Save button | Engagement | Low |
+
+### Recommendations
+
+1. **Rich empty state** — "No recipes yet. Capture your first recipe from a conversation, import from a URL, or start from scratch" with 3 big buttons
+2. **Add sidebar filters** — Filter by cuisine, occasion, book. Sort by recent, alphabetical, recently cooked
+3. **Move "Discover" to dedicated tab or surface it** — "Surprise me" should be a prominent action, not hidden
+4. **Add "Favorite" toggle** — Star recipes, show "Favorites" filter in sidebar
+5. **Add "I cooked this" button** — Records cooking date, shows "Last cooked 3 days ago" badge
+6. **Related recipes** — Simple matching: same cuisine + shared ingredients → suggest related
 
 ---
 
-## Summary
+## 4. Sharing & Virality Flow
 
-The app is well-built and functional. The core issue is **aesthetic drift**: the landing page was clearly designed with intention (warm tones, editorial typography, generous spacing, pill buttons), while the app interior was built function-first with off-the-shelf Tailwind defaults (`neutral-*`, `rounded-lg`, `gap-4`).
+### Current Flow
+RecipeView → Share button → ShareModal → Create link (view/edit) → Copy to clipboard → Send to recipient → Recipient opens `/shared/[token]` → Sees recipe → SignupNudge appears after 2s
 
-The gap is not structural — the app *has* rounded cards, warm surface backgrounds, and amber accents. It's a matter of **tightening the execution**: using the exact same border colors, text colors, padding values, and typography weights that make the landing feel polished.
+### Issues Found
 
-The good news: almost all of this is achievable through CSS token changes and small Tailwind class tweaks. No redesign required.
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 4.1 | **Share modal has no preview** — User can't see what the shared page will look like before generating link | Trust | Low |
+| 4.2 | **Shared page has no native share** — No Web Share API for mobile (share to WhatsApp, Telegram directly) | Virality | Low |
+| 4.3 | **SignupNudge is aggressive** — Auto-expands modal after 2s. Users may close immediately without reading. No "maybe later" option | Conversion | Low |
+| 4.4 | **No "Share to social" with image** — No OG image generation for shared recipes. Social shares will show generic preview | Virality | Medium |
+| 4.5 | **No collaborative editing** — Share link with "edit" permission but no real-time collaboration indicators | Collaboration | High |
+| 4.6 | **No "Invite family member" flow** — No dedicated "Add family member" that sends email invite | Virality | Medium |
+| 4.7 | **Save button on shared page has no loading state** — "Save to Mychelin" → click → no feedback until success banner | Trust | Low |
+| 4.8 | **No QR code for sharing** — Older family members might prefer scanning a QR code at a gathering | Accessibility | Low |
+
+### Recommendations
+
+1. **Add Web Share API** — On mobile shared pages, show native share sheet
+2. **Generate OG images for shared recipes** — Dynamic image with recipe title, photo, "Shared on Mychelin" branding
+3. **QR code generation** — In ShareModal, show QR code for easy mobile sharing at family gatherings
+4. **Nudge family invite flow** — "Share with family" → enter 3 email addresses → sends personalized invite with context
+5. **Make SignupNudge less aggressive** — Start with thin banner only, expand on click. Don't auto-expand
+
+---
+
+## 5. Books & Collaboration Flow
+
+### Current Flow
+BooksView → Create book → Add recipes → Share book → Members can view/edit
+
+### Issues Found
+
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 5.1 | **Books are not discoverable from main UI** — No "Books" tab in bottom nav. User must find it via recipe "Add to book" action | Discovery | Low |
+| 5.2 | **No book cover customization** — Schema has coverEmoji and coverColor but UI for choosing them is basic (if present) | Delight | Low |
+| 5.3 | **No book-level sharing settings** — Can't set "family only" vs "public" per book | Privacy | Medium |
+| 5.4 | **No member management UI** — No view of who has access, no remove member, no permission levels displayed | Collaboration | Medium |
+| 5.5 | **Cooking principles are buried** — Schema and components exist but not prominently featured in book view | Differentiation | Low |
+
+### Recommendations
+
+1. **Add "Books" to bottom nav** — Replace "Discover" or make it 5th tab
+2. **Book cover gallery** — Let users pick from preset heritage-themed covers or upload custom
+3. **Member management panel** — Show avatars, roles, last active. Allow owner to remove/revoke
+
+---
+
+## 6. Meal Planning & Shopping
+
+### Current Flow
+Plan tab → Calendar view → Click date → Add meal → Pick recipe → Set servings → Save → Export to calendar
+
+### Issues Found
+
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 6.1 | **No recipe suggestions for meal planning** — Empty meal slot shows "+" but no "Suggested: Chicken Rice (you cooked this 3 days ago)" | Engagement | Medium |
+| 6.2 | **No shopping list auto-generation from meal plan** — User must manually add ingredients to shopping list | Activation | Medium |
+| 6.3 | **Shopping list is isolated from inventory** — Adding "2 onions" to shopping list doesn't check if you already have 3 onions in fridge | Efficiency | Medium |
+| 6.4 | **Calendar export is hidden** — CalendarExport component exists but not prominently surfaced in meal plan | Retention | Low |
+| 6.5 | **No "Cook this" from meal plan** — Clicking a planned meal should open recipe with pre-scaled servings | UX | Low |
+
+### Recommendations
+
+1. **Auto-generate shopping list from meal plan** — "Plan 5 meals → Generate shopping list" with ingredient aggregation
+2. **Check inventory before adding to shopping list** — "You already have 3 onions (expires in 2 days) — skip?"
+3. **"Cook now" from meal plan** — Opens recipe with servings pre-scaled to planned amount
+
+---
+
+## 7. Fridge / Inventory Flow
+
+### Current Flow
+Fridge tab → Add item (name, qty, unit, location, expiry) → Save → View list with expiry warnings
+
+### Issues Found
+
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 7.1 | **Adding items is tedious** — No barcode scan, no "Add from recipe ingredients" | Activation | High |
+| 7.2 | **No recipe suggestions based on inventory** — "You have chicken, coconut milk, and laksa leaves — make Ah Ma's Laksa?" | Engagement | Medium |
+| 7.3 | **Expiry warnings are subtle** — Red text only, no push notification or email reminder before expiry | Retention | Medium |
+| 7.4 | **No consumption tracking** — Adding "2 onions used" doesn't decrement inventory | Accuracy | Medium |
+
+### Recommendations
+
+1. **"Use ingredients from recipe"** — After viewing a recipe, one-tap "Use these ingredients" that deducts from inventory
+2. **Recipe suggestions from inventory** — Match available ingredients to recipe ingredient lists
+3. **Push notification for expiring items** — "Your laksa leaves expire tomorrow — cook something?"
+
+---
+
+## 8. Profile & Settings
+
+### Issues Found
+
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 8.1 | **No account deletion** — GDPR/privacy requirement missing | Compliance | Medium |
+| 8.2 | **No data export** — Users can't download their recipes | Trust | Medium |
+| 8.3 | **Preferences don't affect app behavior** — Favorite cuisines and dietary restrictions are saved but not used for filtering or recommendations | Personalization | Medium |
+| 8.4 | **No dark mode toggle** — Only system preference, no manual override | Accessibility | Low |
+| 8.5 | **No notification preferences** — Can't opt in/out of email reminders, expiry alerts | Retention | Low |
+
+### Recommendations
+
+1. **Use preferences for discovery** — "Based on your love of Peranakan food, try..."
+2. **Add "Export my recipes"** — JSON/CSV download of all recipes
+3. **Add "Delete my account"** with confirmation and data deletion
+
+---
+
+## 9. Mobile-Specific Issues
+
+| # | Issue | Impact | Effort |
+|---|-------|--------|--------|
+| 9.1 | **Bottom nav covers FAB** — On some screen sizes, FAB and bottom nav overlap | UX | Low |
+| 9.2 | **Sidebar is drawer-only on mobile** — No always-visible recipe list on tablets | UX | Low |
+| 9.3 | **No pull-to-refresh** — Must rely on auto-refresh or re-open app | UX | Low |
+| 9.4 | **RecipeView horizontal scroll on small screens** — Some sections may overflow | UX | Low |
+| 9.5 | **No offline indicator** — PWA exists but no "You're offline" banner when connection drops | Reliability | Low |
+
+---
+
+## Priority Matrix
+
+### Quick Wins (Do This Week)
+1. Post-signup onboarding modal with demo recipes
+2. Rich empty state in sidebar
+3. Inline auth validation (email format, password length)
+4. Make SignupNudge less aggressive (no auto-expand)
+5. Add "Favorite" toggle to recipes
+6. Add Web Share API to shared pages
+7. Add "Books" to bottom nav
+
+### Medium Term (Do This Month)
+1. Bulk ingredient paste
+2. Template recipe gallery
+3. Auto-generate shopping list from meal plan
+4. Recipe suggestions from inventory
+5. OG images for shared recipes
+6. Sidebar filters (cuisine, occasion, sort)
+7. Progressive disclosure in RecipeView
+
+### Long Term (Do Next Quarter)
+1. ConversationCapture without requiring API key (use shared/backend key)
+2. Real-time collaborative editing
+3. Barcode scanning for inventory
+4. Push notifications for expiry alerts
+5. AI-powered "recipe from pantry" suggestions
+6. Full data export / account deletion
+
+---
+
+## Metrics to Track
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Signup → first recipe created | ? | >60% within 24h |
+| Recipe creation abandonment | ? | <30% |
+| Share link creation per user | ? | >2 per active user |
+| Weekly active users (return rate) | ? | >40% |
+| Meal plan usage | ? | >30% of active users |
+
+*Recommend adding analytics instrumentation to measure these before making changes.*

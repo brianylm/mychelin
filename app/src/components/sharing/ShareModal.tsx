@@ -82,11 +82,11 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/55 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-2xl bg-white p-6">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-[#fffdfb] p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
           {/* Header */}
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -103,12 +103,12 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
             </div>
           ) : (
             <div className="space-y-4">
               {/* View-only link */}
-              <div className="rounded-xl border border-neutral-200 p-4">
+              <div className="rounded-2xl border border-[#800020]/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold text-neutral-800">👁 View only</span>
@@ -122,7 +122,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                     </div>
                     <button
                       onClick={() => copyLink(viewLink.token)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 transition-colors hover:bg-amber-200"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-colors hover:bg-[#800020]/15"
                       title="Copy link"
                     >
                       {copiedToken === viewLink.token ? (
@@ -142,7 +142,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                 ) : (
                   <button
                     onClick={() => createLink("view")}
-                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 hover:text-[#800020]"
                   >
                     Create view-only link
                   </button>
@@ -150,7 +150,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
               </div>
 
               {/* Collaborator link */}
-              <div className="rounded-xl border border-neutral-200 p-4">
+              <div className="rounded-2xl border border-[#800020]/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold text-neutral-800">✏️ Collaborator</span>
@@ -164,7 +164,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                     </div>
                     <button
                       onClick={() => copyLink(editLink.token)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 transition-colors hover:bg-amber-200"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-colors hover:bg-[#800020]/15"
                       title="Copy link"
                     >
                       {copiedToken === editLink.token ? (
@@ -184,7 +184,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                 ) : (
                   <button
                     onClick={() => createLink("edit")}
-                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 hover:text-[#800020]"
                   >
                     Create collaborator link
                   </button>

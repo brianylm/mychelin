@@ -120,11 +120,11 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             disabled={exporting !== null}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
               isPrimary("google")
-                ? "bg-amber-50 text-amber-700 border-2 border-amber-200"
+                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
                 : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("google") ? "bg-amber-600 text-white" : "bg-white text-neutral-600"}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("google") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
               <span className="text-lg">🌐</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -139,11 +139,11 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             disabled={exporting !== null}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
               isPrimary("outlook")
-                ? "bg-amber-50 text-amber-700 border-2 border-amber-200"
+                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
                 : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("outlook") ? "bg-amber-600 text-white" : "bg-white text-neutral-600"}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("outlook") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
               <span className="text-lg">📧</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -158,11 +158,11 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             disabled={exporting !== null}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
               isPrimary("apple")
-                ? "bg-amber-50 text-amber-700 border-2 border-amber-200"
+                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
                 : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("apple") ? "bg-amber-600 text-white" : "bg-white text-neutral-600"}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("apple") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
               <span className="text-lg">📲</span>
             </div>
             <div className="flex-1 min-w-0">

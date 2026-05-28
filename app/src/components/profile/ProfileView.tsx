@@ -208,7 +208,7 @@ export function ProfileView() {
               <select
                 value={preferences.cookingSkillLevel}
                 onChange={(e) => setPreferences(prev => ({ ...prev, cookingSkillLevel: e.target.value }))}
-                className={`w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400 ${!preferences.cookingSkillLevel ? "text-neutral-400" : "text-neutral-900"}`}
+                className={`w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400 ${!preferences.cookingSkillLevel ? "text-neutral-400" : "text-neutral-900"}`}
               >
                 <option value="">Select skill level...</option>
                 {SKILL_LEVELS.map(level => (
@@ -232,7 +232,7 @@ export function ProfileView() {
                 }))}
                 placeholder="e.g. 4"
                 min="1"
-                className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400"
               />
             </div>
           </div>
@@ -248,7 +248,7 @@ export function ProfileView() {
                   type="checkbox"
                   checked={preferences.favoriteCuisines.includes(cuisine)}
                   onChange={() => handleCuisineToggle(cuisine)}
-                  className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                  className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-amber-500"
                 />
                 <span className="text-sm text-neutral-700">{cuisine}</span>
               </label>
@@ -266,7 +266,7 @@ export function ProfileView() {
                   type="checkbox"
                   checked={preferences.dietaryRestrictions.includes(restriction)}
                   onChange={() => handleDietaryToggle(restriction)}
-                  className="h-4 w-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                  className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-amber-500"
                 />
                 <span className="text-sm text-neutral-700">{restriction}</span>
               </label>
@@ -282,7 +282,7 @@ export function ProfileView() {
               <button
                 type="button"
                 onClick={() => setShowPasswordForm(true)}
-                className="text-sm font-medium text-amber-700 hover:underline"
+                className="text-sm font-medium text-[#800020] hover:underline"
               >
                 Change password
               </button>
@@ -300,7 +300,7 @@ export function ProfileView() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Your current password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400"
                   required
                   autoFocus
                 />
@@ -314,7 +314,7 @@ export function ProfileView() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400"
                   required
                   minLength={6}
                 />
@@ -328,7 +328,7 @@ export function ProfileView() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your new password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100 focus:bg-white placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400"
                   required
                   minLength={6}
                 />
@@ -374,7 +374,7 @@ export function ProfileView() {
               onClick={handleSave}
               disabled={isSaving}
               size="3"
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-[#17131f] hover:bg-[#800020]"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>

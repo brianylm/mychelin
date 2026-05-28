@@ -33,6 +33,7 @@ interface PasteRecipeModalProps {
   recipeId: number;
   onClose: () => void;
   onRecipeUpdated?: () => void;
+  initialMode?: "paste" | "url";
 }
 
 type Step = "paste" | "processing" | "saving" | "error";
@@ -60,17 +61,25 @@ function hostnameFrom(url: string): string {
   }
 }
 
+function messageFromError(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
+
 export function PasteRecipeModal({
   recipeId,
   onClose,
   onRecipeUpdated,
+  initialMode = "paste",
 }: PasteRecipeModalProps) {
   const [text, setText] = useState("");
   const [step, setStep] = useState<Step>("paste");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [processingLabel, setProcessingLabel] = useState("");
+  const [captureMode, setCaptureMode] = useState<"paste" | "url">(initialMode);
 
-  const isUrl = looksLikeUrl(text);
+  const urlMode = captureMode === "url";
+  const hasValidUrl = looksLikeUrl(text);
+  const isUrl = urlMode || hasValidUrl;
 
   const saveDraft = async (rawText: string, sourceUrl?: string) => {
     const trimmed = rawText.trim();
@@ -123,10 +132,14 @@ export function PasteRecipeModal({
   const handleExtract = async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
+    if (urlMode && !looksLikeUrl(trimmed)) {
+      setErrorMessage("Paste a full URL starting with https:// or http://.");
+      return;
+    }
     setErrorMessage(null);
     setStep("processing");
 
-    if (looksLikeUrl(trimmed)) {
+    if (isUrl) {
       setProcessingLabel(`Fetching ${hostnameFrom(trimmed)}…`);
       try {
         const urlRes = await fetch("/api/capture/url", {
@@ -138,7 +151,7 @@ export function PasteRecipeModal({
           const body = await urlRes.json().catch(() => ({}));
           throw new Error(body.error || "Could not fetch the URL");
         }
-        const { recipe, sourceUrl, text: rawText } = await urlRes.json();
+        const { recipe, sourceUrl } = await urlRes.json();
 
         const hasContent = recipe &&
           (recipe.title?.trim() || recipe.ingredients?.length || recipe.instructions?.length);
@@ -157,9 +170,9 @@ export function PasteRecipeModal({
           `Couldn't extract recipe content from ${hostnameFrom(trimmed)}. ` +
           `Try copying the recipe text from the page and pasting it here instead.`
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("URL import failed:", err);
-        setErrorMessage(err?.message || "Failed to import from URL");
+        setErrorMessage(messageFromError(err, "Failed to import from URL"));
         setStep("error");
       }
     } else {
@@ -183,9 +196,9 @@ export function PasteRecipeModal({
         await patchRecipe(recipe);
         onRecipeUpdated?.();
         onClose();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Paste extract failed:", err);
-        setErrorMessage(err?.message || "Unknown error");
+        setErrorMessage(messageFromError(err, "Unknown error"));
         setStep("error");
       }
     }
@@ -203,16 +216,16 @@ export function PasteRecipeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-stretch justify-center bg-stone-950/55 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="flex h-full w-full flex-col bg-white sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:shadow-2xl"
+        className="flex h-full w-full flex-col bg-[#fffdfb] sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-[2rem] sm:border sm:border-white/70 sm:shadow-[0_24px_80px_rgba(60,43,25,0.18)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-[#800020]/10 bg-white/55 px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">{isUrl ? "🌐" : "📋"}</span>
             <div>
@@ -221,9 +234,13 @@ export function PasteRecipeModal({
               </h2>
               <p className="text-[11px] text-neutral-500">
                 {step === "paste" && !isUrl &&
-                  "Paste anything — a URL, a message, a photo OCR, whatever"}
+                  "Paste a message, notes, photo OCR, or any loose recipe text"}
                 {step === "paste" && isUrl &&
-                  `Import recipe from ${hostnameFrom(text.trim())}`}
+                  (hasValidUrl
+                    ? `Import recipe from ${hostnameFrom(text.trim())}`
+                    : text.trim()
+                      ? "Paste a full URL starting with https:// or http://"
+                      : "Paste a recipe page link and we’ll extract the recipe")}
                 {step === "processing" && processingLabel}
                 {step === "saving" && "Saving your text…"}
                 {step === "error" && "Extraction didn\u2019t work"}
@@ -245,9 +262,13 @@ export function PasteRecipeModal({
                 id="paste-recipe-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={`Paste anything — ingredients, steps, a blog post URL, a WhatsApp message…\n\nThe AI will try to structure it into a recipe. If it can't, your text is saved as a draft so nothing is lost.`}
+                placeholder={
+                  isUrl
+                    ? "https://example.com/family-recipe\n\nPaste the recipe page URL here. If the site blocks extraction, you can switch back and paste the recipe text instead."
+                    : `Paste ingredients, steps, a WhatsApp message, photo OCR, or notes from a call.\n\nThe AI will try to structure it into a recipe. If it can't, your text is saved as a draft so nothing is lost.`
+                }
                 rows={14}
-                className="w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 placeholder:text-neutral-400"
+                className="w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
                 autoFocus
               />
               {!isUrl && (
@@ -255,7 +276,7 @@ export function PasteRecipeModal({
                   {text.length.toLocaleString()} characters
                 </p>
               )}
-              {isUrl && (
+              {hasValidUrl && (
                 <div className="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-600">
                   <Link2Icon className="h-3 w-3" />
                   <span>URL detected — will fetch and extract the recipe</span>
@@ -269,14 +290,14 @@ export function PasteRecipeModal({
               </div>
             )}
             {isSetupError && (
-              <div className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+              <div className="border-t border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs text-[#241017]">
                 <div className="mb-1 flex items-center gap-1.5 font-semibold">
                   <span>⚙️</span>
                   <span>Recipe extraction needs a Gemini API key</span>
                 </div>
-                <p className="leading-relaxed text-amber-800">
+                <p className="leading-relaxed text-[#521224]">
                   Add a{" "}
-                  <code className="rounded bg-amber-100 px-1">GOOGLE_API_KEY</code>{" "}
+                  <code className="rounded bg-[#800020]/10 px-1">GOOGLE_API_KEY</code>{" "}
                   environment variable in Vercel, then redeploy. Free key at{" "}
                   <a
                     href="https://aistudio.google.com/apikey"
@@ -307,7 +328,7 @@ export function PasteRecipeModal({
               <Button
                 onClick={handleExtract}
                 disabled={!text.trim()}
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
               >
                 {isUrl ? <Link2Icon /> : <MagicWandIcon />}
                 {isUrl ? "Import recipe" : "Extract recipe"}
@@ -318,7 +339,7 @@ export function PasteRecipeModal({
 
         {(step === "processing" || step === "saving") && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#800020]/15 border-t-[#800020]" />
             <p className="text-center text-sm text-neutral-700">
               {processingLabel || "Processing…"}
             </p>
@@ -346,6 +367,7 @@ export function PasteRecipeModal({
                 <Button
                   variant="soft"
                   onClick={() => {
+                    setCaptureMode("paste");
                     setText("");
                     setErrorMessage(null);
                     setStep("paste");
@@ -366,7 +388,6 @@ export function PasteRecipeModal({
                   </Button>
                   <Button
                     variant="soft"
-                    color="amber"
                     onClick={handleSaveDraft}
                   >
                     Save as draft

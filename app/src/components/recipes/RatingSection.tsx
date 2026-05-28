@@ -41,8 +41,8 @@ function StarRating({
               size="1"
               className={`!h-auto !p-1 transition-colors ${
                 star <= (hovered ?? value ?? 0)
-                  ? "text-amber-400 hover:text-amber-500"
-                  : "text-neutral-300 hover:text-amber-300"
+                  ? "text-[#800020]/70 hover:text-[#800020]"
+                  : "text-neutral-300 hover:text-[#800020]/50"
               }`}
               onMouseEnter={() => setHovered(star)}
               onMouseLeave={() => setHovered(null)}

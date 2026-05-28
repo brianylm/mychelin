@@ -332,7 +332,7 @@ export function MealPlanView() {
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   viewType === "week"
-                    ? "bg-amber-600 text-white shadow-sm"
+                    ? "bg-[#17131f] text-white shadow-sm"
                     : "text-neutral-600 hover:text-neutral-800"
                 }`}
               >
@@ -345,7 +345,7 @@ export function MealPlanView() {
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   viewType === "month"
-                    ? "bg-amber-600 text-white shadow-sm"
+                    ? "bg-[#17131f] text-white shadow-sm"
                     : "text-neutral-600 hover:text-neutral-800"
                 }`}
               >
@@ -371,7 +371,7 @@ export function MealPlanView() {
               {offset !== 0 && (
                 <button
                   onClick={() => setOffset(0)}
-                  className="mt-1 text-xs text-amber-700 hover:underline"
+                  className="mt-1 text-xs text-[#800020] hover:underline"
                 >
                   Back to {viewType === "week" ? "this week" : "this month"}
                 </button>
@@ -420,7 +420,7 @@ export function MealPlanView() {
                   key={date}
                   className={`rounded-2xl border bg-white p-4 ${
                     isToday
-                      ? "border-amber-300 ring-1 ring-amber-200"
+                      ? "border-[#800020]/30 ring-1 ring-amber-200"
                       : "border-neutral-200"
                   }`}
                 >
@@ -429,7 +429,7 @@ export function MealPlanView() {
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
                         isToday
-                          ? "bg-amber-600 text-white"
+                          ? "bg-[#17131f] text-white"
                           : "bg-neutral-100 text-neutral-700"
                       }`}
                     >
@@ -439,7 +439,7 @@ export function MealPlanView() {
                       {day}
                     </span>
                     {isToday && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                      <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-medium text-[#800020]">
                         Today
                       </span>
                     )}
@@ -480,7 +480,7 @@ export function MealPlanView() {
                             onClick={() =>
                               setAddingSlot({ date, mealType })
                             }
-                            className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-amber-300 hover:text-amber-600"
+                            className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-[#800020]/30 hover:text-[#800020]"
                           >
                             <PlusIcon className="h-3 w-3" />
                           </button>
@@ -521,7 +521,7 @@ export function MealPlanView() {
                       onClick={() => switchToWeekView(date)}
                       className={`min-h-[80px] p-2 text-left transition-colors hover:bg-neutral-50 ${
                         isToday
-                          ? "bg-amber-50"
+                          ? "bg-[#800020]/5"
                           : !isCurrentMonth
                             ? "bg-neutral-50/50 text-neutral-400"
                             : ""
@@ -531,7 +531,7 @@ export function MealPlanView() {
                         <span
                           className={`mb-1 text-sm font-medium ${
                             isToday
-                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-white"
+                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-[#17131f] text-white"
                               : isCurrentMonth
                                 ? "text-neutral-900"
                                 : "text-neutral-400"
@@ -592,7 +592,7 @@ export function MealPlanView() {
                         const random = recipes[Math.floor(Math.random() * recipes.length)];
                         setSelectedRecipeId(random.id);
                       }}
-                      className={`flex w-full items-center gap-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/50 px-3 py-2 text-left text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100`}
+                      className={`flex w-full items-center gap-2 rounded-lg border border-dashed border-[#800020]/30 bg-[#800020]/5 px-3 py-2 text-left text-sm font-medium text-[#800020] transition-colors hover:bg-[#800020]/10`}
                     >
                       <span className="text-base">🎲</span>
                       Surprise me!
@@ -603,7 +603,7 @@ export function MealPlanView() {
                         onClick={() => setSelectedRecipeId(r.id)}
                         className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                           selectedRecipeId === r.id
-                            ? "bg-amber-50 font-medium text-amber-800"
+                            ? "bg-[#800020]/5 font-medium text-[#521224]"
                             : "hover:bg-neutral-100"
                         }`}
                       >

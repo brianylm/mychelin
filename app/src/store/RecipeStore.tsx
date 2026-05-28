@@ -44,7 +44,14 @@ interface RecipeStoreValue {
   deleteRecipe: (id: number) => Promise<void>;
   addIngredient: (
     recipeId: number,
-    data: { name: string; quantity?: number; unit?: string; notes?: string }
+    data: {
+      name: string;
+      quantity?: number;
+      unit?: string;
+      approximate?: boolean;
+      quantityText?: string;
+      notes?: string;
+    }
   ) => Promise<void>;
   updateIngredient: (
     recipeId: number,
@@ -182,7 +189,14 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       data,
     }: {
       recipeId: number;
-      data: { name: string; quantity?: number; unit?: string; notes?: string };
+      data: {
+        name: string;
+        quantity?: number;
+        unit?: string;
+        approximate?: boolean;
+        quantityText?: string;
+        notes?: string;
+      };
     }) =>
       fetchJson(`/api/recipes/${recipeId}/ingredients`, {
         method: "POST",
@@ -325,7 +339,14 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   const addIngredient = useCallback(
     async (
       recipeId: number,
-      data: { name: string; quantity?: number; unit?: string; notes?: string }
+      data: {
+        name: string;
+        quantity?: number;
+        unit?: string;
+        approximate?: boolean;
+        quantityText?: string;
+        notes?: string;
+      }
     ) => {
       await addIngredientMutation.mutateAsync({ recipeId, data });
     },

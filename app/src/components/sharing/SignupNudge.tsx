@@ -79,11 +79,11 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   return (
     <>
       {/* Sticky bottom banner */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-200 bg-gradient-to-br from-amber-50 to-white px-4 py-3 shadow-lg">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-4 py-3 shadow-lg">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <span className="hidden text-2xl sm:inline">📖</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-900">
+            <p className="text-sm font-semibold text-[#241017]">
               Save this {noun}, discover more heritage recipes
             </p>
             <p className="text-[11px] text-neutral-600 truncate">
@@ -92,7 +92,7 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
           </div>
           <button
             onClick={() => setExpanded(true)}
-            className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+            className="shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#800020]"
           >
             Sign up
           </button>
@@ -135,7 +135,7 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
             </h2>
             <p className="mt-2 text-center text-sm text-neutral-600">
               You&apos;re viewing{" "}
-              <span className="font-semibold text-amber-800">
+              <span className="font-semibold text-[#521224]">
                 &ldquo;{resourceName}&rdquo;
               </span>
               . Join Mychelin to save it, capture family recipes from
@@ -144,29 +144,29 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
             </p>
             <ul className="mt-5 space-y-2 text-sm text-neutral-700">
               <li className="flex items-center gap-2">
-                <span className="text-amber-600">✓</span>
+                <span className="text-[#800020]">✓</span>
                 Save shared recipes to your own collection
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-amber-600">✓</span>
+                <span className="text-[#800020]">✓</span>
                 Capture recipes from conversations in Cantonese, Hokkien,
                 Mandarin, or English
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-amber-600">✓</span>
+                <span className="text-[#800020]">✓</span>
                 Collaborate on cookbooks with your family
               </li>
             </ul>
             <div className="mt-6 flex flex-col gap-2">
               <a
                 href={signupHref}
-                className="w-full rounded-xl bg-amber-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+                className="w-full rounded-xl bg-[#17131f] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#800020]"
               >
                 Create a free account
               </a>
               <a
                 href={loginHref}
-                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-sm font-medium text-neutral-700 transition-colors hover:border-amber-300 hover:bg-amber-50"
+                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-sm font-medium text-neutral-700 transition-colors hover:border-[#800020]/30 hover:bg-[#800020]/5"
               >
                 I already have an account
               </a>
