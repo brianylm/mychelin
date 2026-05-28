@@ -238,39 +238,45 @@ export function LandingPage() {
       {/* Archived — see MYCHELIN.md */}
 
       {/* ==================== FINAL CTA ==================== */}
-      <section id="final" className="mx-auto mt-16 max-w-5xl px-6 pb-6 sm:mt-20">
-        <div className="rounded-3xl bg-[#1A1A1A] px-8 py-16 text-center sm:px-14 sm:py-24">
-          <h2
-            className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
-            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
-          >
-            Bring the taste of home with you.
-          </h2>
-          <p className="mx-auto mt-5 max-w-lg text-[#9b9b9b]">
-            Your family&apos;s recipes are one conversation away. Capture them,
-            cook them, and make them part of your new routine.
-          </p>
-          <div className="mt-8 flex justify-center gap-6">
-            <Link
-              href="/login?mode=signup"
-              className="text-sm font-semibold text-white hover:text-[#800020] transition-colors"
+      <section id="final" className="mx-auto mt-20 max-w-6xl px-6 pb-8 sm:mt-28">
+        <div className="grid gap-12 border-y border-[#d8d8d2] py-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:py-16">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6b6b6b]">
+              Start your recipe book
+            </p>
+            <h2
+              className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
             >
-              Start cooking like home →
-            </Link>
+              Bring the taste of home with you.
+            </h2>
           </div>
-          <p className="mt-4 text-xs text-[#6b6b6b]">
-            Free.
-          </p>
+
+          <div className="flex flex-col justify-end">
+            <p className="max-w-2xl text-base leading-7 text-[#5f6368]">
+              Your family&apos;s recipes are one conversation away. Capture them,
+              cook them, and make them part of your new routine.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-6">
+              <Link
+                href="/login?mode=signup"
+                className="text-sm font-semibold text-[#1A1A1A] transition-colors hover:text-[#800020]"
+              >
+                Start cooking like home →
+              </Link>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#8a8a8a]">
+                Free
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ==================== FOOTER ==================== */}
-      <footer className="mx-auto max-w-5xl px-6 py-10">
-        <div className="border-t border-[#e8e8e3] pt-8 text-center">
-          <p className="text-xs text-[#9b9b9b]">
-            Preserving family recipes and heritage, one conversation at a time.
-          </p>
-        </div>
+      <footer className="mx-auto max-w-6xl px-6 py-10">
+        <p className="text-xs text-[#9b9b9b]">
+          Preserving family recipes and heritage, one conversation at a time.
+        </p>
       </footer>
     </div>
   );
