@@ -88,7 +88,7 @@ export function LandingPage() {
           <div className="max-w-xl">
             <h1
               className="text-5xl font-light leading-[1.05] tracking-tight text-[#1a1a1a] sm:text-6xl md:text-7xl"
-              style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 300 }}
+              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif", fontWeight: 700 }}
             >
               Cook like home, even in your new home.
             </h1>
@@ -128,7 +128,7 @@ export function LandingPage() {
           </p>
           <h2
             className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl"
-            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
           >
             Three steps to cook like home again.
           </h2>
@@ -186,7 +186,7 @@ export function LandingPage() {
           </p>
           <h2
             className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl"
-            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
           >
             Everything around the recipe, handled.
           </h2>
@@ -251,7 +251,7 @@ export function LandingPage() {
         <div className="rounded-3xl bg-[#1a1a1a] px-8 py-16 text-center sm:px-14 sm:py-24">
           <h2
             className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
-            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
           >
             Bring the taste of home with you.
           </h2>
