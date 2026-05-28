@@ -22,7 +22,7 @@ function getJwtSecret(): Uint8Array {
   return _jwtSecret;
 }
 
-const COOKIE_NAME = "mychelin_token";
+export const COOKIE_NAME = "mychelin_token";
 const TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
 export interface AuthUser {
@@ -68,28 +68,54 @@ function getCookieDomain(host: string): string | undefined {
     return undefined;
   }
 
-  // Allow explicit override via env var
+  // Allow explicit override via env var.
   if (process.env.COOKIE_DOMAIN) {
     return process.env.COOKIE_DOMAIN;
   }
 
   const hostname = host.split(":")[0];
 
-  // For Vercel deployments, share across subdomains of the project domain
+  // Vercel preview/production domains should use host-only cookies. A broad
+  // Domain attribute like `.sg.vercel.app` is fragile and can survive logout in
+  // confusing ways across aliases. Host-only is safer for auth.
   if (hostname.endsWith(".vercel.app")) {
-    const parts = hostname.split(".");
-    if (parts.length >= 3) {
-      return `.${parts.slice(-3).join(".")}`;
-    }
+    return undefined;
   }
 
-  // For custom domains, use the root domain (last two parts)
+  // For custom domains, use the root domain (last two parts).
   const parts = hostname.split(".");
   if (parts.length > 2) {
     return `.${parts.slice(-2).join(".")}`;
   }
 
   return `.${hostname}`;
+}
+
+export function getCookieDomainCandidates(host?: string): (string | undefined)[] {
+  const candidates = new Set<string | undefined>([undefined]);
+  if (!host) return [...candidates];
+
+  const hostname = host.split(":")[0];
+  const configured = getCookieDomain(host);
+  if (configured) candidates.add(configured);
+
+  // Clear legacy/broad cookies from earlier deployments too. Browsers ignore
+  // invalid domains, but these make logout resilient if the domain strategy
+  // changed after a user logged in.
+  if (hostname && !hostname.includes("localhost") && !hostname.includes("127.0.0.1")) {
+    candidates.add(hostname);
+    candidates.add(`.${hostname}`);
+
+    const parts = hostname.split(".");
+    if (hostname.endsWith(".vercel.app") && parts.length >= 3) {
+      candidates.add(`.${parts.slice(-3).join(".")}`);
+    }
+    if (parts.length > 2) {
+      candidates.add(`.${parts.slice(-2).join(".")}`);
+    }
+  }
+
+  return [...candidates];
 }
 
 export async function setAuthCookie(
@@ -111,20 +137,16 @@ export async function setAuthCookie(
 
 export async function clearAuthCookie(host?: string): Promise<void> {
   const cookieStore = await cookies();
-  const domain = host ? getCookieDomain(host) : undefined;
 
-  // Delete cookie without domain (covers legacy cookies)
-  cookieStore.delete(COOKIE_NAME);
-
-  // Also clear with explicit domain to remove subdomain-scoped cookies
-  if (domain) {
+  for (const domain of getCookieDomainCandidates(host)) {
     cookieStore.set(COOKIE_NAME, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 0,
+      expires: new Date(0),
       path: "/",
-      domain,
+      ...(domain ? { domain } : {}),
     });
   }
 }
