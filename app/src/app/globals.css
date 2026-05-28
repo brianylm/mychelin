@@ -134,6 +134,27 @@ h6,
   font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
 }
 
+.landing-content,
+.landing-content h1,
+.landing-content h2,
+.landing-content h3,
+.landing-content h4 {
+  font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
+  font-weight: 400 !important;
+}
+
+.landing-content p,
+.landing-content a,
+.landing-content button,
+.landing-content span {
+  font-family: "Satoshi", var(--font-dm-sans), system-ui, sans-serif;
+}
+
+.landing-content .landing-serif {
+  font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
+  font-weight: 400 !important;
+}
+
 input,
 textarea,
 select,
