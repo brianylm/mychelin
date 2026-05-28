@@ -34,16 +34,22 @@ export function LandingPage() {
               <span style={{ color: "#262626" }}>chelin</span>
             </span>
           </a>
-          <a
-            href="#how-it-works"
-            className="hidden rounded-full px-5 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
-          >
-            How it works
-          </a>
-          <div className="flex flex-1 justify-end">
+          <div className="flex flex-1 items-center justify-end gap-1">
+            <a
+              href="#features"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
+            >
+              Features
+            </a>
+            <a
+              href="#how-it-works"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
+            >
+              How it works
+            </a>
             <Link
               href="/login?mode=signup"
-              className="relative shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
+              className="relative ml-1 shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
             >
               Get started
             </Link>
@@ -167,26 +173,70 @@ export function LandingPage() {
           ))}
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+      </section>
+
+      {/* ==================== FEATURES ==================== */}
+      <section
+        id="features"
+        className="mx-auto mt-16 max-w-6xl scroll-mt-28 px-6 sm:mt-24"
+      >
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold tracking-[0.22em] text-[#800020]/70">
+            FEATURES
+          </p>
+          <h2
+            className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl"
+            style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+          >
+            Everything around the recipe, handled.
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-[#6b6b6b]">
+            From the first family conversation to the grocery run, Mychelin keeps the cooking flow simple.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-5 lg:grid-cols-3">
           {[
             {
               title: "Voice + chat recipe capture",
               body: "Mychelin sits in your conversations and extracts key data for the recipe. Not sure what to clarify, or don’t speak the language? Mychelin helps with that too.",
+              screenTitle: "Recipe capture",
+              screenLines: ["Aunty: add enough soy sauce", "Mychelin: how much is enough?", "Saved: 2 tbsp light soy sauce"],
             },
             {
               title: "Meal planning",
               body: "Plan and prepare your meals easily. Streamline the homecook process by randomising your meals, cooking and prepping meals in advance, so you can enjoy the process rather than worry about it.",
+              screenTitle: "This week",
+              screenLines: ["Mon · Tau yu bak", "Wed · Chicken curry", "Prep ahead: chop aromatics"],
             },
             {
               title: "Shopping lists",
               body: "Stay on top of what you need, and what’s expiring.",
+              screenTitle: "Shopping list",
+              screenLines: ["✓ Garlic", "□ Coconut milk", "Expiring soon: coriander"],
             },
           ].map((feature) => (
             <div
               key={feature.title}
-              className="rounded-2xl border border-[#ece8df] bg-[#fffdf8] px-5 py-5"
+              className="overflow-hidden rounded-[2rem] border border-[#ece8df] bg-[#fffdf8] p-5 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
             >
-              <h3 className="text-sm font-semibold text-[#1a1a1a]">{feature.title}</h3>
+              <div className="mx-auto flex h-80 max-w-[13rem] justify-center rounded-[2.25rem] border border-stone-900/10 bg-[#1a1a1a] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.18)]">
+                <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-[#fafaf8] px-4 py-5">
+                  <div className="absolute left-1/2 top-2 h-1.5 w-16 -translate-x-1/2 rounded-full bg-stone-900/15" />
+                  <div className="mt-6 rounded-2xl bg-[#800020]/10 px-3 py-2 text-xs font-semibold text-[#800020]">
+                    {feature.screenTitle}
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {feature.screenLines.map((line) => (
+                      <div key={line} className="rounded-xl bg-white px-3 py-2 text-xs text-[#4a4a4a] shadow-sm">
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute inset-x-8 bottom-5 h-1 rounded-full bg-stone-900/15" />
+                </div>
+              </div>
+              <h3 className="mt-6 text-lg font-semibold tracking-tight text-[#1a1a1a]">{feature.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-[#6b6b6b]">{feature.body}</p>
             </div>
           ))}
