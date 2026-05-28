@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Cormorant_Garamond } from "next/font/google";
+import { Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 
-const brandSerif = Cormorant_Garamond({
+const brandSerif = Instrument_Serif({
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["400"],
   style: ["normal"],
   variable: "--font-brand-serif",
 });
@@ -46,11 +46,11 @@ export function LandingPage() {
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <span className="text-lg">🍳</span>
             <span
-              className="text-lg font-bold tracking-tight"
+              className="text-xl font-normal tracking-tight"
               style={{
-                fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif",
-                fontWeight: 700,
-                letterSpacing: "-0.035em",
+                fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif",
+                fontWeight: 400,
+                letterSpacing: "-0.045em",
                 textTransform: "lowercase",
                 WebkitFontSmoothing: "antialiased",
                 MozOsxFontSmoothing: "grayscale",
@@ -90,7 +90,7 @@ export function LandingPage() {
           src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: "center center" }}
+          style={{ objectPosition: "68% center" }}
         />
         {/* Gradient overlay — stronger on left where text sits */}
         <div
@@ -113,8 +113,8 @@ export function LandingPage() {
         <div className="relative z-10 w-full max-w-5xl px-6 py-20 sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
             <h1
-              className="text-5xl font-light leading-[1.05] tracking-tight text-[#1A1A1A] sm:text-6xl md:text-7xl"
-              style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif", fontWeight: 600 }}
+              className="text-6xl font-normal leading-[0.92] tracking-[-0.055em] text-[#1A1A1A] sm:text-7xl md:text-8xl"
+              style={{ fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif", fontWeight: 400 }}
             >
               Cook like home, even in your new home.
             </h1>
@@ -147,8 +147,8 @@ export function LandingPage() {
             How it works
           </p>
           <h2
-            className="mt-4 text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
-            style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
+            className="mt-4 text-5xl font-normal leading-[0.95] tracking-[-0.055em] text-[#1A1A1A] sm:text-6xl lg:text-7xl"
+            style={{ fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif" }}
           >
             Three steps to cook like home again.
           </h2>
@@ -184,8 +184,8 @@ export function LandingPage() {
                 {item.step}
               </div>
               <h3
-                className="mt-6 text-xl font-bold leading-snug tracking-[-0.035em] text-[#1A1A1A]"
-                style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
+                className="mt-6 text-2xl font-normal leading-none tracking-[-0.045em] text-[#1A1A1A]"
+                style={{ fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif" }}
               >
                 {item.title}
               </h3>
@@ -208,8 +208,8 @@ export function LandingPage() {
               Features
             </p>
             <h2
-              className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
-              style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
+              className="mt-6 max-w-xl text-5xl font-normal leading-[0.95] tracking-[-0.055em] text-[#1A1A1A] sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif" }}
             >
               Everything around the recipe, handled.
             </h2>
@@ -239,8 +239,8 @@ export function LandingPage() {
                           0{index + 1}
                         </p>
                         <h3
-                          className="mt-4 text-2xl font-bold leading-tight tracking-[-0.04em] text-[#1A1A1A]"
-                          style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
+                          className="mt-4 text-3xl font-normal leading-none tracking-[-0.05em] text-[#1A1A1A]"
+                          style={{ fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif" }}
                         >
                           {feature.title}
                         </h3>
@@ -303,8 +303,8 @@ export function LandingPage() {
               Start your recipe book
             </p>
             <h2
-              className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
-              style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
+              className="mt-6 max-w-xl text-5xl font-normal leading-[0.95] tracking-[-0.055em] text-[#1A1A1A] sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: "var(--font-brand-serif), 'Instrument Serif', Georgia, serif" }}
             >
               Bring the taste of home with you.
             </h2>
