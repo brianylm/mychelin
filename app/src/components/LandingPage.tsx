@@ -53,7 +53,7 @@ export function LandingPage() {
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <span className="text-lg">🍳</span>
             <span
-              className="text-lg font-bold tracking-tight"
+              className="logo-serif text-lg font-bold tracking-tight"
               style={{
                 fontFamily: "var(--font-logo-serif), 'Libre Baskerville', Georgia, serif",
                 fontWeight: 700,
