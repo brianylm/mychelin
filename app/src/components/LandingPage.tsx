@@ -11,7 +11,7 @@ const libreBaskerville = Libre_Baskerville({
 export function LandingPage() {
   return (
     <div
-      className={`min-h-screen bg-[#fafaf8] text-[#1a1a1a] ${libreBaskerville.variable}`}
+      className={`min-h-screen bg-white text-[#1A1A1A] ${libreBaskerville.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -31,7 +31,7 @@ export function LandingPage() {
               }}
             >
               <span style={{ color: "#800020" }}>my</span>
-              <span style={{ color: "#262626" }}>chelin</span>
+              <span style={{ color: "#1A1A1A" }}>chelin</span>
             </span>
           </a>
           <div className="flex flex-1 items-center justify-end gap-1">
@@ -87,7 +87,7 @@ export function LandingPage() {
         <div className="relative z-10 w-full max-w-5xl px-6 py-20 sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
             <h1
-              className="text-5xl font-light leading-[1.05] tracking-tight text-[#1a1a1a] sm:text-6xl md:text-7xl"
+              className="text-5xl font-light leading-[1.05] tracking-tight text-[#1A1A1A] sm:text-6xl md:text-7xl"
               style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif", fontWeight: 700 }}
             >
               Cook like home, even in your new home.
@@ -163,7 +163,7 @@ export function LandingPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-sm font-semibold text-[#800020]">
                 {item.step}
               </div>
-              <h3 className="mt-6 text-xl font-semibold tracking-tight text-[#1a1a1a]">
+              <h3 className="mt-6 text-xl font-semibold tracking-tight text-[#1A1A1A]">
                 {item.title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-[#6b6b6b]">
@@ -220,8 +220,8 @@ export function LandingPage() {
               key={feature.title}
               className="overflow-hidden rounded-[2rem] border border-[#ece8df] bg-[#fffdf8] p-5 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
             >
-              <div className="mx-auto flex h-80 max-w-[13rem] justify-center rounded-[2.25rem] border border-stone-900/10 bg-[#1a1a1a] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.18)]">
-                <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-[#fafaf8] px-4 py-5">
+              <div className="mx-auto flex h-80 max-w-[13rem] justify-center rounded-[2.25rem] border border-stone-900/10 bg-[#1A1A1A] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.18)]">
+                <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-white px-4 py-5">
                   <div className="absolute left-1/2 top-2 h-1.5 w-16 -translate-x-1/2 rounded-full bg-stone-900/15" />
                   <div className="mt-6 rounded-2xl bg-[#800020]/10 px-3 py-2 text-xs font-semibold text-[#800020]">
                     {feature.screenTitle}
@@ -236,7 +236,7 @@ export function LandingPage() {
                   <div className="absolute inset-x-8 bottom-5 h-1 rounded-full bg-stone-900/15" />
                 </div>
               </div>
-              <h3 className="mt-6 text-lg font-semibold tracking-tight text-[#1a1a1a]">{feature.title}</h3>
+              <h3 className="mt-6 text-lg font-semibold tracking-tight text-[#1A1A1A]">{feature.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-[#6b6b6b]">{feature.body}</p>
             </div>
           ))}
@@ -248,7 +248,7 @@ export function LandingPage() {
 
       {/* ==================== FINAL CTA ==================== */}
       <section id="final" className="mx-auto mt-16 max-w-5xl px-6 pb-6 sm:mt-20">
-        <div className="rounded-3xl bg-[#1a1a1a] px-8 py-16 text-center sm:px-14 sm:py-24">
+        <div className="rounded-3xl bg-[#1A1A1A] px-8 py-16 text-center sm:px-14 sm:py-24">
           <h2
             className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
             style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
