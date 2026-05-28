@@ -15,9 +15,9 @@ export function LandingPage() {
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
-      <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100%-2rem)]">
-        <nav className="flex items-center gap-4 px-5 py-3 rounded-full bg-white/70 backdrop-blur-xl ring-1 ring-stone-200/60 [box-shadow:inset_0_1px_1px_rgba(255,255,255,0.8),0_4px_24px_rgba(0,0,0,0.06)]">
-          <a href="#" className="flex items-center gap-2 shrink-0">
+      <header className="fixed top-4 left-1/2 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">
+        <nav className="relative flex items-center justify-between gap-3 overflow-hidden rounded-full border border-white/45 bg-white/[0.26] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-18px_34px_rgba(255,255,255,0.16),0_18px_55px_rgba(40,26,19,0.14)] backdrop-blur-2xl backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-4 before:top-0 before:h-px before:bg-white/80 supports-[backdrop-filter]:bg-white/[0.18] sm:px-5 sm:py-3">
+          <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <span className="text-lg">🍳</span>
             <span
               className="text-lg font-bold tracking-tight"
@@ -34,45 +34,31 @@ export function LandingPage() {
               <span style={{ color: "#262626" }}>chelin</span>
             </span>
           </a>
-          <div className="w-px h-5 bg-stone-200 hidden md:block" />
-          <div className="hidden md:flex items-center gap-4">
-            <a
-              href="#how-it-works"
-              className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
-            >
-              How it works
-            </a>
-            <a
-              href="#final"
-              className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
-            >
-              Start cooking
-            </a>
-          </div>
-          <div className="w-px h-5 bg-stone-200 hidden md:block" />
-          <Link
-            href="/login"
-            className="text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors shrink-0"
+          <a
+            href="#how-it-works"
+            className="hidden rounded-full px-5 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
           >
-            Sign in
-          </Link>
-              <Link
-                href="/login?mode=signup"
-                className="text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors shrink-0"
-              >
-                Get started
-              </Link>
+            How it works
+          </a>
+          <div className="flex flex-1 justify-end">
+            <Link
+              href="/login?mode=signup"
+              className="relative shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
+            >
+              Get started
+            </Link>
+          </div>
         </nav>
       </header>
 
       {/* ==================== HERO ==================== */}
-      <section className="relative mx-4 mt-4 flex min-h-[75vh] items-center overflow-hidden rounded-3xl sm:mx-6 sm:mt-6 sm:min-h-[80vh] lg:min-h-[85vh]">
+      <section className="relative flex min-h-[82vh] items-center overflow-hidden sm:min-h-[88vh] lg:min-h-screen">
         {/* Background image */}
         <img
-          src="/images/hero.jpg"
-          alt="A grandparent and grandchild sharing a home-cooked meal together"
+          src="/images/hero-family-table.jpg"
+          alt="A family sharing a home-cooked meal together"
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition: "85% center" }}
+          style={{ objectPosition: "center center" }}
         />
         {/* Gradient overlay — stronger on left where text sits */}
         <div
