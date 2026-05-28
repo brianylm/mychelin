@@ -167,18 +167,27 @@ export function LandingPage() {
           ))}
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
           {[
-            "Voice + chat capture",
-            "Dialect-aware transcription",
-            "Meal planning",
-            "Shopping lists",
+            {
+              title: "Voice + chat recipe capture",
+              body: "Mychelin sits in your conversations and extracts key data for the recipe. Not sure what to clarify, or don’t speak the language? Mychelin helps with that too.",
+            },
+            {
+              title: "Meal planning",
+              body: "Plan and prepare your meals easily. Streamline the homecook process by randomising your meals, cooking and prepping meals in advance, so you can enjoy the process rather than worry about it.",
+            },
+            {
+              title: "Shopping lists",
+              body: "Stay on top of what you need, and what’s expiring.",
+            },
           ].map((feature) => (
             <div
-              key={feature}
-              className="rounded-2xl border border-[#ece8df] bg-[#fffdf8] px-5 py-4 text-sm font-medium text-[#4a4a4a]"
+              key={feature.title}
+              className="rounded-2xl border border-[#ece8df] bg-[#fffdf8] px-5 py-5"
             >
-              {feature}
+              <h3 className="text-sm font-semibold text-[#1a1a1a]">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[#6b6b6b]">{feature.body}</p>
             </div>
           ))}
         </div>
