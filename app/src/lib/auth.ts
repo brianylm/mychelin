@@ -110,12 +110,28 @@ export function getCookieDomainCandidates(host?: string): (string | undefined)[]
     if (hostname.endsWith(".vercel.app") && parts.length >= 3) {
       candidates.add(`.${parts.slice(-3).join(".")}`);
     }
-    if (parts.length > 2) {
+    if (!hostname.endsWith(".vercel.app") && parts.length > 2) {
       candidates.add(`.${parts.slice(-2).join(".")}`);
     }
   }
 
   return [...candidates];
+}
+
+export function buildClearAuthCookieHeaders(host?: string): string[] {
+  return getCookieDomainCandidates(host).map((domain) => {
+    const parts = [
+      `${COOKIE_NAME}=`,
+      "Path=/",
+      "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+      "Max-Age=0",
+      "HttpOnly",
+      "SameSite=Lax",
+    ];
+    if (process.env.NODE_ENV === "production") parts.push("Secure");
+    if (domain) parts.push(`Domain=${domain}`);
+    return parts.join("; ");
+  });
 }
 
 export async function setAuthCookie(
