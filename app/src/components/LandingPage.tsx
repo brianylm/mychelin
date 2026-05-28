@@ -114,126 +114,123 @@ export function LandingPage() {
       {/* ==================== HOW IT WORKS ==================== */}
       <section
         id="how-it-works"
-        className="mx-auto mt-16 max-w-6xl scroll-mt-28 px-6 sm:mt-24"
+        className="mx-auto mt-20 max-w-6xl scroll-mt-28 px-6 sm:mt-28"
       >
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold tracking-[0.22em] text-[#800020]/70">
-            HOW IT WORKS
-          </p>
-          <h2
-            className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl"
-            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
-          >
-            Three steps to cook like home again.
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-[#6b6b6b]">
-            Mychelin turns a messy family conversation into something you can save,
-            plan around, and actually cook on a weeknight.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
-          {[
-            {
-              step: "01",
-              title: "Record the family recipe",
-              body: "Capture voice, chat notes, URLs, or rough memory. Mychelin handles mixed languages, dialects, and vague agak-agak instructions.",
-            },
-            {
-              step: "02",
-              title: "Turn it into a usable recipe",
-              body: "AI structures ingredients, method, timing, quantities, substitutions, and the family story — then asks what is missing before it gets lost.",
-            },
-            {
-              step: "03",
-              title: "Plan, shop, and cook it",
-              body: "Add recipes to a weekly plan, generate a shopping list, and cook from a clean step-by-step view when dinner time arrives.",
-            },
-          ].map((item) => (
-            <div
-              key={item.step}
-              className="rounded-[2rem] border border-[#ece8df] bg-white/80 p-6 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
+        <div className="grid gap-12 border-t border-[#d8d8d2] pt-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6b6b6b]">
+              How it works
+            </p>
+            <h2
+              className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-sm font-semibold text-[#800020]">
-                {item.step}
-              </div>
-              <h3 className="mt-6 text-xl font-semibold tracking-tight text-[#1A1A1A]">
-                {item.title}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-[#6b6b6b]">
-                {item.body}
-              </p>
-            </div>
-          ))}
-        </div>
+              Three steps to cook like home again.
+            </h2>
+          </div>
 
+          <div className="divide-y divide-[#d8d8d2] border-t border-[#d8d8d2] lg:border-t-0">
+            {[
+              {
+                title: "Record the family recipe",
+                body: "Capture voice, chat notes, URLs, or rough memory. Mychelin handles mixed languages, dialects, and vague agak-agak instructions.",
+              },
+              {
+                title: "Turn it into a usable recipe",
+                body: "AI structures ingredients, method, timing, quantities, substitutions, and the family story — then asks what is missing before it gets lost.",
+              },
+              {
+                title: "Plan, shop, and cook it",
+                body: "Add recipes to a weekly plan, generate a shopping list, and cook from a clean step-by-step view when dinner time arrives.",
+              },
+            ].map((item) => (
+              <div key={item.title} className="py-8 first:pt-0 lg:first:pt-0">
+                <h3
+                  className="text-xl font-bold leading-snug tracking-[-0.035em] text-[#1A1A1A]"
+                  style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+                >
+                  {item.title}
+                </h3>
+                <p className="mt-3 max-w-2xl text-base leading-7 text-[#5f6368]">
+                  {item.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ==================== FEATURES ==================== */}
       <section
         id="features"
-        className="mx-auto mt-16 max-w-6xl scroll-mt-28 px-6 sm:mt-24"
+        className="mx-auto mt-20 max-w-6xl scroll-mt-28 px-6 sm:mt-28"
       >
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold tracking-[0.22em] text-[#800020]/70">
-            FEATURES
-          </p>
-          <h2
-            className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl"
-            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
-          >
-            Everything around the recipe, handled.
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-[#6b6b6b]">
-            From the first family conversation to the grocery run, Mychelin keeps the cooking flow simple.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {[
-            {
-              title: "Voice + chat recipe capture",
-              body: "Mychelin sits in your conversations and extracts key data for the recipe. Not sure what to clarify, or don’t speak the language? Mychelin helps with that too.",
-              screenTitle: "Recipe capture",
-              screenLines: ["Aunty: add enough soy sauce", "Mychelin: how much is enough?", "Saved: 2 tbsp light soy sauce"],
-            },
-            {
-              title: "Meal planning",
-              body: "Plan and prepare your meals easily. Streamline the homecook process by randomising your meals, cooking and prepping meals in advance, so you can enjoy the process rather than worry about it.",
-              screenTitle: "This week",
-              screenLines: ["Mon · Tau yu bak", "Wed · Chicken curry", "Prep ahead: chop aromatics"],
-            },
-            {
-              title: "Shopping lists",
-              body: "Stay on top of what you need, and what’s expiring.",
-              screenTitle: "Shopping list",
-              screenLines: ["✓ Garlic", "□ Coconut milk", "Expiring soon: coriander"],
-            },
-          ].map((feature) => (
-            <div
-              key={feature.title}
-              className="overflow-hidden rounded-[2rem] border border-[#ece8df] bg-[#fffdf8] p-5 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
+        <div className="grid gap-12 border-t border-[#d8d8d2] pt-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6b6b6b]">
+              Features
+            </p>
+            <h2
+              className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
             >
-              <div className="mx-auto flex h-80 max-w-[13rem] justify-center rounded-[2.25rem] border border-stone-900/10 bg-[#1A1A1A] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.18)]">
-                <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-white px-4 py-5">
-                  <div className="absolute left-1/2 top-2 h-1.5 w-16 -translate-x-1/2 rounded-full bg-stone-900/15" />
-                  <div className="mt-6 rounded-2xl bg-[#800020]/10 px-3 py-2 text-xs font-semibold text-[#800020]">
-                    {feature.screenTitle}
+              Everything around the recipe, handled.
+            </h2>
+          </div>
+
+          <div className="divide-y divide-[#d8d8d2] border-t border-[#d8d8d2] lg:border-t-0">
+            {[
+              {
+                title: "Voice + chat recipe capture",
+                body: "Mychelin sits in your conversations and extracts key data for the recipe. Not sure what to clarify, or don’t speak the language? Mychelin helps with that too.",
+                screenTitle: "Recipe capture",
+                screenLines: ["Aunty: add enough soy sauce", "Mychelin: how much is enough?", "Saved: 2 tbsp light soy sauce"],
+              },
+              {
+                title: "Meal planning",
+                body: "Plan and prepare your meals easily. Streamline the homecook process by randomising your meals, cooking and prepping meals in advance, so you can enjoy the process rather than worry about it.",
+                screenTitle: "This week",
+                screenLines: ["Mon · Tau yu bak", "Wed · Chicken curry", "Prep ahead: chop aromatics"],
+              },
+              {
+                title: "Shopping lists",
+                body: "Stay on top of what you need, and what’s expiring.",
+                screenTitle: "Shopping list",
+                screenLines: ["✓ Garlic", "□ Coconut milk", "Expiring soon: coriander"],
+              },
+            ].map((feature) => (
+              <div key={feature.title} className="grid gap-8 py-10 first:pt-0 sm:grid-cols-[1fr_13rem] sm:items-center">
+                <div>
+                  <h3
+                    className="text-xl font-bold leading-snug tracking-[-0.035em] text-[#1A1A1A]"
+                    style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p className="mt-3 max-w-2xl text-base leading-7 text-[#5f6368]">
+                    {feature.body}
+                  </p>
+                </div>
+
+                <div className="mx-auto flex h-72 w-48 justify-center rounded-[2rem] border border-stone-900/10 bg-[#1A1A1A] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.16)] sm:mx-0">
+                  <div className="relative h-full w-full overflow-hidden rounded-[1.55rem] bg-white px-4 py-5">
+                    <div className="absolute left-1/2 top-2 h-1.5 w-14 -translate-x-1/2 rounded-full bg-stone-900/15" />
+                    <div className="mt-6 rounded-2xl bg-[#800020]/10 px-3 py-2 text-xs font-semibold text-[#800020]">
+                      {feature.screenTitle}
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {feature.screenLines.map((line) => (
+                        <div key={line} className="rounded-xl bg-[#fafafa] px-3 py-2 text-xs leading-relaxed text-[#4a4a4a] shadow-sm">
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="absolute inset-x-8 bottom-5 h-1 rounded-full bg-stone-900/15" />
                   </div>
-                  <div className="mt-4 space-y-3">
-                    {feature.screenLines.map((line) => (
-                      <div key={line} className="rounded-xl bg-white px-3 py-2 text-xs text-[#4a4a4a] shadow-sm">
-                        {line}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="absolute inset-x-8 bottom-5 h-1 rounded-full bg-stone-900/15" />
                 </div>
               </div>
-              <h3 className="mt-6 text-lg font-semibold tracking-tight text-[#1A1A1A]">{feature.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#6b6b6b]">{feature.body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
