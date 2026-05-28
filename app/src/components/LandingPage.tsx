@@ -103,12 +103,6 @@ export function LandingPage() {
               >
                 Try it now →
               </Link>
-              <a
-                href="#how-it-works"
-                className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
-              >
-                See how it works
-              </a>
             </div>
           </div>
         </div>
