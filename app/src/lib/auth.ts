@@ -92,30 +92,33 @@ function getCookieDomain(host: string): string | undefined {
 }
 
 export function getCookieDomainCandidates(host?: string): (string | undefined)[] {
-  const candidates = new Set<string | undefined>([undefined]);
-  if (!host) return [...candidates];
+  const domainCandidates = new Set<string>();
+  if (!host) return [undefined];
 
   const hostname = host.split(":")[0];
   const configured = getCookieDomain(host);
-  if (configured) candidates.add(configured);
+  if (configured) domainCandidates.add(configured);
 
   // Clear legacy/broad cookies from earlier deployments too. Browsers ignore
   // invalid domains, but these make logout resilient if the domain strategy
   // changed after a user logged in.
   if (hostname && !hostname.includes("localhost") && !hostname.includes("127.0.0.1")) {
-    candidates.add(hostname);
-    candidates.add(`.${hostname}`);
+    domainCandidates.add(hostname);
+    domainCandidates.add(`.${hostname}`);
 
     const parts = hostname.split(".");
     if (hostname.endsWith(".vercel.app") && parts.length >= 3) {
-      candidates.add(`.${parts.slice(-3).join(".")}`);
+      domainCandidates.add(`.${parts.slice(-3).join(".")}`);
     }
     if (!hostname.endsWith(".vercel.app") && parts.length > 2) {
-      candidates.add(`.${parts.slice(-2).join(".")}`);
+      domainCandidates.add(`.${parts.slice(-2).join(".")}`);
     }
   }
 
-  return [...candidates];
+  // Put the host-only cookie last. Some runtimes collapse duplicate
+  // Set-Cookie headers by name despite differing Domain attributes; if only
+  // one survives, it must clear the current host-only auth cookie.
+  return [...domainCandidates, undefined];
 }
 
 export function buildClearAuthCookieHeaders(host?: string): string[] {
