@@ -127,6 +127,13 @@ h6,
   letter-spacing: -0.01em;
 }
 
+.brand-serif,
+.brand-serif h1,
+.brand-serif h2,
+.brand-serif h3 {
+  font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
+}
+
 input,
 textarea,
 select,

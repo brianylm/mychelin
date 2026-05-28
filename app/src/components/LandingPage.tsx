@@ -46,7 +46,7 @@ export function LandingPage() {
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <span className="text-lg">🍳</span>
             <span
-              className="text-xl font-normal tracking-tight"
+              className="brand-serif text-xl font-normal tracking-tight"
               style={{
                 fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif",
                 fontWeight: 400,
@@ -113,7 +113,7 @@ export function LandingPage() {
         <div className="relative z-10 w-full max-w-5xl px-6 py-20 sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
             <h1
-              className="text-5xl font-normal leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl"
+              className="brand-serif text-5xl font-normal leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif", fontWeight: 400 }}
             >
               Cook like home, even in your new home.
@@ -147,7 +147,7 @@ export function LandingPage() {
             How it works
           </p>
           <h2
-            className="mt-4 text-4xl font-normal leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+            className="brand-serif mt-4 text-4xl font-normal leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
             style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
           >
             Three steps to cook like home again.
@@ -184,7 +184,7 @@ export function LandingPage() {
                 {item.step}
               </div>
               <h3
-                className="mt-6 text-xl font-normal leading-snug tracking-[-0.035em] text-[#1A1A1A]"
+                className="brand-serif mt-6 text-xl font-normal leading-snug tracking-[-0.035em] text-[#1A1A1A]"
                 style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
               >
                 {item.title}
@@ -208,7 +208,7 @@ export function LandingPage() {
               Features
             </p>
             <h2
-              className="mt-6 max-w-xl text-4xl font-normal leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              className="brand-serif mt-6 max-w-xl text-4xl font-normal leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
             >
               Everything around the recipe, handled.
@@ -239,7 +239,7 @@ export function LandingPage() {
                           0{index + 1}
                         </p>
                         <h3
-                          className="mt-4 text-2xl font-normal leading-snug tracking-[-0.04em] text-[#1A1A1A]"
+                          className="brand-serif mt-4 text-2xl font-normal leading-snug tracking-[-0.04em] text-[#1A1A1A]"
                           style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
                         >
                           {feature.title}
@@ -303,7 +303,7 @@ export function LandingPage() {
               Start your recipe book
             </p>
             <h2
-              className="mt-6 max-w-xl text-4xl font-normal leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              className="brand-serif mt-6 max-w-xl text-4xl font-normal leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
             >
               Bring the taste of home with you.
