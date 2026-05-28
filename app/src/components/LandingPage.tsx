@@ -114,83 +114,73 @@ export function LandingPage() {
       {/* ==================== HOW IT WORKS ==================== */}
       <section
         id="how-it-works"
-        className="mx-auto mt-16 max-w-5xl scroll-mt-28 px-6 sm:mt-20"
+        className="mx-auto mt-16 max-w-6xl scroll-mt-28 px-6 sm:mt-24"
       >
-        <div className="text-center">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold tracking-[0.22em] text-[#800020]/70">
+            HOW IT WORKS
+          </p>
           <h2
-            className="text-3xl font-bold tracking-tight sm:text-4xl"
+            className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl"
             style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
           >
-            How it works
+            Three steps to cook like home again.
           </h2>
-          <p className="mt-3 text-[#6b6b6b]">
-            Two ways Mychelin lowers the barrier to eating like home.
+          <p className="mt-4 text-base leading-relaxed text-[#6b6b6b]">
+            Mychelin turns a messy family conversation into something you can save,
+            plan around, and actually cook on a weeknight.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          {/* Pillar 1: Learn */}
-          <div className="rounded-2xl border border-[#e8e8e3] bg-white px-6 py-8">
-            <span className="text-xs font-semibold tracking-widest text-[#d97706]">
-              LEARN
-            </span>
-            <h3 className="mt-3 text-xl font-semibold text-[#1a1a1a]">
-              Capture recipes straight from the source
-            </h3>
-            <p className="mt-3 text-sm leading-relaxed text-[#6b6b6b]">
-              Ask how to cook a dish over a chat. The AI listens and transcribes
-              across English, Malay, Mandarin, Tamil, and Chinese dialects — even
-              when everyone is speaking a mix. It structures ingredients and
-              steps as you talk, and asks the questions you don&apos;t know to
-              ask: exact measurements, substitutions, and the stories behind
-              every dish.
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[#6b6b6b]">
-              <li className="flex items-start gap-2">
-                <span className="text-[#9b9b9b]">•</span>
-                <span>Multi-dialect transcription in real time</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#9b9b9b]">•</span>
-                <span>Smart clarifying prompts for ingredients &amp; steps</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#9b9b9b]">•</span>
-                <span>Heritage &amp; story tracking for every dish</span>
-              </li>
-            </ul>
-          </div>
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              step: "01",
+              title: "Record the family recipe",
+              body: "Capture voice, chat notes, URLs, or rough memory. Mychelin handles mixed languages, dialects, and vague agak-agak instructions.",
+            },
+            {
+              step: "02",
+              title: "Turn it into a usable card",
+              body: "AI structures ingredients, method, timing, substitutions, and the family story — then asks what is missing before it gets lost.",
+            },
+            {
+              step: "03",
+              title: "Plan, shop, and cook it",
+              body: "Add recipes to a weekly plan, generate a shopping list, and cook from a clean step-by-step view when dinner time arrives.",
+            },
+          ].map((item) => (
+            <div
+              key={item.step}
+              className="rounded-[2rem] border border-[#ece8df] bg-white/80 p-6 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-sm font-semibold text-[#800020]">
+                {item.step}
+              </div>
+              <h3 className="mt-6 text-xl font-semibold tracking-tight text-[#1a1a1a]">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-[#6b6b6b]">
+                {item.body}
+              </p>
+            </div>
+          ))}
+        </div>
 
-          {/* Pillar 2: Cook */}
-          <div className="rounded-2xl border border-[#e8e8e3] bg-white px-6 py-8">
-            <span className="text-xs font-semibold tracking-widest text-[#d97706]">
-              COOK
-            </span>
-            <h3 className="mt-3 text-xl font-semibold text-[#1a1a1a]">
-              Plan, shop, and cook without the hassle
-            </h3>
-            <p className="mt-3 text-sm leading-relaxed text-[#6b6b6b]">
-              Once your family recipes are saved, Mychelin helps you actually
-              cook them. Plan your week, discover dishes based on what you
-              already have, randomise the menu when you can&apos;t decide, and
-              generate grocery lists. Calendar integration blocks out cooking
-              time with prep and cook time factored in.
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[#6b6b6b]">
-              <li className="flex items-start gap-2">
-                <span className="text-[#9b9b9b]">•</span>
-                <span>Weekly meal planner with calendar sync</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#9b9b9b]">•</span>
-                <span>Ingredient-based suggestions &amp; randomiser</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#9b9b9b]">•</span>
-                <span>Auto-generated shopping lists</span>
-              </li>
-            </ul>
-          </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          {[
+            "Voice + chat capture",
+            "Dialect-aware transcription",
+            "Meal planning",
+            "Shopping lists",
+          ].map((feature) => (
+            <div
+              key={feature}
+              className="rounded-2xl border border-[#ece8df] bg-[#fffdf8] px-5 py-4 text-sm font-medium text-[#4a4a4a]"
+            >
+              {feature}
+            </div>
+          ))}
         </div>
       </section>
 
