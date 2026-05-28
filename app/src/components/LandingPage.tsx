@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Libre_Baskerville } from "next/font/google";
+import { Cormorant_Garamond } from "next/font/google";
 import Link from "next/link";
 
-const libreBaskerville = Libre_Baskerville({
+const brandSerif = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["600", "700"],
   style: ["normal"],
-  variable: "--font-libre-baskerville",
+  variable: "--font-brand-serif",
 });
 
 const featurePages = [
@@ -37,7 +37,7 @@ export function LandingPage() {
 
   return (
     <div
-      className={`min-h-screen bg-white text-[#1A1A1A] ${libreBaskerville.variable}`}
+      className={`min-h-screen bg-white text-[#1A1A1A] ${brandSerif.variable}`}
       style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -48,9 +48,9 @@ export function LandingPage() {
             <span
               className="text-lg font-bold tracking-tight"
               style={{
-                fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif",
+                fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif",
                 fontWeight: 700,
-                letterSpacing: "-0.015em",
+                letterSpacing: "-0.035em",
                 textTransform: "lowercase",
                 WebkitFontSmoothing: "antialiased",
                 MozOsxFontSmoothing: "grayscale",
@@ -114,7 +114,7 @@ export function LandingPage() {
           <div className="max-w-xl">
             <h1
               className="text-5xl font-light leading-[1.05] tracking-tight text-[#1A1A1A] sm:text-6xl md:text-7xl"
-              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif", fontWeight: 700 }}
+              style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif", fontWeight: 600 }}
             >
               Cook like home, even in your new home.
             </h1>
@@ -148,7 +148,7 @@ export function LandingPage() {
           </p>
           <h2
             className="mt-4 text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
-            style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+            style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
           >
             Three steps to cook like home again.
           </h2>
@@ -185,7 +185,7 @@ export function LandingPage() {
               </div>
               <h3
                 className="mt-6 text-xl font-bold leading-snug tracking-[-0.035em] text-[#1A1A1A]"
-                style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+                style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
               >
                 {item.title}
               </h3>
@@ -209,7 +209,7 @@ export function LandingPage() {
             </p>
             <h2
               className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
-              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+              style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
             >
               Everything around the recipe, handled.
             </h2>
@@ -240,7 +240,7 @@ export function LandingPage() {
                         </p>
                         <h3
                           className="mt-4 text-2xl font-bold leading-tight tracking-[-0.04em] text-[#1A1A1A]"
-                          style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+                          style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
                         >
                           {feature.title}
                         </h3>
@@ -304,7 +304,7 @@ export function LandingPage() {
             </p>
             <h2
               className="mt-6 max-w-xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
-              style={{ fontFamily: "var(--font-libre-baskerville), 'Libre Baskerville', Georgia, serif" }}
+              style={{ fontFamily: "var(--font-brand-serif), 'Cormorant Garamond', Georgia, serif" }}
             >
               Bring the taste of home with you.
             </h2>
