@@ -22,7 +22,7 @@ export function RecipeSearchHeader({
     <div className="flex h-9 items-center gap-3">
       {isExpanded ? (
         <div className="flex flex-1 animate-fade-in items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5">
+          <div className="flex flex-1 items-center gap-2 rounded-full border border-[#ece8df] bg-white px-3 py-1.5">
             <MagnifyingGlassIcon className="h-4 w-4 text-neutral-400" />
             <input
               type="search"
@@ -64,7 +64,7 @@ export function RecipeSearchHeader({
         </div>
       ) : (
         <>
-          <h1 className="flex-1 shrink-0 text-base font-semibold tracking-tight">
+          <h1 className="app-editorial-title flex-1 shrink-0 text-2xl leading-none text-[#1A1A1A]">
             Recipes
           </h1>
           <Tooltip content="Search">

@@ -2,13 +2,11 @@
 
 import { DropdownMenu, IconButton } from "@radix-ui/themes";
 import {
-  ArchiveIcon,
   DotsVerticalIcon,
-  DrawingPinFilledIcon,
-  DrawingPinIcon,
   Share1Icon,
   TrashIcon,
 } from "@radix-ui/react-icons";
+import { ChefHat, PencilLine } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import type { Recipe } from "@/db/schema";
@@ -17,7 +15,6 @@ interface RecipeListItemProps {
   recipe: Recipe;
   isSelected: boolean;
   onSelect: (id: number) => void;
-  onTogglePin?: (id: number) => void;
   onShare?: (recipe: Recipe) => void;
   onDelete?: (id: number) => void;
   // Optional "ingredient: X" hint shown under the title when this item
@@ -29,7 +26,6 @@ export function RecipeListItem({
   recipe,
   isSelected,
   onSelect,
-  onTogglePin,
   onShare,
   onDelete,
   matchedIngredient,
@@ -71,8 +67,10 @@ export function RecipeListItem({
             alt=""
             className="h-full w-full object-cover"
           />
+        ) : isDraft ? (
+          <PencilLine className="h-4 w-4 text-[#800020]/55" />
         ) : (
-          <span className="text-base">{isDraft ? "✏️" : "🍳"}</span>
+          <ChefHat className="h-4 w-4 text-[#800020]/55" />
         )}
       </div>
 

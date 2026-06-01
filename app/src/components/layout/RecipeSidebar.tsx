@@ -7,7 +7,6 @@ import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
 import { ShareModal } from "@/components/sharing/ShareModal";
-import type { Recipe } from "@/db/schema";
 
 interface Book {
   id: number;
@@ -24,10 +23,16 @@ interface BookRecipe {
 interface RecipeSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpen: () => void;
+  onPasteText?: () => void;
+  onImportUrl?: () => void;
 }
 
-export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
+export function RecipeSidebar({
+  isOpen,
+  onClose,
+  onPasteText,
+  onImportUrl,
+}: RecipeSidebarProps) {
   const {
     recipes,
     loading,
@@ -191,7 +196,11 @@ export function RecipeSidebar({ isOpen, onClose, onOpen }: RecipeSidebarProps) {
             </div>
           )}
 
-          <SidebarToolbar onCreateOpen={handleCreateBlank} />
+          <SidebarToolbar
+            onCreateOpen={handleCreateBlank}
+            onPasteText={onPasteText}
+            onImportUrl={onImportUrl}
+          />
         </div>
 
         {/* Books + Recipe list */}

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
+import { BookOpen, ChefHat, ClipboardPaste, Clock3, Link2, Mic2, Shuffle, Target, Utensils } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,9 +16,9 @@ import { StorySection } from "./StorySection";
 import { RatingSection } from "./RatingSection";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
-import { PhotoUploadSection, type RecipePhoto } from "./PhotoUploadSection";
+import { PhotoUploadSection } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
-import { VoiceRecording, type VoiceClip } from "@/components/heritage/VoiceRecording";
+import { VoiceRecording } from "@/components/heritage/VoiceRecording";
 
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { ServingScaler } from "./ServingScaler";
@@ -36,6 +36,7 @@ import { RecipeSaveStatus } from "./RecipeSaveStatus";
 import { ConversationCapture } from "@/components/capture/ConversationCapture";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
 import { CookingPrinciples } from "@/components/books/CookingPrinciples";
+import type { Recipe } from "@/db/schema";
 
 interface BookSummary {
   id: number;
@@ -50,12 +51,44 @@ interface RecipeViewProps {
   onOpenSidebar: () => void;
 }
 
+type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime">;
+
+type VersionIngredient = {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  notes?: string;
+};
+
+type VersionInstruction = {
+  content?: string;
+  text?: string;
+  step?: number;
+  tip?: string;
+  imageUrl?: string;
+};
+
+type RecipeVersion = {
+  id: number;
+  recipeId?: number;
+  versionNumber: number;
+  versionLabel: string | null;
+  captureMethod: string;
+  closenessRating: number | null;
+  closenessNotes: string | null;
+  changeNote: string | null;
+  notes: string | null;
+  createdAt: string;
+  ingredients: VersionIngredient[];
+  instructions: VersionInstruction[];
+  sourceVersionId: number | null;
+};
+
 export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const {
     recipes,
     loading,
     selectedRecipe,
-    createRecipe,
     updateRecipe,
     deleteRecipe,
     addIngredient,
@@ -88,14 +121,14 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [showAddToBookModal, setShowAddToBookModal] = useState(false);
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
-  const [activeBookRecipes, setActiveBookRecipes] = useState<any[]>([]);
+  const [activeBookRecipes, setActiveBookRecipes] = useState<RecipeCard[]>([]);
   const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState<{ type: "recipe" | "book"; id: number; name: string } | null>(null);
   const [showCookAlong, setShowCookAlong] = useState(false);
   const [compareVersions, setCompareVersions] = useState<{ base: number; compare: number } | null>(null);
-  const [refinementVersion, setRefinementVersion] = useState<any>(null);
-  const [viewingVersion, setViewingVersion] = useState<any>(null);
+  const [refinementVersion, setRefinementVersion] = useState<RecipeVersion | null>(null);
+  const [viewingVersion, setViewingVersion] = useState<RecipeVersion | null>(null);
   const [versionTimelineKey, setVersionTimelineKey] = useState(0);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
@@ -107,7 +140,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [surpriseByQuery, setSurpriseByQuery] = useState("");
 
   // Cache for prefetched book recipes
-  const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, any[]>>({});
+  const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, RecipeCard[]>>({});
 
   // Fetch books for card grid, then prefetch their recipes
   const fetchBooks = useCallback(() => {
@@ -293,7 +326,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
       setters[field](true);
       try {
-        let updateValue: any = values[field] || null;
+        let updateValue: string | number | null = values[field] || null;
         
         // Convert time fields to numbers
         if (field === "prepTime" || field === "cookTime") {
@@ -302,7 +335,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
 
         await updateRecipe(selectedRecipe.id, {
           [field]: updateValue,
-        });
+        } as Partial<Recipe>);
       } catch {
         addToast(`Failed to save ${field}`, "error");
       } finally {
@@ -405,15 +438,10 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
     addToast("Recipe deleted", "success");
   }, [selectedRecipe, deleteRecipe, addToast]);
 
-  const handleAddToBook = useCallback(() => {
-    if (!selectedRecipe) return;
-    setShowAddToBookModal(true);
-  }, [selectedRecipe]);
-
   const handleBookChange = useCallback(
     async (bookId: number | null) => {
       if (!selectedRecipe) return;
-      await updateRecipe(selectedRecipe.id, { bookId } as any);
+      await updateRecipe(selectedRecipe.id, { bookId });
     },
     [selectedRecipe, updateRecipe]
   );
@@ -447,7 +475,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-xl">🎯</span>
+          <Target className="h-5 w-5 text-[#800020]" />
           <h3 className="text-base font-semibold text-neutral-900">
             Surprise me by…
           </h3>
@@ -500,7 +528,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               }
             }}
           >
-            🎲 Pick one
+            <Shuffle className="h-4 w-4" />
+            Pick one
           </Button>
         </div>
       </div>
@@ -526,7 +555,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
         <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8 text-neutral-500">
           <div className="mx-auto max-w-md text-center">
             <img src="/icons/icon-welcome.png" alt="Mychelin" className="mb-6 h-24 w-24 mx-auto" />
-            <h2 className="text-lg font-semibold text-neutral-800">
+            <h2 className="app-editorial-title text-4xl leading-none text-[#1A1A1A]">
               Welcome to Mychelin
             </h2>
             <p className="mt-3 text-sm leading-relaxed">
@@ -564,7 +593,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       </svg>
                     </button>
                     <span className="text-2xl shrink-0">{activeBook?.coverEmoji ?? "📚"}</span>
-                    <h2 className="text-xl font-semibold text-neutral-800 truncate">
+                    <h2 className="app-editorial-title truncate text-4xl leading-none text-[#1A1A1A]">
                       {activeBook?.title ?? "Book"}
                     </h2>
                   </div>
@@ -625,7 +654,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {activeBookRecipes.map((recipe: any) => (
+                    {activeBookRecipes.map((recipe) => (
                       <button
                         key={recipe.id}
                         onClick={() => selectRecipe(recipe.id)}
@@ -635,7 +664,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                           {recipe.imageUrl ? (
                             <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
                           ) : (
-                            <span className="text-4xl opacity-60">🍳</span>
+                            <ChefHat className="h-10 w-10 text-[#800020]/45" />
                           )}
                         </div>
                         <div className="flex flex-1 flex-col p-4">
@@ -669,7 +698,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               {/* Header */}
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-neutral-800">
+                  <h2 className="app-editorial-title text-4xl leading-none text-[#1A1A1A]">
                     Your Recipes
                   </h2>
                   <p className="mt-1 text-sm text-neutral-500">
@@ -681,7 +710,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                     <DropdownMenu.Root>
                       <DropdownMenu.Trigger>
                         <Button variant="soft"  size="2">
-                          🎲 Surprise me
+                          <Shuffle className="h-4 w-4" />
+                          Surprise me
                         </Button>
                       </DropdownMenu.Trigger>
                       <DropdownMenu.Content>
@@ -691,7 +721,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                             selectRecipe(random.id);
                           }}
                         >
-                          🎲 Just surprise me
+                          <Shuffle className="h-4 w-4" />
+                          Just surprise me
                         </DropdownMenu.Item>
                         <DropdownMenu.Item
                           onClick={() => {
@@ -699,7 +730,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                             setSurpriseByOpen(true);
                           }}
                         >
-                          🎯 Surprise me by…
+                          <Target className="h-4 w-4" />
+                          Surprise me by…
                         </DropdownMenu.Item>
                       </DropdownMenu.Content>
                     </DropdownMenu.Root>
@@ -723,8 +755,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               {books.length > 0 && (
                 <div className="mb-6">
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
-                      📚 Books
+                    <h3 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-[0.18em] text-[#6b6b6b]">
+                      <BookOpen className="h-4 w-4 text-[#800020]" />
+                      Books
                     </h3>
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
@@ -779,8 +812,9 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               )}
 
               {/* All recipes card grid */}
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
-                🍳 All Recipes
+              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-[0.18em] text-[#6b6b6b]">
+                <ChefHat className="h-4 w-4 text-[#800020]" />
+                All Recipes
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recipes.map((recipe) => (
@@ -793,16 +827,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       {recipe.imageUrl ? (
                         <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
                       ) : (
-                        <span className="text-4xl opacity-60">
-                          {recipe.cuisine === "Japanese" ? "🍱" :
-                           recipe.cuisine === "Korean" ? "🍲" :
-                           recipe.cuisine === "Italian" ? "🍝" :
-                           recipe.cuisine === "Indian" ? "🍛" :
-                           recipe.cuisine === "Thai" ? "🥘" :
-                           recipe.cuisine === "Mexican" ? "🌮" :
-                           recipe.cuisine === "French" ? "🥐" :
-                           "🍳"}
-                        </span>
+                        <ChefHat className="h-10 w-10 text-[#800020]/45" />
                       )}
                     </div>
                     <div className="flex flex-1 flex-col p-4">
@@ -815,8 +840,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                       )}
                       {(recipe.prepTime || recipe.cookTime) && (
                         <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
-                          {recipe.prepTime && <span>🔪 {recipe.prepTime}m prep</span>}
-                          {recipe.cookTime && <span>🔥 {recipe.cookTime}m cook</span>}
+                          {recipe.prepTime && <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" />{recipe.prepTime}m prep</span>}
+                          {recipe.cookTime && <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{recipe.cookTime}m cook</span>}
                         </div>
                       )}
                     </div>
@@ -914,8 +939,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 onClick={() => setShowCaptureModal(true)}
                 className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
-                  🎙️
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
+                  <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
                   <h3 className="text-sm font-semibold text-[#241017]">
@@ -939,8 +964,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 }}
                 className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
-                  🔗
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
+                  <Link2 className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
                   <h3 className="text-sm font-semibold text-[#241017]">
@@ -963,8 +988,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 }}
                 className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-base transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl sm:text-xl">
-                  📋
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
+                  <ClipboardPaste className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
                   <h3 className="text-sm font-semibold text-[#241017]">
@@ -1140,7 +1165,8 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               onClick={() => setShowCookAlong(true)}
               className="flex items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15"
             >
-              👨‍🍳 Cook Along
+              <ChefHat className="h-3.5 w-3.5" />
+              Cook Along
             </button>
           </div>
 

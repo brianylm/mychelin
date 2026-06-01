@@ -84,6 +84,7 @@ function RecipeWorkspaceContent({
   const [fabOpen, setFabOpen] = useState(false);
   const [pasteRecipeId, setPasteRecipeId] = useState<number | null>(null);
   const [pasteMode, setPasteMode] = useState<"paste" | "url">("paste");
+  const captureCommittedRef = useRef(false);
   const fabRef = useRef<HTMLDivElement>(null);
 
   // Close speed-dial on outside tap
@@ -129,6 +130,7 @@ function RecipeWorkspaceContent({
       const recipe = await res.json();
       qc.invalidateQueries({ queryKey: ["recipes"] });
       selectRecipe(recipe.id);
+      captureCommittedRef.current = false;
       setPasteMode(mode);
       setPasteRecipeId(recipe.id);
     } catch (err) {
@@ -144,11 +146,23 @@ function RecipeWorkspaceContent({
     createDraftForCapture("url");
   }, [createDraftForCapture]);
 
-  const handlePasteModalClose = useCallback(() => {
+  const handlePasteModalClose = useCallback(async () => {
+    const abandonedRecipeId = pasteRecipeId;
     setPasteRecipeId(null);
-  }, []);
+
+    if (!abandonedRecipeId || captureCommittedRef.current) return;
+
+    try {
+      await fetch(`/api/recipes/${abandonedRecipeId}`, { method: "DELETE" });
+      selectRecipe(null);
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+    } catch (err) {
+      console.error("Failed to clean up abandoned capture draft:", err);
+    }
+  }, [pasteRecipeId, qc, selectRecipe]);
 
   const handlePasteModalDone = useCallback(() => {
+    captureCommittedRef.current = true;
     qc.invalidateQueries({ queryKey: ["recipes"] });
     if (pasteRecipeId) {
       qc.invalidateQueries({ queryKey: ["recipe", pasteRecipeId] });
@@ -180,13 +194,14 @@ function RecipeWorkspaceContent({
         />
       )}
 
-      <div className="flex h-[calc(100dvh-60px)] w-full bg-transparent text-foreground">
+      <div className="flex h-[calc(100dvh-68px)] w-full bg-transparent text-foreground">
         {currentView === "recipes" && (
           <>
             <RecipeSidebar
               isOpen={isSidebarOpen}
               onClose={() => setSidebarOpen(false)}
-              onOpen={() => setSidebarOpen(true)}
+              onPasteText={handleQuickCapture}
+              onImportUrl={handleImportUrl}
             />
             <RecipeView onOpenSidebar={() => setSidebarOpen(true)} />
           </>

@@ -210,6 +210,12 @@ export function PasteRecipeModal({
     saveDraft(trimmed);
   };
 
+  const switchCaptureMode = (mode: "paste" | "url") => {
+    setCaptureMode(mode);
+    setErrorMessage(null);
+    if (step === "error") setStep("paste");
+  };
+
   const isSetupError =
     errorMessage != null &&
     /not configured|google_api_key|gemini_api_key/i.test(errorMessage);
@@ -225,12 +231,14 @@ export function PasteRecipeModal({
         className="flex h-full w-full flex-col bg-[#fffdfb] sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-[2rem] sm:border sm:border-white/70 sm:shadow-[0_24px_80px_rgba(60,43,25,0.18)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#800020]/10 bg-white/55 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{isUrl ? "🌐" : "📋"}</span>
+        <div className="flex items-center justify-between border-b border-[#800020]/10 bg-white/[0.58] px-4 py-3 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020] ring-1 ring-[#800020]/10">
+              {isUrl ? <Link2Icon className="h-4 w-4" /> : <MagicWandIcon className="h-4 w-4" />}
+            </div>
             <div>
-              <h2 className="text-sm font-semibold text-neutral-900">
-                {isUrl ? "Import from URL" : "Quick capture"}
+              <h2 className="app-editorial-title text-xl leading-none text-[#1A1A1A]">
+                {isUrl ? "Import recipe" : "Quick capture"}
               </h2>
               <p className="text-[11px] text-neutral-500">
                 {step === "paste" && !isUrl &&
@@ -257,6 +265,25 @@ export function PasteRecipeModal({
 
         {step === "paste" && (
           <>
+            <div className="border-b border-[#d8d8d2] bg-white/70 px-4 py-3">
+              <div className="grid grid-cols-2 gap-2 rounded-full bg-[#f6f2eb] p-1 ring-1 ring-[#ece8df]">
+                <button
+                  type="button"
+                  onClick={() => switchCaptureMode("paste")}
+                  className={`rounded-full px-3 py-2 text-sm font-medium transition ${!urlMode ? "bg-white text-[#241017] shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
+                >
+                  Paste text
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchCaptureMode("url")}
+                  className={`rounded-full px-3 py-2 text-sm font-medium transition ${urlMode ? "bg-white text-[#241017] shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
+                >
+                  Import URL
+                </button>
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <textarea
                 id="paste-recipe-text"
@@ -264,11 +291,11 @@ export function PasteRecipeModal({
                 onChange={(e) => setText(e.target.value)}
                 placeholder={
                   isUrl
-                    ? "https://example.com/family-recipe\n\nPaste the recipe page URL here. If the site blocks extraction, you can switch back and paste the recipe text instead."
-                    : `Paste ingredients, steps, a WhatsApp message, photo OCR, or notes from a call.\n\nThe AI will try to structure it into a recipe. If it can't, your text is saved as a draft so nothing is lost.`
+                    ? "https://example.com/family-recipe"
+                    : `Paste ingredients, steps, a WhatsApp message, photo OCR, or notes from a call.\n\nIf extraction misses, you can still save the text as a draft.`
                 }
-                rows={14}
-                className="w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+                rows={isUrl ? 5 : 14}
+                className={`w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400 ${isUrl ? "font-mono" : ""}`}
                 autoFocus
               />
               {!isUrl && (
@@ -367,7 +394,7 @@ export function PasteRecipeModal({
                 <Button
                   variant="soft"
                   onClick={() => {
-                    setCaptureMode("paste");
+                    switchCaptureMode("paste");
                     setText("");
                     setErrorMessage(null);
                     setStep("paste");
