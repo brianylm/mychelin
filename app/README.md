@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mychelin App
 
-## Getting Started
+This directory contains the production Next.js app for Mychelin. The repository root is a deploy wrapper; Vercel is configured with `app/` as the root directory.
 
-First, run the development server:
+For the public project overview, see [`../README.md`](../README.md).
+
+## Local setup
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Use `.env.local` for local secrets. Do not commit real credentials.
 
-## Learn More
+Common variables:
 
-To learn more about Next.js, take a look at the following resources:
+```text
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+JWT_SECRET=
+BLOB_READ_WRITE_TOKEN=
+GOOGLE_API_KEY=
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` are enough for the minimal checked-in `.env.example`; other integrations are needed for full auth, uploads, and AI capture flows.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+```bash
+npm run dev          # local dev server
+npm run build        # production build
+npm run start        # serve production build
+npm run lint         # ESLint
+npm run db:generate  # Drizzle migration generation
+npm run db:migrate   # apply migrations
+npm run db:push      # push schema changes
+npm run db:studio    # inspect local/remote DB via Drizzle Studio
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes for contributors
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Keep product behavior changes in `app/`; root-level files are mostly project/deploy documentation.
+- Do not commit `.env`, `.env.local`, database dumps, real family recipes, voice files, or screenshots containing private data.
+- Prefer small, reviewable PRs with clear testing notes.
+- New API routes should follow the existing runtime/client patterns in the codebase.
