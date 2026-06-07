@@ -960,3 +960,35 @@ Follow-ups:
 
 - Redeploy production so the serverless functions receive the newly added env vars.
 - Ask Mychelin should now use DeepSeek v4 Flash first, with Gemini fallback only if DeepSeek fails.
+
+
+### 2026-06-07 - Sidebar create collapse and Ask Mychelin production fix
+
+Changed/decided:
+
+- Made the authenticated left-panel Create recipe segment collapsible and slightly larger, with bigger icon touch targets and clearer expanded/collapsed state.
+- Diagnosed production Ask Mychelin 503s after DeepSeek env setup: Vercel had DEEPSEEK_MODEL configured with a trailing newline, so the route sent an invalid model string.
+- Updated Ask Mychelin provider env reads to trim whitespace for DeepSeek and Gemini values before use.
+- Kept authenticated 503 responses more accurate by reporting non-sensitive provider state booleans/model name; unauthenticated requests still return a plain Unauthorized response.
+- Re-synced DeepSeek Vercel Production env from the known-good /home/cluser/agrippa-brain/.env source without printing or committing secrets.
+- Deployed the final fix to production at https://mychelin-sg.vercel.app.
+
+Files touched:
+
+- app/src/components/layout/sidebar/SidebarToolbar.tsx
+- app/src/app/api/capture/draft-recipe/route.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/layout/sidebar/SidebarToolbar.tsx src/app/api/capture/draft-recipe/route.ts passed from app/.
+- npm run build passed from app/.
+- git diff --check passed.
+- Production smoke: landing page returned HTTP 200.
+- Production smoke: unauthenticated Ask route returned plain Unauthorized.
+- Production smoke: synthetic DB user login returned HTTP 200 and Ask Mychelin returned HTTP 200 with provider deepseek-v4-flash; synthetic users and temporary /tmp env files were deleted afterward.
+
+Follow-ups:
+
+- User should manually verify the left-panel collapse affordance and Ask Mychelin flow in their real account.
+- Avoid storing Vercel env values with pasted trailing whitespace; route now trims defensively, but clean env values are still preferred.

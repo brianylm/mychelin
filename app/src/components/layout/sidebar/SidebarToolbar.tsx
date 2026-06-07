@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link2Icon } from "@radix-ui/react-icons";
-import { ClipboardPaste, Mic2, PencilLine, Sparkles } from "lucide-react";
+import { ChevronDown, ClipboardPaste, Mic2, PencilLine, Sparkles } from "lucide-react";
 
 interface SidebarToolbarProps {
   onCreateOpen: () => void;
@@ -13,11 +13,11 @@ interface SidebarToolbarProps {
 }
 
 const actionClass =
-  "flex w-full items-start gap-3 rounded-2xl border border-[#ebe5dc] bg-white px-3 py-3 text-left transition hover:border-[#800020]/25 hover:bg-[#800020]/5";
+  "flex w-full items-start gap-3 rounded-2xl border border-[#ebe5dc] bg-white px-3.5 py-3.5 text-left transition hover:border-[#800020]/25 hover:bg-[#800020]/5 disabled:cursor-not-allowed disabled:opacity-50";
 
 function ActionIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
       {children}
     </span>
   );
@@ -30,20 +30,34 @@ export function SidebarToolbar({
   onCaptureConversation,
   onAiDraft,
 }: SidebarToolbarProps) {
+  const [isCreateOpen, setIsCreateOpen] = useState(true);
+
   return (
-    <section className="rounded-2xl border border-[#800020]/10 bg-[#fffdfb]/85 p-3 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
+    <section className="rounded-2xl border border-[#800020]/10 bg-[#fffdfb]/85 p-3.5 shadow-sm">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-1 text-left"
+        aria-expanded={isCreateOpen}
+        onClick={() => setIsCreateOpen((value) => !value)}
+      >
+        <span>
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
             Create recipe
           </h2>
-          <p className="mt-1 text-[11px] leading-4 text-stone-500">
-            Start from a link, notes, conversation, AI draft, or manual entry.
+          <p className="mt-1 text-xs leading-4 text-stone-500">
+            Link, notes, conversation, AI draft, or manual entry.
           </p>
-        </div>
-      </div>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+          5 ways
+          <ChevronDown
+            className={"h-4 w-4 text-[#800020] transition-transform " + (isCreateOpen ? "rotate-180" : "")}
+            aria-hidden="true"
+          />
+        </span>
+      </button>
 
-      <div className="grid gap-2">
+      <div className={"mt-3 grid gap-2.5 " + (isCreateOpen ? "" : "hidden")}>
         <button type="button" className={actionClass} onClick={onImportUrl} disabled={!onImportUrl}>
           <ActionIcon><Link2Icon className="h-4 w-4" /></ActionIcon>
           <span>

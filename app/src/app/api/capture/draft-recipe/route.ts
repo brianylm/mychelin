@@ -66,6 +66,24 @@ function cleanJson(text: string): string {
     .trim();
 }
 
+function envValue(name: string): string {
+  return process.env[name]?.trim() || "";
+}
+
+function deepSeekModel(): string {
+  return envValue("DEEPSEEK_MODEL") || "deepseek-v4-flash";
+}
+
+function providerState() {
+  return {
+    deepseekConfigured: Boolean(envValue("DEEPSEEK_API_KEY")),
+    deepseekModel: deepSeekModel(),
+    geminiConfigured: Boolean(
+      envValue("GOOGLE_API_KEY") || envValue("GOOGLE_AI_API_KEY") || envValue("GEMINI_API_KEY")
+    ),
+  };
+}
+
 function normalizeRecipe(value: unknown): DraftRecipe {
   const input = value as Partial<DraftRecipe>;
   const title = typeof input.title === "string" && input.title.trim()
@@ -108,7 +126,7 @@ function normalizeRecipe(value: unknown): DraftRecipe {
 }
 
 async function generateWithDeepSeek(prompt: string): Promise<{ recipe: DraftRecipe; provider: string }> {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const apiKey = envValue("DEEPSEEK_API_KEY");
   if (!apiKey) throw new Error("DEEPSEEK_API_KEY missing");
 
   const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -118,7 +136,7 @@ async function generateWithDeepSeek(prompt: string): Promise<{ recipe: DraftReci
       Authorization: "Bearer " + apiKey,
     },
     body: JSON.stringify({
-      model: process.env.DEEPSEEK_MODEL || "deepseek-v4-flash",
+      model: deepSeekModel(),
       messages: [
         {
           role: "system",
@@ -142,11 +160,11 @@ async function generateWithDeepSeek(prompt: string): Promise<{ recipe: DraftReci
   const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error("DeepSeek returned no content");
-  return { recipe: normalizeRecipe(JSON.parse(cleanJson(content))), provider: "deepseek-v4-flash" };
+  return { recipe: normalizeRecipe(JSON.parse(cleanJson(content))), provider: deepSeekModel() };
 }
 
 async function generateWithGemini(prompt: string): Promise<{ recipe: DraftRecipe; provider: string }> {
-  const apiKey = process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = envValue("GOOGLE_API_KEY") || envValue("GOOGLE_AI_API_KEY") || envValue("GEMINI_API_KEY");
   if (!apiKey) throw new Error("Gemini key missing");
 
   const response = await fetch(
@@ -221,7 +239,10 @@ export async function POST(request: NextRequest) {
       } catch (geminiError) {
         console.error("Draft recipe generation failed:", { deepSeekError, geminiError });
         return NextResponse.json(
-          { error: "AI drafting is not configured. Add DEEPSEEK_API_KEY or GOOGLE_API_KEY." },
+          {
+            error: "AI drafting is unavailable. Provider configuration or provider response failed.",
+            providers: providerState(),
+          },
           { status: 503 }
         );
       }
