@@ -938,3 +938,25 @@ Follow-ups:
 - Future analytics enhancements should extend this event taxonomy and helper rather than sending private recipe data directly to an external analytics platform.
 - Add dashboard/query surfaces later for activation, retention, cook-session completion, attempt promotion, AI cost/reliability, and planning conversion.
 - If PostHog/Plausible/Vercel Analytics is added, forward sanitized copies from trackUsageEvent rather than duplicating event definitions across the codebase.
+
+### 2026-06-07 - DeepSeek production env configured
+
+Changed/decided:
+
+- Added DEEPSEEK_API_KEY and DEEPSEEK_MODEL to the Mychelin Vercel Production environment.
+- The key was read from /home/cluser/agrippa-brain/.env and piped directly to Vercel; no Mychelin .env file was created or modified.
+- Confirmed .env* remains ignored by git.
+- Do not commit or print the DeepSeek key value.
+
+Files touched:
+
+- MEMORY.md
+
+Checks:
+
+- npx vercel env ls shows DEEPSEEK_API_KEY and DEEPSEEK_MODEL as encrypted Production env vars.
+
+Follow-ups:
+
+- Redeploy production so the serverless functions receive the newly added env vars.
+- Ask Mychelin should now use DeepSeek v4 Flash first, with Gemini fallback only if DeepSeek fails.
