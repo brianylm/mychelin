@@ -4,20 +4,60 @@ import { db } from "@/db";
 import { inventory, mealPlans } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 interface ShoppingListItem {
+  key: string;
   name: string;
   category: string | null;
-  quantityNeeded: number;
+  quantityNeeded: number | null;
   quantityOnHand: number;
-  quantityToBuy: number;
+  quantityToBuy: number | null;
+  quantityLabel: string;
   unit: string;
+  approximate: boolean;
+  sourceMealCount: number;
+}
+
+interface NeededIngredient {
+  key: string;
+  name: string;
+  category: string | null;
+  quantityNeeded: number | null;
+  unit: string;
+  catalogIngredientId: number | null;
+  approximate: boolean;
+  quantityLabel: string;
+  sourceMealIds: Set<number>;
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeText(value: string | null | undefined): string {
+  return (value || "").trim().toLowerCase();
+}
+
+function formatQuantity(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
+function quantityLabel(quantity: number | null, unit: string): string {
+  if (quantity == null || !Number.isFinite(quantity) || quantity <= 0) return unit || "as needed";
+  return [formatQuantity(quantity), unit].filter(Boolean).join(" ");
+}
+
+function manualKey(name: string, unit: string): string {
+  return "manual_" + normalizeText(name) + "_" + normalizeText(unit);
+}
+
+function approximateKey(name: string, label: string): string {
+  return "approx_" + normalizeText(name) + "_" + normalizeText(label);
+}
 
 // ─── GET /api/shopping-list ────────────────────────────────
 // Generate a shopping list from the current user's meal plan and inventory.
@@ -67,32 +107,51 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const neededIngredients = new Map<string, {
-      name: string;
-      category: string | null;
-      quantityNeeded: number;
-      unit: string;
-      catalogIngredientId: number | null;
-    }>();
+    const neededIngredients = new Map<string, NeededIngredient>();
 
     for (const mealPlan of mealPlansInRange) {
-      const servingsMultiplier = mealPlan.servings;
+      const servingsMultiplier = mealPlan.servings || 1;
 
       for (const ingredient of mealPlan.recipe.ingredients) {
-        const scaledQuantity = (ingredient.quantity || 0) * servingsMultiplier;
-        const aggregationKey = ingredient.catalogIngredientId
-          ? `catalog_${ingredient.catalogIngredientId}`
-          : `manual_${ingredient.name.toLowerCase().trim()}_${(ingredient.unit || "").toLowerCase().trim()}`;
+        const name = ingredient.catalogIngredient?.name || ingredient.name;
+        const unit = ingredient.unit || "";
+        const category = ingredient.catalogIngredient?.category || null;
+        const hasNumericQuantity =
+          typeof ingredient.quantity === "number" &&
+          Number.isFinite(ingredient.quantity) &&
+          ingredient.quantity > 0 &&
+          !ingredient.approximate;
 
-        if (neededIngredients.has(aggregationKey)) {
-          neededIngredients.get(aggregationKey)!.quantityNeeded += scaledQuantity;
+        const scaledQuantity = hasNumericQuantity
+          ? ingredient.quantity! * servingsMultiplier
+          : null;
+        const displayLabel = ingredient.approximate
+          ? ingredient.quantityText?.trim() || quantityLabel(scaledQuantity, unit)
+          : quantityLabel(scaledQuantity, unit);
+        const aggregationKey = hasNumericQuantity
+          ? ingredient.catalogIngredientId
+            ? "catalog_" + ingredient.catalogIngredientId + "_" + normalizeText(unit)
+            : manualKey(name, unit)
+          : approximateKey(name, displayLabel);
+
+        const existing = neededIngredients.get(aggregationKey);
+        if (existing) {
+          if (scaledQuantity != null) {
+            existing.quantityNeeded = (existing.quantityNeeded || 0) + scaledQuantity;
+            existing.quantityLabel = quantityLabel(existing.quantityNeeded, existing.unit);
+          }
+          existing.sourceMealIds.add(mealPlan.id);
         } else {
           neededIngredients.set(aggregationKey, {
-            name: ingredient.catalogIngredient?.name || ingredient.name,
-            category: ingredient.catalogIngredient?.category || null,
+            key: aggregationKey,
+            name,
+            category,
             quantityNeeded: scaledQuantity,
-            unit: ingredient.unit || "",
-            catalogIngredientId: ingredient.catalogIngredientId,
+            unit,
+            catalogIngredientId: hasNumericQuantity ? ingredient.catalogIngredientId : null,
+            approximate: !hasNumericQuantity,
+            quantityLabel: displayLabel,
+            sourceMealIds: new Set([mealPlan.id]),
           });
         }
       }
@@ -108,8 +167,8 @@ export async function GET(request: NextRequest) {
     const inventoryLookup = new Map<string, number>();
     for (const invItem of inventoryItems) {
       const invKey = invItem.catalogIngredientId
-        ? `catalog_${invItem.catalogIngredientId}`
-        : `manual_${invItem.name.toLowerCase().trim()}_${invItem.unit.toLowerCase().trim()}`;
+        ? "catalog_" + invItem.catalogIngredientId + "_" + normalizeText(invItem.unit)
+        : manualKey(invItem.name, invItem.unit);
 
       inventoryLookup.set(invKey, (inventoryLookup.get(invKey) || 0) + invItem.quantity);
     }
@@ -117,22 +176,27 @@ export async function GET(request: NextRequest) {
     const shoppingList: ShoppingListItem[] = [];
 
     for (const needed of neededIngredients.values()) {
-      const key = needed.catalogIngredientId
-        ? `catalog_${needed.catalogIngredientId}`
-        : `manual_${needed.name.toLowerCase().trim()}_${needed.unit.toLowerCase().trim()}`;
-      const quantityOnHand = inventoryLookup.get(key) || 0;
-      const quantityToBuy = Math.max(0, needed.quantityNeeded - quantityOnHand);
+      const quantityOnHand = needed.catalogIngredientId
+        ? inventoryLookup.get("catalog_" + needed.catalogIngredientId + "_" + normalizeText(needed.unit)) || 0
+        : inventoryLookup.get(manualKey(needed.name, needed.unit)) || 0;
+      const quantityToBuy = needed.quantityNeeded == null
+        ? null
+        : Math.max(0, needed.quantityNeeded - quantityOnHand);
 
-      if (quantityToBuy > 0) {
-        shoppingList.push({
-          name: needed.name,
-          category: needed.category,
-          quantityNeeded: needed.quantityNeeded,
-          quantityOnHand,
-          quantityToBuy,
-          unit: needed.unit,
-        });
-      }
+      if (quantityToBuy != null && quantityToBuy <= 0) continue;
+
+      shoppingList.push({
+        key: needed.key,
+        name: needed.name,
+        category: needed.category,
+        quantityNeeded: needed.quantityNeeded,
+        quantityOnHand,
+        quantityToBuy,
+        quantityLabel: quantityToBuy == null ? needed.quantityLabel : quantityLabel(quantityToBuy, needed.unit),
+        unit: needed.unit,
+        approximate: needed.approximate,
+        sourceMealCount: needed.sourceMealIds.size,
+      });
     }
 
     shoppingList.sort((a, b) => {
@@ -146,7 +210,29 @@ export async function GET(request: NextRequest) {
       return a.name.localeCompare(b.name);
     });
 
-    return NextResponse.json({ items: shoppingList });
+    await trackUsageEvent({
+      userId: currentUser.id,
+      eventName: "shopping_list_generated",
+      source: "shopping_list",
+      properties: {
+        meal_count: mealPlansInRange.length,
+        recipe_count: new Set(mealPlansInRange.map((plan) => plan.recipeId)).size,
+        item_count: shoppingList.length,
+        approximate_item_count: shoppingList.filter((item) => item.approximate).length,
+      },
+      path: requestPath(request),
+    });
+
+    return NextResponse.json({
+      items: shoppingList,
+      summary: {
+        startDate,
+        endDate,
+        mealCount: mealPlansInRange.length,
+        recipeCount: new Set(mealPlansInRange.map((plan) => plan.recipeId)).size,
+        itemCount: shoppingList.length,
+      },
+    });
   } catch (error) {
     console.error("GET /api/shopping-list error:", error);
     return NextResponse.json(

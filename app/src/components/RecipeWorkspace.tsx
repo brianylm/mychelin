@@ -106,6 +106,7 @@ function RecipeWorkspaceContent({
   const qc = useQueryClient();
   const { addToast } = useToast();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [shoppingDateRange, setShoppingDateRange] = useState<{ start: string; end: string } | undefined>();
   const [activeCookMeal, setActiveCookMeal] = useState<{
     recipe: RecipeWithRelations;
     mealPlanId?: number;
@@ -465,11 +466,17 @@ function RecipeWorkspaceContent({
           </>
         )}
         {currentView === "fridge" && <FridgeView />}
-        {currentView === "shopping" && <ShoppingListView />}
+        {currentView === "shopping" && (
+          <ShoppingListView initialDateRange={shoppingDateRange} />
+        )}
         {currentView === "plan" && (
           <MealPlanView
             onCookMeal={handleCookMealPlan}
             onCookMeals={handleCookMealBatch}
+            onOpenShoppingList={(range) => {
+              setShoppingDateRange(range);
+              setCurrentView("shopping");
+            }}
           />
         )}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}

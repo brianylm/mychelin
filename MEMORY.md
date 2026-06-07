@@ -1047,3 +1047,42 @@ Checks:
 Follow-ups:
 
 - User should manually test app boot/loading and Ask Mychelin drafting to judge animation speed and visual personality.
+
+
+### 2026-06-07 - Meal plan to shopping list v1
+
+Changed/decided:
+
+- Implemented the next roadmap step: visible meal-plan ranges can now generate a shopping list and open the Shopping tab with that exact date range.
+- Shopping list generation now returns stable item keys, summary metadata, display quantity labels, and approximate item flags.
+- Numeric ingredients are aggregated and adjusted against matching inventory by ingredient/unit.
+- Approximate or non-numeric ingredients such as "to taste" now appear in the shopping list instead of being silently dropped.
+- Added a privacy-safe shopping_list_generated usage event with meal/recipe/item counts only.
+- Updated the in-app changelog with the meal-plan shopping-list release.
+- Changed the left-panel Create recipe section to be collapsed by default.
+- Deployed the final build to production at https://mychelin-sg.vercel.app.
+
+Files touched:
+
+- app/src/app/api/shopping-list/route.ts
+- app/src/components/RecipeWorkspace.tsx
+- app/src/components/planner/MealPlanView.tsx
+- app/src/components/shopping/ShoppingListView.tsx
+- app/src/components/layout/sidebar/SidebarToolbar.tsx
+- app/src/lib/usage-events.ts
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/RecipeWorkspace.tsx src/components/planner/MealPlanView.tsx src/components/shopping/ShoppingListView.tsx src/components/layout/sidebar/SidebarToolbar.tsx src/app/api/shopping-list/route.ts src/lib/usage-events.ts src/lib/changelog.ts passed from app/.
+- npm run build passed from app/.
+- git diff --check passed before this memory entry.
+- Production smoke after final deploy: landing page returned HTTP 200 and unauthenticated shopping-list returned HTTP 401.
+- Production smoke with synthetic user passed: login 200, recipe create 201, two ingredients 201/201, inventory create 201, meal plan create 201, shopping list 200.
+- Production smoke confirmed inventory subtraction and approximate ingredient handling: rice produced 1.5 kg to buy after 0.5 kg on hand; salt appeared as "to taste". Synthetic user and temporary /tmp env files were deleted afterward.
+
+Follow-ups:
+
+- Manual UI test: in Plan, click Generate shopping list for week and month ranges, confirm Shopping opens with the same dates and expected grouped items.
+- Next roadmap item remains Calendar Prep Events: add prep lead-time requirements to recipes and export D-2/D-1 prep reminders plus D-day cooking events.

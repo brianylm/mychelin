@@ -8,7 +8,7 @@ import {
   PlusIcon,
   Cross2Icon,
 } from "@radix-ui/react-icons";
-import { CheckCircle2, ChefHat } from "lucide-react";
+import { CheckCircle2, ChefHat, ShoppingBasket } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { CalendarExport } from "@/components/CalendarExport";
 import {
@@ -172,9 +172,10 @@ function getRecipeMatchEvidence(recipe: Recipe, query: string): string | null {
 interface MealPlanViewProps {
   onCookMeal?: (recipeId: number, mealPlanId: number) => void;
   onCookMeals?: (meals: Array<{ recipeId: number; mealPlanId: number }>) => void;
+  onOpenShoppingList?: (range: { start: string; end: string }) => void;
 }
 
-export function MealPlanView({ onCookMeal, onCookMeals }: MealPlanViewProps) {
+export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: MealPlanViewProps) {
   const { addToast } = useToast();
   const [viewType, setViewType] = useState<ViewType>("week");
   const [offset, setOffset] = useState(0);
@@ -462,7 +463,22 @@ export function MealPlanView({ onCookMeal, onCookMeals }: MealPlanViewProps) {
           </div>
 
           {plans.length > 0 && (
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {onOpenShoppingList && (
+                <Button
+                  variant="solid"
+                  color="gray"
+                  onClick={() =>
+                    onOpenShoppingList({
+                      start: currentDateRange.startDate,
+                      end: currentDateRange.endDate,
+                    })
+                  }
+                >
+                  <ShoppingBasket className="mr-1 h-4 w-4" />
+                  Generate shopping list
+                </Button>
+              )}
               <Button
                 variant="soft"
                 color="amber"

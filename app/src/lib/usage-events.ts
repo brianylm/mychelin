@@ -10,6 +10,7 @@ export type UsageEventName =
   | "ai_draft_completed"
   | "photo_uploaded"
   | "meal_planned"
+  | "shopping_list_generated"
   | "cook_attempt_created"
   | "attempt_promoted_to_version"
   | "transcription_completed";

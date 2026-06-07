@@ -30,7 +30,7 @@ export function SidebarToolbar({
   onCaptureConversation,
   onAiDraft,
 }: SidebarToolbarProps) {
-  const [isCreateOpen, setIsCreateOpen] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
     <section className="rounded-2xl border border-[#800020]/10 bg-[#fffdfb]/85 p-3.5 shadow-sm">

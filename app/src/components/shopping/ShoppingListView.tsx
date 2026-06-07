@@ -4,32 +4,67 @@ import { useState, useCallback, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
 
 interface ShoppingItem {
+  key: string;
   name: string;
   category: string | null;
-  quantityNeeded: number;
+  quantityNeeded: number | null;
   quantityOnHand: number;
-  quantityToBuy: number;
+  quantityToBuy: number | null;
+  quantityLabel: string;
   unit: string;
+  approximate: boolean;
+  sourceMealCount: number;
 }
 
-function getWeekRange(): { start: string; end: string } {
+interface ShoppingSummary {
+  startDate: string;
+  endDate: string;
+  mealCount: number;
+  recipeCount: number;
+  itemCount: number;
+}
+
+interface DateRange {
+  start: string;
+  end: string;
+}
+
+interface ShoppingListViewProps {
+  initialDateRange?: DateRange;
+}
+
+function toDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function getWeekRange(): DateRange {
   const now = new Date();
   const monday = new Date(now);
   monday.setDate(now.getDate() - now.getDay() + 1);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   return {
-    start: monday.toISOString().split("T")[0],
-    end: sunday.toISOString().split("T")[0],
+    start: toDateKey(monday),
+    end: toDateKey(sunday),
   };
 }
 
-export function ShoppingListView() {
+export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [dateRange, setDateRange] = useState(getWeekRange);
+  const [dateRange, setDateRange] = useState<DateRange>(() => initialDateRange || getWeekRange());
+  const [summary, setSummary] = useState<ShoppingSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!initialDateRange) return;
+    setDateRange(initialDateRange);
+    setCheckedItems(new Set());
+  }, [initialDateRange]);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -41,6 +76,7 @@ export function ShoppingListView() {
       const data = await res.json();
       if (res.ok) {
         setItems(data.items || []);
+        setSummary(data.summary || null);
       } else {
         setError(data.error || "Failed to generate list");
       }
@@ -55,11 +91,11 @@ export function ShoppingListView() {
     fetchList();
   }, [fetchList]);
 
-  const toggleCheck = (name: string) => {
+  const toggleCheck = (key: string) => {
     setCheckedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -85,7 +121,7 @@ export function ShoppingListView() {
         <div className="mb-4">
           <h2 className="text-base font-semibold">Shopping List</h2>
           <p className="text-xs text-neutral-500">
-            Based on your meal plan for the week
+            Based on your meal plan, grouped by ingredient and adjusted for matching inventory.
           </p>
         </div>
 
@@ -115,6 +151,24 @@ export function ShoppingListView() {
             Refresh
           </Button>
         </div>
+
+        {/* Summary */}
+        {summary && (
+          <div className="mb-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Meals</p>
+              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.mealCount}</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Recipes</p>
+              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.recipeCount}</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">To buy</p>
+              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.itemCount}</p>
+            </div>
+          </div>
+        )}
 
         {/* Progress */}
         {totalItems > 0 && (
@@ -167,11 +221,11 @@ export function ShoppingListView() {
                 </h3>
                 <div className="space-y-1">
                   {catItems.map((item) => {
-                    const checked = checkedItems.has(item.name);
+                    const checked = checkedItems.has(item.key);
                     return (
                       <button
-                        key={item.name}
-                        onClick={() => toggleCheck(item.name)}
+                        key={item.key}
+                        onClick={() => toggleCheck(item.key)}
                         className={`flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition-all ${
                           checked
                             ? "border-green-200 bg-green-50/50"
@@ -223,11 +277,16 @@ export function ShoppingListView() {
                               checked ? "text-neutral-400" : "text-neutral-800"
                             }`}
                           >
-                            {item.quantityToBuy} {item.unit}
+                            {item.quantityLabel}
                           </p>
-                          {item.quantityOnHand > 0 && (
+                          {item.quantityOnHand > 0 && item.quantityToBuy != null && (
                             <p className="text-[10px] text-neutral-400">
                               {item.quantityOnHand} {item.unit} on hand
+                            </p>
+                          )}
+                          {item.approximate && (
+                            <p className="text-[10px] text-neutral-400">
+                              Check amount while shopping
                             </p>
                           )}
                         </div>

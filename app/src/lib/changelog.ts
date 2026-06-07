@@ -7,6 +7,16 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-07",
+    title: "Meal plan shopping lists",
+    items: [
+      "Meal plans now have a Generate shopping list action for the visible week or month.",
+      "Shopping lists open with the same planner date range and show meal, recipe, and item counts.",
+      "Ingredient quantities are aggregated and adjusted for matching inventory on hand.",
+      "Approximate ingredients such as to taste or agak-agak now appear instead of being dropped.",
+    ],
+  },
+  {
+    date: "2026-06-07",
     title: "Recipe input polish",
     items: [
       "The default Untitled recipe title now behaves like a soft placeholder when users click into the recipe name field.",
