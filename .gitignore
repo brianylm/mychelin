@@ -21,6 +21,9 @@ scripts/node_modules
 # production
 /build
 
+# local agent/session notes
+.commandcode/
+
 # misc
 .DS_Store
 *.pem

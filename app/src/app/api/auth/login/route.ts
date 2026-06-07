@@ -31,15 +31,16 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = await request.json();
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 }
       );
     }
 
-    const user = await getUserFromDb(email.toLowerCase());
+    const user = await getUserFromDb(normalizedEmail);
     if (!user) {
       return NextResponse.json(
         { error: "Invalid email or password" },

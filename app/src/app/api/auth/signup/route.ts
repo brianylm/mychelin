@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, password } = await request.json();
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    if (!name || !email || !password) {
+    if (!name || !normalizedEmail || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
         { status: 400 }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Check if email exists
     const existing = await db.query.users.findFirst({
-      where: eq(users.email, email.toLowerCase()),
+      where: eq(users.email, normalizedEmail),
     });
     if (existing) {
       return NextResponse.json(
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
       .insert(users)
       .values({
         name,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         passwordHash,
         createdAt: now,
       })

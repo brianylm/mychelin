@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { recipeVersions } from "@/db/schema";
+import { recipeVersions, recipes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
@@ -71,6 +71,54 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     console.error("PUT /api/recipes/[id]/versions/[versionId] error:", error);
     return NextResponse.json(
       { error: "Failed to update version" },
+      { status: 500 }
+    );
+  }
+}
+
+
+// ─── DELETE /api/recipes/:id/versions/:versionId ───────────
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id, versionId } = await context.params;
+    const recipeId = Number(id);
+    const verId = Number(versionId);
+
+    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json({ error: "Version not found" }, { status: 404 });
+    }
+
+    const recipe = await db.query.recipes.findFirst({
+      where: eq(recipes.id, recipeId),
+      columns: { activeVersionId: true },
+    });
+
+    if (recipe?.activeVersionId === verId) {
+      return NextResponse.json(
+        { error: "Set another version as definitive before deleting this one" },
+        { status: 409 }
+      );
+    }
+
+    const existing = await db.query.recipeVersions.findFirst({
+      where: eq(recipeVersions.id, verId),
+    });
+
+    if (!existing || existing.recipeId !== recipeId) {
+      return NextResponse.json({ error: "Version not found" }, { status: 404 });
+    }
+
+    await db.delete(recipeVersions).where(eq(recipeVersions.id, verId));
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/recipes/[id]/versions/[versionId] error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete version" },
       { status: 500 }
     );
   }

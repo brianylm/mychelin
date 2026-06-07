@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Button, IconButton } from "@radix-ui/themes";
-import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
+import { Button } from "@radix-ui/themes";
+import { PlusIcon } from "@radix-ui/react-icons";
+import { Trash2 } from "lucide-react";
 import type { Instruction } from "@/db/schema";
 
 interface RecipeStepsProps {
@@ -163,7 +164,9 @@ export function RecipeSteps({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, idx: number) => {
       e.preventDefault();
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      e.stopPropagation();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      document.body.style.userSelect = "none";
       setDragIdx(idx);
       setOverIdx(idx);
     },
@@ -173,6 +176,7 @@ export function RecipeSteps({
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (dragIdx === null) return;
+      e.preventDefault();
       // Find which item the pointer is over by checking Y positions
       const y = e.clientY;
       let closest = dragIdx;
@@ -192,12 +196,20 @@ export function RecipeSteps({
   );
 
   const handlePointerUp = useCallback(() => {
+    document.body.style.userSelect = "";
     if (dragIdx !== null && overIdx !== null && dragIdx !== overIdx) {
       commitReorder(dragIdx, overIdx);
     }
     setDragIdx(null);
     setOverIdx(null);
   }, [dragIdx, overIdx, commitReorder]);
+
+  useEffect(() => {
+    if (dragIdx === null) return;
+    return () => {
+      document.body.style.userSelect = "";
+    };
+  }, [dragIdx]);
 
   // Compute display order during drag
   const displayOrder = (() => {
@@ -251,26 +263,35 @@ export function RecipeSteps({
                 ref={(el) => {
                   if (el) itemRefs.current.set(displayIdx, el);
                 }}
-                className={`group flex gap-2 rounded-lg border px-3 py-2 transition-all ${
+                className={`group flex gap-2 rounded-xl border px-3 py-2.5 transition-all ${
                   isDragging
-                    ? "border-[#800020]/30 bg-[#800020]/5 shadow-md scale-[1.02] z-10 relative"
+                    ? "relative z-10 scale-[1.02] select-none border-[#800020]/35 bg-[#800020]/5 shadow-md ring-2 ring-[#800020]/10"
                     : "border-neutral-100 bg-neutral-50/50"
                 }`}
               >
                 {/* Drag handle + step number */}
                 <div className="flex flex-col items-center justify-center gap-1">
-                  <div
+                  <button
+                    type="button"
                     onPointerDown={(e) =>
                       handlePointerDown(
                         e,
                         sorted.findIndex((s) => s.id === step.id)
                       )
                     }
-                    className="flex cursor-grab touch-none items-center gap-1 rounded px-0.5 py-1 text-neutral-300 transition hover:text-neutral-500 active:cursor-grabbing active:text-[#800020]"
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className={`flex h-10 w-10 cursor-grab touch-none select-none items-center justify-center rounded-full border transition active:cursor-grabbing ${
+                      isDragging
+                        ? "border-[#800020]/30 bg-[#800020] text-white"
+                        : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/25 hover:text-[#800020]"
+                    }`}
                     title="Drag to reorder"
+                    aria-label="Drag step to reorder"
                   >
-                    <GripIcon />
-                  </div>
+                    <GripIcon className="h-4 w-4" />
+                  </button>
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
                     {displayIdx + 1}
                   </span>
@@ -313,16 +334,15 @@ export function RecipeSteps({
                   </button>
                 </div>
 
-                <IconButton
-                  variant="ghost"
-                  size="1"
-                  color="red"
-                  className="mt-1 flex-shrink-0 opacity-100 md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
+                <button
+                  type="button"
+                  className="mt-1 flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
                   onClick={() => onDelete(recipeId, step.id)}
                   aria-label="Remove step"
+                  title="Remove step"
                 >
-                  <Cross2Icon />
-                </IconButton>
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </li>
             );
           })}

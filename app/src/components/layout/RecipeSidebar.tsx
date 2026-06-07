@@ -25,6 +25,9 @@ interface RecipeSidebarProps {
   onClose: () => void;
   onPasteText?: () => void;
   onImportUrl?: () => void;
+  onCookRecipe?: (recipeId: number) => void;
+  onCaptureConversation?: () => void;
+  onAiDraft?: () => void;
 }
 
 export function RecipeSidebar({
@@ -32,6 +35,9 @@ export function RecipeSidebar({
   onClose,
   onPasteText,
   onImportUrl,
+  onCookRecipe,
+  onCaptureConversation,
+  onAiDraft,
 }: RecipeSidebarProps) {
   const {
     recipes,
@@ -200,20 +206,91 @@ export function RecipeSidebar({
             onCreateOpen={handleCreateBlank}
             onPasteText={onPasteText}
             onImportUrl={onImportUrl}
+            onCaptureConversation={onCaptureConversation}
+            onAiDraft={onAiDraft}
           />
         </div>
 
-        {/* Books + Recipe list */}
+        {/* Recipe list + Books: peer sections under Create recipe. */}
         <div className="flex-1 overflow-y-auto px-2 py-3">
-          {/* Books section */}
-          <div className="mb-3">
+          <section className="mb-4">
             <div className="flex items-center justify-between px-3 pb-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/55">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
+                {hasQuery ? "Search results" : "Recipes"}
+              </span>
+              {!hasQuery && filteredRecipes.length > 0 && (
+                <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
+                  {filteredRecipes.length}
+                </span>
+              )}
+            </div>
+
+            {draftRecipes.length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between px-3 pb-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                    Drafts
+                  </span>
+                  <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
+                    {draftRecipes.length}
+                  </span>
+                </div>
+                <ul className="space-y-0.5">
+                  {draftRecipes.map((recipe) => (
+                    <RecipeListItem
+                      key={recipe.id}
+                      recipe={recipe}
+                      isSelected={selectedRecipeId === recipe.id}
+                      onSelect={(id) => {
+                        selectRecipe(id);
+                        onClose();
+                      }}
+                      onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
+                      onDelete={deleteRecipe}
+                      onCook={onCookRecipe}
+                      matchedIngredient={matchedIngredientById.get(recipe.id)}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {activeRecipes.length === 0 && !loading && !searching ? (
+              <p className="px-3 py-6 text-center text-sm text-neutral-500">
+                {query
+                  ? "No recipes match your search."
+                  : draftRecipes.length > 0
+                    ? "All your recipes are drafts. Add ingredients or steps to save them as complete recipes."
+                    : "No recipes yet. Use Create recipe above to start one."}
+              </p>
+            ) : (
+              <ul className="space-y-0.5">
+                {activeRecipes.map((recipe) => (
+                  <RecipeListItem
+                    key={recipe.id}
+                    recipe={recipe}
+                    isSelected={selectedRecipeId === recipe.id}
+                    onSelect={(id) => {
+                      selectRecipe(id);
+                      onClose();
+                    }}
+                    onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
+                    onDelete={deleteRecipe}
+                    onCook={onCookRecipe}
+                    matchedIngredient={matchedIngredientById.get(recipe.id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="border-t border-[#800020]/10 pt-3">
+            <div className="flex items-center justify-between px-3 pb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
                 Books
               </span>
               <button
                 onClick={() => {
-                  // Open create book flow — dispatch custom event
                   window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
                 className="text-[10px] font-medium text-[#800020] hover:text-[#800020]"
@@ -258,10 +335,10 @@ export function RecipeSidebar({
                       </span>
                     </button>
                     {expandedBooks.has(book.id) && (
-                      <ul className="ml-5 border-l border-neutral-200 pl-3 py-1 space-y-0.5">
+                      <ul className="ml-5 space-y-0.5 border-l border-neutral-200 py-1 pl-3">
                         {!bookRecipes[book.id] ? (
                           <li className="px-2 py-1.5 text-xs text-neutral-400">
-                            Loading…
+                            Loading...
                           </li>
                         ) : bookRecipes[book.id].length === 0 ? (
                           <li className="px-2 py-1.5 text-xs text-neutral-400">
@@ -297,79 +374,7 @@ export function RecipeSidebar({
                 No books yet. Create one to organize recipes.
               </p>
             )}
-          </div>
-
-          {/* Drafts — only shown when there's at least one. Deliberately
-              above "All Recipes" so in-progress captures are never out of
-              sight. */}
-          {draftRecipes.length > 0 && (
-            <div className="mb-3">
-              <div className="flex items-center justify-between px-3 pb-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-                  Drafts
-                </span>
-                <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
-                  {draftRecipes.length}
-                </span>
-              </div>
-              <ul className="space-y-0.5">
-                {draftRecipes.map((recipe) => (
-                  <RecipeListItem
-                    key={recipe.id}
-                    recipe={recipe}
-                    isSelected={selectedRecipeId === recipe.id}
-                    onSelect={(id) => {
-                      selectRecipe(id);
-                      onClose();
-                    }}
-                    onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
-                    onDelete={deleteRecipe}
-                    matchedIngredient={matchedIngredientById.get(recipe.id)}
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* All recipes */}
-          {(books.length > 0 || draftRecipes.length > 0) && (
-            <div className="flex items-center justify-between px-3 pb-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-                {hasQuery ? "Search Results" : "All Recipes"}
-              </span>
-              {!hasQuery && activeRecipes.length > 0 && (
-                <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
-                  {activeRecipes.length}
-                </span>
-              )}
-            </div>
-          )}
-          {activeRecipes.length === 0 && !loading && !searching ? (
-            <p className="px-3 py-6 text-center text-sm text-neutral-500">
-              {query
-                ? "No recipes match your search."
-                : draftRecipes.length > 0
-                  ? "All your recipes are drafts. Add ingredients or steps to save them as complete recipes."
-                  : "No recipes yet. Create one!"}
-            </p>
-          ) : (
-            <ul className="space-y-0.5">
-              {activeRecipes.map((recipe) => (
-                <RecipeListItem
-                  key={recipe.id}
-                  recipe={recipe}
-                  isSelected={selectedRecipeId === recipe.id}
-                  onSelect={(id) => {
-                    selectRecipe(id);
-                    onClose();
-                  }}
-                  onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
-                  onDelete={deleteRecipe}
-                  matchedIngredient={matchedIngredientById.get(recipe.id)}
-                />
-              ))}
-            </ul>
-          )}
+          </section>
         </div>
       </aside>
 

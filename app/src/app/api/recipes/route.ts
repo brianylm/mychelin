@@ -5,10 +5,17 @@ import {
   ingredients,
   instructions,
   recipeVersions,
+  recipeAttempts,
   bookMembers,
+  mealPlans,
 } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
-import { ensureVersionLabelColumn } from "@/db/ensure-schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import {
+  ensureMealPlanCookedAtColumn,
+  ensurePlanningOwnershipColumns,
+  ensureRecipeAttemptsTable,
+  ensureVersionLabelColumn,
+} from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import {
   canUserAccessRecipe,
@@ -35,6 +42,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    const planner = searchParams.get("planner") === "1";
 
     if (id) {
       // Single recipe with relations — must pass access check
@@ -69,7 +77,104 @@ export async function GET(request: NextRequest) {
 
     // Match the previous order (newest first) without relying on a desc
     // helper import — reverse in-memory since the result set is small.
-    return NextResponse.json(allRecipes.reverse());
+    const orderedRecipes = allRecipes.reverse();
+
+    if (!planner || orderedRecipes.length === 0) {
+      return NextResponse.json(orderedRecipes);
+    }
+
+    await ensurePlanningOwnershipColumns();
+    await ensureMealPlanCookedAtColumn();
+    await ensureRecipeAttemptsTable();
+
+    const recipeIds = orderedRecipes.map((recipe) => recipe.id);
+    const ingredientRows = await db
+      .select({ recipeId: ingredients.recipeId, name: ingredients.name })
+      .from(ingredients)
+      .where(inArray(ingredients.recipeId, recipeIds));
+
+    const versionCookRows = await db
+      .select({
+        recipeId: recipeVersions.recipeId,
+        lastCookingSession: sql<number | null>`max(${recipeVersions.cookingSessionDate})`,
+      })
+      .from(recipeVersions)
+      .where(inArray(recipeVersions.recipeId, recipeIds))
+      .groupBy(recipeVersions.recipeId);
+
+    const plannedCookRows = await db
+      .select({
+        recipeId: mealPlans.recipeId,
+        lastCookedAt: sql<string | null>`max(${mealPlans.cookedAt})`,
+      })
+      .from(mealPlans)
+      .where(
+        and(
+          eq(mealPlans.userId, currentUser.id),
+          inArray(mealPlans.recipeId, recipeIds),
+          sql`${mealPlans.cookedAt} is not null`
+        )
+      )
+      .groupBy(mealPlans.recipeId);
+
+    const attemptCookRows = await db
+      .select({
+        recipeId: recipeAttempts.recipeId,
+        lastCookedAt: sql<string | null>`max(${recipeAttempts.cookedAt})`,
+      })
+      .from(recipeAttempts)
+      .where(
+        and(
+          eq(recipeAttempts.userId, currentUser.id),
+          inArray(recipeAttempts.recipeId, recipeIds)
+        )
+      )
+      .groupBy(recipeAttempts.recipeId);
+
+    const ingredientsByRecipe = new Map<number, string[]>();
+    for (const row of ingredientRows) {
+      const current = ingredientsByRecipe.get(row.recipeId) ?? [];
+      current.push(row.name);
+      ingredientsByRecipe.set(row.recipeId, current);
+    }
+
+    const versionCookedByRecipe = new Map<number, string>();
+    for (const row of versionCookRows) {
+      if (row.lastCookingSession) {
+        versionCookedByRecipe.set(
+          row.recipeId,
+          new Date(Number(row.lastCookingSession) * 1000).toISOString()
+        );
+      }
+    }
+
+    const plannedCookedByRecipe = new Map<number, string>();
+    for (const row of plannedCookRows) {
+      if (row.lastCookedAt) plannedCookedByRecipe.set(row.recipeId, row.lastCookedAt);
+    }
+
+    const attemptCookedByRecipe = new Map<number, string>();
+    for (const row of attemptCookRows) {
+      if (row.lastCookedAt) attemptCookedByRecipe.set(row.recipeId, row.lastCookedAt);
+    }
+
+    const plannerRecipes = orderedRecipes.map((recipe) => {
+      const versionCookedAt = versionCookedByRecipe.get(recipe.id) ?? null;
+      const plannedCookedAt = plannedCookedByRecipe.get(recipe.id) ?? null;
+      const attemptCookedAt = attemptCookedByRecipe.get(recipe.id) ?? null;
+      const lastCookedAt = [versionCookedAt, plannedCookedAt, attemptCookedAt]
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .at(-1) ?? null;
+
+      return {
+        ...recipe,
+        ingredients: ingredientsByRecipe.get(recipe.id) ?? [],
+        lastCookedAt,
+      };
+    });
+
+    return NextResponse.json(plannerRecipes);
   } catch (error) {
     console.error("GET /api/recipes error:", error);
     return NextResponse.json(

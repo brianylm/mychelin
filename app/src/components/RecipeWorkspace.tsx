@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import { RecipeStoreProvider, useRecipeStore } from "@/store/RecipeStore";
+import { RecipeStoreProvider, useRecipeStore, type RecipeWithRelations } from "@/store/RecipeStore";
 import { RecipeSidebar } from "@/components/layout/RecipeSidebar";
 import { RecipeView } from "@/components/recipes/RecipeView";
 import { Header } from "@/components/layout/Header";
@@ -18,12 +18,45 @@ import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
 import { RecipeSearchModal } from "@/components/search/RecipeSearchModal";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
-import { ClipboardPaste, Link, PencilLine } from "lucide-react";
+import { ConversationCapture } from "@/components/capture/ConversationCapture";
+import { AiDraftRecipeModal } from "@/components/capture/AiDraftRecipeModal";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { CookWithMeSession } from "@/components/recipes/CookWithMeSession";
+import { MultiCookWithMeSession } from "@/components/recipes/MultiCookWithMeSession";
+import { useToast } from "@/context/ToastContext";
+import { ClipboardPaste, Link, Mic2, PencilLine, Sparkles } from "lucide-react";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("recipes");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    fetch("/api/user/preferences")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const pendingSignup =
+          window.localStorage.getItem("mychelin_onboarding_pending") === "1";
+        const createdAt = data.createdAt ? Date.parse(data.createdAt) : 0;
+        const rolloutAt = Date.parse("2026-06-06T00:00:00.000Z");
+        const newSinceRollout = Number.isFinite(createdAt) && createdAt >= rolloutAt;
+        setShowOnboarding(
+          data.onboardingCompleted !== true && (pendingSignup || newSinceRollout)
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setShowOnboarding(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   if (loading) {
     return (
@@ -35,6 +68,15 @@ export function RecipeWorkspace() {
 
   if (!user) {
     return <AuthScreen />;
+  }
+
+  if (showOnboarding) {
+    return (
+      <OnboardingFlow
+        userName={user.name}
+        onComplete={() => setShowOnboarding(false)}
+      />
+    );
   }
 
   return (
@@ -62,7 +104,16 @@ function RecipeWorkspaceContent({
 }) {
   const { selectRecipe, createRecipe } = useRecipeStore();
   const qc = useQueryClient();
+  const { addToast } = useToast();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeCookMeal, setActiveCookMeal] = useState<{
+    recipe: RecipeWithRelations;
+    mealPlanId?: number;
+  } | null>(null);
+  const [activeCookBatch, setActiveCookBatch] = useState<Array<{
+    recipe: RecipeWithRelations;
+    mealPlanId?: number;
+  }> | null>(null);
 
   const handleNavigateToRecipe = useCallback((recipeId: number) => {
     // Always refresh the list — a navigation often follows a fork/create
@@ -80,11 +131,129 @@ function RecipeWorkspaceContent({
     setCurrentView(view);
   }, [selectRecipe, setCurrentView]);
 
+  const startCookSession = useCallback(
+    async (recipeId: number, mealPlanId?: number, keepCurrentView = false) => {
+      if (!keepCurrentView) {
+        selectRecipe(recipeId);
+        setCurrentView("recipes");
+      }
+      try {
+        const response = await fetch(`/api/recipes/${recipeId}`);
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || "Failed to load recipe");
+        }
+        const recipe = (await response.json()) as RecipeWithRelations;
+        setActiveCookMeal({ recipe, mealPlanId });
+      } catch (err) {
+        addToast(
+          err instanceof Error ? err.message : "Couldn't start cooking session",
+          "error"
+        );
+      }
+    },
+    [addToast, selectRecipe, setCurrentView]
+  );
+
+  const handleCookMealPlan = useCallback(
+    (recipeId: number, mealPlanId: number) => {
+      void startCookSession(recipeId, mealPlanId, true);
+    },
+    [startCookSession]
+  );
+
+  const handleCookMealBatch = useCallback(
+    async (meals: Array<{ recipeId: number; mealPlanId: number }>) => {
+      if (meals.length === 0) return;
+      try {
+        const loadedMeals = await Promise.all(
+          meals.map(async (meal) => {
+            const response = await fetch("/api/recipes/" + meal.recipeId);
+            if (!response.ok) {
+              const body = await response.json().catch(() => ({}));
+              throw new Error(body.error || "Failed to load recipe");
+            }
+            return {
+              recipe: (await response.json()) as RecipeWithRelations,
+              mealPlanId: meal.mealPlanId,
+            };
+          })
+        );
+        setActiveCookMeal(null);
+        setActiveCookBatch(loadedMeals);
+        // Keep the planner visible under the batch cooking modal.
+      } catch (err) {
+        addToast(
+          err instanceof Error ? err.message : "Couldn't start batch cooking session",
+          "error"
+        );
+      }
+    },
+    [addToast]
+  );
+
+  const handleCookRecipe = useCallback(
+    (recipeId: number) => {
+      void startCookSession(recipeId);
+    },
+    [startCookSession]
+  );
+
+  const handleCookMealComplete = useCallback(async () => {
+    if (!activeCookMeal) return;
+
+    qc.invalidateQueries({ queryKey: ["recipe", activeCookMeal.recipe.id] });
+
+    if (activeCookMeal.mealPlanId == null) {
+      addToast("Cooking session saved", "success");
+      return;
+    }
+
+    const response = await fetch(`/api/meal-plans/${activeCookMeal.mealPlanId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cookedAt: new Date().toISOString() }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Cooking session saved, but meal was not marked cooked");
+    }
+
+    addToast("Cooking session saved and meal marked cooked", "success");
+  }, [activeCookMeal, addToast, qc]);
+
+
+  const handleCookBatchComplete = useCallback(async (mealPlanIds: number[]) => {
+    if (!activeCookBatch) return;
+
+    for (const meal of activeCookBatch) {
+      qc.invalidateQueries({ queryKey: ["recipe", meal.recipe.id] });
+    }
+
+    for (const mealPlanId of mealPlanIds) {
+      const response = await fetch("/api/meal-plans/" + mealPlanId, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cookedAt: new Date().toISOString() }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Attempts saved, but one meal was not marked cooked");
+      }
+    }
+
+    addToast("Batch cooking attempts saved", "success");
+  }, [activeCookBatch, addToast, qc]);
+
   // ── FAB speed-dial state ─────────────────────────────────
   const [fabOpen, setFabOpen] = useState(false);
   const [pasteRecipeId, setPasteRecipeId] = useState<number | null>(null);
   const [pasteMode, setPasteMode] = useState<"paste" | "url">("paste");
+  const [conversationRecipeId, setConversationRecipeId] = useState<number | null>(null);
+  const [aiDraftOpen, setAiDraftOpen] = useState(false);
   const captureCommittedRef = useRef(false);
+  const conversationCommittedRef = useRef(false);
   const fabRef = useRef<HTMLDivElement>(null);
 
   // Close speed-dial on outside tap
@@ -146,6 +315,89 @@ function RecipeWorkspaceContent({
     createDraftForCapture("url");
   }, [createDraftForCapture]);
 
+  const createDraftForConversation = useCallback(async () => {
+    setFabOpen(false);
+    try {
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Conversation recipe", status: "draft" }),
+      });
+      if (!res.ok) throw new Error("Failed to create recipe");
+      const recipe = await res.json();
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      selectRecipe(recipe.id);
+      setCurrentView("recipes");
+      setSidebarOpen(false);
+      conversationCommittedRef.current = false;
+      setConversationRecipeId(recipe.id);
+    } catch (err) {
+      console.error("Conversation capture failed:", err);
+      addToast("Could not start conversation capture", "error");
+    }
+  }, [addToast, qc, selectRecipe, setCurrentView, setSidebarOpen]);
+
+  const handleConversationClose = useCallback(async () => {
+    const abandonedRecipeId = conversationRecipeId;
+    setConversationRecipeId(null);
+
+    if (!abandonedRecipeId || conversationCommittedRef.current) return;
+
+    try {
+      await fetch(`/api/recipes/${abandonedRecipeId}`, { method: "DELETE" });
+      selectRecipe(null);
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+    } catch (err) {
+      console.error("Failed to clean up abandoned conversation draft:", err);
+    }
+  }, [conversationRecipeId, qc, selectRecipe]);
+
+  const handleConversationDone = useCallback(() => {
+    conversationCommittedRef.current = true;
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    if (conversationRecipeId) {
+      qc.invalidateQueries({ queryKey: ["recipe", conversationRecipeId] });
+    }
+    setConversationRecipeId(null);
+    addToast("Recipe captured from conversation", "success");
+  }, [addToast, conversationRecipeId, qc]);
+
+  const handleCreateAiDraft = useCallback(async (draft: {
+    title: string;
+    description?: string;
+    cuisine?: string;
+    yield?: string;
+    prepTime?: number | null;
+    cookTime?: number | null;
+    story?: string;
+    ingredients: Array<{
+      name: string;
+      quantity?: number | null;
+      unit?: string | null;
+      approximate?: boolean;
+      quantityText?: string | null;
+      notes?: string;
+    }>;
+    instructions: Array<{ content: string; tip?: string }>;
+  }) => {
+    const response = await fetch("/api/recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...draft, status: "draft" }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Failed to save draft recipe");
+    }
+    const recipe = await response.json();
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    selectRecipe(recipe.id);
+    setCurrentView("recipes");
+    setSidebarOpen(false);
+    setFabOpen(false);
+    addToast("Draft recipe created", "success");
+  }, [addToast, qc, selectRecipe, setCurrentView, setSidebarOpen]);
+
   const handlePasteModalClose = useCallback(async () => {
     const abandonedRecipeId = pasteRecipeId;
     setPasteRecipeId(null);
@@ -202,13 +454,24 @@ function RecipeWorkspaceContent({
               onClose={() => setSidebarOpen(false)}
               onPasteText={handleQuickCapture}
               onImportUrl={handleImportUrl}
+              onCookRecipe={handleCookRecipe}
+              onCaptureConversation={createDraftForConversation}
+              onAiDraft={() => setAiDraftOpen(true)}
             />
-            <RecipeView onOpenSidebar={() => setSidebarOpen(true)} />
+            <RecipeView
+              onOpenSidebar={() => setSidebarOpen(true)}
+              onCookRecipe={handleCookRecipe}
+            />
           </>
         )}
         {currentView === "fridge" && <FridgeView />}
         {currentView === "shopping" && <ShoppingListView />}
-        {currentView === "plan" && <MealPlanView />}
+        {currentView === "plan" && (
+          <MealPlanView
+            onCookMeal={handleCookMealPlan}
+            onCookMeals={handleCookMealBatch}
+          />
+        )}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "profile" && <ProfileView />}
       </div>
@@ -260,11 +523,40 @@ function RecipeWorkspaceContent({
 
                 <button
                   type="button"
+                  onClick={createDraftForConversation}
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                >
+                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                    Record conversation
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                    <Mic2 className="h-[18px] w-[18px]" />
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFabOpen(false);
+                    setAiDraftOpen(true);
+                  }}
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                >
+                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                    Ask Mychelin
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                    <Sparkles className="h-[18px] w-[18px]" />
+                  </span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleFromScratch}
                   className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
-                    From scratch
+                    Manual recipe
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
                     <PencilLine className="h-[18px] w-[18px]" />
@@ -298,6 +590,38 @@ function RecipeWorkspaceContent({
             </button>
           </div>
         </>
+      )}
+
+      {conversationRecipeId != null && (
+        <ConversationCapture
+          recipeId={conversationRecipeId}
+          onClose={handleConversationClose}
+          onRecipeUpdated={handleConversationDone}
+        />
+      )}
+
+      {aiDraftOpen && (
+        <AiDraftRecipeModal
+          onClose={() => setAiDraftOpen(false)}
+          onCreateDraft={handleCreateAiDraft}
+        />
+      )}
+
+      {activeCookMeal && (
+        <CookWithMeSession
+          recipe={activeCookMeal.recipe}
+          mealPlanId={activeCookMeal.mealPlanId}
+          onClose={() => setActiveCookMeal(null)}
+          onComplete={handleCookMealComplete}
+        />
+      )}
+
+      {activeCookBatch && (
+        <MultiCookWithMeSession
+          meals={activeCookBatch}
+          onClose={() => setActiveCookBatch(null)}
+          onComplete={handleCookBatchComplete}
+        />
       )}
 
       {/* Paste-extract modal for Quick Capture flow */}

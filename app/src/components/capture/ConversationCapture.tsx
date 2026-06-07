@@ -62,6 +62,7 @@ function isSetupError(message: string): boolean {
   const m = message.toLowerCase();
   return (
     m.includes("not configured") ||
+    m.includes("openai_api_key") ||
     m.includes("gemini_api_key") ||
     m.includes("google_api_key")
   );
@@ -72,22 +73,12 @@ function ErrorBanner({ message }: { message: string }) {
     return (
       <div className="border-t border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs text-[#241017]">
         <div className="mb-1 flex items-center gap-1.5 font-semibold">
-          <span>⚙️</span>
-          <span>AI capture needs a Gemini API key</span>
+          <span>AI capture needs a transcription key</span>
         </div>
         <p className="leading-relaxed text-[#521224]">
-          Add a <code className="rounded bg-[#800020]/10 px-1">GOOGLE_API_KEY</code>{" "}
-          environment variable in Vercel → Project Settings → Environment
-          Variables, then redeploy. Get a free key at{" "}
-          <a
-            href="https://aistudio.google.com/apikey"
-            target="_blank"
-            rel="noreferrer"
-            className="underline"
-          >
-            aistudio.google.com/apikey
-          </a>
-          .
+          Add <code className="rounded bg-[#800020]/10 px-1">OPENAI_API_KEY</code>{" "}
+          for OpenAI speech-to-text, or keep <code className="rounded bg-[#800020]/10 px-1">GOOGLE_API_KEY</code>{" "}
+          for the Gemini fallback, then redeploy.
         </p>
       </div>
     );
@@ -97,6 +88,14 @@ function ErrorBanner({ message }: { message: string }) {
       {message}
     </div>
   );
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getErrorName(error: unknown): string {
+  return error instanceof Error ? error.name : "";
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -142,7 +141,6 @@ export function ConversationCapture({
   useEffect(() => {
     return () => {
       hardStopInternal();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     };
   }, []);
 
@@ -150,23 +148,52 @@ export function ConversationCapture({
     if (blob.size < 500) return;
     setProcessingChunks((n) => n + 1);
     try {
-      const audioBase64 = await blobToBase64(blob);
-      const res = await fetch("/api/capture/transcribe-chunk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audioBase64,
-          mimeType,
-          language: "auto",
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Transcription failed");
-      }
-      const data = (await res.json()) as {
-        segments?: Array<{ speaker: string; text: string }>;
+      const transcribeWithOpenAI = async () => {
+        const formData = new FormData();
+        const extension = mimeType.includes("mp4") ? "mp4" : mimeType.includes("ogg") ? "ogg" : "webm";
+        formData.set("audio", new File([blob], `conversation-chunk.${extension}`, { type: mimeType }));
+        formData.set("language", "auto");
+        const res = await fetch("/api/capture/transcribe-whisper", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "OpenAI transcription failed");
+        }
+        return (await res.json()) as {
+          segments?: Array<{ speaker: string; text: string }>;
+        };
       };
+
+      const transcribeWithGemini = async () => {
+        const audioBase64 = await blobToBase64(blob);
+        const res = await fetch("/api/capture/transcribe-chunk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            audioBase64,
+            mimeType,
+            language: "auto",
+          }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Transcription failed");
+        }
+        return (await res.json()) as {
+          segments?: Array<{ speaker: string; text: string }>;
+        };
+      };
+
+      let data: { segments?: Array<{ speaker: string; text: string }> };
+      try {
+        data = await transcribeWithOpenAI();
+      } catch (openAiError) {
+        console.warn("OpenAI transcription unavailable, trying Gemini fallback:", openAiError);
+        data = await transcribeWithGemini();
+      }
+
       const segments = data.segments ?? [];
       if (segments.length === 0) return;
 
@@ -193,9 +220,9 @@ export function ConversationCapture({
         }
         return next;
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Chunk upload failed:", err);
-      setErrorMessage(err?.message || "Transcription failed");
+      setErrorMessage(getErrorMessage(err, "Transcription failed"));
     } finally {
       setProcessingChunks((n) => Math.max(0, n - 1));
     }
@@ -275,12 +302,12 @@ export function ConversationCapture({
       setIsRecording(true);
       setConnecting(false);
       startChunkRecorder();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to start recording:", err);
       setErrorMessage(
-        err?.name === "NotAllowedError"
+        getErrorName(err) === "NotAllowedError"
           ? "Microphone permission denied"
-          : err?.message || "Failed to start recording"
+          : getErrorMessage(err, "Failed to start recording")
       );
       setConnecting(false);
       hardStopInternal();
@@ -370,9 +397,9 @@ export function ConversationCapture({
 
       onRecipeUpdated?.();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save conversation failed:", err);
-      setErrorMessage(err?.message || "Failed to save. Please try again.");
+      setErrorMessage(getErrorMessage(err, "Failed to save. Please try again."));
       setStep("naming");
     }
   };

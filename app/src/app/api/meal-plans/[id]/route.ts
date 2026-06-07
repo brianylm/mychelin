@@ -1,25 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { mealPlans } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+const VALID_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 // ─── GET /api/meal-plans/:id ───────────────────────────────
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensurePlanningOwnershipColumns();
+    await ensureMealPlanCookedAtColumn();
+
     const { id } = await context.params;
     const planId = Number(id);
 
     const plan = await db.query.mealPlans.findFirst({
-      where: eq(mealPlans.id, planId),
+      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
       with: {
         recipe: {
-          columns: { id: true, title: true, yield: true }
-        }
+          columns: { id: true, title: true, yield: true },
+        },
       },
     });
 
@@ -41,16 +55,22 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 // ─── PATCH /api/meal-plans/:id ─────────────────────────────
-// Update a meal plan (partial update supported)
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensurePlanningOwnershipColumns();
+    await ensureMealPlanCookedAtColumn();
+
     const { id } = await context.params;
     const planId = Number(id);
     const body = await request.json();
 
-    // Check meal plan exists
     const existing = await db.query.mealPlans.findFirst({
-      where: eq(mealPlans.id, planId),
+      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
     });
 
     if (!existing) {
@@ -60,13 +80,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const { date, mealType, recipeId, servings, notes } = body;
-    const updateFields: any = {};
-    
+    const { date, mealType, recipeId, servings, notes, cookedAt } = body;
+    const updateFields: Partial<typeof mealPlans.$inferInsert> = {};
+
     if (date !== undefined) {
-      // Validate date format (basic check)
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(date)) {
+      if (!DATE_RE.test(date)) {
         return NextResponse.json(
           { error: "Invalid date format. Use YYYY-MM-DD" },
           { status: 400 }
@@ -74,11 +92,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
       updateFields.date = date;
     }
-    
+
     if (mealType !== undefined) {
-      // Validate mealType
-      const validMealTypes = ["breakfast", "lunch", "dinner", "snack"];
-      if (!validMealTypes.includes(mealType)) {
+      if (!VALID_MEAL_TYPES.includes(mealType)) {
         return NextResponse.json(
           { error: "Invalid meal type. Must be one of: breakfast, lunch, dinner, snack" },
           { status: 400 }
@@ -86,10 +102,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
       updateFields.mealType = mealType;
     }
-    
-    if (recipeId !== undefined) updateFields.recipeId = Number(recipeId);
+
+    if (recipeId !== undefined) {
+      const recipeIdNumber = Number(recipeId);
+      if (!(await canUserAccessRecipe(currentUser.id, recipeIdNumber))) {
+        return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+      }
+      updateFields.recipeId = recipeIdNumber;
+    }
     if (servings !== undefined) updateFields.servings = servings;
     if (notes !== undefined) updateFields.notes = notes;
+    if (cookedAt !== undefined) {
+      if (cookedAt !== null && typeof cookedAt !== "string") {
+        return NextResponse.json(
+          { error: "Invalid cookedAt value" },
+          { status: 400 }
+        );
+      }
+      updateFields.cookedAt = cookedAt;
+    }
 
     if (Object.keys(updateFields).length === 0) {
       return NextResponse.json(
@@ -101,15 +132,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     await db
       .update(mealPlans)
       .set(updateFields)
-      .where(eq(mealPlans.id, planId));
+      .where(and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)));
 
-    // Return updated meal plan with recipe details
     const updatedPlan = await db.query.mealPlans.findFirst({
-      where: eq(mealPlans.id, planId),
+      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
       with: {
         recipe: {
-          columns: { id: true, title: true, yield: true }
-        }
+          columns: { id: true, title: true, yield: true },
+        },
       },
     });
 
@@ -126,11 +156,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ─── DELETE /api/meal-plans/:id ────────────────────────────
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensurePlanningOwnershipColumns();
+    await ensureMealPlanCookedAtColumn();
+
     const { id } = await context.params;
     const planId = Number(id);
 
     const existing = await db.query.mealPlans.findFirst({
-      where: eq(mealPlans.id, planId),
+      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
     });
 
     if (!existing) {
@@ -140,7 +178,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    await db.delete(mealPlans).where(eq(mealPlans.id, planId));
+    await db
+      .delete(mealPlans)
+      .where(and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)));
 
     return NextResponse.json({ message: "Meal plan deleted successfully" });
   } catch (error) {

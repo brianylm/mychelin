@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: email.trim(), password }),
     });
     const data = await res.json();
     if (!res.ok) return data.error || "Login failed";
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email: email.trim(), password }),
       });
       const data = await res.json();
       if (!res.ok) return data.error || "Signup failed";

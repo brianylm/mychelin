@@ -41,7 +41,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Set this version as the active version
+    // Set this version as the definitive version
     await db
       .update(recipes)
       .set({
@@ -51,13 +51,13 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       .where(eq(recipes.id, recipeId));
 
     return NextResponse.json({
-      message: "Rolled back to version " + (version.versionLabel ?? version.versionNumber),
+      message: "Set definitive version to " + (version.versionLabel ?? version.versionNumber),
       activeVersionId: verId,
     });
   } catch (error) {
     console.error("POST rollback error:", error);
     return NextResponse.json(
-      { error: "Failed to rollback" },
+      { error: "Failed to set definitive version" },
       { status: 500 }
     );
   }

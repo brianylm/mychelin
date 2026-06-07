@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
+import { ensureUserOnboardingColumns } from "@/db/ensure-schema";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -18,6 +19,8 @@ export async function GET() {
         { status: 401 }
       );
     }
+
+    await ensureUserOnboardingColumns();
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, currentUser.id),
@@ -46,6 +49,11 @@ export async function GET() {
       householdSize: user.householdSize,
       favoriteCuisines,
       dietaryRestrictions,
+      onboardingCompleted: Boolean(user.onboardingCompleted),
+      cookingGoal: user.cookingGoal,
+      cookingFrequency: user.cookingFrequency,
+      firstCaptureMode: user.firstCaptureMode,
+      createdAt: user.createdAt,
     });
   } catch (error) {
     console.error("GET /api/user/preferences error:", error);
@@ -68,26 +76,38 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    await ensureUserOnboardingColumns();
+
     const body = await request.json();
     const {
       name,
       cookingSkillLevel,
       householdSize,
-      favoriteCuisines = [],
-      dietaryRestrictions = [],
+      favoriteCuisines,
+      dietaryRestrictions,
+      onboardingCompleted,
+      cookingGoal,
+      cookingFrequency,
+      firstCaptureMode,
     } = body;
 
-    // Update user preferences
-    await db
-      .update(users)
-      .set({
-        name: name || null,
-        cookingSkillLevel: cookingSkillLevel || null,
-        householdSize: householdSize || null,
-        favoriteCuisines: JSON.stringify(favoriteCuisines),
-        dietaryRestrictions: JSON.stringify(dietaryRestrictions),
-      })
-      .where(eq(users.id, currentUser.id));
+    const updates: Partial<typeof users.$inferInsert> = {};
+    if (typeof name === "string" && name.trim()) updates.name = name.trim();
+    if (typeof cookingSkillLevel === "string") updates.cookingSkillLevel = cookingSkillLevel || null;
+    if (typeof householdSize === "number" || householdSize === null) updates.householdSize = householdSize;
+    if (Array.isArray(favoriteCuisines)) updates.favoriteCuisines = JSON.stringify(favoriteCuisines);
+    if (Array.isArray(dietaryRestrictions)) updates.dietaryRestrictions = JSON.stringify(dietaryRestrictions);
+    if (typeof onboardingCompleted === "boolean") updates.onboardingCompleted = onboardingCompleted;
+    if (typeof cookingGoal === "string") updates.cookingGoal = cookingGoal || null;
+    if (typeof cookingFrequency === "string") updates.cookingFrequency = cookingFrequency || null;
+    if (typeof firstCaptureMode === "string") updates.firstCaptureMode = firstCaptureMode || null;
+
+    if (Object.keys(updates).length > 0) {
+      await db
+        .update(users)
+        .set(updates)
+        .where(eq(users.id, currentUser.id));
+    }
 
     return NextResponse.json({ message: "Preferences updated successfully" });
   } catch (error) {

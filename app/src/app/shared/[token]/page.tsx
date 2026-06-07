@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ServingScaler, formatScaledQuantity } from "@/components/recipes/ServingScaler";
 import { SignupNudge } from "@/components/sharing/SignupNudge";
@@ -70,12 +71,12 @@ function SaveRecipeButton({ token }: { token: string }) {
             <p className="text-sm font-semibold text-emerald-900">Saved to your Mychelin!</p>
             <p className="text-[11px] text-emerald-700">This recipe is now in your collection.</p>
           </div>
-          <a
+          <Link
             href="/"
             className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
           >
             Open my recipes
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -262,7 +263,7 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         )}
 
         <div className="mt-12 pb-8 text-center text-xs text-neutral-400">
-          Made with <a href="/" className="text-[#800020] hover:underline">Mychelin</a> · preserving family recipe heritage
+          Made with <Link href="/" className="text-[#800020] hover:underline">Mychelin</Link> · cooking like home, even in your new home
         </div>
       </div>
     </div>
@@ -416,7 +417,7 @@ export default function SharedPage() {
         )}
 
         <div className="mt-12 pb-8 text-center text-xs text-neutral-400">
-          Made with <a href="/" className="text-[#800020] hover:underline">Mychelin</a> · preserving family recipe heritage
+          Made with <Link href="/" className="text-[#800020] hover:underline">Mychelin</Link> · cooking like home, even in your new home
         </div>
       </div>
       <SignupNudge context="book" resourceName={b.title} />

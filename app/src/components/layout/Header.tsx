@@ -22,7 +22,7 @@ export function Header({
 
   return (
     <header className="sticky left-0 right-0 top-0 z-20 flex h-[68px] items-center bg-transparent px-3 py-2">
-      <div className="relative mx-auto flex h-full w-full items-center justify-between gap-3 overflow-hidden rounded-full border border-white/45 bg-white/[0.26] px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-18px_34px_rgba(255,255,255,0.16),0_18px_55px_rgba(40,26,19,0.14)] backdrop-blur-2xl backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-4 before:top-0 before:h-px before:bg-white/80 supports-[backdrop-filter]:bg-white/[0.18] sm:px-4">
+      <div className="relative mx-auto flex h-full w-full items-center justify-between gap-3 rounded-full bg-white/75 px-3 shadow-[0_14px_38px_rgba(40,26,19,0.12)] ring-1 ring-white/70 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/60 sm:px-4">
         <div className="relative z-10 flex items-center gap-2">
           {onMenuClick && (
             <IconButton

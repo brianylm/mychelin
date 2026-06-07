@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Libre_Baskerville, Newsreader } from "next/font/google";
 import Link from "next/link";
 
@@ -55,10 +55,6 @@ export function LandingPage() {
     setActiveFeature((current) => (current - 1 + featurePages.length) % featurePages.length);
   }, []);
 
-  useEffect(() => {
-    const interval = window.setInterval(showNextFeature, 10000);
-    return () => window.clearInterval(interval);
-  }, [activeFeature, showNextFeature]);
 
   return (
     <div
@@ -67,7 +63,7 @@ export function LandingPage() {
     >
       {/* ==================== NAV ==================== */}
       <header className="fixed top-4 left-1/2 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">
-        <nav className="relative flex items-center justify-between gap-3 overflow-hidden rounded-full border border-white/45 bg-white/[0.26] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-18px_34px_rgba(255,255,255,0.16),0_18px_55px_rgba(40,26,19,0.14)] backdrop-blur-2xl backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-4 before:top-0 before:h-px before:bg-white/80 supports-[backdrop-filter]:bg-white/[0.18] sm:px-5 sm:py-3">
+        <nav className="relative flex items-center justify-between gap-3 rounded-full bg-white/75 px-3 py-2 shadow-[0_14px_38px_rgba(40,26,19,0.12)] ring-1 ring-white/70 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/60 sm:px-5 sm:py-3">
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <img
               src="/images/mychelin-icon.png"
@@ -104,6 +100,12 @@ export function LandingPage() {
               Features
             </a>
             <Link
+              href="/login"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 sm:block"
+            >
+              Log in
+            </Link>
+            <Link
               href="/login?mode=signup"
               className="relative ml-1 shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
             >
@@ -114,24 +116,26 @@ export function LandingPage() {
       </header>
 
       {/* ==================== HERO ==================== */}
-      <section className="relative flex min-h-[82vh] items-center overflow-hidden sm:min-h-[88vh] lg:min-h-screen">
+      <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
         {/* Background image */}
         <img
           src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
           className="landing-hero-image absolute inset-0 h-full w-full object-cover"
         />
-        {/* Gradient overlay — stronger on left where text sits */}
+        {/* Mobile readability scrim. Keeps faces visible and reserves
+            the strongest wash for the copy area rather than the whole image. */}
+        <div className="landing-hero-readable-scrim absolute inset-0 sm:hidden" />
+        {/* Desktop overlays were already working; keep them unchanged. */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 hidden sm:block"
           style={{
             background:
               "linear-gradient(90deg, rgba(250,250,248,0.92) 0%, rgba(250,250,248,0.75) 35%, rgba(250,250,248,0.2) 60%, rgba(250,250,248,0) 100%)",
           }}
         />
-        {/* Bottom fade for smooth transition to next section */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 hidden sm:block"
           style={{
             background:
               "linear-gradient(0deg, rgba(250,250,248,0.6) 0%, rgba(250,250,248,0) 25%)",
@@ -139,10 +143,10 @@ export function LandingPage() {
         />
 
         {/* Text content */}
-        <div className="relative z-10 w-full max-w-5xl px-6 py-20 sm:py-24 sm:pl-[8%] lg:pl-[12%]">
+        <div className="relative z-10 w-full max-w-5xl px-6 pb-12 pt-[52vh] sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
             <h1
-              className="landing-serif text-5xl leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl"
+              className="landing-serif text-[2.75rem] leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif", fontWeight: 400 }}
             >
               Cook like home, even in your new home.
@@ -332,16 +336,34 @@ export function LandingPage() {
               })}
             </div>
 
-            <div className="mt-6 flex justify-center gap-2">
-              {featurePages.map((feature, index) => (
-                <button
-                  key={feature.title}
-                  type="button"
-                  onClick={() => showFeature(index)}
-                  className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
-                  aria-label={`Show ${feature.title}`}
-                />
-              ))}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={showPreviousFeature}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
+                aria-label="Show previous feature"
+              >
+                ←
+              </button>
+              <div className="flex gap-2">
+                {featurePages.map((feature, index) => (
+                  <button
+                    key={feature.title}
+                    type="button"
+                    onClick={() => showFeature(index)}
+                    className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
+                    aria-label={`Show ${feature.title}`}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={showNextFeature}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
+                aria-label="Show next feature"
+              >
+                →
+              </button>
             </div>
           </div>
         </div>
@@ -351,34 +373,34 @@ export function LandingPage() {
       {/* Archived — see MYCHELIN.md */}
 
       {/* ==================== FINAL CTA ==================== */}
-      <section id="final" className="mx-auto mt-20 max-w-6xl px-6 pb-8 sm:mt-28">
-        <div className="grid gap-12 border-y border-[#d8d8d2] py-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:py-16">
+      <section id="final" className="mt-20 bg-[#17131f] px-6 py-16 text-white sm:mt-28 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6b6b6b]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#f7c86a]">
               Start your recipe book
             </p>
             <h2
-              className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
             >
               Bring the taste of home with you.
             </h2>
           </div>
 
-          <div className="flex flex-col justify-end">
-            <p className="max-w-2xl text-base leading-7 text-[#5f6368]">
+          <div className="flex flex-col justify-end border-t border-white/15 pt-8 lg:border-t-0 lg:pt-0">
+            <p className="max-w-2xl text-base leading-7 text-white/70">
               Your family&apos;s recipes are one conversation away. Capture them,
               cook them, and make them part of your new routine.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-6">
+            <div className="mt-8 flex flex-wrap items-center gap-5">
               <Link
                 href="/login?mode=signup"
-                className="text-sm font-semibold text-[#1A1A1A] transition-colors hover:text-[#800020]"
+                className="rounded-full bg-[#f7c86a] px-5 py-3 text-sm font-semibold text-[#17131f] transition hover:bg-[#ffd98a]"
               >
-                Start cooking like home →
+                Start cooking like home
               </Link>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#8a8a8a]">
-                Free
+              <p className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
+                Free.
               </p>
             </div>
           </div>
@@ -388,7 +410,7 @@ export function LandingPage() {
       {/* ==================== FOOTER ==================== */}
       <footer className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-xs text-[#9b9b9b]">
-          Preserving family recipes and heritage, one conversation at a time.
+          Cook like home, even in your new home.
         </p>
       </footer>
     </div>

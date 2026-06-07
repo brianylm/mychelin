@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Button, IconButton } from "@radix-ui/themes";
 import {
   ChevronLeftIcon,
@@ -8,8 +8,16 @@ import {
   PlusIcon,
   Cross2Icon,
 } from "@radix-ui/react-icons";
+import { CheckCircle2, ChefHat } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { CalendarExport } from "@/components/CalendarExport";
+import {
+  Button as UiButton,
+  EmptyState,
+  FilterBar,
+  RecipeResultRow,
+  type FilterOption,
+} from "@/components/ui";
 import { getMealDateTime, getDefaultMealEndTime, CalendarEvent } from "@/lib/calendar";
 
 interface MealPlan {
@@ -19,12 +27,17 @@ interface MealPlan {
   recipeId: number;
   servings: number;
   notes: string | null;
+  cookedAt: string | null;
   recipe?: { id: number; title: string; yield: string | null };
 }
 
 interface Recipe {
   id: number;
   title: string;
+  description?: string | null;
+  cuisine?: string | null;
+  ingredients?: string[];
+  lastCookedAt?: string | null;
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -37,29 +50,43 @@ const MEAL_LABELS: Record<string, string> = {
 
 const MEAL_COLORS: Record<string, string> = {
   breakfast: "bg-orange-400",
-  lunch: "bg-yellow-400", 
+  lunch: "bg-yellow-400",
   dinner: "bg-blue-400",
   snack: "bg-purple-400",
 };
 
 type ViewType = "week" | "month";
 
-function getWeekDates(offset: number): string[] {
-  const now = new Date();
+function toDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function getLocalTodayKey(): string {
+  return toDateKey(new Date());
+}
+
+function dateFromKey(dateKey: string): Date {
+  return new Date(dateKey + "T00:00:00");
+}
+
+function getWeekDates(offset: number, anchorDateKey = getLocalTodayKey()): string[] {
+  const now = dateFromKey(anchorDateKey);
   const monday = new Date(now);
   monday.setDate(now.getDate() - now.getDay() + 1 + offset * 7);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return d.toISOString().split("T")[0];
+    return toDateKey(d);
   });
 }
 
-function getMonthDates(offset: number): string[][] {
-  const now = new Date();
+function getMonthDates(offset: number, anchorDateKey = getLocalTodayKey()): string[][] {
+  const now = dateFromKey(anchorDateKey);
   const targetMonth = new Date(now.getFullYear(), now.getMonth() + offset, 1);
   const firstDay = new Date(targetMonth);
-  const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
   
   // Start from the Monday of the week containing the first day
   const startDate = new Date(firstDay);
@@ -71,7 +98,7 @@ function getMonthDates(offset: number): string[][] {
   while (weeks.length < 6) {
     const week: string[] = [];
     for (let i = 0; i < 7; i++) {
-      week.push(currentDate.toISOString().split("T")[0]);
+      week.push(toDateKey(currentDate));
       currentDate.setDate(currentDate.getDate() + 1);
     }
     weeks.push(week);
@@ -88,48 +115,100 @@ function getMonthDates(offset: number): string[][] {
   return weeks;
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, todayKey = getLocalTodayKey()) {
   const d = new Date(dateStr + "T00:00:00");
   return {
     day: d.toLocaleDateString("en-SG", { weekday: "short" }),
     date: d.getDate(),
     full: d.toLocaleDateString("en-SG", { day: "numeric", month: "short" }),
-    isToday: dateStr === new Date().toISOString().split("T")[0],
+    isToday: dateStr === todayKey,
     month: d.getMonth(),
     year: d.getFullYear(),
   };
 }
 
-function getRandomRecipe(recipes: Recipe[], usedRecipes: Set<number>): Recipe | null {
-  const availableRecipes = recipes.filter(r => !usedRecipes.has(r.id));
-  if (availableRecipes.length === 0) {
-    // If all recipes used, cycle through all recipes
-    return recipes[Math.floor(Math.random() * recipes.length)];
-  }
-  return availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
+function getLastCookedLabel(lastCookedAt?: string | null): string {
+  if (!lastCookedAt) return "Never cooked";
+
+  const then = new Date(lastCookedAt).getTime();
+  if (Number.isNaN(then)) return "Last cooked unknown";
+
+  const days = Math.max(0, Math.floor((Date.now() - then) / (24 * 60 * 60 * 1000)));
+  if (days === 0) return "Cooked today";
+  if (days === 1) return "Cooked yesterday";
+  if (days < 14) return `Cooked ${days} days ago`;
+
+  return `Last cooked ${new Date(lastCookedAt).toLocaleDateString("en-SG", {
+    day: "numeric",
+    month: "short",
+  })}`;
 }
 
-export function MealPlanView() {
+function getLastCookedSortValue(recipe: Recipe): number {
+  if (!recipe.lastCookedAt) return 0;
+  const timestamp = new Date(recipe.lastCookedAt).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getRecipeMatchEvidence(recipe: Recipe, query: string): string | null {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const ingredientMatch = (recipe.ingredients ?? []).find((ingredient) =>
+    ingredient.toLowerCase().includes(normalized)
+  );
+  if (ingredientMatch) return "Matched ingredient: " + ingredientMatch;
+
+  if (recipe.cuisine?.toLowerCase().includes(normalized)) {
+    return "Matched cuisine: " + recipe.cuisine;
+  }
+
+  if (recipe.title.toLowerCase().includes(normalized)) return "Matched title";
+  if (recipe.description?.toLowerCase().includes(normalized)) return "Matched notes";
+
+  return null;
+}
+
+interface MealPlanViewProps {
+  onCookMeal?: (recipeId: number, mealPlanId: number) => void;
+  onCookMeals?: (meals: Array<{ recipeId: number; mealPlanId: number }>) => void;
+}
+
+export function MealPlanView({ onCookMeal, onCookMeals }: MealPlanViewProps) {
   const { addToast } = useToast();
   const [viewType, setViewType] = useState<ViewType>("week");
   const [offset, setOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [randomising, setRandomising] = useState(false);
   const [addingSlot, setAddingSlot] = useState<{
     date: string;
     mealType: string;
   } | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+  const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
+  const [recipeQuery, setRecipeQuery] = useState("");
+  const [cuisineFilter, setCuisineFilter] = useState("all");
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportEvents, setExportEvents] = useState<CalendarEvent[]>([]);
   const [exportTitle, setExportTitle] = useState("");
+  const [todayKey, setTodayKey] = useState(getLocalTodayKey);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setTodayKey((current) => {
+        const next = getLocalTodayKey();
+        return next === current ? current : next;
+      });
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   // Get current date range based on view type
   const getCurrentDates = useCallback(() => {
     if (viewType === "week") {
-      const weekDates = getWeekDates(offset);
+      const weekDates = getWeekDates(offset, todayKey);
       return {
         dates: weekDates,
         startDate: weekDates[0],
@@ -144,11 +223,12 @@ export function MealPlanView() {
         })}`,
       };
     } else {
-      const monthWeeks = getMonthDates(offset);
+      const monthWeeks = getMonthDates(offset, todayKey);
       const allDates = monthWeeks.flat();
       const startDate = allDates[0];
       const endDate = allDates[allDates.length - 1];
-      const monthDate = new Date(new Date().getFullYear(), new Date().getMonth() + offset, 1);
+      const baseDate = dateFromKey(todayKey);
+      const monthDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + offset, 1);
       return {
         dates: allDates,
         weeks: monthWeeks,
@@ -157,26 +237,101 @@ export function MealPlanView() {
         title: monthDate.toLocaleDateString("en-SG", { month: "long", year: "numeric" }),
       };
     }
-  }, [viewType, offset]);
+  }, [viewType, offset, todayKey]);
 
   const currentDateRange = getCurrentDates();
 
   // Fetch meal plans
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/meal-plans?startDate=${currentDateRange.startDate}&endDate=${currentDateRange.endDate}`)
-      .then((r) => r.json())
-      .then((data) => setPlans(Array.isArray(data) ? data : []))
-      .catch(() => setPlans([]))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    async function loadMealPlans() {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `/api/meal-plans?startDate=${currentDateRange.startDate}&endDate=${currentDateRange.endDate}`
+        );
+        const data = await response.json();
+        if (!cancelled) setPlans(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setPlans([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadMealPlans();
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentDateRange.startDate, currentDateRange.endDate]);
 
-  // Fetch recipes for the add dialog and randomise
+  // Fetch recipes for the add dialog
   useEffect(() => {
-    fetch("/api/recipes")
+    fetch("/api/recipes?planner=1")
       .then((r) => r.json())
       .then((data) => setRecipes(Array.isArray(data) ? data : []))
       .catch(() => setRecipes([]));
+  }, []);
+
+  const cuisineOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        recipes
+          .map((recipe) => recipe.cuisine?.trim())
+          .filter((cuisine): cuisine is string => Boolean(cuisine))
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [recipes]);
+
+  const cuisineFilterOptions = useMemo<FilterOption[]>(() => {
+    return [
+      { label: "All", value: "all", count: recipes.length },
+      ...cuisineOptions.map((cuisine) => ({
+        label: cuisine,
+        value: cuisine,
+        count: recipes.filter((recipe) => recipe.cuisine === cuisine).length,
+      })),
+    ];
+  }, [cuisineOptions, recipes]);
+
+  const filteredRecipes = useMemo(() => {
+    const query = recipeQuery.trim().toLowerCase();
+    return recipes
+      .filter((recipe) => {
+        if (cuisineFilter !== "all" && recipe.cuisine !== cuisineFilter) return false;
+        if (!query) return true;
+
+        const searchable = [
+          recipe.title,
+          recipe.description ?? "",
+          recipe.cuisine ?? "",
+          ...(recipe.ingredients ?? []),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return searchable.includes(query);
+      })
+      .sort((a, b) => getLastCookedSortValue(a) - getLastCookedSortValue(b));
+  }, [cuisineFilter, recipeQuery, recipes]);
+
+  const selectedRecipe = selectedRecipeId
+    ? recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null
+    : null;
+
+  const openAddDialog = useCallback((date: string, mealType: string) => {
+    setAddingSlot({ date, mealType });
+    setSelectedRecipeId(null);
+    setRecipeQuery("");
+    setCuisineFilter("all");
+  }, []);
+
+  const closeAddDialog = useCallback(() => {
+    setAddingSlot(null);
+    setSelectedRecipeId(null);
+    setRecipeQuery("");
+    setCuisineFilter("all");
   }, []);
 
   const addPlan = useCallback(async () => {
@@ -195,14 +350,13 @@ export function MealPlanView() {
       const newPlan = await res.json();
       if (res.ok) {
         setPlans((prev) => [...prev, newPlan]);
-        setAddingSlot(null);
-        setSelectedRecipeId(null);
+        closeAddDialog();
         addToast("Meal added", "success");
       }
     } catch {
       addToast("Failed to add meal", "error");
     }
-  }, [addingSlot, selectedRecipeId, addToast]);
+  }, [addingSlot, selectedRecipeId, closeAddDialog, addToast]);
 
   const removePlan = useCallback(
     async (id: number) => {
@@ -216,71 +370,6 @@ export function MealPlanView() {
     },
     [addToast]
   );
-
-  const randomiseMeals = useCallback(async () => {
-    if (recipes.length === 0) {
-      addToast("No recipes available", "error");
-      return;
-    }
-
-    setRandomising(true);
-    const emptySlots: Array<{ date: string; mealType: string }> = [];
-    
-    // Find all empty slots in current view
-    currentDateRange.dates.forEach(date => {
-      MEAL_TYPES.forEach(mealType => {
-        const hasPlans = plans.some(p => p.date === date && p.mealType === mealType);
-        if (!hasPlans) {
-          emptySlots.push({ date, mealType });
-        }
-      });
-    });
-
-    if (emptySlots.length === 0) {
-      addToast("No empty meal slots to fill", "info");
-      setRandomising(false);
-      return;
-    }
-
-    try {
-      const newPlans: MealPlan[] = [];
-      const usedRecipesPerDay: Record<string, Set<number>> = {};
-      
-      for (const slot of emptySlots) {
-        if (!usedRecipesPerDay[slot.date]) {
-          usedRecipesPerDay[slot.date] = new Set();
-        }
-        
-        const randomRecipe = getRandomRecipe(recipes, usedRecipesPerDay[slot.date]);
-        if (!randomRecipe) continue;
-        
-        usedRecipesPerDay[slot.date].add(randomRecipe.id);
-        
-        const res = await fetch("/api/meal-plans", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date: slot.date,
-            mealType: slot.mealType,
-            recipeId: randomRecipe.id,
-            servings: 1,
-          }),
-        });
-        
-        if (res.ok) {
-          const newPlan = await res.json();
-          newPlans.push(newPlan);
-        }
-      }
-      
-      setPlans((prev) => [...prev, ...newPlans]);
-      addToast(`Added ${newPlans.length} random meals`, "success");
-    } catch {
-      addToast("Failed to randomise meals", "error");
-    }
-    
-    setRandomising(false);
-  }, [recipes, plans, currentDateRange.dates, addToast]);
 
   const getPlansForSlot = (date: string, mealType: string) =>
     plans.filter((p) => p.date === date && p.mealType === mealType);
@@ -300,21 +389,6 @@ export function MealPlanView() {
         description: `Planned meal: ${plan.recipe?.title || "Meal"}`,
       };
     });
-  };
-
-  const switchToWeekView = (targetDate: string) => {
-    const target = new Date(targetDate + "T00:00:00");
-    const now = new Date();
-    const currentMonday = new Date(now);
-    currentMonday.setDate(now.getDate() - now.getDay() + 1);
-    
-    const targetMonday = new Date(target);
-    targetMonday.setDate(target.getDate() - target.getDay() + 1);
-    
-    const weeksDiff = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    
-    setViewType("week");
-    setOffset(weeksDiff);
   };
 
   return (
@@ -413,8 +487,7 @@ export function MealPlanView() {
           /* Week View */
           <div className="space-y-3">
             {(currentDateRange.dates as string[]).map((date) => {
-              const { day, date: num, isToday } = formatDate(date);
-
+              const { day, date: num, isToday } = formatDate(date, todayKey);
               return (
                 <div
                   key={date}
@@ -454,32 +527,69 @@ export function MealPlanView() {
                           key={mealType}
                           className="rounded-lg border border-neutral-100 bg-neutral-50/50 p-2"
                         >
-                          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
-                            {MEAL_LABELS[mealType]}
-                          </p>
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+                              {MEAL_LABELS[mealType]}
+                            </p>
+                            {onCookMeals && slotPlans.filter((plan) => !plan.cookedAt).length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onCookMeals(
+                                    slotPlans
+                                      .filter((plan) => !plan.cookedAt)
+                                      .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
+                                  )
+                                }
+                                className="inline-flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white transition hover:bg-[#800020]"
+                              >
+                                <ChefHat className="h-3 w-3" />
+                                Cook together
+                              </button>
+                            )}
+                          </div>
+                          <div className="space-y-1.5">
                           {slotPlans.map((plan) => (
                             <div
                               key={plan.id}
-                              className="group flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs shadow-sm"
+                              className="group flex items-center gap-2 rounded-md bg-white px-2.5 py-2 text-xs shadow-sm"
                             >
-                              <span className="flex-1 truncate text-neutral-800">
-                                {plan.recipe?.title || "Unknown recipe"}
-                              </span>
+                              <div className="min-w-0 flex-1">
+                                <span className={`block truncate text-neutral-800 ${plan.cookedAt ? "line-through decoration-neutral-300" : ""}`}>
+                                  {plan.recipe?.title || "Unknown recipe"}
+                                </span>
+                                {plan.cookedAt && (
+                                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Cooked
+                                  </span>
+                                )}
+                              </div>
+                              {onCookMeal && !plan.cookedAt && (
+                                <button
+                                  type="button"
+                                  onClick={() => onCookMeal(plan.recipeId, plan.id)}
+                                  className="flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white opacity-100 transition hover:bg-[#800020] sm:opacity-0 sm:group-hover:opacity-100"
+                                  aria-label={`Cook ${plan.recipe?.title || "planned meal"}`}
+                                >
+                                  <ChefHat className="h-3 w-3" />
+                                  Cook
+                                </button>
+                              )}
                               <IconButton
                                 variant="ghost"
                                 size="1"
                                 color="red"
-                                className="h-4 w-4 opacity-0 group-hover:opacity-100"
+                                className="h-4 w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                                 onClick={() => removePlan(plan.id)}
                               >
                                 <Cross2Icon className="h-3 w-3" />
                               </IconButton>
                             </div>
                           ))}
+                          </div>
                           <button
-                            onClick={() =>
-                              setAddingSlot({ date, mealType })
-                            }
+                            onClick={() => openAddDialog(date, mealType)}
                             className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-[#800020]/30 hover:text-[#800020]"
                           >
                             <PlusIcon className="h-3 w-3" />
@@ -510,15 +620,20 @@ export function MealPlanView() {
             {currentDateRange.weeks?.map((week, weekIndex) => (
               <div key={weekIndex} className="grid grid-cols-7 border-b border-neutral-100 last:border-b-0">
                 {week.map((date) => {
-                  const { date: num, isToday, month } = formatDate(date);
+                  const { date: num, isToday, month } = formatDate(date, todayKey);
                   const dayPlans = getPlansForDate(date);
-                  const currentMonth = new Date().getMonth() + offset;
+                  const baseDate = dateFromKey(todayKey);
+                  const currentMonth = new Date(
+                    baseDate.getFullYear(),
+                    baseDate.getMonth() + offset,
+                    1
+                  ).getMonth();
                   const isCurrentMonth = month === currentMonth;
                   
                   return (
                     <button
                       key={date}
-                      onClick={() => switchToWeekView(date)}
+                      onClick={() => setSelectedDayDate(date)}
                       className={`min-h-[80px] p-2 text-left transition-colors hover:bg-neutral-50 ${
                         isToday
                           ? "bg-[#800020]/5"
@@ -562,80 +677,240 @@ export function MealPlanView() {
           </div>
         )}
 
+        {/* Month day planner */}
+        {selectedDayDate && !addingSlot && (
+          <>
+            <div
+              className="fixed inset-0 z-30 bg-neutral-950/30 backdrop-blur-sm"
+              onClick={() => setSelectedDayDate(null)}
+            />
+            <div className="fixed inset-x-4 bottom-20 z-40 mx-auto max-w-lg rounded-xl bg-white p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-neutral-900">
+                    Plan {formatDate(selectedDayDate, todayKey).full}
+                  </h3>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Add meals without leaving month view.
+                  </p>
+                </div>
+                <IconButton
+                  variant="ghost"
+                  size="1"
+                  color="gray"
+                  onClick={() => setSelectedDayDate(null)}
+                  aria-label="Close day planner"
+                >
+                  <Cross2Icon />
+                </IconButton>
+              </div>
+              <div className="space-y-2">
+                {MEAL_TYPES.map((mealType) => {
+                  const slotPlans = getPlansForSlot(selectedDayDate, mealType);
+
+                  return (
+                    <div
+                      key={mealType}
+                      className="rounded-lg border border-neutral-100 bg-neutral-50/70 p-3"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+                          {MEAL_LABELS[mealType]}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          {onCookMeals && slotPlans.filter((plan) => !plan.cookedAt).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onCookMeals(
+                                  slotPlans
+                                    .filter((plan) => !plan.cookedAt)
+                                    .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
+                                )
+                              }
+                              className="inline-flex h-7 items-center gap-1 rounded-md bg-[#17131f] px-2.5 text-[11px] font-semibold text-white transition hover:bg-[#800020]"
+                            >
+                              <ChefHat className="h-3 w-3" />
+                              Cook together
+                            </button>
+                          )}
+                        <button
+                          type="button"
+                          onClick={() => openAddDialog(selectedDayDate, mealType)}
+                          className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                        >
+                          <PlusIcon className="h-3 w-3" />
+                          Add meal
+                        </button>
+                        </div>
+                      </div>
+
+                      {slotPlans.length === 0 ? (
+                        <p className="rounded-md bg-white px-3 py-2 text-xs text-neutral-400">
+                          No meal planned.
+                        </p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {slotPlans.map((plan) => (
+                            <div
+                              key={plan.id}
+                              className="group flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs shadow-sm"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <span
+                                  className={
+                                    "block truncate text-neutral-800 " +
+                                    (plan.cookedAt
+                                      ? "line-through decoration-neutral-300"
+                                      : "")
+                                  }
+                                >
+                                  {plan.recipe?.title || "Unknown recipe"}
+                                </span>
+                                {plan.cookedAt && (
+                                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    Cooked
+                                  </span>
+                                )}
+                              </div>
+                              {onCookMeal && !plan.cookedAt && (
+                                <button
+                                  type="button"
+                                  onClick={() => onCookMeal(plan.recipeId, plan.id)}
+                                  className="flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white transition hover:bg-[#800020]"
+                                  aria-label={
+                                    "Cook " + (plan.recipe?.title || "planned meal")
+                                  }
+                                >
+                                  <ChefHat className="h-3 w-3" />
+                                  Cook
+                                </button>
+                              )}
+                              <IconButton
+                                variant="ghost"
+                                size="1"
+                                color="red"
+                                className="h-4 w-4"
+                                onClick={() => removePlan(plan.id)}
+                              >
+                                <Cross2Icon className="h-3 w-3" />
+                              </IconButton>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Add meal dialog */}
         {addingSlot && (
           <>
             <div
               className="fixed inset-0 z-40 bg-neutral-950/40 backdrop-blur-sm"
-              onClick={() => {
-                setAddingSlot(null);
-                setSelectedRecipeId(null);
-              }}
+              onClick={closeAddDialog}
             />
-            <div className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-sm rounded-xl bg-white p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
-              <h3 className="mb-1 text-sm font-semibold">Add to meal plan</h3>
-              <p className="mb-3 text-xs text-neutral-500">
-                {formatDate(addingSlot.date).full} •{" "}
-                {MEAL_LABELS[addingSlot.mealType]}
-              </p>
-
-              <div className="mb-3 max-h-48 space-y-1 overflow-y-auto">
-                {recipes.length === 0 ? (
-                  <p className="py-4 text-center text-xs text-neutral-500">
-                    No recipes yet. Create one first!
-                  </p>
-                ) : (
-                  <>
-                    {/* Surprise Me */}
-                    <button
-                      onClick={() => {
-                        const random = recipes[Math.floor(Math.random() * recipes.length)];
-                        setSelectedRecipeId(random.id);
-                      }}
-                      className={`flex w-full items-center gap-2 rounded-lg border border-dashed border-[#800020]/30 bg-[#800020]/5 px-3 py-2 text-left text-sm font-medium text-[#800020] transition-colors hover:bg-[#800020]/10`}
-                    >
-                      <span className="text-base">🎲</span>
-                      Surprise me!
-                    </button>
-                    {recipes.map((r) => (
-                      <button
-                        key={r.id}
-                        onClick={() => setSelectedRecipeId(r.id)}
-                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                          selectedRecipeId === r.id
-                            ? "bg-[#800020]/5 font-medium text-[#521224]"
-                            : "hover:bg-neutral-100"
-                        }`}
-                      >
-                        <span className="text-base">🍳</span>
-                        {r.title}
-                      </button>
-                    ))}
-                  </>
-                )}
+            <div className="fixed inset-x-3 bottom-16 z-50 mx-auto max-h-[82vh] max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
+              <div className="border-b border-neutral-100 p-5 pb-4">
+                <h3 className="mb-1 text-sm font-semibold text-neutral-900">
+                  Add to meal plan
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  {formatDate(addingSlot.date, todayKey).full} - {MEAL_LABELS[addingSlot.mealType]}
+                </p>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  size="2"
-                  variant="solid"
+              <div className="space-y-3 p-5">
+                <FilterBar
+                  id="planner-recipe-search"
+                  label="Search recipes to add to the meal plan"
+                  query={recipeQuery}
+                  onQueryChange={setRecipeQuery}
+                  placeholder="Search recipes, ingredients, notes"
+                  filters={cuisineFilterOptions}
+                  activeFilter={cuisineFilter}
+                  onFilterChange={setCuisineFilter}
+                  resultCount={filteredRecipes.length}
+                  resultLabel={filteredRecipes.length === 1 ? "recipe" : "recipes"}
+                />
+
+                {selectedRecipe && (
+                  <div className="rounded-lg border border-[#800020]/15 bg-[#800020]/5 px-3 py-2">
+                    <p className="text-xs font-semibold text-[#521224]">
+                      {selectedRecipe.title}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-[#6b3b45]">
+                      {getLastCookedLabel(selectedRecipe.lastCookedAt)}
+                    </p>
+                  </div>
+                )}
+
+                <div className="max-h-[42vh] space-y-2 overflow-y-auto pr-1">
+                  {recipes.length === 0 ? (
+                    <EmptyState
+                      title="No recipes yet"
+                      description="Create or capture a recipe first, then come back to add it to your plan."
+                    />
+                  ) : filteredRecipes.length === 0 ? (
+                    <EmptyState
+                      title="No recipes match"
+                      description="Try another ingredient, recipe name, or category."
+                    />
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const random =
+                            filteredRecipes[
+                              Math.floor(Math.random() * filteredRecipes.length)
+                            ];
+                          if (random) setSelectedRecipeId(random.id);
+                        }}
+                        className="flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)] px-3 py-2 text-left text-sm font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-accent-muted)]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+                      >
+                        <span>Surprise me from these results</span>
+                        <span className="text-[11px] text-[var(--ui-muted)]">
+                          Least recent first
+                        </span>
+                      </button>
+
+                      {filteredRecipes.map((recipe) => (
+                        <RecipeResultRow
+                          key={recipe.id}
+                          title={recipe.title}
+                          cuisine={recipe.cuisine}
+                          ingredients={recipe.ingredients}
+                          lastCookedLabel={getLastCookedLabel(recipe.lastCookedAt)}
+                          selected={selectedRecipeId === recipe.id}
+                          matchEvidence={getRecipeMatchEvidence(recipe, recipeQuery)}
+                          onSelect={() => setSelectedRecipeId(recipe.id)}
+                        />
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2 border-t border-[var(--ui-border)] p-5 pt-4">
+                <UiButton
                   disabled={!selectedRecipeId}
                   onClick={addPlan}
                   className="flex-1"
                 >
-                  Add
-                </Button>
-                <Button
-                  size="2"
-                  variant="soft"
-                  color="gray"
-                  onClick={() => {
-                    setAddingSlot(null);
-                    setSelectedRecipeId(null);
-                  }}
+                  Add meal
+                </UiButton>
+                <UiButton
+                  variant="secondary"
+                  onClick={closeAddDialog}
                 >
                   Cancel
-                </Button>
+                </UiButton>
               </div>
             </div>
           </>

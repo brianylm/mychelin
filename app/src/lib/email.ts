@@ -37,30 +37,30 @@ function buildResetEmailHtml(name: string, resetUrl: string): string {
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Reset your Mychelin password</title>
   </head>
-  <body style="margin:0;padding:0;background-color:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1c1917;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f5f4;padding:32px 16px;">
+  <body style="margin:0;padding:0;background-color:#faf8f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#17131f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#faf8f4;padding:36px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="max-width:520px;background-color:#ffffff;border:1px solid #e7e5e4;border-radius:16px;padding:32px;">
+          <table role="presentation" width="520" cellspacing="0" cellpadding="0" border="0" style="max-width:520px;background-color:#fffdfb;border:1px solid #eee4dd;border-radius:24px;padding:34px;box-shadow:0 18px 48px rgba(60,43,25,0.08);">
             <tr>
               <td>
-                <h1 style="margin:0 0 16px 0;font-size:20px;font-weight:600;color:#1c1917;">Reset your password</h1>
-                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#44403c;">Hi ${safeName},</p>
-                <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#44403c;">We got a request to reset the password for your Mychelin account. Click the button below to choose a new password. This link expires in 1 hour.</p>
+                <h1 style="margin:0 0 16px 0;font-size:20px;font-weight:600;color:#17131f;">Reset your password</h1>
+                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#57534e;">Hi ${safeName},</p>
+                <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#57534e;">We got a request to reset the password for your Mychelin account. Click the button below to choose a new password. This link expires in 1 hour.</p>
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px 0;">
                   <tr>
-                    <td style="border-radius:10px;background-color:#d97706;">
+                    <td style="border-radius:10px;background-color:#17131f;">
                       <a href="${safeUrl}" style="display:inline-block;padding:12px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">Reset password</a>
                     </td>
                   </tr>
                 </table>
                 <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#78716c;">If the button doesn&rsquo;t work, copy and paste this link into your browser:</p>
-                <p style="margin:0 0 24px 0;font-size:13px;line-height:1.6;word-break:break-all;"><a href="${safeUrl}" style="color:#b45309;text-decoration:underline;">${safeUrl}</a></p>
+                <p style="margin:0 0 24px 0;font-size:13px;line-height:1.6;word-break:break-all;"><a href="${safeUrl}" style="color:#800020;text-decoration:underline;">${safeUrl}</a></p>
                 <p style="margin:0;font-size:13px;line-height:1.6;color:#78716c;">If you didn&rsquo;t request this, you can safely ignore this email &mdash; your password won&rsquo;t change.</p>
               </td>
             </tr>
           </table>
-          <p style="margin:16px 0 0 0;font-size:12px;color:#a8a29e;">Mychelin &middot; Preserving family recipes</p>
+          <p style="margin:16px 0 0 0;font-size:12px;color:#a8a29e;">Mychelin &middot; Cook like home, even in your new home.</p>
         </td>
       </tr>
     </table>

@@ -21,6 +21,15 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Make voice recording flows clearer on mobile.
 - Add privacy/consent affordances before recording or sharing audio.
 - Separate raw recordings, transcripts, and public recipe text in the UI and data model where needed.
+- Prefer OpenAI speech-to-text for first-pass transcription, with Gemini fallback where dialect handling or diarization needs it.
+
+### Activation and habit loop
+
+- Use onboarding to capture a user's first goal: learn to cook, cook regularly, save family recipes, plan meals, or reduce waste.
+- Bias the first session toward a fast magic moment: one messy family recipe becomes one usable cookable recipe.
+- Keep improving the first-draft recipe prompt flow: users can ask Mychelin to create specific recipes they want to try, then save them as editable first drafts before cooking/refining. Prefer DeepSeek v4 Flash for structured text drafting when configured, with Gemini fallback; keep OpenAI speech-to-text for audio transcription.
+- Treat Duolingo-style stickiness as a low-friction cooking loop, not points for their own sake: one small cooking promise, one first recipe, one attempt, one improvement.
+- Keep the habit threshold forgiving. A cooking streak should reward showing up without punishing real-life missed days or pushing users to cook daily when weekly cooking is the healthier goal.
 
 ### Sharing and permissions
 
@@ -29,6 +38,12 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Add tests around auth, recipe access, and invitation boundaries.
 
 ## Medium term
+
+
+### Planning and calendar workflows
+
+- Extend Send to Calendar so planned dishes can generate prep events before cook day, e.g. marinade or soak reminders on D-2 plus the actual cook event on D-day.
+- Let recipes store prep lead-time requirements separately from active cooking steps so calendar exports can schedule the right reminders without cluttering cook-with-me.
 
 ### Mobile PWA polish
 

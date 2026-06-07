@@ -8,9 +8,26 @@ import {
   CheckIcon,
   DotsVerticalIcon,
   CounterClockwiseClockIcon,
+  Pencil1Icon,
+  TrashIcon,
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@radix-ui/react-icons";
+
+interface VersionIngredient {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  notes?: string;
+}
+
+interface VersionInstruction {
+  content?: string;
+  text?: string;
+  step?: number;
+  tip?: string;
+  imageUrl?: string;
+}
 
 interface Version {
   id: number;
@@ -23,8 +40,8 @@ interface Version {
   changeNote: string | null;
   notes: string | null;
   createdAt: string;
-  ingredients: any[];
-  instructions: any[];
+  ingredients: VersionIngredient[];
+  instructions: VersionInstruction[];
   sourceVersionId: number | null;
 }
 
@@ -40,6 +57,7 @@ interface VersionTimelineProps {
 const METHOD_ICONS: Record<string, { icon: string; label: string }> = {
   ai_capture: { icon: "🎙️", label: "AI Capture" },
   cook_along: { icon: "👨‍🍳", label: "Cook Along" },
+  attempt_promotion: { icon: "⭐", label: "Promoted Attempt" },
   manual: { icon: "✏️", label: "Manual Edit" },
   refinement: { icon: "🔄", label: "Refinement" },
 };
@@ -64,8 +82,14 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareSelection, setCompareSelection] = useState<number[]>([]);
+  const [editingVersionId, setEditingVersionId] = useState<number | null>(null);
+  const [draftChangeNote, setDraftChangeNote] = useState("");
+  const [draftNotes, setDraftNotes] = useState("");
+  const [savingVersionId, setSavingVersionId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchVersions = useCallback(async () => {
+    setError(null);
     try {
       const res = await fetch(`/api/recipes/${recipeId}/versions`);
       if (res.ok) {
@@ -80,11 +104,69 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
 
   useEffect(() => { fetchVersions(); }, [fetchVersions]);
 
-  const handleRollback = async (versionId: number) => {
+  const handleSetDefinitive = async (versionId: number) => {
+    setError(null);
     try {
       const res = await fetch(`/api/recipes/${recipeId}/versions/${versionId}/rollback`, { method: "POST" });
       if (res.ok) { setActiveVersionId(versionId); setMenuOpen(null); }
-    } catch { /* silent */ }
+      else {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to set definitive version");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set definitive version");
+    }
+  };
+
+  const startEditVersion = (version: Version) => {
+    setEditingVersionId(version.id);
+    setDraftChangeNote(version.changeNote ?? "");
+    setDraftNotes(version.notes ?? "");
+    setMenuOpen(null);
+  };
+
+  const saveVersion = async (versionId: number) => {
+    setSavingVersionId(versionId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}/versions/${versionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          changeNote: draftChangeNote.trim() || null,
+          notes: draftNotes.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to update version");
+      }
+      setEditingVersionId(null);
+      await fetchVersions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update version");
+    } finally {
+      setSavingVersionId(null);
+    }
+  };
+
+  const deleteVersion = async (versionId: number) => {
+    if (!window.confirm("Delete this version? This cannot be undone.")) return;
+    setSavingVersionId(versionId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}/versions/${versionId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to delete version");
+      }
+      setMenuOpen(null);
+      await fetchVersions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete version");
+    } finally {
+      setSavingVersionId(null);
+    }
   };
 
   const handleCompareToggle = (versionId: number) => {
@@ -123,7 +205,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
       <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-[#800020]">🌿</span>
-          <h3 className="text-sm font-semibold text-neutral-800">Version History</h3>
+          <h3 className="text-sm font-semibold text-neutral-800">Versions</h3>
           <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-xs font-medium text-[#800020]">{versions.length}</span>
         </div>
         {versions.length >= 2 && (
@@ -139,6 +221,12 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
       {compareMode && (
         <div className="border-b border-[#800020]/10 bg-[#800020]/5 px-4 py-2 text-xs text-[#800020]">
           Select two versions to compare ({compareSelection.length}/2)
+        </div>
+      )}
+
+      {error && (
+        <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+          {error}
         </div>
       )}
 
@@ -176,7 +264,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                     <span className="text-sm" title={method.label}>{method.icon}</span>
                     <span className="text-sm font-medium text-neutral-800">v{labelOf(version)}</span>
                     {isActive && (
-                      <span className="rounded-full bg-[#800020]/50 px-1.5 py-0.5 text-[10px] font-semibold text-white">ACTIVE</span>
+                      <span className="rounded-full bg-[#800020]/50 px-1.5 py-0.5 text-[10px] font-semibold text-white">DEFINITIVE</span>
                     )}
                     {isAncestor && (
                       <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">ANCESTOR</span>
@@ -211,10 +299,18 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                       <div className="absolute right-0 top-8 z-10 w-40 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg">
                         {!isActive && !isAncestor && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleRollback(version.id); }}
+                            onClick={(e) => { e.stopPropagation(); handleSetDefinitive(version.id); }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
                           >
-                            <CounterClockwiseClockIcon className="h-3 w-3" /> Set as Active
+                            <CounterClockwiseClockIcon className="h-3 w-3" /> Set as definitive
+                          </button>
+                        )}
+                        {!isAncestor && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); startEditVersion(version); }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
+                          >
+                            <Pencil1Icon className="h-3 w-3" /> Edit notes
                           </button>
                         )}
                         <button
@@ -223,11 +319,62 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                         >
                           <ClockIcon className="h-3 w-3" /> View Details
                         </button>
+                        {!isActive && !isAncestor && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); void deleteVersion(version.id); }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-700 hover:bg-red-50"
+                            disabled={savingVersionId === version.id}
+                          >
+                            <TrashIcon className="h-3 w-3" /> Delete version
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
               </div>
+
+              {editingVersionId === version.id && (
+                <div
+                  className="mt-3 rounded-xl border border-neutral-200 bg-white p-3"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <label className="block text-xs font-semibold text-neutral-500">
+                    Version note
+                    <input
+                      value={draftChangeNote}
+                      onChange={(event) => setDraftChangeNote(event.target.value)}
+                      className="mt-1 h-9 w-full rounded-md border border-neutral-200 px-2 text-sm text-neutral-800"
+                    />
+                  </label>
+                  <label className="mt-2 block text-xs font-semibold text-neutral-500">
+                    Details
+                    <textarea
+                      value={draftNotes}
+                      onChange={(event) => setDraftNotes(event.target.value)}
+                      rows={2}
+                      className="mt-1 w-full resize-none rounded-md border border-neutral-200 px-2 py-2 text-sm text-neutral-800"
+                    />
+                  </label>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void saveVersion(version.id)}
+                      disabled={savingVersionId === version.id}
+                      className="rounded-md bg-[#17131f] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {savingVersionId === version.id ? "Saving..." : "Save version"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingVersionId(null)}
+                      className="rounded-md bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

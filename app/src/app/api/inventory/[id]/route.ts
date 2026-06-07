@@ -1,25 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { inventory } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const VALID_LOCATIONS = ["pantry", "fridge", "freezer"];
+
 // ─── GET /api/inventory/:id ────────────────────────────────
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensurePlanningOwnershipColumns();
+
     const { id } = await context.params;
     const itemId = Number(id);
 
     const item = await db.query.inventory.findFirst({
-      where: eq(inventory.id, itemId),
+      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
       with: {
         catalogIngredient: {
-          columns: { id: true, name: true, category: true, defaultUnit: true }
-        }
+          columns: { id: true, name: true, category: true, defaultUnit: true },
+        },
       },
     });
 
@@ -41,16 +53,21 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 // ─── PATCH /api/inventory/:id ──────────────────────────────
-// Update an inventory item (partial update supported)
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensurePlanningOwnershipColumns();
+
     const { id } = await context.params;
     const itemId = Number(id);
     const body = await request.json();
 
-    // Check item exists
     const existing = await db.query.inventory.findFirst({
-      where: eq(inventory.id, itemId),
+      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
     });
 
     if (!existing) {
@@ -61,8 +78,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const { catalogIngredientId, name, quantity, unit, location, expiryDate } = body;
-    const updateFields: any = {};
-    
+    const updateFields: Partial<typeof inventory.$inferInsert> = {};
+
     if (catalogIngredientId !== undefined) {
       updateFields.catalogIngredientId = catalogIngredientId ? Number(catalogIngredientId) : null;
     }
@@ -70,8 +87,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (quantity !== undefined) updateFields.quantity = Number(quantity);
     if (unit !== undefined) updateFields.unit = unit;
     if (location !== undefined) {
-      // Validate location if provided
-      if (location && !["pantry", "fridge", "freezer"].includes(location)) {
+      if (location && !VALID_LOCATIONS.includes(location)) {
         return NextResponse.json(
           { error: "Invalid location. Must be one of: pantry, fridge, freezer" },
           { status: 400 }
@@ -80,15 +96,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updateFields.location = location;
     }
     if (expiryDate !== undefined) {
-      // Validate expiry date format if provided
-      if (expiryDate) {
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(expiryDate)) {
-          return NextResponse.json(
-            { error: "Invalid expiry date format. Use YYYY-MM-DD" },
-            { status: 400 }
-          );
-        }
+      if (expiryDate && !DATE_RE.test(expiryDate)) {
+        return NextResponse.json(
+          { error: "Invalid expiry date format. Use YYYY-MM-DD" },
+          { status: 400 }
+        );
       }
       updateFields.expiryDate = expiryDate;
     }
@@ -100,21 +112,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Add updated timestamp
     updateFields.updatedAt = new Date().toISOString();
 
     await db
       .update(inventory)
       .set(updateFields)
-      .where(eq(inventory.id, itemId));
+      .where(and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)));
 
-    // Return updated inventory item with catalog details
     const updatedItem = await db.query.inventory.findFirst({
-      where: eq(inventory.id, itemId),
+      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
       with: {
         catalogIngredient: {
-          columns: { id: true, name: true, category: true, defaultUnit: true }
-        }
+          columns: { id: true, name: true, category: true, defaultUnit: true },
+        },
       },
     });
 
@@ -131,11 +141,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ─── DELETE /api/inventory/:id ─────────────────────────────
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensurePlanningOwnershipColumns();
+
     const { id } = await context.params;
     const itemId = Number(id);
 
     const existing = await db.query.inventory.findFirst({
-      where: eq(inventory.id, itemId),
+      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
     });
 
     if (!existing) {
@@ -145,7 +162,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    await db.delete(inventory).where(eq(inventory.id, itemId));
+    await db
+      .delete(inventory)
+      .where(and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)));
 
     return NextResponse.json({ message: "Inventory item deleted successfully" });
   } catch (error) {

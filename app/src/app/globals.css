@@ -17,6 +17,32 @@
   /* Semantic */
   --background: #fafaf8;
   --color-foreground: #1a1a1a;
+
+  /* Agrippa/Mychelin UI primitives */
+  --ui-bg: #fafaf8;
+  --ui-surface: #fffdfb;
+  --ui-surface-raised: #ffffff;
+  --ui-surface-subtle: #f6f2eb;
+  --ui-text: #1a1a1a;
+  --ui-muted: #6b625c;
+  --ui-border: #ebe5dc;
+  --ui-border-strong: #d8d0c6;
+  --ui-accent: #800020;
+  --ui-accent-muted: #f7edf0;
+  --ui-action: #17131f;
+  --ui-action-hover: #800020;
+  --ui-action-text: #fffaf4;
+  --ui-focus: rgba(128, 0, 32, 0.55);
+  --ui-focus-soft: rgba(128, 0, 32, 0.12);
+  --ui-success: #047857;
+  --ui-success-soft: #ecfdf5;
+  --ui-warning: #b45309;
+  --ui-warning-soft: #fff7ed;
+  --ui-warning-text: #7c2d12;
+  --ui-danger: #b91c1c;
+  --ui-danger-soft: #fef2f2;
+  --ui-info: #1d4ed8;
+  --ui-info-soft: #eff6ff;
 }
 
 @theme inline {
@@ -26,6 +52,14 @@
   --color-accent: rgb(var(--accent));
   --color-accent-light: rgb(var(--accent-light));
   --color-accent-dark: rgb(var(--accent-dark));
+  --color-ui-bg: var(--ui-bg);
+  --color-ui-surface: var(--ui-surface);
+  --color-ui-surface-raised: var(--ui-surface-raised);
+  --color-ui-surface-subtle: var(--ui-surface-subtle);
+  --color-ui-text: var(--ui-text);
+  --color-ui-muted: var(--ui-muted);
+  --color-ui-border: var(--ui-border);
+  --color-ui-accent: var(--ui-accent);
 
   --font-sans: var(--font-dm-sans, "DM Sans"), system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -176,12 +210,36 @@ h6,
 }
 
 .landing-hero-image {
-  object-position: 78% center;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: 87% 44%;
+}
+
+.landing-hero-readable-scrim {
+  inset: 0;
+  height: 100%;
+  background: linear-gradient(
+    0deg,
+    rgba(250, 250, 248, 0.92) 0%,
+    rgba(250, 250, 248, 0.7) 18%,
+    rgba(250, 250, 248, 0.28) 40%,
+    rgba(250, 250, 248, 0.04) 64%,
+    rgba(250, 250, 248, 0) 100%
+  );
 }
 
 @media (min-width: 640px) {
   .landing-hero-image {
+    inset: 0;
+    height: 100%;
+    object-fit: cover;
     object-position: 68% center;
+  }
+
+  .landing-hero-readable-scrim {
+    inset: 0;
+    height: 100%;
   }
 }
 
@@ -223,4 +281,20 @@ button {
   --accent-a10: rgba(128, 0, 32, 0.86);
   --accent-a11: rgba(128, 0, 32, 0.92);
   --accent-a12: rgba(128, 0, 32, 0.96);
+  --accent-contrast: #fffaf4;
+  --accent-surface: #fff7f8;
+  --accent-indicator: #800020;
+  --accent-track: #d89caf;
+}
+
+.radix-themes :where(.rt-Button, .rt-IconButton):where(.rt-variant-solid) {
+  color: var(--accent-contrast) !important;
+}
+
+.radix-themes :where(.rt-Button, .rt-IconButton):where(.rt-variant-solid) :where(svg, span),
+.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.bg-\[\#17131f\], .bg-\[\#800020\], .bg-\[\#800020\]\/50),
+.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.bg-\[\#17131f\], .bg-\[\#800020\], .bg-\[\#800020\]\/50) :where(svg, span),
+.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.hover\:bg-\[\#800020\]):hover,
+.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.hover\:bg-\[\#800020\]):hover :where(svg, span) {
+  color: var(--accent-contrast) !important;
 }

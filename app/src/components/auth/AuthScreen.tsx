@@ -67,6 +67,9 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
     if (result) {
       setError(result);
     } else {
+      if (mode === "signup") {
+        window.localStorage.setItem("mychelin_onboarding_pending", "1");
+      }
       // Login/signup succeeded — check for returnTo param (e.g. from shared page)
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get("returnTo");

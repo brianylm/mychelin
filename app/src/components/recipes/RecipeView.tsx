@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import { BookOpen, ChefHat, ClipboardPaste, Clock3, Link2, Mic2, Shuffle, Target, Utensils } from "lucide-react";
+import { BookOpen, ChefHat, ClipboardPaste, Clock3, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
@@ -22,6 +22,8 @@ import { VoiceRecording } from "@/components/heritage/VoiceRecording";
 
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { ServingScaler } from "./ServingScaler";
+import { CookWithMeSession } from "./CookWithMeSession";
+import { AttemptHistory } from "./AttemptHistory";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
 import { CreateBookModal } from "@/components/books/CreateBookModal";
 import { ShareModal } from "@/components/sharing/ShareModal";
@@ -49,6 +51,7 @@ interface BookSummary {
 
 interface RecipeViewProps {
   onOpenSidebar: () => void;
+  onCookRecipe?: (recipeId: number) => void;
 }
 
 type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime">;
@@ -84,7 +87,7 @@ type RecipeVersion = {
   sourceVersionId: number | null;
 };
 
-export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
+export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const {
     recipes,
     loading,
@@ -125,6 +128,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState<{ type: "recipe" | "book"; id: number; name: string } | null>(null);
+  const [showCookWithMe, setShowCookWithMe] = useState(false);
   const [showCookAlong, setShowCookAlong] = useState(false);
   const [compareVersions, setCompareVersions] = useState<{ base: number; compare: number } | null>(null);
   const [refinementVersion, setRefinementVersion] = useState<RecipeVersion | null>(null);
@@ -327,6 +331,10 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       setters[field](true);
       try {
         let updateValue: string | number | null = values[field] || null;
+        if (field === "title" && !values[field].trim()) {
+          updateValue = "Untitled recipe";
+          setTitle("Untitled recipe");
+        }
         
         // Convert time fields to numbers
         if (field === "prepTime" || field === "cookTime") {
@@ -404,17 +412,37 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
   const handlePhotoUpload = useCallback(
     async (file: File) => {
       if (!selectedRecipe) return;
+      const recipeId = selectedRecipe.id;
       const formData = new FormData();
       formData.append("file", file);
       try {
-        await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
+        const response = await fetch(`/api/recipes/${recipeId}/photos`, {
           method: "POST",
           body: formData,
         });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body.error || "Failed to upload photo");
+        }
+        qc.setQueryData<import("@/store/RecipeStore").RecipeWithRelations | null>(
+          ["recipe", recipeId],
+          (current) => {
+            if (!current) return current;
+            const nextPhotos = [...(current.photos ?? []), body];
+            return {
+              ...current,
+              imageUrl: current.imageUrl || body.blobUrl,
+              photos: nextPhotos,
+            };
+          }
+        );
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ["recipe", recipeId] }),
+          qc.invalidateQueries({ queryKey: ["recipes"] }),
+        ]);
         addToast("Photo uploaded", "success");
-        qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
-      } catch {
-        addToast("Failed to upload photo", "error");
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to upload photo", "error");
       }
     },
     [selectedRecipe, addToast, qc]
@@ -559,7 +587,7 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               Welcome to Mychelin
             </h2>
             <p className="mt-3 text-sm leading-relaxed">
-              Preserve your family&apos;s food heritage. Create a recipe to
+              Build a family cookbook you can actually cook from. Create a recipe to
               capture the dishes, stories, and traditions that matter.
             </p>
             <div className="pt-6">
@@ -655,25 +683,42 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {activeBookRecipes.map((recipe) => (
-                      <button
+                      <article
                         key={recipe.id}
-                        onClick={() => selectRecipe(recipe.id)}
                         className="group flex flex-col rounded-2xl border border-[#800020]/10 bg-white/80 p-0 text-left shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#800020]/25 hover:shadow-[0_22px_55px_rgba(60,43,25,0.14)]"
                       >
-                        <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
-                          {recipe.imageUrl ? (
-                            <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
-                          ) : (
-                            <ChefHat className="h-10 w-10 text-[#800020]/45" />
-                          )}
-                        </div>
-                        <div className="flex flex-1 flex-col p-4">
-                          <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
-                          {recipe.cuisine && (
-                            <span className="mt-1 text-xs font-medium text-[#800020] bg-[#800020]/5 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
-                          )}
-                        </div>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => selectRecipe(recipe.id)}
+                          className="flex flex-1 flex-col text-left"
+                        >
+                          <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
+                            {recipe.imageUrl ? (
+                              <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
+                            ) : (
+                              <ChefHat className="h-10 w-10 text-[#800020]/45" />
+                            )}
+                          </div>
+                          <div className="flex flex-1 flex-col p-4 pb-3">
+                            <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
+                            {recipe.cuisine && (
+                              <span className="mt-1 w-fit rounded-full bg-[#800020]/5 px-2 py-0.5 text-xs font-medium text-[#800020]">{recipe.cuisine}</span>
+                            )}
+                          </div>
+                        </button>
+                        {onCookRecipe && (
+                          <div className="px-4 pb-4">
+                            <button
+                              type="button"
+                              onClick={() => onCookRecipe(recipe.id)}
+                              className="flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]"
+                            >
+                              <ChefHat className="h-4 w-4" />
+                              Cook with me
+                            </button>
+                          </div>
+                        )}
+                      </article>
                     ))}
                   </div>
                 )}
@@ -818,34 +863,51 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recipes.map((recipe) => (
-                  <button
+                  <article
                     key={recipe.id}
-                    onClick={() => selectRecipe(recipe.id)}
                     className="group flex flex-col rounded-2xl border border-[#800020]/10 bg-white/80 p-0 text-left shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#800020]/25 hover:shadow-[0_22px_55px_rgba(60,43,25,0.14)]"
                   >
-                    <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
-                      {recipe.imageUrl ? (
-                        <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
-                      ) : (
-                        <ChefHat className="h-10 w-10 text-[#800020]/45" />
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
-                      {recipe.cuisine && (
-                        <span className="mt-1 text-xs font-medium text-[#800020] bg-[#800020]/5 rounded-full px-2 py-0.5 w-fit">{recipe.cuisine}</span>
-                      )}
-                      {recipe.description && (
-                        <p className="mt-2 line-clamp-2 text-xs text-neutral-500 leading-relaxed">{recipe.description}</p>
-                      )}
-                      {(recipe.prepTime || recipe.cookTime) && (
-                        <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
-                          {recipe.prepTime && <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" />{recipe.prepTime}m prep</span>}
-                          {recipe.cookTime && <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{recipe.cookTime}m cook</span>}
-                        </div>
-                      )}
-                    </div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => selectRecipe(recipe.id)}
+                      className="flex flex-1 flex-col text-left"
+                    >
+                      <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
+                        {recipe.imageUrl ? (
+                          <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
+                        ) : (
+                          <ChefHat className="h-10 w-10 text-[#800020]/45" />
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col p-4 pb-3">
+                        <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
+                        {recipe.cuisine && (
+                          <span className="mt-1 w-fit rounded-full bg-[#800020]/5 px-2 py-0.5 text-xs font-medium text-[#800020]">{recipe.cuisine}</span>
+                        )}
+                        {recipe.description && (
+                          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-500">{recipe.description}</p>
+                        )}
+                        {(recipe.prepTime || recipe.cookTime) && (
+                          <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
+                            {recipe.prepTime && <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" />{recipe.prepTime}m prep</span>}
+                            {recipe.cookTime && <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{recipe.cookTime}m cook</span>}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                    {onCookRecipe && recipe.status !== "draft" && (
+                      <div className="px-4 pb-4">
+                        <button
+                          type="button"
+                          onClick={() => onCookRecipe(recipe.id)}
+                          className="flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]"
+                        >
+                          <ChefHat className="h-4 w-4" />
+                          Cook with me
+                        </button>
+                      </div>
+                    )}
+                  </article>
                 ))}
               </div>
             </>
@@ -1045,11 +1107,20 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
           onRemove={handlePhotoRemove}
           onSetCover={async (photoUrl) => {
             if (!selectedRecipe) return;
-            await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
+            const response = await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ photoUrl }),
             });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              addToast(body.error || "Failed to update cover photo", "error");
+              return;
+            }
+            qc.setQueryData<import("@/store/RecipeStore").RecipeWithRelations | null>(
+              ["recipe", selectedRecipe.id],
+              (current) => current ? { ...current, imageUrl: photoUrl } : current
+            );
             qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
             qc.invalidateQueries({ queryKey: ["recipes"] });
             addToast("Cover photo updated", "success");
@@ -1161,14 +1232,34 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
             <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
               Versions & Refinement
             </h2>
-            <button
-              onClick={() => setShowCookAlong(true)}
-              className="flex items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15"
-            >
-              <ChefHat className="h-3.5 w-3.5" />
-              Cook Along
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCookWithMe(true)}
+                className="flex items-center gap-1 rounded-xl bg-[#17131f] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#800020]"
+              >
+                <ChefHat className="h-3.5 w-3.5" />
+                Cook with me
+              </button>
+              <button
+                onClick={() => setShowCookAlong(true)}
+                className="hidden items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15 sm:flex"
+              >
+                <PencilLine className="h-3.5 w-3.5" />
+                Log version
+              </button>
+            </div>
           </div>
+
+          <AttemptHistory
+            recipeId={selectedRecipe.id}
+            refreshKey={versionTimelineKey}
+            onPromoted={() => {
+              setVersionTimelineKey((k) => k + 1);
+              qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+              qc.invalidateQueries({ queryKey: ["recipes"] });
+              addToast("Attempt promoted to version", "success");
+            }}
+          />
 
           <VersionTimeline
             key={versionTimelineKey}
@@ -1232,6 +1323,18 @@ export function RecipeView({ onOpenSidebar }: RecipeViewProps) {
       {shareModalEl}
 
       {/* Version modals */}
+      {showCookWithMe && selectedRecipe && (
+        <CookWithMeSession
+          recipe={selectedRecipe}
+          onClose={() => setShowCookWithMe(false)}
+          onComplete={() => {
+            setVersionTimelineKey((k) => k + 1);
+            qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+            addToast("Cooking attempt saved", "success");
+          }}
+        />
+      )}
+
       {showCookAlong && selectedRecipe && (
         <CookAlongCapture
           recipeId={selectedRecipe.id}

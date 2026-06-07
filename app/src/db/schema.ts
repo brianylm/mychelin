@@ -13,6 +13,10 @@ export const users = sqliteTable("users", {
   householdSize: integer("household_size"),
   favoriteCuisines: text("favorite_cuisines"), // JSON stringified array
   dietaryRestrictions: text("dietary_restrictions"), // JSON stringified array
+  onboardingCompleted: integer("onboarding_completed", { mode: "boolean" }).notNull().default(false),
+  cookingGoal: text("cooking_goal"),
+  cookingFrequency: text("cooking_frequency"),
+  firstCaptureMode: text("first_capture_mode"),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -150,6 +154,7 @@ export const ingredients = sqliteTable("ingredients", {
 // ─── Meal Plans ────────────────────────────────────────────
 export const mealPlans = sqliteTable("meal_plans", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // "YYYY-MM-DD"
   mealType: text("meal_type").notNull(), // "breakfast" | "lunch" | "dinner" | "snack"
   recipeId: integer("recipe_id")
@@ -157,6 +162,7 @@ export const mealPlans = sqliteTable("meal_plans", {
     .references(() => recipes.id, { onDelete: "cascade" }),
   servings: real("servings").notNull().default(1), // multiplier against recipe's base yield
   notes: text("notes"), // optional
+  cookedAt: text("cooked_at"), // ISO string, null until cooked
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -165,6 +171,7 @@ export const mealPlans = sqliteTable("meal_plans", {
 // ─── Inventory ─────────────────────────────────────────────
 export const inventory = sqliteTable("inventory", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   catalogIngredientId: integer("catalog_ingredient_id")
     .references(() => ingredientCatalog.id), // nullable FK to catalog
   name: text("name").notNull(), // display name (denormalized for items without catalog entry)
@@ -208,6 +215,38 @@ export const recipeVersions = sqliteTable("recipe_versions", {
   closenessNotes: text("closeness_notes"),
   cookingSessionDate: integer("cooking_session_date"), // unix timestamp
   photos: text("photos"), // JSON stringified array of URLs
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Recipe Attempts ───────────────────────────────────────
+export const recipeAttempts = sqliteTable("recipe_attempts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  versionId: integer("version_id").references(() => recipeVersions.id, {
+    onDelete: "set null",
+  }),
+  mealPlanId: integer("meal_plan_id").references(() => mealPlans.id, {
+    onDelete: "set null",
+  }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  cookedAt: text("cooked_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  rating: real("rating"), // 0.5-5, nullable until the user rates the dish
+  notes: text("notes"),
+  changeNotes: text("change_notes"), // JSON stringified cook-session changes
+  whatWorked: text("what_worked"),
+  nextTime: text("next_time"),
+  ingredientsSnapshot: text("ingredients_snapshot"),
+  instructionsSnapshot: text("instructions_snapshot"),
+  promotedVersionId: integer("promoted_version_id").references(
+    () => recipeVersions.id,
+    { onDelete: "set null" }
+  ),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -308,6 +347,8 @@ export const shareLinks = sqliteTable("share_links", {
 // ─── Relations ─────────────────────────────────────────────
 export const usersRelations = relations(users, ({ many }) => ({
   recipes: many(recipes),
+  mealPlans: many(mealPlans),
+  inventoryItems: many(inventory),
   createdBooks: many(books),
   bookMemberships: many(bookMembers),
 }));
@@ -333,6 +374,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   photos: many(recipePhotos),
   bookRecipes: many(bookRecipes),
   versions: many(recipeVersions, { relationName: "recipeVersions" }),
+  attempts: many(recipeAttempts),
 }));
 
 export const recipeVersionsRelations = relations(recipeVersions, ({ one }) => ({
@@ -348,6 +390,29 @@ export const recipeVersionsRelations = relations(recipeVersions, ({ one }) => ({
   sourceVersion: one(recipeVersions, {
     fields: [recipeVersions.sourceVersionId],
     references: [recipeVersions.id],
+  }),
+}));
+
+export const recipeAttemptsRelations = relations(recipeAttempts, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeAttempts.recipeId],
+    references: [recipes.id],
+  }),
+  version: one(recipeVersions, {
+    fields: [recipeAttempts.versionId],
+    references: [recipeVersions.id],
+  }),
+  promotedVersion: one(recipeVersions, {
+    fields: [recipeAttempts.promotedVersionId],
+    references: [recipeVersions.id],
+  }),
+  mealPlan: one(mealPlans, {
+    fields: [recipeAttempts.mealPlanId],
+    references: [mealPlans.id],
+  }),
+  user: one(users, {
+    fields: [recipeAttempts.userId],
+    references: [users.id],
   }),
 }));
 
@@ -382,6 +447,10 @@ export const ingredientsRelations = relations(ingredients, ({ one }) => ({
 }));
 
 export const mealPlansRelations = relations(mealPlans, ({ one }) => ({
+  user: one(users, {
+    fields: [mealPlans.userId],
+    references: [users.id],
+  }),
   recipe: one(recipes, {
     fields: [mealPlans.recipeId],
     references: [recipes.id],
@@ -389,6 +458,10 @@ export const mealPlansRelations = relations(mealPlans, ({ one }) => ({
 }));
 
 export const inventoryRelations = relations(inventory, ({ one }) => ({
+  user: one(users, {
+    fields: [inventory.userId],
+    references: [users.id],
+  }),
   catalogIngredient: one(ingredientCatalog, {
     fields: [inventory.catalogIngredientId],
     references: [ingredientCatalog.id],
@@ -479,6 +552,8 @@ export type BookActivityLog = typeof bookActivityLog.$inferSelect;
 export type NewBookActivityLog = typeof bookActivityLog.$inferInsert;
 export type RecipeVersion = typeof recipeVersions.$inferSelect;
 export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
+export type RecipeAttempt = typeof recipeAttempts.$inferSelect;
+export type NewRecipeAttempt = typeof recipeAttempts.$inferInsert;
 export type BookTip = typeof bookTips.$inferSelect;
 export type NewBookTip = typeof bookTips.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

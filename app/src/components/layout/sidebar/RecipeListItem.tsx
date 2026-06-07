@@ -17,6 +17,7 @@ interface RecipeListItemProps {
   onSelect: (id: number) => void;
   onShare?: (recipe: Recipe) => void;
   onDelete?: (id: number) => void;
+  onCook?: (id: number) => void;
   // Optional "ingredient: X" hint shown under the title when this item
   // is a search hit matched on an ingredient name.
   matchedIngredient?: string | null;
@@ -28,6 +29,7 @@ export function RecipeListItem({
   onSelect,
   onShare,
   onDelete,
+  onCook,
   matchedIngredient,
 }: RecipeListItemProps) {
   const qc = useQueryClient();
@@ -103,6 +105,20 @@ export function RecipeListItem({
 
       {/* Actions */}
       <div className="flex flex-shrink-0 items-center gap-1">
+        {onCook && !isDraft && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCook(recipe.id);
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-[#17131f] text-white opacity-100 transition hover:bg-[#800020] md:opacity-0 md:group-hover:opacity-100"
+            aria-label={`Cook ${recipe.title}`}
+            title="Cook with me"
+          >
+            <ChefHat className="h-3.5 w-3.5" />
+          </button>
+        )}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             <IconButton
