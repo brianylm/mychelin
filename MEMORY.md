@@ -1019,3 +1019,31 @@ Checks:
 Follow-ups:
 
 - User is brainstorming a new "firing up the wok" loading animation; preferred direction should be chosen before generating or implementing the asset.
+
+
+### 2026-06-07 - Wok loading animations
+
+Changed/decided:
+
+- Replaced the old generic wok loader with a code-native LoadingAnimation component that supports two variants.
+- General app loading now uses the calmer Wok Ignition animation: wok silhouette, blue/orange flame, oil shimmer, and heat wisps.
+- Ask Mychelin drafting now uses the livelier Hei Burst animation: wok toss, flame burst, sparks, and flying ingredient shapes.
+- Kept this as SVG/CSS rather than a GIF so it stays lightweight, themeable, and easy to tune.
+- Deployed the change to production at https://mychelin-sg.vercel.app.
+
+Files touched:
+
+- app/src/components/ui/LoadingAnimation.tsx
+- app/src/components/capture/AiDraftRecipeModal.tsx
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/ui/LoadingAnimation.tsx src/components/capture/AiDraftRecipeModal.tsx passed from app/.
+- npm run build passed from app/.
+- git diff --check passed.
+- Production smoke: landing page returned HTTP 200.
+
+Follow-ups:
+
+- User should manually test app boot/loading and Ask Mychelin drafting to judge animation speed and visual personality.

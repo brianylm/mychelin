@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, X } from "lucide-react";
+import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 
 interface DraftRecipe {
   title: string;
@@ -72,13 +73,23 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
           </button>
         </div>
 
-        <textarea
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-          placeholder="e.g. I want to cook chicken curry for 2, not too spicy, beginner friendly"
-          className="mt-5 min-h-32 w-full rounded-2xl border border-[#d8d8d2] bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:ring-4 focus:ring-[#800020]/10"
-          autoFocus
-        />
+        {loading ? (
+          <div className="mt-5 rounded-2xl border border-[#800020]/10 bg-white px-4 py-6">
+            <LoadingAnimation
+              variant="hei-burst"
+              size={132}
+              label="Drafting your first recipe..."
+            />
+          </div>
+        ) : (
+          <textarea
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder="e.g. I want to cook chicken curry for 2, not too spicy, beginner friendly"
+            className="mt-5 min-h-32 w-full rounded-2xl border border-[#d8d8d2] bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:ring-4 focus:ring-[#800020]/10"
+            autoFocus
+          />
+        )}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {examples.map((example) => (
@@ -86,7 +97,8 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
               key={example}
               type="button"
               onClick={() => setPrompt(example)}
-              className="rounded-full border border-[#ebe5dc] bg-white px-3 py-1.5 text-xs text-stone-600 transition hover:border-[#800020]/25 hover:text-[#521224]"
+              disabled={loading}
+              className="rounded-full border border-[#ebe5dc] bg-white px-3 py-1.5 text-xs text-stone-600 transition hover:border-[#800020]/25 hover:text-[#521224] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {example}
             </button>
