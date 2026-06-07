@@ -5,6 +5,7 @@ import { mealPlans } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -120,6 +121,20 @@ export async function POST(request: NextRequest) {
           columns: { id: true, title: true, yield: true },
         },
       },
+    });
+
+    await trackUsageEvent({
+      userId: currentUser.id,
+      eventName: "meal_planned",
+      source: "meal_plan",
+      recipeId: recipeIdNumber,
+      mealPlanId: newPlan.id,
+      properties: {
+        meal_type: mealType,
+        servings: Number(servings || 1),
+        has_notes: Boolean(notes),
+      },
+      path: requestPath(request),
     });
 
     return NextResponse.json(fullPlan, { status: 201 });

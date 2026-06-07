@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -188,11 +189,35 @@ export async function POST(request: NextRequest) {
 
     const prompt = draftPrompt(userPrompt.slice(0, 2000));
     try {
-      return NextResponse.json(await generateWithDeepSeek(prompt));
+      const result = await generateWithDeepSeek(prompt);
+      await trackUsageEvent({
+        userId: user.id,
+        eventName: "ai_draft_completed",
+        source: "ask_mychelin",
+        properties: {
+          provider: result.provider,
+          ingredients_count: result.recipe.ingredients.length,
+          steps_count: result.recipe.instructions.length,
+        },
+        path: requestPath(request),
+      });
+      return NextResponse.json(result);
     } catch (deepSeekError) {
       console.warn("DeepSeek draft unavailable, trying Gemini fallback:", deepSeekError);
       try {
-        return NextResponse.json(await generateWithGemini(prompt));
+        const result = await generateWithGemini(prompt);
+        await trackUsageEvent({
+          userId: user.id,
+          eventName: "ai_draft_completed",
+          source: "ask_mychelin",
+          properties: {
+            provider: result.provider,
+            ingredients_count: result.recipe.ingredients.length,
+            steps_count: result.recipe.instructions.length,
+          },
+          path: requestPath(request),
+        });
+        return NextResponse.json(result);
       } catch (geminiError) {
         console.error("Draft recipe generation failed:", { deepSeekError, geminiError });
         return NextResponse.json(

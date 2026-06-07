@@ -8,6 +8,7 @@ import {
 } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -141,6 +142,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
         .set({ activeVersionId: newVersion.id })
         .where(eq(recipes.id, recipeId));
     }
+
+    await trackUsageEvent({
+      userId: currentUser.id,
+      eventName: "attempt_promoted_to_version",
+      source: "attempt_history",
+      recipeId,
+      properties: {
+        attempt_id: attempt.id,
+        version_id: newVersion.id,
+        set_definitive: setActive,
+        has_next_time: Boolean(attempt.nextTime),
+        ingredients_count: ingredientsData.length,
+        steps_count: instructionsData.length,
+      },
+      path: requestPath(request),
+    });
 
     return NextResponse.json(
       {

@@ -5,6 +5,7 @@ import { recipePhotos, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -120,6 +121,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
         .set({ imageUrl: blob.url, updatedAt: new Date().toISOString() })
         .where(eq(recipes.id, recipeId));
     }
+
+    await trackUsageEvent({
+      userId: currentUser.id,
+      eventName: "photo_uploaded",
+      source: "recipe_photo",
+      recipeId,
+      properties: {
+        file_type: file.type || null,
+        file_size_bucket_kb: Math.ceil(file.size / 102400) * 100,
+        auto_set_cover: !recipe.imageUrl,
+      },
+      path: requestPath(request),
+    });
 
     return NextResponse.json(newPhoto, { status: 201 });
   } catch (error) {

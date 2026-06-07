@@ -9,6 +9,7 @@ import {
   RATE_LIMITS,
 } from "@/lib/rateLimit";
 import { eq } from "drizzle-orm";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -77,6 +78,13 @@ export async function POST(request: NextRequest) {
 
     const host = request.headers.get("host") || undefined;
     await setAuthCookie(authUser, host);
+
+    await trackUsageEvent({
+      userId: newUser.id,
+      eventName: "user_signed_up",
+      source: "auth",
+      path: requestPath(request),
+    });
 
     return NextResponse.json(
       { user: authUser, message: "Account created" },

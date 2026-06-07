@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { extractRecipeText } from "@/lib/ai-extract";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -91,7 +92,7 @@ Guidelines:
         .replace(/```json\n?|\n?```/g, "")
         .trim();
       extractedRecipe = JSON.parse(cleaned);
-    } catch (err) {
+    } catch {
       console.error(
         "Failed to parse extracted JSON:",
         extracted.result.provider,
@@ -102,6 +103,20 @@ Guidelines:
         { status: 502 }
       );
     }
+
+    await trackUsageEvent({
+      userId: user.id,
+      eventName: "recipe_capture_completed",
+      source: "paste",
+      properties: {
+        provider: extracted.result.provider,
+        model: extracted.result.model,
+        input_chars_bucket: Math.ceil(text.length / 500) * 500,
+        ingredients_count: Array.isArray(extractedRecipe?.ingredients) ? extractedRecipe.ingredients.length : 0,
+        steps_count: Array.isArray(extractedRecipe?.instructions) ? extractedRecipe.instructions.length : 0,
+      },
+      path: requestPath(request),
+    });
 
     return NextResponse.json({
       recipe: extractedRecipe,

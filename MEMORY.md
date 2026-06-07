@@ -898,3 +898,43 @@ Follow-ups:
 
 - Deploy to production and manually verify title placeholder behavior, mobile photo upload display, comma-separated ingredient paste, Done-on-draft ingredient add, step drag behavior, timer defaults, and next-time promotion CTA.
 - Commit the deployed work to clear the repository worktree while leaving .commandcode ignored.
+
+### 2026-06-07 - Internal usage event tracking foundation
+
+Changed/decided:
+
+- Added a platform-agnostic internal usage event layer so Mychelin can track core product usage even if the external analytics vendor changes later.
+- Added a privacy-safe usage_events table with user/event/source/recipe/book/meal-plan anchors, sanitized JSON properties, path, and created_at.
+- Added lazy ensureUsageEventsTable() so production routes can create the table/indexes even before manual migration application.
+- Added trackUsageEvent() helper that is best-effort and catches errors so analytics never breaks product flows.
+- Instrumented initial high-signal server events: user signup, onboarding completion, recipe creation, paste capture completion, Ask Mychelin draft completion, OpenAI transcription completion, photo upload, meal planned, cook attempt created, and attempt promoted to version.
+- Event properties intentionally avoid recipe text, prompts, transcripts, family stories, photo URLs, raw ingredient names, and raw step content. Only counts, booleans, source/provider labels, model names, and coarse size buckets are stored.
+
+Files touched:
+
+- app/src/db/schema.ts
+- app/drizzle/0021_usage_events.sql
+- app/src/db/ensure-schema.ts
+- app/src/lib/usage-events.ts
+- app/src/app/api/auth/signup/route.ts
+- app/src/app/api/user/preferences/route.ts
+- app/src/app/api/recipes/route.ts
+- app/src/app/api/capture/paste/route.ts
+- app/src/app/api/capture/draft-recipe/route.ts
+- app/src/app/api/capture/transcribe-whisper/route.ts
+- app/src/app/api/meal-plans/route.ts
+- app/src/app/api/recipes/[id]/photos/route.ts
+- app/src/app/api/recipes/[id]/attempts/route.ts
+- app/src/app/api/recipes/[id]/attempts/[attemptId]/promote/route.ts
+- MEMORY.md
+
+Checks:
+
+- npx tsc --noEmit passed from app/.
+- Targeted eslint passed for usage tracking files and instrumented routes.
+
+Follow-ups:
+
+- Future analytics enhancements should extend this event taxonomy and helper rather than sending private recipe data directly to an external analytics platform.
+- Add dashboard/query surfaces later for activation, retention, cook-session completion, attempt promotion, AI cost/reliability, and planning conversion.
+- If PostHog/Plausible/Vercel Analytics is added, forward sanitized copies from trackUsageEvent rather than duplicating event definitions across the codebase.

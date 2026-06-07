@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -102,7 +103,20 @@ export async function POST(request: NextRequest) {
     }
 
     const data = (await response.json()) as OpenAITranscriptionResponse;
-    return NextResponse.json({ segments: segmentsFromDiarizedJson(data) });
+    const segments = segmentsFromDiarizedJson(data);
+    await trackUsageEvent({
+      userId: user.id,
+      eventName: "transcription_completed",
+      source: "conversation",
+      properties: {
+        provider: "openai",
+        model,
+        segments_count: segments.length,
+        audio_size_bucket_kb: Math.ceil(audio.size / 102400) * 100,
+      },
+      path: requestPath(request),
+    });
+    return NextResponse.json({ segments });
   } catch (error) {
     console.error("POST /api/capture/transcribe-whisper error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

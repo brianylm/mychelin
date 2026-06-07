@@ -4,6 +4,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureUserOnboardingColumns } from "@/db/ensure-schema";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -107,6 +108,20 @@ export async function PATCH(request: NextRequest) {
         .update(users)
         .set(updates)
         .where(eq(users.id, currentUser.id));
+    }
+
+    if (onboardingCompleted === true) {
+      await trackUsageEvent({
+        userId: currentUser.id,
+        eventName: "onboarding_completed",
+        source: "onboarding",
+        properties: {
+          has_goal: Boolean(cookingGoal),
+          has_frequency: Boolean(cookingFrequency),
+          first_capture_mode: typeof firstCaptureMode === "string" ? firstCaptureMode : null,
+        },
+        path: requestPath(request),
+      });
     }
 
     return NextResponse.json({ message: "Preferences updated successfully" });

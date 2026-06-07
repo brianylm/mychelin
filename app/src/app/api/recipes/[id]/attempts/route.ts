@@ -5,6 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -129,6 +130,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
         createdAt: now,
       })
       .returning();
+
+    await trackUsageEvent({
+      userId: currentUser.id,
+      eventName: "cook_attempt_created",
+      source: "cook_with_me",
+      recipeId,
+      mealPlanId: body.mealPlanId ? Number(body.mealPlanId) : null,
+      properties: {
+        has_rating: rating !== null,
+        rating: rating ?? null,
+        has_next_time: Boolean(body.nextTime),
+        change_notes_count: Array.isArray(body.changeNotes) ? body.changeNotes.length : 0,
+        ingredients_count: Array.isArray(body.ingredientsSnapshot) ? body.ingredientsSnapshot.length : 0,
+        steps_count: Array.isArray(body.instructionsSnapshot) ? body.instructionsSnapshot.length : 0,
+        from_meal_plan: Boolean(body.mealPlanId),
+      },
+      path: requestPath(request),
+    });
 
     return NextResponse.json(parseAttempt(attempt), { status: 201 });
   } catch (error) {

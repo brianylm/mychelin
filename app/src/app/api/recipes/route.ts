@@ -22,6 +22,7 @@ import {
   ensureRecipeOwnershipBackfill,
   recipesVisibleTo,
 } from "@/lib/recipe-access";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -340,6 +341,23 @@ export async function POST(request: NextRequest) {
         ingredients: { orderBy: (ing, { asc }) => [asc(ing.sortOrder)] },
         instructions: { orderBy: (inst, { asc }) => [asc(inst.stepNumber)] },
       },
+    });
+
+    await trackUsageEvent({
+      userId: currentUser.id,
+      eventName: "recipe_created",
+      source: "api",
+      recipeId: newRecipe.id,
+      bookId: bookId ?? null,
+      properties: {
+        status: status ?? "active",
+        has_book: bookId != null,
+        ingredients_count: Array.isArray(ingredientsList) ? ingredientsList.length : 0,
+        steps_count: Array.isArray(instructionsList) ? instructionsList.length : 0,
+        has_description: Boolean(description),
+        has_image: Boolean(imageUrl),
+      },
+      path: requestPath(request),
     });
 
     return NextResponse.json(fullRecipe, { status: 201 });

@@ -49,6 +49,25 @@ export const authRateLimits = sqliteTable("auth_rate_limits", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Usage Events ──────────────────────────────────────────
+// Internal, privacy-safe product analytics. Store event names and
+// sanitized metadata only — never recipe text, prompts, transcripts,
+// photos, family stories, or raw ingredient/step content.
+export const usageEvents = sqliteTable("usage_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  eventName: text("event_name").notNull(),
+  source: text("source"),
+  recipeId: integer("recipe_id").references(() => recipes.id, { onDelete: "set null" }),
+  bookId: integer("book_id").references(() => books.id, { onDelete: "set null" }),
+  mealPlanId: integer("meal_plan_id").references(() => mealPlans.id, { onDelete: "set null" }),
+  properties: text("properties"), // JSON stringified sanitized event metadata
+  path: text("path"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Recipes ───────────────────────────────────────────────
 export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -351,6 +370,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   inventoryItems: many(inventory),
   createdBooks: many(books),
   bookMemberships: many(bookMembers),
+  usageEvents: many(usageEvents),
 }));
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -523,6 +543,25 @@ export const bookActivityLogRelations = relations(bookActivityLog, ({ one }) => 
   }),
 }));
 
+export const usageEventsRelations = relations(usageEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [usageEvents.userId],
+    references: [users.id],
+  }),
+  recipe: one(recipes, {
+    fields: [usageEvents.recipeId],
+    references: [recipes.id],
+  }),
+  book: one(books, {
+    fields: [usageEvents.bookId],
+    references: [books.id],
+  }),
+  mealPlan: one(mealPlans, {
+    fields: [usageEvents.mealPlanId],
+    references: [mealPlans.id],
+  }),
+}));
+
 // ─── Types ─────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -560,3 +599,5 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert;
 export type AuthRateLimit = typeof authRateLimits.$inferSelect;
 export type NewAuthRateLimit = typeof authRateLimits.$inferInsert;
+export type UsageEvent = typeof usageEvents.$inferSelect;
+export type NewUsageEvent = typeof usageEvents.$inferInsert;
