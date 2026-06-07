@@ -992,3 +992,30 @@ Follow-ups:
 
 - User should manually verify the left-panel collapse affordance and Ask Mychelin flow in their real account.
 - Avoid storing Vercel env values with pasted trailing whitespace; route now trims defensively, but clean env values are still preferred.
+
+
+### 2026-06-07 - Sidebar section collapse cleanup
+
+Changed/decided:
+
+- Removed the "5 ways" label from the authenticated sidebar Create recipe header; the chevron alone now indicates collapse state.
+- Made Recipes and Books first-tier sidebar sections collapsible, defaulting open.
+- Search automatically reopens the Recipes section so search results remain visible.
+- Deployed the change to production at https://mychelin-sg.vercel.app.
+
+Files touched:
+
+- app/src/components/layout/RecipeSidebar.tsx
+- app/src/components/layout/sidebar/SidebarToolbar.tsx
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/layout/RecipeSidebar.tsx src/components/layout/sidebar/SidebarToolbar.tsx passed from app/.
+- npm run build passed from app/.
+- git diff --check passed.
+- Production smoke: landing page returned HTTP 200.
+
+Follow-ups:
+
+- User is brainstorming a new "firing up the wok" loading animation; preferred direction should be chosen before generating or implementing the asset.

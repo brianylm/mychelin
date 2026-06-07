@@ -48,13 +48,10 @@ export function SidebarToolbar({
             Link, notes, conversation, AI draft, or manual entry.
           </p>
         </span>
-        <span className="flex shrink-0 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-          5 ways
-          <ChevronDown
-            className={"h-4 w-4 text-[#800020] transition-transform " + (isCreateOpen ? "rotate-180" : "")}
-            aria-hidden="true"
-          />
-        </span>
+        <ChevronDown
+          className={"h-4 w-4 shrink-0 text-[#800020] transition-transform " + (isCreateOpen ? "rotate-180" : "")}
+          aria-hidden="true"
+        />
       </button>
 
       <div className={"mt-3 grid gap-2.5 " + (isCreateOpen ? "" : "hidden")}>

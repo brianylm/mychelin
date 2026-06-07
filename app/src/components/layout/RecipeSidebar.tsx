@@ -7,6 +7,7 @@ import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
 import { ShareModal } from "@/components/sharing/ShareModal";
+import { ChevronDown } from "lucide-react";
 
 interface Book {
   id: number;
@@ -51,6 +52,8 @@ export function RecipeSidebar({
 
   const [query, setQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [isRecipesOpen, setIsRecipesOpen] = useState(true);
+  const [isBooksOpen, setIsBooksOpen] = useState(true);
   const [shareTarget, setShareTarget] = useState<{ id: number; name: string } | null>(null);
 
   // Books state
@@ -149,6 +152,11 @@ export function RecipeSidebar({
   }, [query]);
 
   const hasQuery = query.trim().length > 0;
+
+  useEffect(() => {
+    if (hasQuery) setIsRecipesOpen(true);
+  }, [hasQuery]);
+
   const filteredRecipes = hasQuery
     ? searchResults.map((r) => r.recipe)
     : recipes;
@@ -214,18 +222,32 @@ export function RecipeSidebar({
         {/* Recipe list + Books: peer sections under Create recipe. */}
         <div className="flex-1 overflow-y-auto px-2 py-3">
           <section className="mb-4">
-            <div className="flex items-center justify-between px-3 pb-1.5">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-[#800020]/5"
+              aria-expanded={isRecipesOpen}
+              onClick={() => setIsRecipesOpen((value) => !value)}
+            >
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
                 {hasQuery ? "Search results" : "Recipes"}
               </span>
-              {!hasQuery && filteredRecipes.length > 0 && (
-                <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
-                  {filteredRecipes.length}
-                </span>
-              )}
-            </div>
+              <span className="flex items-center gap-2">
+                {!hasQuery && filteredRecipes.length > 0 && (
+                  <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
+                    {filteredRecipes.length}
+                  </span>
+                )}
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-[#800020] transition-transform",
+                    isRecipesOpen && "rotate-180"
+                  )}
+                  aria-hidden="true"
+                />
+              </span>
+            </button>
 
-            {draftRecipes.length > 0 && (
+            {isRecipesOpen && draftRecipes.length > 0 && (
               <div className="mb-3">
                 <div className="flex items-center justify-between px-3 pb-1.5">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
@@ -255,7 +277,7 @@ export function RecipeSidebar({
               </div>
             )}
 
-            {activeRecipes.length === 0 && !loading && !searching ? (
+            {isRecipesOpen && (activeRecipes.length === 0 && !loading && !searching ? (
               <p className="px-3 py-6 text-center text-sm text-neutral-500">
                 {query
                   ? "No recipes match your search."
@@ -281,24 +303,44 @@ export function RecipeSidebar({
                   />
                 ))}
               </ul>
-            )}
+            ))}
           </section>
 
           <section className="border-t border-[#800020]/10 pt-3">
-            <div className="flex items-center justify-between px-3 pb-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
-                Books
-              </span>
+            <div className="flex items-center justify-between gap-2 px-3 pb-1.5">
               <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 text-left transition hover:text-[#800020]"
+                aria-expanded={isBooksOpen}
+                onClick={() => setIsBooksOpen((value) => !value)}
+              >
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
+                  Books
+                </span>
+                {books.length > 0 && (
+                  <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
+                    {books.length}
+                  </span>
+                )}
+                <ChevronDown
+                  className={cn(
+                    "ml-auto h-4 w-4 shrink-0 text-[#800020] transition-transform",
+                    isBooksOpen && "rotate-180"
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
-                className="text-[10px] font-medium text-[#800020] hover:text-[#800020]"
+                className="shrink-0 rounded-full px-2 py-1 text-[10px] font-medium text-[#800020] transition hover:bg-[#800020]/10"
               >
                 + New
               </button>
             </div>
-            {books.length > 0 ? (
+            {isBooksOpen && (books.length > 0 ? (
               <ul className="space-y-0.5">
                 {books.map((book) => (
                   <li key={book.id}>
@@ -373,7 +415,7 @@ export function RecipeSidebar({
               <p className="px-3 py-2 text-xs text-neutral-400">
                 No books yet. Create one to organize recipes.
               </p>
-            )}
+            ))}
           </section>
         </div>
       </aside>
