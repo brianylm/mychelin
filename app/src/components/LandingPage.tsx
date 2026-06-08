@@ -20,10 +20,10 @@ const logoSerif = Libre_Baskerville({
 
 const featurePages = [
   {
-    title: "Voice + chat recipe capture",
-    body: "Mychelin sits in your conversations and extracts key data for the recipe. Not sure what to clarify, or don’t speak the language? Mychelin helps with that too.",
-    screenTitle: "Recipe capture",
-    screenLines: ["Aunty: add enough soy sauce", "Mychelin: how much is enough?", "Saved: 2 tbsp light soy sauce"],
+    title: "Live recipe conversation",
+    body: "Mychelin sits with you while a parent or grandparent narrates the dish: live transcript, translated gist, and questions to ask before the important details disappear.",
+    screenTitle: "Live helper",
+    screenLines: ["Ah Ma: fry until fragrant", "Gist: aromatics first, low heat", "Ask: what smell tells me it is ready?"],
   },
   {
     title: "Meal planning",
@@ -152,8 +152,9 @@ export function LandingPage() {
               Cook like home, even in your new home.
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-[#4a4a4a]">
-              Moving out usually means missing home-cooked meals. Mychelin helps
-              you bring a taste of home with you.
+              Mychelin helps you capture family recipes as they are spoken,
+              translate the gist while you listen, and turn them into meals you
+              can plan, shop for, and cook again.
             </p>
             <div className="mt-8 flex flex-wrap gap-6">
               <Link
@@ -186,8 +187,9 @@ export function LandingPage() {
             Three steps to cook like home again.
           </h2>
           <p className="mt-5 text-base leading-7 text-[#5f6368]">
-            Mychelin turns a messy family conversation into something you can save,
-            plan around, and actually cook on a weeknight.
+            Mychelin helps you stay inside the family conversation first,
+            then turns what was said into something you can save, plan around,
+            and cook on a weeknight.
           </p>
         </div>
 
@@ -195,13 +197,13 @@ export function LandingPage() {
           {[
             {
               step: "01",
-              title: "Record the family recipe",
-              body: "Capture voice, chat notes, URLs, or rough memory. Mychelin handles mixed languages, dialects, and vague agak-agak instructions.",
+              title: "Sit in the conversation",
+              body: "Record while the recipe is being narrated. Mychelin listens for mixed language, translates the gist, and suggests respectful follow-up questions.",
             },
             {
               step: "02",
-              title: "Turn it into a usable recipe",
-              body: "AI structures ingredients, method, timing, quantities, substitutions, and the family story — then asks what is missing before it gets lost.",
+              title: "Review what was said",
+              body: "Keep the original phrasing beside translated instructions, confirm uncertain family terms, and only then extract the recipe structure.",
             },
             {
               step: "03",
@@ -389,8 +391,9 @@ export function LandingPage() {
 
           <div className="flex flex-col justify-end border-t border-white/15 pt-8 lg:border-t-0 lg:pt-0">
             <p className="max-w-2xl text-base leading-7 text-white/70">
-              Your family&apos;s recipes are one conversation away. Capture them,
-              cook them, and make them part of your new routine.
+              Start with the next recipe conversation. Mychelin helps you ask
+              better questions in the moment, then turns the answers into a dish
+              you can cook again.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-5">
               <Link

@@ -6,6 +6,15 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-06-08",
+    title: "Live recipe conversation helper",
+    items: [
+      "Live conversation capture now shows a translated gist, missing recipe cues, and questions to ask while family narrates.",
+      "Conversation capture copy across the app now reflects live facilitation instead of passive recording only.",
+      "Landing page and onboarding copy now explain that Mychelin helps users stay inside mixed-language family recipe conversations.",
+    ],
+  },
+  {
     date: "2026-06-07",
     title: "Meal plan shopping lists",
     items: [

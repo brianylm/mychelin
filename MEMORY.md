@@ -123,6 +123,43 @@ Known stale or conflicting external notes:
 
 ## Session Log
 
+### 2026-06-08 - Live recipe conversation helper implementation
+
+Changed/decided:
+
+- Added a new Edge API route for conversation assistance that turns recent transcript messages into a translated gist, suggested learner questions, missing recipe cues, and uncertain terms.
+- Updated the conversation capture modal from passive recording copy to live facilitation: sticky helper panel, gist, question chips, missing cues, uncertain terms, and copied-question feedback.
+- Updated downstream copy across landing page, onboarding, sidebar, mobile create flow, recipe empty-state CTA, sharing signup nudge, metadata, and in-app changelog to reflect live conversation assistance.
+- Added usage analytics event support for `conversation_assist_completed`.
+
+Files touched:
+
+- `app/src/app/api/capture/conversation-assist/route.ts`
+- `app/src/components/capture/ConversationCapture.tsx`
+- `app/src/components/LandingPage.tsx`
+- `app/src/components/RecipeWorkspace.tsx`
+- `app/src/components/layout/sidebar/SidebarToolbar.tsx`
+- `app/src/components/onboarding/OnboardingFlow.tsx`
+- `app/src/components/recipes/RecipeView.tsx`
+- `app/src/components/sharing/SignupNudge.tsx`
+- `app/src/app/layout.tsx`
+- `app/src/app/preview/layout.tsx`
+- `app/src/lib/changelog.ts`
+- `app/src/lib/usage-events.ts`
+- `MEMORY.md`
+
+Checks:
+
+- Focused ESLint passed on touched app files with existing image/font warnings only.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+
+Follow-ups:
+
+- Build the next Realtime layer with streamed captions/translation when latency becomes the blocker; current implementation is near-live chunked assistance.
+- Add transcript review persistence if raw transcript, translated transcript, accepted questions, and final extraction need to become separate durable artifacts.
+- Test with pilot audio clips across mixed English/Mandarin/Cantonese/Hokkien/Teochew and background kitchen noise.
+
 ### 2026-06-08 - Reprioritized pilot operations and realtime conversation facilitation
 
 Changed/decided:

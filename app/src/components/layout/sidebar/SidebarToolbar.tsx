@@ -45,7 +45,7 @@ export function SidebarToolbar({
             Create recipe
           </h2>
           <p className="mt-1 text-xs leading-4 text-stone-500">
-            Link, notes, conversation, AI draft, or manual entry.
+            Link, notes, live conversation, AI draft, or manual entry.
           </p>
         </span>
         <ChevronDown
@@ -74,8 +74,8 @@ export function SidebarToolbar({
         <button type="button" className={actionClass} onClick={onCaptureConversation} disabled={!onCaptureConversation}>
           <ActionIcon><Mic2 className="h-4 w-4" /></ActionIcon>
           <span>
-            <span className="block text-sm font-semibold text-stone-900">Record conversation</span>
-            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Talk through a family recipe and extract the structure.</span>
+            <span className="block text-sm font-semibold text-stone-900">Live conversation</span>
+            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Record, translate the gist, and get questions to ask while family narrates.</span>
           </span>
         </button>
 

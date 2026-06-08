@@ -3,20 +3,27 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@radix-ui/themes";
 import { StopIcon, MagicWandIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2 } from "lucide-react";
 import { ChatBubble } from "./ChatBubble";
 
-// Modal-based conversational capture. Opens from the recipe page, records
-// the full conversation with zero pre-setup (no speaker names, no language
-// picker), streams chunks to Gemini for live transcription + diarization,
-// and on save lets the user assign real names to the speaker labels
-// Gemini produced. The final recipe data PATCHes back into the recipe
-// the modal was opened from.
+// Modal-based conversation facilitation. Opens from the recipe page,
+// records the family recipe conversation with zero pre-setup, streams
+// chunks for transcription, and uses the recent transcript to surface a
+// translated gist plus respectful follow-up questions while the learner
+// is still talking with the family cook.
 
 interface ConversationMessage {
   id: string;
   speakerLabel: string; // raw label from Gemini, e.g. "Speaker 1"
   text: string;
   timestamp: string;
+}
+
+interface ConversationAssist {
+  translatedGist: string;
+  suggestedQuestions: string[];
+  missingCues: string[];
+  uncertainTerms: string[];
 }
 
 interface ExtractedRecipe {
@@ -98,6 +105,138 @@ function getErrorName(error: unknown): string {
   return error instanceof Error ? error.name : "";
 }
 
+function ConversationAssistPanel({
+  assist,
+  isLoading,
+  error,
+  copiedQuestion,
+  hasMessages,
+  onCopyQuestion,
+}: {
+  assist: ConversationAssist | null;
+  isLoading: boolean;
+  error: string | null;
+  copiedQuestion: string | null;
+  hasMessages: boolean;
+  onCopyQuestion: (question: string) => void;
+}) {
+  const questions = assist?.suggestedQuestions ?? [];
+  const missingCues = assist?.missingCues ?? [];
+  const uncertainTerms = assist?.uncertainTerms ?? [];
+
+  return (
+    <div
+      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[#eadfd0] bg-[#fffaf4]/95 px-4 py-3 shadow-[0_12px_32px_rgba(60,43,25,0.08)] backdrop-blur"
+      aria-live="polite"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+            <Languages className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#800020]">
+              Live helper
+            </p>
+            <p className="truncate text-xs text-stone-500">
+              {isLoading
+                ? "Reading the latest turn..."
+                : hasMessages
+                  ? "Translation gist and questions"
+                  : "Start talking to unlock prompts"}
+            </p>
+          </div>
+        </div>
+        {copiedQuestion && (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#17131f] px-2.5 py-1 text-[10px] font-semibold text-white">
+            <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
+            Copied
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <div className="mt-3 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {!hasMessages && !error && (
+        <p className="mt-3 text-sm leading-6 text-stone-600">
+          Mychelin will listen for family terms, translate the gist, and suggest
+          useful questions while the recipe is being narrated.
+        </p>
+      )}
+
+      {assist?.translatedGist && (
+        <div className="mt-3 rounded-2xl border border-[#eadfd0] bg-white px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+            Gist
+          </p>
+          <p className="mt-1 text-sm leading-6 text-stone-800">
+            {assist.translatedGist}
+          </p>
+        </div>
+      )}
+
+      {questions.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+            <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden="true" />
+            Ask next
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {questions.map((question) => (
+              <button
+                key={question}
+                type="button"
+                onClick={() => onCopyQuestion(question)}
+                className="min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2 text-left text-xs leading-5 text-[#241017] transition hover:border-[#800020]/30 hover:bg-[#800020]/10"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(missingCues.length > 0 || uncertainTerms.length > 0) && (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {missingCues.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+                Still missing
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {missingCues.map((cue) => (
+                  <span key={cue} className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] text-stone-600">
+                    {cue}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {uncertainTerms.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+                Confirm wording
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {uncertainTerms.map((term) => (
+                  <span key={term} className="rounded-full bg-[#f7c86a]/25 px-2.5 py-1 text-[11px] text-stone-700">
+                    {term}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -122,6 +261,10 @@ export function ConversationCapture({
   const [connecting, setConnecting] = useState(false);
   const [processingChunks, setProcessingChunks] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [conversationAssist, setConversationAssist] = useState<ConversationAssist | null>(null);
+  const [isAssisting, setIsAssisting] = useState(false);
+  const [assistError, setAssistError] = useState<string | null>(null);
+  const [copiedQuestion, setCopiedQuestion] = useState<string | null>(null);
 
   // Map from raw Gemini speaker label to the real name the user assigns
   // in the naming step. Defaults below give the user something to edit.
@@ -133,6 +276,12 @@ export function ConversationCapture({
   const mimeTypeRef = useRef<string>("audio/webm");
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const assistRequestSignatureRef = useRef<string>("");
+
+  const transcriptSignature = useMemo(
+    () => messages.map((m) => m.speakerLabel + ":" + m.text).join("\n").slice(-5000),
+    [messages]
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -142,6 +291,57 @@ export function ConversationCapture({
     return () => {
       hardStopInternal();
     };
+  }, []);
+
+  useEffect(() => {
+    if (step !== "recording" || messages.length === 0 || !transcriptSignature) return;
+    if (assistRequestSignatureRef.current === transcriptSignature) return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setIsAssisting(true);
+      try {
+        const res = await fetch("/api/capture/conversation-assist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            messages: messages.slice(-14).map((message) => ({
+              speaker: message.speakerLabel,
+              text: message.text,
+              timestamp: message.timestamp,
+            })),
+          }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Question helper unavailable");
+        }
+        const data = (await res.json()) as ConversationAssist;
+        assistRequestSignatureRef.current = transcriptSignature;
+        setConversationAssist(data);
+        setAssistError(null);
+      } catch (err: unknown) {
+        if (getErrorName(err) === "AbortError") return;
+        console.warn("Conversation assist failed:", err);
+        setAssistError("Live questions are unavailable, but recording still works.");
+      } finally {
+        if (!controller.signal.aborted) setIsAssisting(false);
+      }
+    }, 900);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [messages, step, transcriptSignature]);
+
+  const handleCopyQuestion = useCallback((question: string) => {
+    setCopiedQuestion(question);
+    void navigator.clipboard?.writeText(question).catch(() => undefined);
+    window.setTimeout(() => {
+      setCopiedQuestion((current) => (current === question ? null : current));
+    }, 1300);
   }, []);
 
   const uploadChunk = useCallback(async (blob: Blob, mimeType: string) => {
@@ -428,17 +628,19 @@ export function ConversationCapture({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🎙️</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+              <Mic2 className="h-4 w-4" aria-hidden="true" />
+            </span>
             <div>
               <h2 className="text-sm font-semibold text-neutral-900">
-                Heritage capture
+                Recipe conversation
               </h2>
               <p className="text-[11px] text-neutral-500">
-                {step === "recording" && isRecording && "Recording — speak naturally"}
-                {step === "recording" && !isRecording && messages.length === 0 && "Press start to begin"}
-                {step === "recording" && !isRecording && messages.length > 0 && "Press start to keep talking, or Done to save"}
-                {step === "naming" && "Who was speaking?"}
-                {step === "processing" && "Extracting your recipe…"}
+                {step === "recording" && isRecording && "Listening, translating gist, and spotting gaps"}
+                {step === "recording" && !isRecording && messages.length === 0 && "Start while the recipe is being narrated"}
+                {step === "recording" && !isRecording && messages.length > 0 && "Keep talking, or review and save"}
+                {step === "naming" && "Confirm who was speaking"}
+                {step === "processing" && "Extracting your recipe..."}
               </p>
             </div>
           </div>
@@ -454,14 +656,25 @@ export function ConversationCapture({
           <>
             {/* Chat log */}
             <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4 space-y-2">
+              <ConversationAssistPanel
+                assist={conversationAssist}
+                isLoading={isAssisting}
+                error={assistError}
+                copiedQuestion={copiedQuestion}
+                hasMessages={messages.length > 0}
+                onCopyQuestion={handleCopyQuestion}
+              />
+
               {messages.length === 0 && !isRecording && !connecting && (
                 <div className="flex h-full items-center justify-center">
                   <div className="max-w-xs text-center">
-                    <div className="mb-4 text-4xl">🗣️</div>
-                    <p className="text-sm text-neutral-600">
-                      Press <strong>Start conversation</strong> and the AI will
-                      listen to whoever is speaking. Each person gets their own
-                      side of the chat. You&apos;ll label them at the end.
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#800020]/10 text-[#800020]">
+                      <Mic2 className="h-6 w-6" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm leading-6 text-neutral-600">
+                      Start while a parent or grandparent explains the recipe.
+                      Mychelin will capture the transcript, translate the gist,
+                      and suggest questions you can ask out loud.
                     </p>
                   </div>
                 </div>
@@ -533,8 +746,8 @@ export function ConversationCapture({
                 )}
               </div>
               <p className="mt-2 text-center text-[11px] text-neutral-500">
-                The AI auto-detects the language — including Cantonese, Hokkien,
-                Mandarin, and English.
+                Auto-detects mixed family language and preserves original terms
+                for review after the conversation.
               </p>
             </div>
           </>
@@ -544,9 +757,9 @@ export function ConversationCapture({
           <>
             <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4">
               <p className="mb-4 text-sm text-neutral-600">
-                The AI heard {uniqueSpeakerLabels.length}{" "}
+                Mychelin heard {uniqueSpeakerLabels.length}{" "}
                 {uniqueSpeakerLabels.length === 1 ? "speaker" : "speakers"}.
-                Who were they?
+                Confirm the names before saving the recipe.
               </p>
               <div className="space-y-3">
                 {uniqueSpeakerLabels.map((label, i) => {

@@ -13,7 +13,8 @@ export type UsageEventName =
   | "shopping_list_generated"
   | "cook_attempt_created"
   | "attempt_promoted_to_version"
-  | "transcription_completed";
+  | "transcription_completed"
+  | "conversation_assist_completed";
 
 type Primitive = string | number | boolean | null;
 export type UsageEventProperties = Record<string, Primitive | Primitive[]>;

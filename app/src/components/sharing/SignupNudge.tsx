@@ -30,14 +30,17 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   // Read persisted dismissal once on mount so SSR doesn't flash a
   // banner the user already closed.
   useEffect(() => {
-    try {
-      if (localStorage.getItem(DISMISS_KEY) === "1") {
-        setDismissed(true);
+    const timer = window.setTimeout(() => {
+      try {
+        if (localStorage.getItem(DISMISS_KEY) === "1") {
+          setDismissed(true);
+        }
+      } catch {
+        /* storage might be unavailable */
       }
-    } catch {
-      /* storage might be unavailable */
-    }
-    setHydrated(true);
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Auto-open the full modal once after ~2 seconds so new visitors
@@ -138,9 +141,8 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
               <span className="font-semibold text-[#521224]">
                 &ldquo;{resourceName}&rdquo;
               </span>
-              . Join Mychelin to save it, capture family recipes from
-              conversations in any dialect, and build your own heritage
-              cookbook.
+              . Join Mychelin to save it, capture family recipes through
+              live conversation help, and build your own heritage cookbook.
             </p>
             <ul className="mt-5 space-y-2 text-sm text-neutral-700">
               <li className="flex items-center gap-2">
@@ -149,8 +151,7 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-[#800020]">✓</span>
-                Capture recipes from conversations in Cantonese, Hokkien,
-                Mandarin, or English
+                Get live gist translation and question prompts during family recipe talks
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-[#800020]">✓</span>

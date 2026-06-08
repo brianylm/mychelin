@@ -534,7 +534,7 @@ function RecipeWorkspaceContent({
                   className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
-                    Record conversation
+                    Live conversation
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
                     <Mic2 className="h-[18px] w-[18px]" />

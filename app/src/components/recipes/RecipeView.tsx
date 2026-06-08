@@ -1006,14 +1006,13 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                 </div>
                 <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
                   <h3 className="text-sm font-semibold text-[#241017]">
-                    Capture from a conversation
+                    Live conversation capture
                   </h3>
                   <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
                     AI
                   </span>
                   <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
-                    Talk with a parent or grandparent in their own dialect.
-                    We&apos;ll transcribe and extract the recipe.
+                    Talk with a parent or grandparent while Mychelin translates the gist and suggests follow-up questions.
                   </p>
                 </div>
               </button>
@@ -1373,9 +1372,9 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         />
       )}
 
-      {/* Heritage capture modal — opened from the empty-state CTA above.
-          Streams audio to Gemini, lets the user label speakers after
-          recording, then PATCHes this recipe with the extracted data. */}
+      {/* Live conversation modal — opened from the empty-state CTA above.
+          Uses OpenAI-first transcription with Gemini fallback, surfaces
+          live assistance, then PATCHes this recipe after speaker review. */}
       {showCaptureModal && selectedRecipe && (
         <ConversationCapture
           recipeId={selectedRecipe.id}

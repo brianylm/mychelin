@@ -26,7 +26,7 @@ const logoSerif = Libre_Baskerville({
 export const metadata: Metadata = {
   title: "Mychelin",
   description:
-    "Cook like home, even in your new home.",
+    "Capture family recipes through live conversation help, then plan, shop, and cook like home.",
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/favicon.ico" }],

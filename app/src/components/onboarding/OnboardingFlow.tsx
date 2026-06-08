@@ -28,7 +28,7 @@ const frequencies: Array<{ value: Frequency; label: string }> = [
 ];
 
 const captureModes: Array<{ value: CaptureMode; title: string; body: string }> = [
-  { value: "voice", title: "Record a conversation", body: "Best for asking family cooks how they really do it." },
+  { value: "voice", title: "Live recipe conversation", body: "Best for sitting with a family cook while Mychelin translates the gist and suggests what to ask." },
   { value: "paste", title: "Paste notes", body: "Best for WhatsApp messages, rough lists, or old docs." },
   { value: "url", title: "Import a URL", body: "Best for recipes you want to adapt into your style." },
   { value: "scratch", title: "Start from scratch", body: "Best when you already know the recipe shape." },
