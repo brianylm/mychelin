@@ -1577,3 +1577,29 @@ Follow-ups:
 
 - User should retest Record conversation in-browser: after mic permission, the modal should immediately show Recording now and an audio meter; live text should appear via OpenAI Realtime if billing/tier is active, or via browser captions where supported.
 - If OpenAI Realtime remains unavailable after billing setup, inspect `/api/capture/realtime-transcription` production logs for the provider status and consider migrating the handshake to the latest documented realtime transcription session flow if needed.
+
+### 2026-06-08 - Conversation transcript fallback hardening
+
+Changed/decided:
+
+- Updated conversation capture so short-batch transcription runs in parallel with browser live captions, preventing a blank chat if the browser recognizer claims to start but emits no text.
+- Reduced audio chunk duration to 2.5 seconds and suppresses delayed chunk text when recent live captions have already appeared, avoiding obvious duplicates.
+- Added an in-chat "Listening for words..." placeholder when audio is detected but no transcript text has appeared yet.
+- Deployed the change to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/components/capture/ConversationCapture.tsx`
+
+Checks:
+
+- Focused `npx eslint src/components/capture/ConversationCapture.tsx` passed.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/` and `/app` returned HTTP 200.
+
+Follow-ups:
+
+- User should retest by speaking immediately after recording starts. Expected: audio meter moves; if live caption events fire, text appears directly; if not, the chat shows the listening placeholder and short-batch transcript should appear when speech transcription is available.
+- If no transcript appears after this change, inspect production logs for `/api/capture/transcribe-whisper` and `/api/capture/realtime-transcription`; likely remaining cause is OpenAI billing/tier or unsupported browser speech recognition on the test device.
