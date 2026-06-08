@@ -1508,3 +1508,22 @@ Follow-ups:
 
 - Add OPENAI_API_KEY to Vercel Production to enable OpenAI Realtime/transcription; DeepSeek does not transcribe audio.
 - Manually test full conversation flow in browser: live captions, DeepSeek suggested questions, stop, label speaker, extract/save recipe.
+
+
+### 2026-06-08 - OpenAI production key enabled
+
+Changed/decided:
+
+- User added OPENAI_API_KEY to Vercel Production.
+- Vercel automatically created a new Production deployment after the env var was added.
+- Confirmed the latest Production deployment is Ready and the live app responds at https://mychelin-sg.vercel.app.
+
+Checks:
+
+- npx vercel env ls shows OPENAI_API_KEY present in Production, value encrypted.
+- npx vercel inspect mychelin-bs3orrxiq-brianylms-projects.vercel.app --wait reported Ready.
+- Production smoke passed: /app returned 200; seeded login returned 200; authenticated empty-SDP POST to /api/capture/realtime-transcription returned 400 "SDP offer is required" instead of the previous 503 missing OpenAI key; seeded user cleanup remaining 0.
+
+Follow-ups:
+
+- Manual browser microphone test is now the next required validation: start conversation capture, confirm OpenAI Realtime captions connect before browser fallback, stop, label speaker, and extract/save recipe.
