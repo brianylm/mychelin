@@ -123,6 +123,29 @@ Known stale or conflicting external notes:
 
 ## Session Log
 
+### 2026-06-08 - Production deploy for live conversation helper
+
+Changed/decided:
+
+- Deployed commit `8e05b7a Add live conversation helper` to production after preview auth was not usable for user testing.
+- Production alias updated: `https://mychelin-sg.vercel.app`.
+- Verified the new `/api/capture/conversation-assist` route exists in the production build and rejects unauthenticated requests.
+
+Checks:
+
+- `git status --short` was clean before deploy.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production landing page returned HTTP 200.
+- Production unauthenticated `POST /api/capture/conversation-assist` returned `Unauthorized`.
+- Production smoke passed with a throwaway user: signup 201, auth me 200, recipe create 201, ingredient create 201, instruction create 201, recipe fetch 200, recipe delete 200, login 200.
+- Throwaway production smoke user was deleted from Turso; remaining count 0.
+
+Follow-ups:
+
+- User should test live conversation capture on production with microphone permissions and real mixed-language audio.
+- Next technical step remains true streamed captions/translation if near-live chunked assistance is not fast enough.
+
 ### 2026-06-08 - Live recipe conversation helper implementation
 
 Changed/decided:
