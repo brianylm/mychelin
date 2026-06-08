@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@radix-ui/themes";
 import { StopIcon, MagicWandIcon, Cross2Icon } from "@radix-ui/react-icons";
-import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2 } from "lucide-react";
+import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower } from "lucide-react";
 import { ChatBubble } from "./ChatBubble";
 
 // Modal-based conversation facilitation. Opens from the recipe page,
@@ -17,6 +17,7 @@ interface ConversationMessage {
   speakerLabel: string; // raw label from Gemini, e.g. "Speaker 1"
   text: string;
   timestamp: string;
+  isPartial?: boolean;
 }
 
 interface ConversationAssist {
@@ -59,8 +60,9 @@ interface ConversationCaptureProps {
 }
 
 type ModalStep = "recording" | "naming" | "processing";
+type TranscriptionMode = "idle" | "realtime" | "chunked";
 
-const CHUNK_DURATION_MS = 4000;
+const CHUNK_DURATION_MS = 3000;
 
 // Detect the "not configured" error from the transcribe / extract routes
 // so we can show a richer banner with setup steps instead of a tiny red
@@ -112,6 +114,7 @@ function ConversationAssistPanel({
   copiedQuestion,
   hasMessages,
   onCopyQuestion,
+  transcriptionMode,
 }: {
   assist: ConversationAssist | null;
   isLoading: boolean;
@@ -119,10 +122,16 @@ function ConversationAssistPanel({
   copiedQuestion: string | null;
   hasMessages: boolean;
   onCopyQuestion: (question: string) => void;
+  transcriptionMode: TranscriptionMode;
 }) {
   const questions = assist?.suggestedQuestions ?? [];
   const missingCues = assist?.missingCues ?? [];
   const uncertainTerms = assist?.uncertainTerms ?? [];
+  const statusLabel = transcriptionMode === "realtime"
+    ? "Realtime captions"
+    : transcriptionMode === "chunked"
+      ? "Backup captions"
+      : "Ready";
 
   return (
     <div
@@ -147,12 +156,18 @@ function ConversationAssistPanel({
             </p>
           </div>
         </div>
-        {copiedQuestion && (
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#17131f] px-2.5 py-1 text-[10px] font-semibold text-white">
-            <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
-            Copied
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-stone-600 ring-1 ring-[#eadfd0]">
+            <RadioTower className="h-3 w-3 text-[#800020]" aria-hidden="true" />
+            {statusLabel}
           </span>
-        )}
+          {copiedQuestion && (
+            <span className="flex items-center gap-1 rounded-full bg-[#17131f] px-2.5 py-1 text-[10px] font-semibold text-white">
+              <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
+              Copied
+            </span>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -260,6 +275,7 @@ export function ConversationCapture({
   const [isRecording, setIsRecording] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [processingChunks, setProcessingChunks] = useState(0);
+  const [transcriptionMode, setTranscriptionMode] = useState<TranscriptionMode>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [conversationAssist, setConversationAssist] = useState<ConversationAssist | null>(null);
   const [isAssisting, setIsAssisting] = useState(false);
@@ -273,6 +289,9 @@ export function ConversationCapture({
   // Recorder refs (don't want to re-render on every chunk)
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
+  const realtimeCommitIntervalRef = useRef<number | null>(null);
   const mimeTypeRef = useRef<string>("audio/webm");
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -287,11 +306,6 @@ export function ConversationCapture({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-    return () => {
-      hardStopInternal();
-    };
-  }, []);
 
   useEffect(() => {
     if (step !== "recording" || messages.length === 0 || !transcriptSignature) return;
@@ -342,6 +356,64 @@ export function ConversationCapture({
     window.setTimeout(() => {
       setCopiedQuestion((current) => (current === question ? null : current));
     }, 1300);
+  }, []);
+
+  const appendRealtimeDelta = useCallback((itemId: string, delta: string) => {
+    const cleanDelta = delta;
+    if (!cleanDelta.trim()) return;
+    const messageId = "realtime-" + itemId;
+    setMessages((prev) => {
+      const existingIndex = prev.findIndex((message) => message.id === messageId);
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        const current = next[existingIndex];
+        next[existingIndex] = {
+          ...current,
+          text: current.text + cleanDelta,
+          isPartial: true,
+          timestamp: new Date().toISOString(),
+        };
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          id: messageId,
+          speakerLabel: "Live transcript",
+          text: cleanDelta.trimStart(),
+          timestamp: new Date().toISOString(),
+          isPartial: true,
+        },
+      ];
+    });
+  }, []);
+
+  const completeRealtimeTranscript = useCallback((itemId: string, transcript: string) => {
+    const text = transcript.trim();
+    if (!text) return;
+    const messageId = "realtime-" + itemId;
+    setMessages((prev) => {
+      const existingIndex = prev.findIndex((message) => message.id === messageId);
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        next[existingIndex] = {
+          ...next[existingIndex],
+          text,
+          isPartial: false,
+          timestamp: new Date().toISOString(),
+        };
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          id: messageId,
+          speakerLabel: "Live transcript",
+          text,
+          timestamp: new Date().toISOString(),
+        },
+      ];
+    });
   }, []);
 
   const uploadChunk = useCallback(async (blob: Blob, mimeType: string) => {
@@ -428,8 +500,113 @@ export function ConversationCapture({
     }
   }, []);
 
-  const hardStopInternal = () => {
+  const stopRealtimeInternal = useCallback(() => {
+    if (realtimeCommitIntervalRef.current != null) {
+      window.clearInterval(realtimeCommitIntervalRef.current);
+      realtimeCommitIntervalRef.current = null;
+    }
+    try {
+      dataChannelRef.current?.close();
+    } catch {
+      /* ignore */
+    }
+    dataChannelRef.current = null;
+    try {
+      peerConnectionRef.current?.close();
+    } catch {
+      /* ignore */
+    }
+    peerConnectionRef.current = null;
+  }, []);
+
+  const startRealtimeTranscription = useCallback(async (stream: MediaStream): Promise<boolean> => {
+    if (typeof RTCPeerConnection === "undefined") return false;
+
+    stopRealtimeInternal();
+    const peerConnection = new RTCPeerConnection();
+    peerConnectionRef.current = peerConnection;
+
+    for (const track of stream.getAudioTracks()) {
+      peerConnection.addTrack(track, stream);
+    }
+
+    const dataChannel = peerConnection.createDataChannel("oai-events");
+    dataChannelRef.current = dataChannel;
+
+    const commitAudio = () => {
+      const channel = dataChannelRef.current;
+      if (channel?.readyState !== "open") return;
+      try {
+        channel.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
+      } catch {
+        /* ignore intermittent empty-buffer commits */
+      }
+    };
+
+    dataChannel.onopen = () => {
+      commitAudio();
+      realtimeCommitIntervalRef.current = window.setInterval(commitAudio, 2200);
+    };
+
+    dataChannel.onmessage = (message) => {
+      try {
+        const event = JSON.parse(String(message.data)) as {
+          type?: string;
+          item_id?: string;
+          delta?: string;
+          transcript?: string;
+          error?: { message?: string };
+        };
+        const itemId = event.item_id || "turn-" + Date.now();
+        if (event.type === "conversation.item.input_audio_transcription.delta" && event.delta) {
+          appendRealtimeDelta(itemId, event.delta);
+        }
+        if (event.type === "conversation.item.input_audio_transcription.completed" && event.transcript) {
+          completeRealtimeTranscript(itemId, event.transcript);
+        }
+        if (event.type === "error" && event.error?.message) {
+          console.warn("Realtime transcription event error:", event.error.message);
+        }
+      } catch (error) {
+        console.warn("Failed to parse realtime transcription event:", error);
+      }
+    };
+
+    dataChannel.onerror = () => {
+      setAssistError("Realtime captions had a connection issue. Keep talking; backup transcription may still run after reconnect.");
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+      if (peerConnection.connectionState === "failed" || peerConnection.connectionState === "disconnected") {
+        setAssistError("Realtime captions disconnected. Stop and restart if the transcript stops moving.");
+      }
+    };
+
+    try {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      const response = await fetch("/api/capture/realtime-transcription", {
+        method: "POST",
+        headers: { "Content-Type": "application/sdp" },
+        body: offer.sdp || "",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Realtime transcription unavailable");
+      }
+      const answerSdp = await response.text();
+      await peerConnection.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      return true;
+    } catch (error) {
+      console.warn("Realtime transcription unavailable, using chunked fallback:", error);
+      stopRealtimeInternal();
+      return false;
+    }
+  }, [appendRealtimeDelta, completeRealtimeTranscript, stopRealtimeInternal]);
+
+  const hardStopInternal = useCallback(() => {
     recordingActiveRef.current = false;
+    stopRealtimeInternal();
     try {
       mediaRecorderRef.current?.stop();
     } catch {
@@ -438,7 +615,14 @@ export function ConversationCapture({
     mediaRecorderRef.current = null;
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
-  };
+    setTranscriptionMode("idle");
+  }, [stopRealtimeInternal]);
+
+  useEffect(() => {
+    return () => {
+      hardStopInternal();
+    };
+  }, [hardStopInternal]);
 
   const startChunkRecorder = useCallback(() => {
     const stream = mediaStreamRef.current;
@@ -472,6 +656,7 @@ export function ConversationCapture({
 
   const startRecording = useCallback(async () => {
     setErrorMessage(null);
+    setAssistError(null);
     setConnecting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -482,6 +667,15 @@ export function ConversationCapture({
         },
       });
       mediaStreamRef.current = stream;
+
+      recordingActiveRef.current = true;
+      const realtimeStarted = await startRealtimeTranscription(stream);
+      if (realtimeStarted) {
+        setTranscriptionMode("realtime");
+        setIsRecording(true);
+        setConnecting(false);
+        return;
+      }
 
       const candidates = [
         "audio/webm;codecs=opus",
@@ -498,7 +692,8 @@ export function ConversationCapture({
       }
       mimeTypeRef.current = mimeType;
 
-      recordingActiveRef.current = true;
+      setTranscriptionMode("chunked");
+      setAssistError("Realtime captions are unavailable, so Mychelin is using backup chunked transcription.");
       setIsRecording(true);
       setConnecting(false);
       startChunkRecorder();
@@ -512,12 +707,12 @@ export function ConversationCapture({
       setConnecting(false);
       hardStopInternal();
     }
-  }, [startChunkRecorder]);
+  }, [hardStopInternal, startChunkRecorder, startRealtimeTranscription]);
 
   const stopRecording = useCallback(() => {
     setIsRecording(false);
     hardStopInternal();
-  }, []);
+  }, [hardStopInternal]);
 
   // Unique speaker labels that appeared during the conversation, in the
   // order they first spoke. Used in the naming step.
@@ -663,6 +858,7 @@ export function ConversationCapture({
                 copiedQuestion={copiedQuestion}
                 hasMessages={messages.length > 0}
                 onCopyQuestion={handleCopyQuestion}
+                transcriptionMode={transcriptionMode}
               />
 
               {messages.length === 0 && !isRecording && !connecting && (
@@ -681,15 +877,35 @@ export function ConversationCapture({
               )}
 
               {messages.map((m) => (
-                <ChatBubble
-                  key={m.id}
-                  speaker={m.speakerLabel}
-                  text={m.text}
-                  language="auto"
-                  timestamp={m.timestamp}
-                  isRight={sideForLabel(m.speakerLabel) === "right"}
-                />
+                <div key={m.id} className="relative">
+                  <ChatBubble
+                    speaker={m.speakerLabel}
+                    text={m.text}
+                    language={m.isPartial ? "live" : "auto"}
+                    timestamp={m.timestamp}
+                    isRight={sideForLabel(m.speakerLabel) === "right"}
+                  />
+                  {m.isPartial && (
+                    <div className="-mt-3 mb-3 flex justify-start pl-2">
+                      <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#800020]">
+                        updating
+                      </span>
+                    </div>
+                  )}
+                </div>
               ))}
+
+              {isRecording && transcriptionMode === "realtime" && messages.length === 0 && (
+                <div className="flex justify-center py-2">
+                  <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] text-emerald-800 ring-1 ring-emerald-100">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    </span>
+                    Realtime stream connected. Start speaking.
+                  </div>
+                </div>
+              )}
 
               {isRecording && processingChunks > 0 && (
                 <div className="flex justify-center py-2">
@@ -746,8 +962,11 @@ export function ConversationCapture({
                 )}
               </div>
               <p className="mt-2 text-center text-[11px] text-neutral-500">
-                Auto-detects mixed family language and preserves original terms
-                for review after the conversation.
+                {transcriptionMode === "realtime"
+                  ? "Realtime captions stream as the conversation happens; original terms are kept for review."
+                  : transcriptionMode === "chunked"
+                    ? "Backup captions arrive every few seconds and preserve original terms for review."
+                    : "Auto-detects mixed family language and preserves original terms for review after the conversation."}
               </p>
             </div>
           </>

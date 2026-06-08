@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-08",
+    title: "Realtime recipe conversation capture",
+    items: [
+      "Conversation capture now tries a true OpenAI Realtime transcription stream first, so live transcript text can appear while the family cook is still speaking.",
+      "If Realtime cannot connect, Mychelin automatically falls back to the existing chunked OpenAI/Gemini transcription path.",
+      "The live helper now shows whether captions are using Realtime or backup chunked mode, and marks partial text while it is still updating.",
+    ],
+  },
+  {
+    date: "2026-06-08",
     title: "Pilot readiness loop",
     items: [
       "Profile now includes a Pilot loop checklist for the first Mychelin run-through.",
