@@ -23,8 +23,11 @@ import { AiDraftRecipeModal } from "@/components/capture/AiDraftRecipeModal";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { CookWithMeSession } from "@/components/recipes/CookWithMeSession";
 import { MultiCookWithMeSession } from "@/components/recipes/MultiCookWithMeSession";
+import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import { useToast } from "@/context/ToastContext";
 import { ClipboardPaste, Link, Mic2, PencilLine, Sparkles } from "lucide-react";
+
+type PilotFeedbackStage = "first_capture" | "first_cook" | "first_version" | "pilot_general";
 
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
@@ -115,6 +118,15 @@ function RecipeWorkspaceContent({
     recipe: RecipeWithRelations;
     mealPlanId?: number;
   }> | null>(null);
+  const [pilotFeedbackStage, setPilotFeedbackStage] = useState<PilotFeedbackStage | null>(null);
+
+  const promptPilotFeedback = useCallback((stage: PilotFeedbackStage) => {
+    if (typeof window === "undefined") return;
+    const key = "mychelin_pilot_feedback_prompted_" + stage;
+    if (window.localStorage.getItem(key) === "1") return;
+    window.localStorage.setItem(key, "1");
+    window.setTimeout(() => setPilotFeedbackStage(stage), 600);
+  }, []);
 
   const handleNavigateToRecipe = useCallback((recipeId: number) => {
     // Always refresh the list — a navigation often follows a fork/create
@@ -207,6 +219,7 @@ function RecipeWorkspaceContent({
 
     if (activeCookMeal.mealPlanId == null) {
       addToast("Cooking session saved", "success");
+      promptPilotFeedback("first_cook");
       return;
     }
 
@@ -222,7 +235,8 @@ function RecipeWorkspaceContent({
     }
 
     addToast("Cooking session saved and meal marked cooked", "success");
-  }, [activeCookMeal, addToast, qc]);
+    promptPilotFeedback("first_cook");
+  }, [activeCookMeal, addToast, promptPilotFeedback, qc]);
 
 
   const handleCookBatchComplete = useCallback(async (mealPlanIds: number[]) => {
@@ -245,7 +259,8 @@ function RecipeWorkspaceContent({
     }
 
     addToast("Batch cooking attempts saved", "success");
-  }, [activeCookBatch, addToast, qc]);
+    promptPilotFeedback("first_cook");
+  }, [activeCookBatch, addToast, promptPilotFeedback, qc]);
 
   // ── FAB speed-dial state ─────────────────────────────────
   const [fabOpen, setFabOpen] = useState(false);
@@ -361,7 +376,8 @@ function RecipeWorkspaceContent({
     }
     setConversationRecipeId(null);
     addToast("Recipe captured from conversation", "success");
-  }, [addToast, conversationRecipeId, qc]);
+    promptPilotFeedback("first_capture");
+  }, [addToast, conversationRecipeId, promptPilotFeedback, qc]);
 
   const handleCreateAiDraft = useCallback(async (draft: {
     title: string;
@@ -397,7 +413,8 @@ function RecipeWorkspaceContent({
     setSidebarOpen(false);
     setFabOpen(false);
     addToast("Draft recipe created", "success");
-  }, [addToast, qc, selectRecipe, setCurrentView, setSidebarOpen]);
+    promptPilotFeedback("first_capture");
+  }, [addToast, promptPilotFeedback, qc, selectRecipe, setCurrentView, setSidebarOpen]);
 
   const handlePasteModalClose = useCallback(async () => {
     const abandonedRecipeId = pasteRecipeId;
@@ -421,7 +438,8 @@ function RecipeWorkspaceContent({
       qc.invalidateQueries({ queryKey: ["recipe", pasteRecipeId] });
     }
     setPasteRecipeId(null);
-  }, [qc, pasteRecipeId]);
+    promptPilotFeedback("first_capture");
+  }, [pasteRecipeId, promptPilotFeedback, qc]);
 
   const showFab = currentView === "recipes" && !isSidebarOpen;
 
@@ -611,6 +629,14 @@ function RecipeWorkspaceContent({
         <AiDraftRecipeModal
           onClose={() => setAiDraftOpen(false)}
           onCreateDraft={handleCreateAiDraft}
+        />
+      )}
+
+      {pilotFeedbackStage && (
+        <PilotFeedbackPrompt
+          stage={pilotFeedbackStage}
+          source="milestone_prompt"
+          onClose={() => setPilotFeedbackStage(null)}
         />
       )}
 

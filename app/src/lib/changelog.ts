@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-08",
+    title: "Pilot readiness loop",
+    items: [
+      "Profile now includes a Pilot loop checklist for the first Mychelin run-through.",
+      "Mychelin can collect privacy-safe pilot feedback after first recipe capture and first cook-with-me completion.",
+      "Pilot feedback is stored separately from recipes, transcripts, and family details.",
+    ],
+  },
+  {
+    date: "2026-06-08",
     title: "Google sign-in",
     items: [
       "Login and signup screens now include Continue with Google.",

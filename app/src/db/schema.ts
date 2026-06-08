@@ -129,6 +129,20 @@ export const notificationJobs = sqliteTable("notification_jobs", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+
+// ─── Pilot Feedback ───────────────────────────────────────
+export const pilotFeedback = sqliteTable("pilot_feedback", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  stage: text("stage").notNull(),
+  rating: integer("rating"),
+  comment: text("comment"),
+  source: text("source"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Recipes ───────────────────────────────────────────────
 export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -438,6 +452,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   pushSubscriptions: many(pushSubscriptions),
   notificationJobs: many(notificationJobs),
+  pilotFeedback: many(pilotFeedback),
 }));
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -650,6 +665,14 @@ export const notificationJobsRelations = relations(notificationJobs, ({ one }) =
   }),
 }));
 
+
+export const pilotFeedbackRelations = relations(pilotFeedback, ({ one }) => ({
+  user: one(users, {
+    fields: [pilotFeedback.userId],
+    references: [users.id],
+  }),
+}));
+
 // ─── Types ─────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -695,3 +718,5 @@ export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type NotificationJob = typeof notificationJobs.$inferSelect;
 export type NewNotificationJob = typeof notificationJobs.$inferInsert;
+export type PilotFeedback = typeof pilotFeedback.$inferSelect;
+export type NewPilotFeedback = typeof pilotFeedback.$inferInsert;

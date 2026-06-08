@@ -1339,3 +1339,41 @@ Checks:
 - npm run build passed from app/.
 - git diff --check passed.
 - Production smoke: /login returned 200 and /api/auth/google/start returned 307 to accounts.google.com with a state cookie.
+
+
+### 2026-06-08 - Pilot readiness feedback loop
+
+Changed/decided:
+
+- Implemented the first pilot-operations slice: a privacy-safe feedback store/API, a Profile pilot checklist, and lightweight milestone feedback prompts.
+- Added pilot_feedback schema, migration, and route-level ensure helper.
+- Added /api/pilot/status for the user's MVP loop checklist based on privacy-safe usage events.
+- Added /api/pilot/feedback for first_capture, first_cook, first_version, and pilot_general feedback stages.
+- Profile now shows a Pilot loop checklist for onboarding, first recipe capture/create, meal plan, shopping list, first cook, and version promotion.
+- RecipeWorkspace now prompts once after first capture and once after first cook-with-me completion, using localStorage to avoid repeated prompting.
+
+Files touched:
+
+- ROADMAP.md
+- app/drizzle/0024_pilot_feedback.sql
+- app/src/app/api/pilot/feedback/route.ts
+- app/src/app/api/pilot/status/route.ts
+- app/src/components/pilot/PilotFeedbackPrompt.tsx
+- app/src/components/pilot/PilotChecklistPanel.tsx
+- app/src/components/RecipeWorkspace.tsx
+- app/src/components/profile/ProfileView.tsx
+- app/src/db/schema.ts
+- app/src/db/ensure-schema.ts
+- app/src/lib/usage-events.ts
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint on touched pilot/profile/workspace/API/schema files passed from app/.
+- git diff --check passed before build/deploy.
+
+Follow-ups:
+
+- Add first promoted-version feedback prompt once the version promotion surface is refined for pilot users.
+- Consider an admin/operator pilot dashboard if usage events and feedback need to be reviewed inside the app instead of through DB/API inspection.

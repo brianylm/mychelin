@@ -14,7 +14,8 @@ export type UsageEventName =
   | "cook_attempt_created"
   | "attempt_promoted_to_version"
   | "transcription_completed"
-  | "conversation_assist_completed";
+  | "conversation_assist_completed"
+  | "pilot_feedback_submitted";
 
 type Primitive = string | number | boolean | null;
 export type UsageEventProperties = Record<string, Primitive | Primitive[]>;

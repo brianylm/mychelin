@@ -35,10 +35,10 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 ### Pilot operations
 
 - Prepare a small pilot runbook covering signup, first recipe capture, first meal plan, shopping-list generation, cook-with-me, attempt notes, and version promotion.
-- Collect privacy-safe feedback after the first capture, first cook session, and first promoted version.
+- Collect privacy-safe feedback after the first capture, first cook session, and first promoted version. Initial implementation covers first capture, first cook, and general pilot feedback; first promoted-version feedback remains a follow-up.
 - Define pilot success metrics around completed core loops, transcript correction burden, recipe quality, and whether users feel more confident cooking the dish again.
 - Maintain synthetic demo data and smoke-test scripts for auth, recipe capture, meal planning, shopping list, cook-with-me, attempts, versions, sharing, and permissions before inviting pilot users.
-- Review usage analytics weekly during the pilot, especially activation drop-offs, failed captures, AI fallback rates, and repeat cooking behavior.
+- Review usage analytics weekly during the pilot, especially activation drop-offs, failed captures, AI fallback rates, repeat cooking behavior, and qualitative feedback notes.
 
 ### Activation, training, and habit loop
 

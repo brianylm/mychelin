@@ -18,6 +18,7 @@ let userOnboardingEnsured = false;
 let usageEventsEnsured = false;
 let notificationsEnsured = false;
 let userOAuthEnsured = false;
+let pilotFeedbackEnsured = false;
 
 export async function ensureVersionLabelColumn(): Promise<void> {
   if (versionLabelEnsured) return;
@@ -321,4 +322,42 @@ export async function ensureUserOAuthColumns(): Promise<void> {
   }
 
   userOAuthEnsured = true;
+}
+
+export async function ensurePilotFeedbackTable(): Promise<void> {
+  if (pilotFeedbackEnsured) return;
+
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) return;
+
+  const client = createClient({ url, authToken });
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS pilot_feedback (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      user_id integer REFERENCES users(id) ON DELETE cascade,
+      stage text NOT NULL,
+      rating integer,
+      comment text,
+      source text,
+      created_at text NOT NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS pilot_feedback_user_id_idx ON pilot_feedback(user_id)`,
+    `CREATE INDEX IF NOT EXISTS pilot_feedback_stage_idx ON pilot_feedback(stage)`,
+    `CREATE INDEX IF NOT EXISTS pilot_feedback_created_at_idx ON pilot_feedback(created_at)`,
+  ];
+
+  for (const statement of statements) {
+    try {
+      await client.execute(statement);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      const msg = message.toLowerCase();
+      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
+        console.warn("ensurePilotFeedbackTable:", message);
+      }
+    }
+  }
+
+  pilotFeedbackEnsured = true;
 }

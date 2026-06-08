@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { EditableField } from "@/components/ui/EditableField";
 import { useToast } from "@/context/ToastContext";
 import { changelogEntries } from "@/lib/changelog";
+import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
 
 const CUISINE_OPTIONS = [
   "Chinese", "Malay", "Indian", "Peranakan", "Eurasian", "Western",
@@ -515,6 +516,8 @@ export function ProfileView() {
             )}
           </div>
         </div>
+
+        <PilotChecklistPanel />
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
           <h2 className="mb-4 text-sm font-semibold text-neutral-800">Basic Information</h2>
