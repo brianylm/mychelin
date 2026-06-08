@@ -1527,3 +1527,25 @@ Checks:
 Follow-ups:
 
 - Manual browser microphone test is now the next required validation: start conversation capture, confirm OpenAI Realtime captions connect before browser fallback, stop, label speaker, and extract/save recipe.
+
+### 2026-06-08 - Landing hero crop adjustment
+
+Changed/decided:
+
+- Nudged the landing hero image crop slightly to improve spacing between the two visible human subjects without changing the asset.
+- Deployed the adjustment to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/app/globals.css`
+
+Checks:
+
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production landing page returned HTTP 200.
+
+Follow-ups:
+
+- User should visually confirm the hero crop on mobile and desktop; if either subject still feels too tight, adjust object-position by another small increment.
