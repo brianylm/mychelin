@@ -38,6 +38,7 @@ import { RecipeSaveStatus } from "./RecipeSaveStatus";
 import { ConversationCapture } from "@/components/capture/ConversationCapture";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
 import { CookingPrinciples } from "@/components/books/CookingPrinciples";
+import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import type { Recipe } from "@/db/schema";
 
 interface BookSummary {
@@ -134,6 +135,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [refinementVersion, setRefinementVersion] = useState<RecipeVersion | null>(null);
   const [viewingVersion, setViewingVersion] = useState<RecipeVersion | null>(null);
   const [versionTimelineKey, setVersionTimelineKey] = useState(0);
+  const [showVersionFeedback, setShowVersionFeedback] = useState(false);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [pasteMode, setPasteMode] = useState<"paste" | "url">("paste");
@@ -142,6 +144,14 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   // random pool to recipes whose title or an ingredient matches.
   const [surpriseByOpen, setSurpriseByOpen] = useState(false);
   const [surpriseByQuery, setSurpriseByQuery] = useState("");
+
+  const promptVersionFeedback = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const key = "mychelin_pilot_feedback_prompted_first_version";
+    if (window.localStorage.getItem(key) === "1") return;
+    window.localStorage.setItem(key, "1");
+    window.setTimeout(() => setShowVersionFeedback(true), 500);
+  }, []);
 
   // Cache for prefetched book recipes
   const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, RecipeCard[]>>({});
@@ -1257,6 +1267,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
               qc.invalidateQueries({ queryKey: ["recipes"] });
               addToast("Attempt promoted to version", "success");
+              promptVersionFeedback();
             }}
           />
 
@@ -1399,6 +1410,14 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             qc.invalidateQueries({ queryKey: ["recipes"] });
             addToast(pasteMode === "url" ? "Recipe imported from URL!" : "Recipe extracted from pasted text!", "success");
           }}
+        />
+      )}
+
+      {showVersionFeedback && (
+        <PilotFeedbackPrompt
+          stage="first_version"
+          source="recipe_attempt_promotion"
+          onClose={() => setShowVersionFeedback(false)}
         />
       )}
 

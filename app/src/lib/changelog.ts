@@ -10,7 +10,8 @@ export const changelogEntries: ChangelogEntry[] = [
     title: "Pilot readiness loop",
     items: [
       "Profile now includes a Pilot loop checklist for the first Mychelin run-through.",
-      "Mychelin can collect privacy-safe pilot feedback after first recipe capture and first cook-with-me completion.",
+      "Mychelin can collect privacy-safe pilot feedback after first recipe capture, first cook-with-me completion, and first attempt promotion.",
+      "The Pilot loop checklist now shows clearer next-step guidance and can be refreshed from Profile.",
       "Pilot feedback is stored separately from recipes, transcripts, and family details.",
     ],
   },

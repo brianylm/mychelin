@@ -9,12 +9,12 @@ export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 const CHECKS = [
-  { id: "onboarding", label: "Set cooking goal", eventNames: ["onboarding_completed"] },
+  { id: "onboarding", label: "Set cooking goals", eventNames: ["onboarding_completed"] },
   { id: "capture", label: "Capture or create first recipe", eventNames: ["recipe_capture_completed", "ai_draft_completed", "recipe_created"] },
   { id: "plan", label: "Plan one meal", eventNames: ["meal_planned"] },
   { id: "shopping", label: "Generate shopping list", eventNames: ["shopping_list_generated"] },
-  { id: "cook", label: "Finish first cook-with-me session", eventNames: ["cook_attempt_created"] },
-  { id: "version", label: "Promote useful attempt notes", eventNames: ["attempt_promoted_to_version"] },
+  { id: "cook", label: "Finish cook-with-me and save an attempt", eventNames: ["cook_attempt_created"] },
+  { id: "version", label: "Promote an attempt to a version", eventNames: ["attempt_promoted_to_version"] },
 ];
 
 export async function GET() {
