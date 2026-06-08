@@ -167,17 +167,21 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
             <>
               {mode !== "forgot" && (
                 <>
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="3"
                     onClick={startGoogleLogin}
                     disabled={loading || googleLoading}
-                    className="!h-12 !w-full !rounded-full !border-[#d8d8d2] !bg-white !font-semibold !text-stone-800 hover:!bg-stone-50"
+                    className="flex h-11 w-full items-center justify-center gap-3 rounded border border-[#dadce0] bg-white px-4 text-[14px] font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8fafd] hover:shadow focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30 disabled:cursor-not-allowed disabled:opacity-70"
+                    style={{ fontFamily: "Roboto, Arial, sans-serif" }}
                   >
-                    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-sm font-bold text-[#4285F4]">G</span>
-                    {googleLoading ? "Opening Google..." : "Continue with Google"}
-                  </Button>
+                    <svg className="h-[18px] w-[18px]" viewBox="0 0 18 18" aria-hidden="true">
+                      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.25h2.91c1.7-1.57 2.69-3.88 2.69-6.6z" />
+                      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.19l-2.91-2.25c-.8.54-1.83.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.96v2.33A9 9 0 0 0 9 18z" />
+                      <path fill="#FBBC05" d="M3.95 10.71A5.41 5.41 0 0 1 3.67 9c0-.59.1-1.16.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l2.99-2.33z" />
+                      <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.96l2.99 2.33C4.66 5.16 6.65 3.58 9 3.58z" />
+                    </svg>
+                    <span>{googleLoading ? "Opening Google..." : "Continue with Google"}</span>
+                  </button>
                   <div className="my-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
                     <span className="h-px flex-1 bg-stone-200" />
                     <span>{mode === "signup" ? "or create with email" : "or sign in with email"}</span>
