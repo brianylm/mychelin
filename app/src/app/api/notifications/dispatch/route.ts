@@ -13,7 +13,7 @@ function isAuthorized(request: NextRequest): boolean {
   if (cronSecret) {
     return request.headers.get("authorization") === "Bearer " + cronSecret;
   }
-  return request.headers.get("x-vercel-cron") === "1" || request.nextUrl.searchParams.get("cron") === "1";
+  return request.headers.get("x-vercel-cron") === "1";
 }
 
 function configureWebPush() {
