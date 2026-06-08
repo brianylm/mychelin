@@ -1294,3 +1294,28 @@ Checks:
 Follow-ups:
 
 - Deploy to production and manually test the full Google browser redirect flow with a Google test user. API-only smoke can verify redirect wiring, but it cannot complete Google's hosted login page.
+
+
+### 2026-06-08 - Google sign-in production deploy
+
+Changed/decided:
+
+- Deployed Google sign-in to production at https://mychelin-sg.vercel.app.
+- Added a follow-up safety fix so normal signup, login lookup, and profile preferences ensure the new OAuth user columns before querying users.
+
+Commits:
+
+- 837bcb2 Add Google sign-in
+- 861eaf9 Ensure Google auth user columns before auth queries
+
+Checks:
+
+- npx eslint on Google OAuth routes, AuthScreen, auth helper, signup route, user preferences route, schema, and ensure-schema passed from app/ with only the existing Mychelin logo img warning.
+- npm run build passed from app/.
+- Production deploy aliased to https://mychelin-sg.vercel.app.
+- Production smoke passed: landing 200; /api/auth/google/start returned 307 to Google and set the state cookie; bad callback returned 307 to /login with google_state_mismatch; seeded password login 200; /api/auth/me 200; /api/user/preferences 200; OAuth columns were queryable; synthetic user cleanup remaining 0.
+
+Follow-ups:
+
+- Manual browser test required: click Continue with Google on production with a Google test user and confirm it returns to Mychelin logged in.
+- If pilot users are outside the Google OAuth test-user list, add them in Google Auth Platform or publish/verify the app when ready.
