@@ -241,7 +241,7 @@ Guidelines:
 - If the text clearly isn't a recipe (random article, etc.), return the shape with empty fields.
 - Do NOT wrap the JSON in markdown code fences.`;
 
-    // Use the shared extraction helper (Gemini with retry + MiniMax fallback)
+    // Use the shared extraction helper (DeepSeek first, optional Gemini/MiniMax fallback)
     const extracted = await extractRecipeText(prompt);
 
     if (!extracted.ok) {

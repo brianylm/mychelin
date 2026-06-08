@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { callDeepSeekJson, isDeepSeekConfigured } from "@/lib/deepseek";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -39,25 +40,54 @@ function normalizeAssist(data: unknown): ConversationAssistResponse {
   };
 }
 
+function cleanJson(text: string): string {
+  return text
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function geminiKey(): string {
+  return process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+}
+
+async function callGeminiAssist(apiKey: string, prompt: string): Promise<{ text: string; model: string }> {
+  const model = "gemini-2.5-flash";
+  const geminiRes = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1200,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
+
+  if (!geminiRes.ok) {
+    const text = await geminiRes.text();
+    throw new Error("Gemini failed: " + geminiRes.status + " " + text.slice(0, 240));
+  }
+
+  const geminiData = await geminiRes.json();
+  const generatedText: string | undefined =
+    geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!generatedText) throw new Error("Gemini returned no text");
+  return { text: generatedText, model };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const apiKey =
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_AI_API_KEY ||
-      process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        {
-          error:
-            "Conversation assistance is not configured. Add GOOGLE_API_KEY or GEMINI_API_KEY.",
-        },
-        { status: 503 }
-      );
     }
 
     const body = (await request.json()) as {
@@ -116,46 +146,55 @@ Rules:
 - Keep translatedGist under 45 words.
 - Return at most 4 suggestedQuestions, 4 missingCues, and 4 uncertainTerms.`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1200,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
+    let generatedText = "";
+    let provider = "";
+    let model = "";
+    let lastError = "";
 
-    if (!geminiRes.ok) {
-      const text = await geminiRes.text();
-      console.error("Gemini conversation assist error:", geminiRes.status, text);
-      return NextResponse.json(
-        { error: "Conversation assistance failed" },
-        { status: 502 }
-      );
+    if (isDeepSeekConfigured()) {
+      try {
+        const deepseek = await callDeepSeekJson({
+          system: "You are Mychelin's live recipe conversation facilitator. Return strict JSON only, no markdown.",
+          prompt,
+          temperature: 0.2,
+          maxTokens: 1200,
+        });
+        generatedText = deepseek.text;
+        provider = "deepseek";
+        model = deepseek.model;
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : "DeepSeek failed";
+        console.error("DeepSeek conversation assist error:", lastError.slice(0, 240));
+      }
     }
 
-    const geminiData = await geminiRes.json();
-    const generatedText: string | undefined =
-      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!generatedText && geminiKey()) {
+      try {
+        const gemini = await callGeminiAssist(geminiKey(), prompt);
+        generatedText = gemini.text;
+        provider = "gemini";
+        model = gemini.model;
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : "Gemini failed";
+        console.error("Gemini conversation assist error:", lastError.slice(0, 240));
+      }
+    }
+
     if (!generatedText) {
-      return NextResponse.json({
-        translatedGist: "",
-        suggestedQuestions: [],
-        missingCues: [],
-        uncertainTerms: [],
-      });
+      return NextResponse.json(
+        {
+          error: isDeepSeekConfigured() || geminiKey()
+            ? "Conversation assistance failed"
+            : "Conversation assistance is not configured. Add DEEPSEEK_API_KEY for DeepSeek text reasoning.",
+          detail: lastError ? lastError.slice(0, 180) : undefined,
+        },
+        { status: isDeepSeekConfigured() || geminiKey() ? 502 : 503 }
+      );
     }
 
     let parsed: unknown;
     try {
-      parsed = JSON.parse(generatedText.replace(/```json\n?|\n?```/g, "").trim());
+      parsed = JSON.parse(cleanJson(generatedText));
     } catch {
       console.error("Failed to parse conversation assist JSON:", generatedText);
       return NextResponse.json(
@@ -170,6 +209,8 @@ Rules:
       eventName: "conversation_assist_completed",
       source: "conversation",
       properties: {
+        provider,
+        model,
         messages_count: messages.length,
         questions_count: assistance.suggestedQuestions.length,
         missing_cues_count: assistance.missingCues.length,

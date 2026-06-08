@@ -29,7 +29,7 @@ The production app lives in [`app/`](./app). The repository root is a deploy wra
 - **Data:** Turso/libSQL, Drizzle ORM
 - **Auth:** JWT cookie auth with bcrypt password hashing
 - **Storage:** Vercel Blob for uploaded assets
-- **AI:** Google Gemini-compatible API key for recipe extraction/transcription workflows
+- **AI:** OpenAI for speech-to-text; DeepSeek V4 Flash for low-cost text reasoning and recipe extraction; optional Gemini fallback for audio/text workflows
 - **Hosting:** Vercel, with root directory set to `app`
 
 ## Repository layout
@@ -68,10 +68,13 @@ TURSO_DATABASE_URL=
 TURSO_AUTH_TOKEN=
 JWT_SECRET=
 BLOB_READ_WRITE_TOKEN=
-GOOGLE_API_KEY=
+OPENAI_API_KEY=
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
 ```
 
-The app also supports Gemini-compatible aliases where implemented. See [`app/.env.example`](./app/.env.example) for the minimal checked-in template.
+Gemini-compatible aliases remain optional where implemented. See [`app/.env.example`](./app/.env.example) for the minimal checked-in template.
 
 ## Common commands
 

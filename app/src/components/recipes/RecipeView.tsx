@@ -1384,7 +1384,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       )}
 
       {/* Live conversation modal — opened from the empty-state CTA above.
-          Uses OpenAI-first transcription with Gemini fallback, surfaces
+          Uses OpenAI/browser live captions with chunked fallback, surfaces
           live assistance, then PATCHes this recipe after speaker review. */}
       {showCaptureModal && selectedRecipe && (
         <ConversationCapture

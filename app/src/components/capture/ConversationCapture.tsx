@@ -109,7 +109,8 @@ function isSetupError(message: string): boolean {
     m.includes("not configured") ||
     m.includes("openai_api_key") ||
     m.includes("gemini_api_key") ||
-    m.includes("google_api_key")
+    m.includes("google_api_key") ||
+    m.includes("deepseek_api_key")
   );
 }
 
@@ -118,12 +119,12 @@ function ErrorBanner({ message }: { message: string }) {
     return (
       <div className="border-t border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs text-[#241017]">
         <div className="mb-1 flex items-center gap-1.5 font-semibold">
-          <span>AI capture needs a transcription key</span>
+          <span>AI capture needs speech and text keys</span>
         </div>
         <p className="leading-relaxed text-[#521224]">
           Add <code className="rounded bg-[#800020]/10 px-1">OPENAI_API_KEY</code>{" "}
-          for OpenAI speech-to-text, or keep <code className="rounded bg-[#800020]/10 px-1">GOOGLE_API_KEY</code>{" "}
-          for the Gemini fallback, then redeploy.
+          for speech-to-text and <code className="rounded bg-[#800020]/10 px-1">DEEPSEEK_API_KEY</code>{" "}
+          for conversation gist, prompts, and recipe extraction.
         </p>
       </div>
     );

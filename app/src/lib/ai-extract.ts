@@ -1,10 +1,12 @@
-// Shared extraction helper — tries Gemini first, then falls back to
-// MiniMax if Gemini exhausts its retries / hits overload. Both paths
+import { callDeepSeekJson, deepSeekModel, isDeepSeekConfigured } from "@/lib/deepseek";
+
+// Shared extraction helper — tries DeepSeek first for low-cost text
+// reasoning, then falls back to Gemini/MiniMax if configured. All paths
 // return the raw JSON string produced by the model.
 
 export interface ExtractResult {
   text: string;
-  provider: "gemini" | "minimax";
+  provider: "deepseek" | "gemini" | "minimax";
   model: string;
 }
 
@@ -121,8 +123,28 @@ export async function extractRecipeText(
   let lastStatus = 0;
   let lastBody = "";
 
-  // Try Gemini models — 2.0-flash first (most stable), then 2.5-flash
-  // (smarter but more often overloaded). One retry each on transient errors.
+  if (isDeepSeekConfigured()) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await callDeepSeekJson({
+          system: "You are a recipe extraction assistant. Return only valid JSON matching the schema in the user message. No prose, no markdown fences.",
+          prompt,
+          temperature: 0.1,
+          maxTokens: 4096,
+        });
+        return {
+          ok: true,
+          result: { text: r.text, provider: "deepseek", model: r.model },
+        };
+      } catch (error) {
+        lastStatus = 502;
+        lastBody = error instanceof Error ? error.message : "DeepSeek failed";
+        console.error("DeepSeek " + deepSeekModel() + " attempt " + (attempt + 1) + " failed:", lastBody.slice(0, 200));
+        if (attempt === 0) await sleep(600);
+      }
+    }
+  }
+
   if (geminiKey) {
     for (const model of ["gemini-2.0-flash", "gemini-2.5-flash"]) {
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -135,7 +157,7 @@ export async function extractRecipeText(
         }
         lastStatus = r.status;
         lastBody = r.body;
-        console.error(`Gemini ${model} attempt ${attempt + 1} failed:`, r.status, r.body.slice(0, 200));
+        console.error("Gemini " + model + " attempt " + (attempt + 1) + " failed:", r.status, r.body.slice(0, 200));
         const isTransient = r.status === 429 || r.status >= 500;
         if (!isTransient) break;
         if (attempt === 0) await sleep(600);
@@ -143,7 +165,6 @@ export async function extractRecipeText(
     }
   }
 
-  // Gemini exhausted (or no key) — try MiniMax if configured.
   if (minimaxKey) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const r = await callMiniMax(minimaxKey, minimaxModel, minimaxBase, prompt);
@@ -155,20 +176,19 @@ export async function extractRecipeText(
       }
       lastStatus = r.status;
       lastBody = r.body;
-      console.error(`MiniMax attempt ${attempt + 1} failed:`, r.status, r.body.slice(0, 200));
+      console.error("MiniMax attempt " + (attempt + 1) + " failed:", r.status, r.body.slice(0, 200));
       const isTransient = r.status === 429 || r.status >= 500;
       if (!isTransient) break;
       if (attempt === 0) await sleep(600);
     }
   }
 
-  // Everything exhausted — surface the last upstream error.
-  if (!geminiKey && !minimaxKey) {
+  if (!isDeepSeekConfigured() && !geminiKey && !minimaxKey) {
     return {
       ok: false,
       error: {
         message:
-          "No AI provider is configured. Set GOOGLE_API_KEY (Gemini) or MINIMAX_API_KEY (MiniMax) in Vercel environment variables.",
+          "No AI text provider is configured. Set DEEPSEEK_API_KEY for DeepSeek, or GOOGLE_API_KEY/GEMINI_API_KEY for Gemini.",
         status: 503,
       },
     };
@@ -192,10 +212,10 @@ export async function extractRecipeText(
         ? "API key invalid or expired"
         : lastStatus >= 500
           ? "AI service overloaded"
-          : `HTTP ${lastStatus}`;
+          : "HTTP " + lastStatus;
   const message = detail
-    ? `${statusHint}: ${detail}`
-    : `${statusHint} — extraction failed after retrying all providers`;
+    ? statusHint + ": " + detail
+    : statusHint + " — extraction failed after retrying all providers";
   console.error("AI extract exhausted all providers:", lastStatus, lastBody);
   return { ok: false, error: { message, status: 502 } };
 }

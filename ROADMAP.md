@@ -16,7 +16,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Support live conversation assistance while a family cook narrates: near-realtime transcription, lightweight translation, and suggested follow-up questions so the learner can stay in the conversation.
 - Preserve side-by-side original phrasing and translated cooking instructions so family terms, sensory cues, and cultural context are not flattened.
 - Add reviewer flows so families can correct AI transcription/translation before the generated recipe becomes definitive.
-- Treat full realtime translation as a core product capability. Initial implementation now tries OpenAI Realtime transcription first, falls back to browser live captions when OpenAI Realtime is unavailable, then falls back to chunked OpenAI/Gemini transcription. It still needs real-audio pilot validation for dialect accuracy, latency, and speaker labeling.
+- Treat full realtime translation as a core product capability. Initial implementation now tries OpenAI Realtime transcription first, falls back to browser live captions when OpenAI Realtime is unavailable, then falls back to chunked OpenAI/Gemini transcription. Text reasoning uses DeepSeek first when configured. It still needs real-audio pilot validation for dialect accuracy, latency, and speaker labeling.
 
 ### Conversation facilitation
 
@@ -30,7 +30,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Make voice recording flows clearer on mobile.
 - Add privacy/consent affordances before recording or sharing audio.
 - Separate raw recordings, transcripts, and public recipe text in the UI and data model where needed.
-- Prefer OpenAI Realtime speech-to-text for live captions, browser live captions as a no-key production fallback, OpenAI request/response transcription for backup chunks, and Gemini fallback where dialect handling or diarization needs it.
+- Prefer OpenAI Realtime speech-to-text for live captions, browser live captions as a no-key production fallback, OpenAI request/response transcription for backup chunks, DeepSeek V4 Flash for text reasoning, and Gemini only as an optional fallback where dialect audio handling needs it.
 
 ### Pilot operations
 
@@ -49,7 +49,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Add a sample recipe sandbox so new users can safely practice planning, shopping-list generation, cook-with-me, attempts, and version promotion without risking their own recipes.
 - Add contextual coach tips only at useful moments, e.g. empty recipe, planned meals, shopping-list generation, cook-session completion, and version promotion. Avoid generic modal tours and permanent banners.
 - Add a replayable Learn Mychelin area under Profile for recipe capture, meal planning, shopping list, cook-with-me, and attempts/versioning walkthroughs.
-- Keep improving the first-draft recipe prompt flow: users can ask Mychelin to create specific recipes they want to try, then save them as editable first drafts before cooking/refining. Prefer DeepSeek v4 Flash for structured text drafting when configured, with Gemini fallback; keep OpenAI speech-to-text for audio transcription.
+- Keep improving the first-draft recipe prompt flow: users can ask Mychelin to create specific recipes they want to try, then save them as editable first drafts before cooking/refining. Prefer DeepSeek v4 Flash for structured text drafting, conversation assist, and recipe extraction when configured; keep OpenAI speech-to-text for audio transcription.
 - Treat Duolingo-style stickiness as a low-friction cooking loop, not points for their own sake: one small cooking promise, one first recipe, one attempt, one improvement.
 - Use PWA notifications for practical prompts: planned meals, prep windows, weekly rhythm nudges, and post-cook review reminders. Keep payloads privacy-safe and avoid recipe/transcript detail in push copy.
 - Keep the habit threshold forgiving. A cooking streak should reward showing up without punishing real-life missed days or pushing users to cook daily when weekly cooking is the healthier goal.

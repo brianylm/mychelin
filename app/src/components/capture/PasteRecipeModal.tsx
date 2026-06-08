@@ -190,7 +190,7 @@ export function PasteRecipeModal({
         const { recipe } = (await pasteRes.json()) as { recipe: ExtractedRecipe };
 
         if (!recipe) {
-          throw new Error("Gemini returned an empty recipe object");
+          throw new Error("AI extraction returned an empty recipe object");
         }
 
         await patchRecipe(recipe);
@@ -319,22 +319,13 @@ export function PasteRecipeModal({
             {isSetupError && (
               <div className="border-t border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs text-[#241017]">
                 <div className="mb-1 flex items-center gap-1.5 font-semibold">
-                  <span>⚙️</span>
-                  <span>Recipe extraction needs a Gemini API key</span>
+                  <span>Recipe extraction needs a DeepSeek API key</span>
                 </div>
                 <p className="leading-relaxed text-[#521224]">
                   Add a{" "}
-                  <code className="rounded bg-[#800020]/10 px-1">GOOGLE_API_KEY</code>{" "}
-                  environment variable in Vercel, then redeploy. Free key at{" "}
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    aistudio.google.com/apikey
-                  </a>
-                  .
+                  <code className="rounded bg-[#800020]/10 px-1">DEEPSEEK_API_KEY</code>{" "}
+                  environment variable in Vercel, then redeploy. Use <code className="rounded bg-[#800020]/10 px-1">DEEPSEEK_MODEL</code>{" "}
+                  set to <code className="rounded bg-[#800020]/10 px-1">deepseek-v4-flash</code>.
                 </p>
               </div>
             )}

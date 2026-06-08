@@ -11,6 +11,7 @@ export const changelogEntries: ChangelogEntry[] = [
     items: [
       "Conversation capture now tries a true OpenAI Realtime transcription stream first, so live transcript text can appear while the family cook is still speaking.",
       "If OpenAI Realtime cannot connect, Mychelin falls back to browser live captions first, then the existing chunked OpenAI/Gemini transcription path.",
+      "Conversation gist, question prompts, and recipe extraction now use DeepSeek first when configured, reducing Gemini dependency for text reasoning.",
       "The live helper now shows whether captions are using Realtime, browser, or backup chunked mode, and marks partial text while it is still updating.",
     ],
   },

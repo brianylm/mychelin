@@ -9,8 +9,8 @@ export const preferredRegion = "hnd1";
 // POST /api/capture/paste
 //
 // Takes a blob of pasted text (from a webpage, a messaging app, an
-// OCR'd cookbook page, wherever) and asks an AI provider (Gemini
-// primary, MiniMax fallback) to extract a clean structured recipe
+// OCR'd cookbook page, wherever) and asks an AI provider (DeepSeek
+// primary, optional Gemini/MiniMax fallback) to extract a clean structured recipe
 // from it. Returns the same shape as the existing /api/capture/extract
 // endpoint so the client can PATCH it straight into an existing
 // recipe via /api/recipes/[id].

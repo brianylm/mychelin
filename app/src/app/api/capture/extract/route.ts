@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { callDeepSeekJson, isDeepSeekConfigured } from "@/lib/deepseek";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -15,9 +16,50 @@ interface ExtractRequest {
   conversation: ConversationMessage[];
 }
 
+function cleanJson(text: string): string {
+  return text
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function geminiKey(): string {
+  return process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+}
+
+async function callGeminiExtract(apiKey: string, prompt: string): Promise<string> {
+  const model = "gemini-2.5-flash";
+  const geminiResponse = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 4096,
+          responseMimeType: "application/json",
+        },
+      }),
+    }
+  );
+
+  if (!geminiResponse.ok) {
+    const text = await geminiResponse.text();
+    throw new Error("Gemini failed: " + geminiResponse.status + " " + text.slice(0, 240));
+  }
+
+  const geminiData = await geminiResponse.json();
+  const generatedText: string | undefined = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!generatedText) throw new Error("Gemini returned no recipe data");
+  return generatedText;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
@@ -35,23 +77,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Gemini API key
-    const apiKey =
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_AI_API_KEY ||
-      process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("Missing Google API key");
-      return NextResponse.json(
-        {
-          error:
-            "AI extraction is not configured. Add a GOOGLE_API_KEY (or GEMINI_API_KEY) environment variable in Vercel with a Gemini API key from https://aistudio.google.com/apikey.",
-        },
-        { status: 503 }
-      );
-    }
-
-    // Format conversation for Gemini
     const conversationText = conversation
       .map((msg) => `${msg.speaker}: ${msg.text}`)
       .join("\n");
@@ -95,67 +120,58 @@ Extract the following information in JSON format:
 }
 
 Guidelines:
-- Extract only information that is explicitly mentioned or clearly implied
-- Use null for missing numeric values, empty string for missing text
-- Preserve the cultural context and emotional significance
-- Include any cooking tips, family secrets, or traditional methods mentioned
-- If ingredients or steps are unclear, use the most reasonable interpretation
+- Extract only information that is explicitly mentioned or clearly implied.
+- Use null for missing numeric values, empty string for missing text.
+- Preserve the cultural context, original dish terms, dialect words, and emotional significance.
+- Include any cooking tips, family secrets, or traditional methods mentioned.
+- If ingredients or steps are unclear, preserve uncertainty in notes/tips instead of inventing precision.
 
 Return only the JSON object, no additional text.`;
 
-    // Call Gemini API
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 4096,
-          },
-        }),
-      }
-    );
+    let generatedText = "";
+    let lastError = "";
 
-    if (!geminiResponse.ok) {
-      console.error("Gemini API error:", geminiResponse.statusText);
-      return NextResponse.json(
-        { error: "Failed to process conversation" },
-        { status: 500 }
-      );
+    if (isDeepSeekConfigured()) {
+      try {
+        const deepseek = await callDeepSeekJson({
+          system: "You extract heritage recipe conversations into strict JSON. Preserve uncertainty and family terms. No prose, no markdown.",
+          prompt,
+          temperature: 0.2,
+          maxTokens: 4096,
+        });
+        generatedText = deepseek.text;
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : "DeepSeek failed";
+        console.error("DeepSeek extraction error:", lastError.slice(0, 240));
+      }
     }
 
-    const geminiData = await geminiResponse.json();
-    const generatedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!generatedText && geminiKey()) {
+      try {
+        generatedText = await callGeminiExtract(geminiKey(), prompt);
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : "Gemini failed";
+        console.error("Gemini extraction error:", lastError.slice(0, 240));
+      }
+    }
 
     if (!generatedText) {
-      console.error("No response from Gemini:", geminiData);
       return NextResponse.json(
-        { error: "No recipe data generated" },
-        { status: 500 }
+        {
+          error: isDeepSeekConfigured() || geminiKey()
+            ? "Failed to process conversation"
+            : "AI extraction is not configured. Add DEEPSEEK_API_KEY for DeepSeek recipe extraction.",
+          detail: lastError ? lastError.slice(0, 180) : undefined,
+        },
+        { status: isDeepSeekConfigured() || geminiKey() ? 502 : 503 }
       );
     }
 
-    // Parse the JSON response from Gemini
     let extractedRecipe;
     try {
-      // Clean up the response - remove markdown code blocks if present
-      const cleanedText = generatedText.replace(/```json\n?|\n?```/g, "").trim();
-      extractedRecipe = JSON.parse(cleanedText);
+      extractedRecipe = JSON.parse(cleanJson(generatedText));
     } catch (parseError) {
-      console.error("Failed to parse Gemini response:", parseError, "Response:", generatedText);
+      console.error("Failed to parse extraction response:", parseError, "Response:", generatedText);
       return NextResponse.json(
         { error: "Failed to parse recipe data" },
         { status: 500 }
