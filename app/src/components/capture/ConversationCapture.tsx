@@ -60,9 +60,45 @@ interface ConversationCaptureProps {
 }
 
 type ModalStep = "recording" | "naming" | "processing";
-type TranscriptionMode = "idle" | "realtime" | "chunked";
+type TranscriptionMode = "idle" | "realtime" | "browser" | "chunked";
 
 const CHUNK_DURATION_MS = 3000;
+
+interface BrowserSpeechRecognitionResult {
+  isFinal: boolean;
+  readonly length: number;
+  [index: number]: { transcript: string };
+}
+
+interface BrowserSpeechRecognitionEvent {
+  resultIndex: number;
+  results: {
+    readonly length: number;
+    [index: number]: BrowserSpeechRecognitionResult;
+  };
+}
+
+interface BrowserSpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+    webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+  }
+}
+
 
 // Detect the "not configured" error from the transcribe / extract routes
 // so we can show a richer banner with setup steps instead of a tiny red
@@ -129,9 +165,11 @@ function ConversationAssistPanel({
   const uncertainTerms = assist?.uncertainTerms ?? [];
   const statusLabel = transcriptionMode === "realtime"
     ? "Realtime captions"
-    : transcriptionMode === "chunked"
-      ? "Backup captions"
-      : "Ready";
+    : transcriptionMode === "browser"
+      ? "Browser captions"
+      : transcriptionMode === "chunked"
+        ? "Backup captions"
+        : "Ready";
 
   return (
     <div
@@ -292,6 +330,7 @@ export function ConversationCapture({
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const realtimeCommitIntervalRef = useRef<number | null>(null);
+  const browserSpeechRef = useRef<BrowserSpeechRecognition | null>(null);
   const mimeTypeRef = useRef<string>("audio/webm");
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -416,6 +455,40 @@ export function ConversationCapture({
     });
   }, []);
 
+  const updateBrowserInterim = useCallback((text: string) => {
+    const trimmed = text.trim();
+    const messageId = "browser-interim";
+    setMessages((prev) => {
+      const withoutInterim = prev.filter((message) => message.id !== messageId);
+      if (!trimmed) return withoutInterim;
+      return [
+        ...withoutInterim,
+        {
+          id: messageId,
+          speakerLabel: "Live transcript",
+          text: trimmed,
+          timestamp: new Date().toISOString(),
+          isPartial: true,
+        },
+      ];
+    });
+  }, []);
+
+  const appendBrowserFinal = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setMessages((prev) => [
+      ...prev.filter((message) => message.id !== "browser-interim"),
+      {
+        id: "browser-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+        speakerLabel: "Live transcript",
+        text: trimmed,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  }, []);
+
+
   const uploadChunk = useCallback(async (blob: Blob, mimeType: string) => {
     if (blob.size < 500) return;
     setProcessingChunks((n) => n + 1);
@@ -499,6 +572,74 @@ export function ConversationCapture({
       setProcessingChunks((n) => Math.max(0, n - 1));
     }
   }, []);
+
+  const stopBrowserSpeechInternal = useCallback(() => {
+    const recognition = browserSpeechRef.current;
+    browserSpeechRef.current = null;
+    if (!recognition) return;
+    recognition.onend = null;
+    recognition.onerror = null;
+    recognition.onresult = null;
+    try {
+      recognition.abort();
+    } catch {
+      try {
+        recognition.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
+  const startBrowserSpeechRecognition = useCallback((): boolean => {
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) return false;
+
+    stopBrowserSpeechInternal();
+    const recognition = new Recognition();
+    browserSpeechRef.current = recognition;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-SG";
+
+    recognition.onresult = (event) => {
+      let finalText = "";
+      let interimText = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const transcript = Array.from({ length: result.length }, (_, index) => result[index]?.transcript ?? "").join(" ");
+        if (result.isFinal) finalText += " " + transcript;
+        else interimText += " " + transcript;
+      }
+      if (finalText.trim()) appendBrowserFinal(finalText);
+      updateBrowserInterim(interimText);
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === "no-speech") return;
+      setAssistError("Browser live captions had a connection issue. Mychelin can still use backup chunked transcription if you restart.");
+    };
+
+    recognition.onend = () => {
+      if (!recordingActiveRef.current || browserSpeechRef.current !== recognition) return;
+      window.setTimeout(() => {
+        try {
+          recognition.start();
+        } catch {
+          /* ignore duplicate starts */
+        }
+      }, 300);
+    };
+
+    try {
+      recognition.start();
+      return true;
+    } catch (error) {
+      console.warn("Browser speech recognition unavailable:", error);
+      browserSpeechRef.current = null;
+      return false;
+    }
+  }, [appendBrowserFinal, stopBrowserSpeechInternal, updateBrowserInterim]);
 
   const stopRealtimeInternal = useCallback(() => {
     if (realtimeCommitIntervalRef.current != null) {
@@ -607,6 +748,7 @@ export function ConversationCapture({
   const hardStopInternal = useCallback(() => {
     recordingActiveRef.current = false;
     stopRealtimeInternal();
+    stopBrowserSpeechInternal();
     try {
       mediaRecorderRef.current?.stop();
     } catch {
@@ -616,7 +758,7 @@ export function ConversationCapture({
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     setTranscriptionMode("idle");
-  }, [stopRealtimeInternal]);
+  }, [stopBrowserSpeechInternal, stopRealtimeInternal]);
 
   useEffect(() => {
     return () => {
@@ -677,6 +819,15 @@ export function ConversationCapture({
         return;
       }
 
+      const browserStarted = startBrowserSpeechRecognition();
+      if (browserStarted) {
+        setTranscriptionMode("browser");
+        setAssistError("OpenAI Realtime is unavailable, so Mychelin is using browser live captions for this session.");
+        setIsRecording(true);
+        setConnecting(false);
+        return;
+      }
+
       const candidates = [
         "audio/webm;codecs=opus",
         "audio/webm",
@@ -707,7 +858,7 @@ export function ConversationCapture({
       setConnecting(false);
       hardStopInternal();
     }
-  }, [hardStopInternal, startChunkRecorder, startRealtimeTranscription]);
+  }, [hardStopInternal, startBrowserSpeechRecognition, startChunkRecorder, startRealtimeTranscription]);
 
   const stopRecording = useCallback(() => {
     setIsRecording(false);
@@ -895,14 +1046,14 @@ export function ConversationCapture({
                 </div>
               ))}
 
-              {isRecording && transcriptionMode === "realtime" && messages.length === 0 && (
+              {isRecording && (transcriptionMode === "realtime" || transcriptionMode === "browser") && messages.length === 0 && (
                 <div className="flex justify-center py-2">
                   <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] text-emerald-800 ring-1 ring-emerald-100">
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                     </span>
-                    Realtime stream connected. Start speaking.
+                    {transcriptionMode === "browser" ? "Browser live captions connected. Start speaking." : "Realtime stream connected. Start speaking."}
                   </div>
                 </div>
               )}
@@ -964,9 +1115,11 @@ export function ConversationCapture({
               <p className="mt-2 text-center text-[11px] text-neutral-500">
                 {transcriptionMode === "realtime"
                   ? "Realtime captions stream as the conversation happens; original terms are kept for review."
-                  : transcriptionMode === "chunked"
-                    ? "Backup captions arrive every few seconds and preserve original terms for review."
-                    : "Auto-detects mixed family language and preserves original terms for review after the conversation."}
+                  : transcriptionMode === "browser"
+                    ? "Browser live captions stream as the conversation happens; backup AI extraction still runs after review."
+                    : transcriptionMode === "chunked"
+                      ? "Backup captions arrive every few seconds and preserve original terms for review."
+                      : "Auto-detects mixed family language and preserves original terms for review after the conversation."}
               </p>
             </div>
           </>

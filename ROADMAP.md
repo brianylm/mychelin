@@ -16,7 +16,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Support live conversation assistance while a family cook narrates: near-realtime transcription, lightweight translation, and suggested follow-up questions so the learner can stay in the conversation.
 - Preserve side-by-side original phrasing and translated cooking instructions so family terms, sensory cues, and cultural context are not flattened.
 - Add reviewer flows so families can correct AI transcription/translation before the generated recipe becomes definitive.
-- Treat full realtime translation as a core product capability. Initial implementation now tries OpenAI Realtime transcription first, falls back to chunked OpenAI/Gemini transcription, and still needs real-audio pilot validation for dialect accuracy, latency, and speaker labeling.
+- Treat full realtime translation as a core product capability. Initial implementation now tries OpenAI Realtime transcription first, falls back to browser live captions when OpenAI Realtime is unavailable, then falls back to chunked OpenAI/Gemini transcription. It still needs real-audio pilot validation for dialect accuracy, latency, and speaker labeling.
 
 ### Conversation facilitation
 
@@ -30,7 +30,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Make voice recording flows clearer on mobile.
 - Add privacy/consent affordances before recording or sharing audio.
 - Separate raw recordings, transcripts, and public recipe text in the UI and data model where needed.
-- Prefer OpenAI Realtime speech-to-text for live captions, OpenAI request/response transcription for backup chunks, and Gemini fallback where dialect handling or diarization needs it.
+- Prefer OpenAI Realtime speech-to-text for live captions, browser live captions as a no-key production fallback, OpenAI request/response transcription for backup chunks, and Gemini fallback where dialect handling or diarization needs it.
 
 ### Pilot operations
 
