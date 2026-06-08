@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { recipeAttempts, recipes } from "@/db/schema";
+import { notificationJobs, notificationPreferences, recipeAttempts, recipes } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { ensureRecipeAttemptsTable } from "@/db/ensure-schema";
+import { ensureNotificationTables, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
@@ -29,6 +29,29 @@ function normalizeRating(value: unknown): number | null {
   const rounded = Math.round(rating * 2) / 2;
   if (rounded < 0.5 || rounded > 5) return null;
   return rounded;
+}
+
+async function queuePostCookReviewReminder(userId: number) {
+  try {
+    await ensureNotificationTables();
+    const prefs = await db.query.notificationPreferences.findFirst({
+      where: eq(notificationPreferences.userId, userId),
+    });
+    if (prefs && !prefs.reviewReminders) return;
+
+    const dueAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+    await db.insert(notificationJobs).values({
+      userId,
+      type: "post_cook_review",
+      title: "Review your latest cook",
+      body: "Turn today's attempt notes into a clearer next version while it is still fresh.",
+      url: "/app",
+      dueAt,
+      createdAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn("post-cook review reminder skipped:", error);
+  }
 }
 
 function parseAttempt(row: typeof recipeAttempts.$inferSelect) {
@@ -148,6 +171,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       },
       path: requestPath(request),
     });
+
+    await queuePostCookReviewReminder(currentUser.id);
 
     return NextResponse.json(parseAttempt(attempt), { status: 201 });
   } catch (error) {

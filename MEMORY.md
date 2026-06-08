@@ -1191,3 +1191,52 @@ Follow-ups:
 
 - Manual UI test: in Plan, click Generate shopping list for week and month ranges, confirm Shopping opens with the same dates and expected grouped items.
 - Next roadmap item remains Calendar Prep Events: add prep lead-time requirements to recipes and export D-2/D-1 prep reminders plus D-day cooking events.
+
+
+### 2026-06-08 - Cooking rhythm and PWA reminder foundation
+
+Changed/decided:
+
+- Implemented the first stickiness layer as a practical weekly cooking rhythm instead of a daily streak mechanic.
+- Onboarding frequency/goals now seed the user's weekly cooking goal in notification preferences.
+- Profile now shows cooked-this-week, planned-this-week, weekly goal, progress, reminder toggles, reminder time, and browser push enable/pause state.
+- Added PWA push subscription storage, notification preferences, notification jobs, and a daily Vercel cron dispatch route.
+- Cook-with-me attempt creation now queues a privacy-safe post-cook review reminder when review reminders are enabled.
+- Service worker now handles push notifications and notification clicks.
+- Added VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT to Vercel Production env only; no secret values were printed or committed.
+- Preview deployment is available but authenticated smoke is blocked because Preview still lacks JWT_SECRET.
+
+Files touched:
+
+- ROADMAP.md
+- app/package.json
+- app/package-lock.json
+- app/public/sw.js
+- app/vercel.json
+- app/drizzle/0022_notifications_and_rhythm.sql
+- app/src/lib/rhythm.ts
+- app/src/lib/changelog.ts
+- app/src/db/schema.ts
+- app/src/db/ensure-schema.ts
+- app/src/components/profile/ProfileView.tsx
+- app/src/app/api/user/preferences/route.ts
+- app/src/app/api/recipes/[id]/attempts/route.ts
+- app/src/app/api/notifications/preferences/route.ts
+- app/src/app/api/notifications/rhythm/route.ts
+- app/src/app/api/notifications/subscribe/route.ts
+- app/src/app/api/notifications/vapid-public-key/route.ts
+- app/src/app/api/notifications/dispatch/route.ts
+
+Checks:
+
+- npx eslint on touched notification/profile/rhythm files passed from app/.
+- npm run build passed from app/.
+- git diff --check passed.
+- Vercel Preview deployed: https://mychelin-ibze342bo-brianylms-projects.vercel.app
+- Preview unauth checks passed: landing 200, unauth /api/notifications/rhythm 401.
+- Preview authenticated smoke could not run because signup returned 500 due missing JWT_SECRET in Preview env; this matches the known preview-auth limitation.
+
+Follow-ups:
+
+- Deploy to production and smoke-test auth plus rhythm/reminder APIs on https://mychelin-sg.vercel.app.
+- Hobby Vercel cron only supports daily schedules, so notification dispatch is daily for now. Upgrade scheduling or use a different scheduler if tighter prep/review reminders become important.

@@ -43,6 +43,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 ### Activation, training, and habit loop
 
 - Use onboarding to capture a user's first goal: learn to cook, cook regularly, save family recipes, plan meals, or reduce waste.
+- Translate onboarding frequency into a forgiving weekly cooking goal, then show progress in Profile so the habit loop feels like a practical rhythm rather than daily guilt.
 - Bias the first session toward a fast magic moment: one messy family recipe becomes one usable cookable recipe.
 - Add a first-recipe guided mission that trains the Mychelin loop through action: capture/create a recipe, plan it, generate a shopping list, cook with me, record an attempt, and promote useful changes into a version.
 - Add a sample recipe sandbox so new users can safely practice planning, shopping-list generation, cook-with-me, attempts, and version promotion without risking their own recipes.
@@ -50,6 +51,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Add a replayable Learn Mychelin area under Profile for recipe capture, meal planning, shopping list, cook-with-me, and attempts/versioning walkthroughs.
 - Keep improving the first-draft recipe prompt flow: users can ask Mychelin to create specific recipes they want to try, then save them as editable first drafts before cooking/refining. Prefer DeepSeek v4 Flash for structured text drafting when configured, with Gemini fallback; keep OpenAI speech-to-text for audio transcription.
 - Treat Duolingo-style stickiness as a low-friction cooking loop, not points for their own sake: one small cooking promise, one first recipe, one attempt, one improvement.
+- Use PWA notifications for practical prompts: planned meals, prep windows, weekly rhythm nudges, and post-cook review reminders. Keep payloads privacy-safe and avoid recipe/transcript detail in push copy.
 - Keep the habit threshold forgiving. A cooking streak should reward showing up without punishing real-life missed days or pushing users to cook daily when weekly cooking is the healthier goal.
 
 ### Sharing and permissions

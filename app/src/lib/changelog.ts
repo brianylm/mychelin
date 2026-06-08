@@ -7,6 +7,16 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-08",
+    title: "Cooking rhythm and reminders",
+    items: [
+      "Onboarding home-cooking frequency now seeds a weekly cooking goal in Profile.",
+      "Profile now shows this week's cooked, planned, and goal progress so users can keep a realistic cooking rhythm.",
+      "Users can save reminder preferences for weekly rhythm nudges, planned meals, prep, post-cook reviews, and family recipe activity.",
+      "Cook-with-me attempts now queue a privacy-safe post-cook review reminder when browser push is configured.",
+    ],
+  },
+  {
+    date: "2026-06-08",
     title: "Live recipe conversation helper",
     items: [
       "Live conversation capture now shows a translated gist, missing recipe cues, and questions to ask while family narrates.",

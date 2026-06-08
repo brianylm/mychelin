@@ -68,6 +68,64 @@ export const usageEvents = sqliteTable("usage_events", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Notification Preferences ──────────────────────────────
+export const notificationPreferences = sqliteTable("notification_preferences", {
+  userId: integer("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  weeklyCookingGoal: integer("weekly_cooking_goal").notNull().default(2),
+  rhythmReminders: integer("rhythm_reminders", { mode: "boolean" }).notNull().default(true),
+  mealReminders: integer("meal_reminders", { mode: "boolean" }).notNull().default(true),
+  prepReminders: integer("prep_reminders", { mode: "boolean" }).notNull().default(true),
+  reviewReminders: integer("review_reminders", { mode: "boolean" }).notNull().default(true),
+  familyActivity: integer("family_activity", { mode: "boolean" }).notNull().default(true),
+  reminderTime: text("reminder_time").notNull().default("18:00"),
+  timezone: text("timezone").notNull().default("Asia/Singapore"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Web Push Subscriptions ────────────────────────────────
+export const pushSubscriptions = sqliteTable("push_subscriptions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  disabledAt: text("disabled_at"),
+  lastSuccessAt: text("last_success_at"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Notification Jobs ─────────────────────────────────────
+export const notificationJobs = sqliteTable("notification_jobs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  url: text("url").notNull().default("/app"),
+  dueAt: text("due_at").notNull(),
+  sentAt: text("sent_at"),
+  canceledAt: text("canceled_at"),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Recipes ───────────────────────────────────────────────
 export const recipes = sqliteTable("recipes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -364,13 +422,19 @@ export const shareLinks = sqliteTable("share_links", {
 });
 
 // ─── Relations ─────────────────────────────────────────────
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   recipes: many(recipes),
   mealPlans: many(mealPlans),
   inventoryItems: many(inventory),
   createdBooks: many(books),
   bookMemberships: many(bookMembers),
   usageEvents: many(usageEvents),
+  notificationPreference: one(notificationPreferences, {
+    fields: [users.id],
+    references: [notificationPreferences.userId],
+  }),
+  pushSubscriptions: many(pushSubscriptions),
+  notificationJobs: many(notificationJobs),
 }));
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -562,6 +626,27 @@ export const usageEventsRelations = relations(usageEvents, ({ one }) => ({
   }),
 }));
 
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [pushSubscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const notificationJobsRelations = relations(notificationJobs, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationJobs.userId],
+    references: [users.id],
+  }),
+}));
+
 // ─── Types ─────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -601,3 +686,9 @@ export type AuthRateLimit = typeof authRateLimits.$inferSelect;
 export type NewAuthRateLimit = typeof authRateLimits.$inferInsert;
 export type UsageEvent = typeof usageEvents.$inferSelect;
 export type NewUsageEvent = typeof usageEvents.$inferInsert;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type NewNotificationPreference = typeof notificationPreferences.$inferInsert;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
+export type NotificationJob = typeof notificationJobs.$inferSelect;
+export type NewNotificationJob = typeof notificationJobs.$inferInsert;

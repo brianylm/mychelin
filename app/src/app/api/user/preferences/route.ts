@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { notificationPreferences, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureUserOnboardingColumns } from "@/db/ensure-schema";
+import { ensureNotificationTables, ensureUserOnboardingColumns } from "@/db/ensure-schema";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
+import { weeklyGoalFromOnboarding } from "@/lib/rhythm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -111,6 +112,25 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (onboardingCompleted === true) {
+      await ensureNotificationTables();
+      const weeklyCookingGoal = weeklyGoalFromOnboarding({ cookingFrequency, cookingGoal });
+      const now = new Date().toISOString();
+      const existingNotificationPrefs = await db.query.notificationPreferences.findFirst({
+        where: eq(notificationPreferences.userId, currentUser.id),
+      });
+      if (existingNotificationPrefs) {
+        await db
+          .update(notificationPreferences)
+          .set({ weeklyCookingGoal, updatedAt: now })
+          .where(eq(notificationPreferences.userId, currentUser.id));
+      } else {
+        await db.insert(notificationPreferences).values({
+          userId: currentUser.id,
+          weeklyCookingGoal,
+          updatedAt: now,
+        });
+      }
+
       await trackUsageEvent({
         userId: currentUser.id,
         eventName: "onboarding_completed",
@@ -118,6 +138,7 @@ export async function PATCH(request: NextRequest) {
         properties: {
           has_goal: Boolean(cookingGoal),
           has_frequency: Boolean(cookingFrequency),
+          weekly_cooking_goal: weeklyGoalFromOnboarding({ cookingFrequency, cookingGoal }),
           first_capture_mode: typeof firstCaptureMode === "string" ? firstCaptureMode : null,
         },
         path: requestPath(request),

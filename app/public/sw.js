@@ -12,7 +12,7 @@
 //
 // On activate, old versioned caches are pruned.
 
-const CACHE_VERSION = "mychelin-v10";
+const CACHE_VERSION = "mychelin-v11";
 const APP_SHELL_CACHE = CACHE_VERSION + "-shell";
 const DYNAMIC_CACHE = CACHE_VERSION + "-dynamic";
 
@@ -142,5 +142,47 @@ self.addEventListener("fetch", function (event) {
       .catch(function () {
         return caches.match(event.request);
       })
+  );
+});
+
+// ─── Push Notifications ───────────────────────────────────
+self.addEventListener("push", function (event) {
+  var payload = {};
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch (err) {
+      payload = { body: event.data.text() };
+    }
+  }
+
+  var title = payload.title || "Mychelin reminder";
+  var options = {
+    body: payload.body || "Your cooking rhythm is waiting.",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: payload.type || "mychelin-reminder",
+    data: { url: payload.url || "/app" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  var targetUrl = new URL(event.notification.data && event.notification.data.url ? event.notification.data.url : "/app", self.location.origin).href;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (clients) {
+      for (var i = 0; i < clients.length; i += 1) {
+        var client = clients[i];
+        if (client.url.indexOf(self.location.origin) === 0 && "focus" in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+      return undefined;
+    })
   );
 });
