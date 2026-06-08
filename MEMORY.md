@@ -123,6 +123,28 @@ Known stale or conflicting external notes:
 
 ## Session Log
 
+### 2026-06-08 - Reprioritized pilot operations and realtime conversation facilitation
+
+Changed/decided:
+
+- Reordered the pilot roadmap so pilot operations sit above training/tutorial work.
+- Elevated realtime translation/conversation facilitation from a deferred capability to a near-term core product requirement for family recipe conversations.
+- Clarified that record-conversation should actively help the learner ask follow-up questions while preserving raw transcript, translated transcript, AI-suggested questions, accepted answers, and final recipe extraction as separable artifacts.
+
+Files touched:
+
+- `ROADMAP.md`
+- `MEMORY.md`
+
+Checks:
+
+- `git diff --check` passed for the docs-only roadmap update.
+
+Follow-ups:
+
+- Design the record-conversation MVP as a facilitator: live captions/translation where possible, suggested questions, consent, transcript review, and graceful degradation for dialect or latency uncertainty.
+- Keep older family cooks out of high-friction UI; optimize the active screen for the learner who is asking questions and capturing the recipe.
+
 ### 2026-06-08 - Pilot training roadmap and conversation-capture direction
 
 Changed/decided:

@@ -10,11 +10,20 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Ask clarifying questions for missing timings, quantities, substitutions, and sensory cues.
 - Preserve uncertainty instead of hallucinating precision where family cooks say "agak-agak".
 
-### Dialect and multilingual support
+### Dialect, multilingual, and realtime translation support
 
 - Improve capture for Singapore family language mixes: English, Mandarin, Malay, Tamil, Hokkien, Teochew, Cantonese, Hakka, Hainanese, and Peranakan/Nyonya vocabulary.
-- Support side-by-side original phrasing and translated cooking instructions.
-- Add reviewer flows so families can correct AI transcription/translation.
+- Support live conversation assistance while a family cook narrates: near-realtime transcription, lightweight translation, and suggested follow-up questions so the learner can stay in the conversation.
+- Preserve side-by-side original phrasing and translated cooking instructions so family terms, sensory cues, and cultural context are not flattened.
+- Add reviewer flows so families can correct AI transcription/translation before the generated recipe becomes definitive.
+- Treat full realtime translation as a core product capability, but pilot it with graceful degradation: partial captions first, then translated summaries and question prompts where latency or dialect uncertainty is high.
+
+### Conversation facilitation
+
+- Turn record-conversation from passive capture into an active helper: listen for missing quantities, timings, heat levels, sensory cues, substitutions, and family-specific terms.
+- Suggest respectful questions the learner can ask during the conversation, e.g. how hot, how long, what should it smell like, what can be substituted, and what mistakes to avoid.
+- Keep the older family cook experience calm: no noisy interruptions, no pressure to speak in a formal recipe format, and no requirement to read the screen.
+- Store raw transcript, translated transcript, AI-suggested questions, accepted answers, and final recipe extraction as separate artifacts where needed.
 
 ### Voice and consent controls
 
@@ -22,6 +31,14 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Add privacy/consent affordances before recording or sharing audio.
 - Separate raw recordings, transcripts, and public recipe text in the UI and data model where needed.
 - Prefer OpenAI speech-to-text for first-pass transcription, with Gemini fallback where dialect handling or diarization needs it.
+
+### Pilot operations
+
+- Prepare a small pilot runbook covering signup, first recipe capture, first meal plan, shopping-list generation, cook-with-me, attempt notes, and version promotion.
+- Collect privacy-safe feedback after the first capture, first cook session, and first promoted version.
+- Define pilot success metrics around completed core loops, transcript correction burden, recipe quality, and whether users feel more confident cooking the dish again.
+- Maintain synthetic demo data and smoke-test scripts for auth, recipe capture, meal planning, shopping list, cook-with-me, attempts, versions, sharing, and permissions before inviting pilot users.
+- Review usage analytics weekly during the pilot, especially activation drop-offs, failed captures, AI fallback rates, and repeat cooking behavior.
 
 ### Activation, training, and habit loop
 
