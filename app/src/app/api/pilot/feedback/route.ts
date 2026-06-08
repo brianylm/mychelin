@@ -18,7 +18,7 @@ const STAGES = new Set([
 
 function cleanComment(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const trimmed = value.trim().replace(/s+/g, " ");
+  const trimmed = value.trim().replace(/\s+/g, " ");
   return trimmed ? trimmed.slice(0, 600) : null;
 }
 
