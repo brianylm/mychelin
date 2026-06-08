@@ -1549,3 +1549,31 @@ Checks:
 Follow-ups:
 
 - User should visually confirm the hero crop on mobile and desktop; if either subject still feels too tight, adjust object-position by another small increment.
+
+### 2026-06-08 - Conversation capture immediate recording fix
+
+Changed/decided:
+
+- Changed recipe conversation capture so microphone recording starts immediately after mic permission instead of waiting for the OpenAI Realtime handshake.
+- Added a visible audio-level meter and "Recording now" state so users can tell whether Mychelin is hearing audio even before transcript text appears.
+- Moved OpenAI Realtime startup to a background attempt with a short timeout; browser live captions remain active when OpenAI Realtime is unavailable.
+- Confirmed current OpenAI docs show `gpt-realtime-whisper` is the intended realtime transcription model, priced per audio minute, and free-tier realtime transcription is not supported.
+- Deployed the fix to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/components/capture/ConversationCapture.tsx`
+
+Checks:
+
+- Focused `npx eslint src/components/capture/ConversationCapture.tsx` passed.
+- `git diff --check` passed.
+- Full `npm run lint` still fails on existing unrelated repo lint debt.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/` and `/app` returned HTTP 200.
+
+Follow-ups:
+
+- User should retest Record conversation in-browser: after mic permission, the modal should immediately show Recording now and an audio meter; live text should appear via OpenAI Realtime if billing/tier is active, or via browser captions where supported.
+- If OpenAI Realtime remains unavailable after billing setup, inspect `/api/capture/realtime-transcription` production logs for the provider status and consider migrating the handshake to the latest documented realtime transcription session flow if needed.
