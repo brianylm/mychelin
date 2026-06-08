@@ -62,7 +62,7 @@ interface ConversationCaptureProps {
 type ModalStep = "recording" | "naming" | "processing";
 type TranscriptionMode = "idle" | "realtime" | "browser" | "chunked";
 
-const CHUNK_DURATION_MS = 3000;
+const CHUNK_DURATION_MS = 2500;
 
 interface BrowserSpeechRecognitionResult {
   isFinal: boolean;
@@ -337,6 +337,8 @@ export function ConversationCapture({
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioLevelRafRef = useRef<number | null>(null);
   const realtimeAttemptRef = useRef(0);
+  const chunkBackupActiveRef = useRef(false);
+  const lastLiveTranscriptAtRef = useRef(0);
   const mimeTypeRef = useRef<string>("audio/webm");
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -404,6 +406,7 @@ export function ConversationCapture({
   }, []);
 
   const appendRealtimeDelta = useCallback((itemId: string, delta: string) => {
+    lastLiveTranscriptAtRef.current = Date.now();
     const cleanDelta = delta;
     if (!cleanDelta.trim()) return;
     const messageId = "realtime-" + itemId;
@@ -434,6 +437,7 @@ export function ConversationCapture({
   }, []);
 
   const completeRealtimeTranscript = useCallback((itemId: string, transcript: string) => {
+    lastLiveTranscriptAtRef.current = Date.now();
     const text = transcript.trim();
     if (!text) return;
     const messageId = "realtime-" + itemId;
@@ -462,6 +466,7 @@ export function ConversationCapture({
   }, []);
 
   const updateBrowserInterim = useCallback((text: string) => {
+    if (text.trim()) lastLiveTranscriptAtRef.current = Date.now();
     const trimmed = text.trim();
     const messageId = "browser-interim";
     setMessages((prev) => {
@@ -481,6 +486,7 @@ export function ConversationCapture({
   }, []);
 
   const appendBrowserFinal = useCallback((text: string) => {
+    lastLiveTranscriptAtRef.current = Date.now();
     const trimmed = text.trim();
     if (!trimmed) return;
     setMessages((prev) => [
@@ -548,6 +554,9 @@ export function ConversationCapture({
       const segments = data.segments ?? [];
       if (segments.length === 0) return;
 
+      const recentLiveTranscript = Date.now() - lastLiveTranscriptAtRef.current < CHUNK_DURATION_MS * 3;
+      if (recentLiveTranscript) return;
+
       setMessages((prev) => {
         const next = [...prev];
         for (const seg of segments) {
@@ -569,6 +578,7 @@ export function ConversationCapture({
             });
           }
         }
+        if (segments.length > 0) lastLiveTranscriptAtRef.current = Date.now();
         return next;
       });
     } catch (err: unknown) {
@@ -802,6 +812,7 @@ export function ConversationCapture({
 
   const hardStopInternal = useCallback(() => {
     realtimeAttemptRef.current += 1;
+    chunkBackupActiveRef.current = false;
     recordingActiveRef.current = false;
     stopAudioMeter();
     stopRealtimeInternal();
@@ -825,7 +836,7 @@ export function ConversationCapture({
 
   const startChunkRecorder = useCallback(() => {
     const stream = mediaStreamRef.current;
-    if (!stream) return;
+    if (!stream || !chunkBackupActiveRef.current) return;
     const mimeType = mimeTypeRef.current;
     const recorder = new MediaRecorder(stream, { mimeType });
     mediaRecorderRef.current = recorder;
@@ -836,8 +847,8 @@ export function ConversationCapture({
     };
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
-      uploadChunk(blob, mimeType);
-      if (recordingActiveRef.current) {
+      void uploadChunk(blob, mimeType);
+      if (recordingActiveRef.current && chunkBackupActiveRef.current) {
         startChunkRecorder();
       }
     };
@@ -868,32 +879,35 @@ export function ConversationCapture({
       mediaStreamRef.current = stream;
       startAudioMeter(stream);
 
+      const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/mp4",
+      ];
+      const mimeType = candidates.find(
+        (c) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)
+      );
+      if (!mimeType) {
+        throw new Error("Your browser doesn't support audio recording");
+      }
+      mimeTypeRef.current = mimeType;
+
       recordingActiveRef.current = true;
+      chunkBackupActiveRef.current = true;
+      lastLiveTranscriptAtRef.current = 0;
       setIsRecording(true);
       setConnecting(false);
+      startChunkRecorder();
 
       const browserStarted = startBrowserSpeechRecognition();
       if (browserStarted) {
         setTranscriptionMode("browser");
-        setAssistError("Recording is live. Browser captions should appear as you speak while Mychelin checks OpenAI Realtime.");
+        setAssistError("Recording is live. Words should appear here as captions; backup transcription is also running if live captions stall.");
       } else {
-        const candidates = [
-          "audio/webm;codecs=opus",
-          "audio/webm",
-          "audio/ogg;codecs=opus",
-          "audio/ogg",
-          "audio/mp4",
-        ];
-        const mimeType = candidates.find(
-          (c) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)
-        );
-        if (!mimeType) {
-          throw new Error("Your browser doesn't support audio recording");
-        }
-        mimeTypeRef.current = mimeType;
         setTranscriptionMode("chunked");
         setAssistError("Recording is live. Live captions are unavailable in this browser, so backup captions will arrive in short batches if speech transcription is available.");
-        startChunkRecorder();
       }
 
       const attemptId = realtimeAttemptRef.current + 1;
@@ -901,6 +915,12 @@ export function ConversationCapture({
       void startRealtimeTranscription(stream).then((realtimeStarted) => {
         if (!recordingActiveRef.current || realtimeAttemptRef.current !== attemptId) return;
         if (realtimeStarted) {
+          chunkBackupActiveRef.current = false;
+          try {
+            mediaRecorderRef.current?.stop();
+          } catch {
+            /* ignore */
+          }
           stopBrowserSpeechInternal();
           setTranscriptionMode("realtime");
           setAssistError(null);
@@ -908,7 +928,7 @@ export function ConversationCapture({
         }
         if (browserStarted) {
           setTranscriptionMode("browser");
-          setAssistError("OpenAI Realtime is unavailable, but recording is active and browser live captions should appear as you speak.");
+          setAssistError("OpenAI Realtime is unavailable, but recording is active. Browser captions should appear as you speak; backup transcription is also checking short audio batches.");
         } else {
           setTranscriptionMode("chunked");
           setAssistError("OpenAI Realtime is unavailable. Recording is active; backup captions may arrive after each short audio batch.");
@@ -1124,6 +1144,23 @@ export function ConversationCapture({
                       className="h-full rounded-full bg-emerald-500 transition-[width] duration-100"
                       style={{ width: Math.max(8, Math.round(inputLevel * 100)) + "%" }}
                     />
+                  </div>
+                </div>
+              )}
+
+              {isRecording && messages.length === 0 && inputLevel > 0.08 && (
+                <div className="relative">
+                  <ChatBubble
+                    speaker="Live transcript"
+                    text="Listening for words..."
+                    language="live"
+                    timestamp={new Date().toISOString()}
+                    isRight={false}
+                  />
+                  <div className="-mt-3 mb-3 flex justify-start pl-2">
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-800 ring-1 ring-amber-100">
+                      audio detected
+                    </span>
                   </div>
                 </div>
               )}
