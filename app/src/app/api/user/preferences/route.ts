@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { notificationPreferences, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureNotificationTables, ensureUserOnboardingColumns } from "@/db/ensure-schema";
+import { ensureNotificationTables, ensureUserOAuthColumns, ensureUserOnboardingColumns } from "@/db/ensure-schema";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { weeklyGoalFromOnboarding } from "@/lib/rhythm";
 
@@ -23,6 +23,7 @@ export async function GET() {
     }
 
     await ensureUserOnboardingColumns();
+    await ensureUserOAuthColumns();
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, currentUser.id),
@@ -79,6 +80,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     await ensureUserOnboardingColumns();
+    await ensureUserOAuthColumns();
 
     const body = await request.json();
     const {

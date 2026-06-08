@@ -10,6 +10,7 @@ import {
 } from "@/lib/rateLimit";
 import { eq } from "drizzle-orm";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
+import { ensureUserOAuthColumns } from "@/db/ensure-schema";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest) {
         { status: 429, headers: rateLimitHeaders(limit) }
       );
     }
+
+    await ensureUserOAuthColumns();
 
     const { name, email, password } = await request.json();
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { ensureUserOAuthColumns } from "@/db/ensure-schema";
 
 // Lazily resolve JWT_SECRET so a missing env var doesn't crash at module
 // import time (mirrors the db client lazy-init pattern). The check fires
@@ -184,6 +185,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 export async function getUserFromDb(
   email: string
 ): Promise<(typeof users.$inferSelect) | undefined> {
+  await ensureUserOAuthColumns();
   return db.query.users.findFirst({
     where: eq(users.email, email),
   });
