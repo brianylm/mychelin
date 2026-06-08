@@ -96,6 +96,7 @@ declare global {
   interface Window {
     SpeechRecognition?: BrowserSpeechRecognitionConstructor;
     webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+    webkitAudioContext?: typeof AudioContext;
   }
 }
 
@@ -315,6 +316,7 @@ export function ConversationCapture({
   const [connecting, setConnecting] = useState(false);
   const [processingChunks, setProcessingChunks] = useState(0);
   const [transcriptionMode, setTranscriptionMode] = useState<TranscriptionMode>("idle");
+  const [inputLevel, setInputLevel] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [conversationAssist, setConversationAssist] = useState<ConversationAssist | null>(null);
   const [isAssisting, setIsAssisting] = useState(false);
@@ -332,6 +334,9 @@ export function ConversationCapture({
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const realtimeCommitIntervalRef = useRef<number | null>(null);
   const browserSpeechRef = useRef<BrowserSpeechRecognition | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioLevelRafRef = useRef<number | null>(null);
+  const realtimeAttemptRef = useRef(0);
   const mimeTypeRef = useRef<string>("audio/webm");
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -601,7 +606,7 @@ export function ConversationCapture({
     browserSpeechRef.current = recognition;
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-SG";
+    recognition.lang = navigator.language?.toLowerCase().startsWith("en") ? navigator.language : "en-SG";
 
     recognition.onresult = (event) => {
       let finalText = "";
@@ -641,6 +646,51 @@ export function ConversationCapture({
       return false;
     }
   }, [appendBrowserFinal, stopBrowserSpeechInternal, updateBrowserInterim]);
+
+  const stopAudioMeter = useCallback(() => {
+    if (audioLevelRafRef.current != null) {
+      window.cancelAnimationFrame(audioLevelRafRef.current);
+      audioLevelRafRef.current = null;
+    }
+    const audioContext = audioContextRef.current;
+    audioContextRef.current = null;
+    if (audioContext) {
+      void audioContext.close().catch(() => undefined);
+    }
+    setInputLevel(0);
+  }, []);
+
+  const startAudioMeter = useCallback((stream: MediaStream) => {
+    stopAudioMeter();
+    const AudioContextConstructor = window.AudioContext ?? window.webkitAudioContext;
+    if (!AudioContextConstructor) return;
+
+    try {
+      const audioContext = new AudioContextConstructor();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      const samples = new Uint8Array(analyser.frequencyBinCount);
+
+      const tick = () => {
+        analyser.getByteTimeDomainData(samples);
+        let sum = 0;
+        for (const sample of samples) {
+          const centered = (sample - 128) / 128;
+          sum += centered * centered;
+        }
+        const rms = Math.sqrt(sum / samples.length);
+        setInputLevel(Math.min(1, rms * 8));
+        audioLevelRafRef.current = window.requestAnimationFrame(tick);
+      };
+
+      tick();
+    } catch (error) {
+      console.warn("Audio level meter unavailable:", error);
+    }
+  }, [stopAudioMeter]);
 
   const stopRealtimeInternal = useCallback(() => {
     if (realtimeCommitIntervalRef.current != null) {
@@ -727,11 +777,15 @@ export function ConversationCapture({
     try {
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 6000);
       const response = await fetch("/api/capture/realtime-transcription", {
         method: "POST",
         headers: { "Content-Type": "application/sdp" },
         body: offer.sdp || "",
+        signal: controller.signal,
       });
+      window.clearTimeout(timeout);
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error || "Realtime transcription unavailable");
@@ -747,7 +801,9 @@ export function ConversationCapture({
   }, [appendRealtimeDelta, completeRealtimeTranscript, stopRealtimeInternal]);
 
   const hardStopInternal = useCallback(() => {
+    realtimeAttemptRef.current += 1;
     recordingActiveRef.current = false;
+    stopAudioMeter();
     stopRealtimeInternal();
     stopBrowserSpeechInternal();
     try {
@@ -759,7 +815,7 @@ export function ConversationCapture({
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
     setTranscriptionMode("idle");
-  }, [stopBrowserSpeechInternal, stopRealtimeInternal]);
+  }, [stopAudioMeter, stopBrowserSpeechInternal, stopRealtimeInternal]);
 
   useEffect(() => {
     return () => {
@@ -810,45 +866,62 @@ export function ConversationCapture({
         },
       });
       mediaStreamRef.current = stream;
+      startAudioMeter(stream);
 
       recordingActiveRef.current = true;
-      const realtimeStarted = await startRealtimeTranscription(stream);
-      if (realtimeStarted) {
-        setTranscriptionMode("realtime");
-        setIsRecording(true);
-        setConnecting(false);
-        return;
-      }
+      setIsRecording(true);
+      setConnecting(false);
 
       const browserStarted = startBrowserSpeechRecognition();
       if (browserStarted) {
         setTranscriptionMode("browser");
-        setAssistError("OpenAI Realtime is unavailable, so Mychelin is using browser live captions for this session.");
-        setIsRecording(true);
-        setConnecting(false);
-        return;
+        setAssistError("Recording is live. Browser captions should appear as you speak while Mychelin checks OpenAI Realtime.");
+      } else {
+        const candidates = [
+          "audio/webm;codecs=opus",
+          "audio/webm",
+          "audio/ogg;codecs=opus",
+          "audio/ogg",
+          "audio/mp4",
+        ];
+        const mimeType = candidates.find(
+          (c) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)
+        );
+        if (!mimeType) {
+          throw new Error("Your browser doesn't support audio recording");
+        }
+        mimeTypeRef.current = mimeType;
+        setTranscriptionMode("chunked");
+        setAssistError("Recording is live. Live captions are unavailable in this browser, so backup captions will arrive in short batches if speech transcription is available.");
+        startChunkRecorder();
       }
 
-      const candidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-        "audio/ogg",
-        "audio/mp4",
-      ];
-      const mimeType = candidates.find(
-        (c) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c)
-      );
-      if (!mimeType) {
-        throw new Error("Your browser doesn't support audio recording");
-      }
-      mimeTypeRef.current = mimeType;
-
-      setTranscriptionMode("chunked");
-      setAssistError("Realtime captions are unavailable, so Mychelin is using backup chunked transcription.");
-      setIsRecording(true);
-      setConnecting(false);
-      startChunkRecorder();
+      const attemptId = realtimeAttemptRef.current + 1;
+      realtimeAttemptRef.current = attemptId;
+      void startRealtimeTranscription(stream).then((realtimeStarted) => {
+        if (!recordingActiveRef.current || realtimeAttemptRef.current !== attemptId) return;
+        if (realtimeStarted) {
+          stopBrowserSpeechInternal();
+          setTranscriptionMode("realtime");
+          setAssistError(null);
+          return;
+        }
+        if (browserStarted) {
+          setTranscriptionMode("browser");
+          setAssistError("OpenAI Realtime is unavailable, but recording is active and browser live captions should appear as you speak.");
+        } else {
+          setTranscriptionMode("chunked");
+          setAssistError("OpenAI Realtime is unavailable. Recording is active; backup captions may arrive after each short audio batch.");
+        }
+      }).catch((error: unknown) => {
+        if (!recordingActiveRef.current || realtimeAttemptRef.current !== attemptId) return;
+        console.warn("Realtime transcription background start failed:", error);
+        setAssistError(
+          browserStarted
+            ? "OpenAI Realtime is unavailable, but recording is active and browser live captions should appear as you speak."
+            : "OpenAI Realtime is unavailable. Recording is active; backup captions may arrive after each short audio batch."
+        );
+      });
     } catch (err: unknown) {
       console.error("Failed to start recording:", err);
       setErrorMessage(
@@ -859,7 +932,7 @@ export function ConversationCapture({
       setConnecting(false);
       hardStopInternal();
     }
-  }, [hardStopInternal, startBrowserSpeechRecognition, startChunkRecorder, startRealtimeTranscription]);
+  }, [hardStopInternal, startAudioMeter, startBrowserSpeechRecognition, startChunkRecorder, startRealtimeTranscription, stopBrowserSpeechInternal]);
 
   const stopRecording = useCallback(() => {
     setIsRecording(false);
@@ -1013,6 +1086,18 @@ export function ConversationCapture({
                 transcriptionMode={transcriptionMode}
               />
 
+              {connecting && (
+                <div className="flex justify-center py-2">
+                  <div className="flex items-center gap-2 rounded-full bg-[#800020]/5 px-3 py-1 text-[11px] text-[#800020] ring-1 ring-[#800020]/10">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#800020]/40 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#800020]" />
+                    </span>
+                    Opening microphone...
+                  </div>
+                </div>
+              )}
+
               {messages.length === 0 && !isRecording && !connecting && (
                 <div className="flex h-full items-center justify-center">
                   <div className="max-w-xs text-center">
@@ -1024,6 +1109,21 @@ export function ConversationCapture({
                       Mychelin will capture the transcript, translate the gist,
                       and suggest questions you can ask out loud.
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {isRecording && (
+                <div className="mb-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="font-semibold">Recording now</span>
+                    <span>{inputLevel > 0.08 ? "Hearing audio" : "Waiting for speech"}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/80">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-[width] duration-100"
+                      style={{ width: Math.max(8, Math.round(inputLevel * 100)) + "%" }}
+                    />
                   </div>
                 </div>
               )}
@@ -1054,7 +1154,7 @@ export function ConversationCapture({
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                     </span>
-                    {transcriptionMode === "browser" ? "Browser live captions connected. Start speaking." : "Realtime stream connected. Start speaking."}
+                    {transcriptionMode === "browser" ? "Browser live captions active. Speak and watch this area." : "Realtime stream connected. Speak and watch this area."}
                   </div>
                 </div>
               )}
@@ -1097,7 +1197,7 @@ export function ConversationCapture({
                       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
                     </span>
                     {connecting
-                      ? "Connecting…"
+                      ? "Opening mic…"
                       : messages.length > 0
                       ? "Keep talking"
                       : "Start conversation"}
