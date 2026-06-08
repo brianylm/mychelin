@@ -1377,3 +1377,28 @@ Follow-ups:
 
 - Add first promoted-version feedback prompt once the version promotion surface is refined for pilot users.
 - Consider an admin/operator pilot dashboard if usage events and feedback need to be reviewed inside the app instead of through DB/API inspection.
+
+
+### 2026-06-08 - Pilot readiness production deploy
+
+Changed/decided:
+
+- Deployed the pilot readiness feedback loop to production at https://mychelin-sg.vercel.app.
+- Added a follow-up fix for pilot feedback comment cleanup so whitespace is normalized correctly before storage.
+
+Commits:
+
+- 9f939ef Add pilot readiness feedback loop
+- a798d2c Fix pilot feedback comment cleanup
+
+Checks:
+
+- npx eslint src/app/api/pilot/feedback/route.ts passed from app/.
+- npm run build passed from app/.
+- Production deploy aliased to https://mychelin-sg.vercel.app.
+- Production smoke passed: unauthenticated /api/pilot/status returned 401; synthetic signup returned 201; authenticated /api/pilot/status returned 200 with 6 checklist items; POST /api/pilot/feedback returned 201 for pilot_general; GET /api/pilot/feedback returned 200 with the submitted feedback; synthetic user cleanup remaining 0.
+
+Follow-ups:
+
+- Add first promoted-version feedback prompt once the version promotion surface is refined for pilot users.
+- Consider an admin/operator pilot dashboard if usage events and feedback need to be reviewed inside the app instead of through DB/API inspection.
