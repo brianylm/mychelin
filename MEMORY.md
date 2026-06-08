@@ -1319,3 +1319,23 @@ Follow-ups:
 
 - Manual browser test required: click Continue with Google on production with a Google test user and confirm it returns to Mychelin logged in.
 - If pilot users are outside the Google OAuth test-user list, add them in Google Auth Platform or publish/verify the app when ready.
+
+
+### 2026-06-08 - Google button visual polish
+
+Changed/decided:
+
+- Restyled the auth screen Continue with Google button to more closely match Google's default white button style: four-color Google mark, Roboto/Arial font stack, standard border, square-ish radius, and neutral Google text color.
+- Deployed the polish to production at https://mychelin-sg.vercel.app.
+
+Files touched:
+
+- app/src/components/auth/AuthScreen.tsx
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/auth/AuthScreen.tsx passed from app/ with only the existing Mychelin logo img warning.
+- npm run build passed from app/.
+- git diff --check passed.
+- Production smoke: /login returned 200 and /api/auth/google/start returned 307 to accounts.google.com with a state cookie.
