@@ -1375,7 +1375,7 @@ Checks:
 
 Follow-ups:
 
-- Add first promoted-version feedback prompt once the version promotion surface is refined for pilot users.
+- Done in 2026-06-08 Pilot version feedback hardening: first promoted-version feedback prompt now appears after attempt promotion.
 - Consider an admin/operator pilot dashboard if usage events and feedback need to be reviewed inside the app instead of through DB/API inspection.
 
 
@@ -1400,5 +1400,36 @@ Checks:
 
 Follow-ups:
 
-- Add first promoted-version feedback prompt once the version promotion surface is refined for pilot users.
+- Done in 2026-06-08 Pilot version feedback hardening: first promoted-version feedback prompt now appears after attempt promotion.
 - Consider an admin/operator pilot dashboard if usage events and feedback need to be reviewed inside the app instead of through DB/API inspection.
+
+
+### 2026-06-08 - Pilot version feedback hardening
+
+Changed/decided:
+
+- Added a one-time first_version pilot feedback prompt after a recipe attempt is promoted to a version.
+- Polished the Profile Pilot loop checklist with clearer next-step guidance, row descriptions, completion dates, and a manual refresh control.
+- Updated pilot checklist API labels so the cook and version steps distinguish attempts, versions, and definitive versions more clearly.
+- Updated the in-app changelog entry for the pilot readiness loop.
+
+Files touched:
+
+- app/src/app/api/pilot/status/route.ts
+- app/src/components/pilot/PilotChecklistPanel.tsx
+- app/src/components/recipes/RecipeView.tsx
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/recipes/RecipeView.tsx src/components/pilot/PilotChecklistPanel.tsx src/app/api/pilot/status/route.ts src/lib/changelog.ts passed from app/ with only the existing RecipeView img warnings.
+- git diff --check passed.
+- npm run build passed from app/.
+- Production deploy aliased to https://mychelin-sg.vercel.app.
+- Production smoke passed: synthetic signup 201; recipe create 201; attempt create 201; attempt promote 201; /api/pilot/status returned 200 and marked version_completed=true with label "Promote an attempt to a version"; synthetic user cleanup remaining 0.
+
+Follow-ups:
+
+- Manually verify in-browser that the first_version feedback modal appears once after promoting an attempt and does not keep reappearing after dismissal.
+- Next roadmap slice remains conversation capture / Whisper-first live assistance.
