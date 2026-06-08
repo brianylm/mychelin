@@ -123,6 +123,29 @@ Known stale or conflicting external notes:
 
 ## Session Log
 
+### 2026-06-08 - Pilot training roadmap and conversation-capture direction
+
+Changed/decided:
+
+- Added pilot training/tutorial items to `ROADMAP.md`: first-recipe guided mission, sample recipe sandbox, contextual coach tips, replayable Learn Mychelin under Profile, and pilot training scripts.
+- Kept record-conversation direction as OpenAI speech-to-text first pass with Gemini fallback for dialect-heavy or diarization-sensitive cases.
+- Recommendation for pilot MVP: harden the current near-live conversation capture and transcript review flow before building full realtime translation.
+
+Files touched:
+
+- `ROADMAP.md`
+- `MEMORY.md`
+
+Checks:
+
+- `git diff --check` passed for the docs-only roadmap update.
+
+Follow-ups:
+
+- Add consent and transcript-review UX before extracting/saving a recipe from recorded conversation.
+- Build a small pilot audio test set across English, Mandarin, Cantonese, Hokkien/Teochew where available, mixed speech, background noise, and two-speaker family conversations.
+- Compare OpenAI diarized transcription against the Gemini fallback using transcript accuracy, speaker separation, dialect term preservation, latency, and extraction quality.
+
 ### 2026-06-03 - Consolidated agent guidance and memory
 
 Changed/decided:

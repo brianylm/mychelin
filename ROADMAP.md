@@ -23,10 +23,14 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Separate raw recordings, transcripts, and public recipe text in the UI and data model where needed.
 - Prefer OpenAI speech-to-text for first-pass transcription, with Gemini fallback where dialect handling or diarization needs it.
 
-### Activation and habit loop
+### Activation, training, and habit loop
 
 - Use onboarding to capture a user's first goal: learn to cook, cook regularly, save family recipes, plan meals, or reduce waste.
 - Bias the first session toward a fast magic moment: one messy family recipe becomes one usable cookable recipe.
+- Add a first-recipe guided mission that trains the Mychelin loop through action: capture/create a recipe, plan it, generate a shopping list, cook with me, record an attempt, and promote useful changes into a version.
+- Add a sample recipe sandbox so new users can safely practice planning, shopping-list generation, cook-with-me, attempts, and version promotion without risking their own recipes.
+- Add contextual coach tips only at useful moments, e.g. empty recipe, planned meals, shopping-list generation, cook-session completion, and version promotion. Avoid generic modal tours and permanent banners.
+- Add a replayable Learn Mychelin area under Profile for recipe capture, meal planning, shopping list, cook-with-me, and attempts/versioning walkthroughs.
 - Keep improving the first-draft recipe prompt flow: users can ask Mychelin to create specific recipes they want to try, then save them as editable first drafts before cooking/refining. Prefer DeepSeek v4 Flash for structured text drafting when configured, with Gemini fallback; keep OpenAI speech-to-text for audio transcription.
 - Treat Duolingo-style stickiness as a low-friction cooking loop, not points for their own sake: one small cooking promise, one first recipe, one attempt, one improvement.
 - Keep the habit threshold forgiving. A cooking streak should reward showing up without punishing real-life missed days or pushing users to cook daily when weekly cooking is the healthier goal.
@@ -60,6 +64,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 - Add privacy-safe screenshots and demo data.
 - Document a guided "capture Ah Ma's recipe" flow for heritage partners and reviewers.
+- Build pilot-user training scripts around the core loop: first recipe, first meal plan, first shopping list, first cook session, first attempt, and first promoted version.
 
 ## Long term
 
