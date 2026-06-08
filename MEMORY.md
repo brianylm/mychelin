@@ -1433,3 +1433,37 @@ Follow-ups:
 
 - Manually verify in-browser that the first_version feedback modal appears once after promoting an attempt and does not keep reappearing after dismissal.
 - Next roadmap slice remains conversation capture / Whisper-first live assistance.
+
+
+### 2026-06-08 - Realtime conversation capture production deploy
+
+Changed/decided:
+
+- Added an authenticated /api/capture/realtime-transcription Edge route that exchanges browser SDP with OpenAI Realtime using the server-side OPENAI_API_KEY, so the browser never sees the secret.
+- Updated ConversationCapture to try OpenAI Realtime WebRTC transcription first.
+- Added a browser SpeechRecognition live-caption fallback for production sessions where OpenAI Realtime is unavailable or not configured.
+- Kept the existing chunked OpenAI/Gemini transcription path as the final fallback and reduced chunk duration from 4s to 3s.
+- The live helper now displays Realtime, Browser, or Backup caption mode and marks partial transcript text while it is updating.
+- Updated ROADMAP.md and in-app changelog copy to reflect the realtime-first, fallback-backed behavior.
+
+Files touched:
+
+- ROADMAP.md
+- app/src/app/api/capture/realtime-transcription/route.ts
+- app/src/components/capture/ConversationCapture.tsx
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint src/components/capture/ConversationCapture.tsx src/app/api/capture/realtime-transcription/route.ts src/lib/changelog.ts passed from app/.
+- git diff --check passed.
+- npm run build passed from app/.
+- Production deploy aliased to https://mychelin-sg.vercel.app.
+- Production smoke passed: /app returned 200; unauthenticated /api/capture/realtime-transcription returned 401; seeded production login returned 200; authenticated empty-SDP request returned 503 with "OpenAI Realtime transcription is not configured. Add OPENAI_API_KEY."; seeded user cleanup remaining 0.
+
+Follow-ups:
+
+- Add OPENAI_API_KEY to Vercel Production to enable the OpenAI Realtime path; current production will use browser live captions first, then chunked backup.
+- Manually test microphone flow in Chrome/Safari: start conversation, confirm browser live captions appear, stop, label speaker, and extract/save recipe.
+- Real-audio pilot validation still needed for dialect accuracy, latency, and whether browser captions are good enough before OpenAI Realtime is configured.
