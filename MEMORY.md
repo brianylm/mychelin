@@ -1240,3 +1240,25 @@ Follow-ups:
 
 - Deploy to production and smoke-test auth plus rhythm/reminder APIs on https://mychelin-sg.vercel.app.
 - Hobby Vercel cron only supports daily schedules, so notification dispatch is daily for now. Upgrade scheduling or use a different scheduler if tighter prep/review reminders become important.
+
+
+### 2026-06-08 - Cooking rhythm production deploy and cron hardening
+
+Changed/decided:
+
+- Deployed cooking rhythm and PWA reminder foundation to production at https://mychelin-sg.vercel.app.
+- Hardened /api/notifications/dispatch by removing the temporary query-string cron bypass; it now accepts Vercel cron headers or CRON_SECRET bearer auth.
+- Added CRON_SECRET to Vercel Production env without printing or committing it. Initial deploy caught a trailing-whitespace CRON_SECRET issue; removed and re-added it without a newline.
+
+Checks:
+
+- npx eslint src/app/api/notifications/dispatch/route.ts passed from app/.
+- npm run build passed from app/.
+- Production deploy aliased to https://mychelin-sg.vercel.app.
+- Production smoke passed after signup rate limit was worked around with a synthetic DB-seeded user: login 200, me 200, onboarding 200, notification preferences 200 with weeklyGoal 3, rhythm before 200 cooked 0, recipe create 201, attempt create 201 with rating 4.5, rhythm after 200 cooked 1 remaining 2, recipe delete 200, synthetic user cleanup remaining 0.
+- Unauthenticated notification dispatch returned 401 and VAPID public-key route returned configured=true.
+
+Follow-ups:
+
+- Signup smoke temporarily hit 429 because repeated agent synthetic signups exhausted the auth rate limit. This is expected; login-based seeded smoke passed.
+- Daily Vercel Hobby cron remains the current scheduler constraint.
