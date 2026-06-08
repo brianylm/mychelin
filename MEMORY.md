@@ -1467,3 +1467,44 @@ Follow-ups:
 - Add OPENAI_API_KEY to Vercel Production to enable the OpenAI Realtime path; current production will use browser live captions first, then chunked backup.
 - Manually test microphone flow in Chrome/Safari: start conversation, confirm browser live captions appear, stop, label speaker, and extract/save recipe.
 - Real-audio pilot validation still needed for dialect accuracy, latency, and whether browser captions are good enough before OpenAI Realtime is configured.
+
+
+### 2026-06-08 - DeepSeek-first capture text reasoning
+
+Changed/decided:
+
+- Added shared DeepSeek helper for OpenAI-compatible chat completions using DEEPSEEK_API_KEY, optional DEEPSEEK_BASE_URL, and DEEPSEEK_MODEL defaulting to deepseek-v4-flash.
+- Updated conversation assist to use DeepSeek first for translated gist, missing cues, uncertain terms, and suggested questions; Gemini remains optional fallback only if configured.
+- Updated conversation-to-recipe extraction and shared paste/URL extraction helper to use DeepSeek first for low-cost text reasoning.
+- Updated app copy and docs so Gemini is no longer described as required for text reasoning/extraction.
+- Confirmed Vercel Production already has DEEPSEEK_API_KEY and DEEPSEEK_MODEL. DEEPSEEK_BASE_URL is optional because the helper defaults to https://api.deepseek.com.
+
+Files touched:
+
+- MYCHELIN.md
+- README.md
+- ROADMAP.md
+- app/src/lib/deepseek.ts
+- app/src/lib/ai-extract.ts
+- app/src/app/api/capture/conversation-assist/route.ts
+- app/src/app/api/capture/extract/route.ts
+- app/src/app/api/capture/paste/route.ts
+- app/src/app/api/capture/url/route.ts
+- app/src/components/capture/ConversationCapture.tsx
+- app/src/components/capture/PasteRecipeModal.tsx
+- app/src/components/recipes/RecipeView.tsx
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint on DeepSeek helper, capture routes, capture UI, RecipeView, and changelog passed from app/ with only existing RecipeView img warnings.
+- git diff --check passed.
+- npm run build passed from app/.
+- Production deploy aliased to https://mychelin-sg.vercel.app.
+- Production smoke passed: seeded login 200; /api/capture/conversation-assist returned 200 with gist present and 4 suggested questions; /api/capture/paste returned 200 with provider=deepseek and 2 ingredients; seeded users and usage events cleaned up with remaining=0.
+
+Follow-ups:
+
+- Add OPENAI_API_KEY to Vercel Production to enable OpenAI Realtime/transcription; DeepSeek does not transcribe audio.
+- Manually test full conversation flow in browser: live captions, DeepSeek suggested questions, stop, label speaker, extract/save recipe.
