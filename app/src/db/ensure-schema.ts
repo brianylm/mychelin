@@ -17,6 +17,7 @@ let recipeAttemptsEnsured = false;
 let userOnboardingEnsured = false;
 let usageEventsEnsured = false;
 let notificationsEnsured = false;
+let userOAuthEnsured = false;
 
 export async function ensureVersionLabelColumn(): Promise<void> {
   if (versionLabelEnsured) return;
@@ -290,4 +291,34 @@ export async function ensureNotificationTables(): Promise<void> {
   }
 
   notificationsEnsured = true;
+}
+
+export async function ensureUserOAuthColumns(): Promise<void> {
+  if (userOAuthEnsured) return;
+
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) return;
+
+  const client = createClient({ url, authToken });
+  const statements = [
+    `ALTER TABLE users ADD COLUMN auth_provider text NOT NULL DEFAULT 'password'`,
+    `ALTER TABLE users ADD COLUMN google_sub text`,
+    `ALTER TABLE users ADD COLUMN email_verified integer NOT NULL DEFAULT 0`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_idx ON users(google_sub) WHERE google_sub IS NOT NULL`,
+  ];
+
+  for (const statement of statements) {
+    try {
+      await client.execute(statement);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      const msg = message.toLowerCase();
+      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
+        console.warn("ensureUserOAuthColumns:", message);
+      }
+    }
+  }
+
+  userOAuthEnsured = true;
 }

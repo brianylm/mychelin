@@ -1262,3 +1262,35 @@ Follow-ups:
 
 - Signup smoke temporarily hit 429 because repeated agent synthetic signups exhausted the auth rate limit. This is expected; login-based seeded smoke passed.
 - Daily Vercel Hobby cron remains the current scheduler constraint.
+
+
+### 2026-06-08 - Google sign-in implementation
+
+Changed/decided:
+
+- Added native Google OAuth login using the existing Mychelin JWT cookie session rather than migrating to a new auth library.
+- Added users.auth_provider, users.google_sub, and users.email_verified schema fields plus migration and route-level ensure helper.
+- Added /api/auth/google/start and /api/auth/google/callback Edge routes.
+- Google callback exchanges the authorization code, verifies the ID token against Google's JWKS, links verified existing emails, or creates a new Google-backed user with an unusable random password hash.
+- Login/signup UI now includes Continue with Google and shows user-friendly Google callback errors.
+
+Files touched:
+
+- app/drizzle/0023_google_oauth_users.sql
+- app/src/app/api/auth/google/start/route.ts
+- app/src/app/api/auth/google/callback/route.ts
+- app/src/components/auth/AuthScreen.tsx
+- app/src/db/schema.ts
+- app/src/db/ensure-schema.ts
+- app/src/lib/auth.ts
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- npx eslint on Google OAuth routes, AuthScreen, auth helper, schema, and ensure-schema passed from app/ with only the existing Mychelin logo img warning.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Deploy to production and manually test the full Google browser redirect flow with a Google test user. API-only smoke can verify redirect wiring, but it cannot complete Google's hosted login page.

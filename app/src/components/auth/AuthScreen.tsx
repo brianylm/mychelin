@@ -22,11 +22,41 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get("error");
+    if (!authError?.startsWith("google_")) return;
+    const messages: Record<string, string> = {
+      google_cancelled: "Google sign-in was cancelled.",
+      google_not_configured: "Google sign-in is not configured yet.",
+      google_state_mismatch: "Google sign-in expired. Please try again.",
+      google_login_failed: "Google sign-in failed. Please try again.",
+    };
+    setError(messages[authError] || "Google sign-in failed. Please try again.");
+    params.delete("error");
+    const nextUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+    window.history.replaceState({}, "", nextUrl);
+  }, []);
 
   const switchMode = (next: Mode) => {
     setMode(next);
     setError(null);
     setForgotSent(false);
+  };
+
+  const startGoogleLogin = () => {
+    setGoogleLoading(true);
+    setError(null);
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get("returnTo");
+    const url = new URL("/api/auth/google/start", window.location.origin);
+    if (returnTo && returnTo.startsWith("/shared/")) {
+      url.searchParams.set("returnTo", returnTo);
+    }
+    window.location.href = url.toString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,6 +165,27 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
             </div>
           ) : (
             <>
+              {mode !== "forgot" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="3"
+                    onClick={startGoogleLogin}
+                    disabled={loading || googleLoading}
+                    className="!h-12 !w-full !rounded-full !border-[#d8d8d2] !bg-white !font-semibold !text-stone-800 hover:!bg-stone-50"
+                  >
+                    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-sm font-bold text-[#4285F4]">G</span>
+                    {googleLoading ? "Opening Google..." : "Continue with Google"}
+                  </Button>
+                  <div className="my-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                    <span className="h-px flex-1 bg-stone-200" />
+                    <span>{mode === "signup" ? "or create with email" : "or sign in with email"}</span>
+                    <span className="h-px flex-1 bg-stone-200" />
+                  </div>
+                </>
+              )}
+
               <div className="space-y-3">
                 {mode === "signup" && (
                   <div>

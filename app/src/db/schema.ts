@@ -8,6 +8,9 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   avatarUrl: text("avatar_url"),
+  authProvider: text("auth_provider").notNull().default("password"),
+  googleSub: text("google_sub").unique(),
+  emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   // Profile fields
   cookingSkillLevel: text("cooking_skill_level"), // "beginner" | "intermediate" | "advanced"
   householdSize: integer("household_size"),

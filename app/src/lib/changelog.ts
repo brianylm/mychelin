@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-08",
+    title: "Google sign-in",
+    items: [
+      "Login and signup screens now include Continue with Google.",
+      "Google accounts use the same Mychelin session cookie as email login, so recipes, meal plans, and profile settings continue to work normally.",
+      "Existing email accounts can be linked to Google when the Google email is verified.",
+    ],
+  },
+  {
+    date: "2026-06-08",
     title: "Cooking rhythm and reminders",
     items: [
       "Onboarding home-cooking frequency now seeds a weekly cooking goal in Profile.",
