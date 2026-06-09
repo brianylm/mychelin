@@ -124,8 +124,25 @@ function RecipeWorkspaceContent({
     if (typeof window === "undefined") return;
     const key = "mychelin_pilot_feedback_prompted_" + stage;
     if (window.localStorage.getItem(key) === "1") return;
-    window.localStorage.setItem(key, "1");
-    window.setTimeout(() => setPilotFeedbackStage(stage), 600);
+
+    const showPrompt = () => {
+      if (window.localStorage.getItem(key) === "1") return;
+      window.localStorage.setItem(key, "1");
+      setPilotFeedbackStage(stage);
+    };
+
+    if (stage === "first_capture") {
+      const pendingKey = key + "_pending";
+      if (window.localStorage.getItem(pendingKey) === "1") return;
+      window.localStorage.setItem(pendingKey, "1");
+      window.setTimeout(() => {
+        window.localStorage.removeItem(pendingKey);
+        showPrompt();
+      }, 60000);
+      return;
+    }
+
+    window.setTimeout(showPrompt, 600);
   }, []);
 
   const handleNavigateToRecipe = useCallback((recipeId: number) => {

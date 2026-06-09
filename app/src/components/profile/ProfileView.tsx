@@ -90,6 +90,48 @@ function rhythmMessage(summary: RhythmSummary | null): string {
   return "Plan or cook one more dish to keep the week moving.";
 }
 
+function ProfileSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto bg-surface">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 pb-28">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <div className="h-5 w-40 animate-pulse rounded bg-neutral-200" />
+          <div className="mt-4 h-4 w-64 max-w-full animate-pulse rounded bg-neutral-100" />
+        </div>
+        <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="h-3 w-28 animate-pulse rounded bg-[#eadfce]" />
+              <div className="mt-3 h-5 w-56 max-w-full animate-pulse rounded bg-neutral-200" />
+              <div className="mt-3 h-4 w-full animate-pulse rounded bg-neutral-100" />
+            </div>
+            <div className="h-11 w-11 animate-pulse rounded-full bg-[#eadfce]" />
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="rounded-xl border border-[#eadfce] bg-white p-3">
+                <div className="h-3 w-20 animate-pulse rounded bg-neutral-100" />
+                <div className="mt-3 h-7 w-10 animate-pulse rounded bg-neutral-200" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 h-2 animate-pulse rounded-full bg-[#eadfce]" />
+        </div>
+        {[0, 1, 2].map((section) => (
+          <div key={section} className="rounded-2xl border border-neutral-200 bg-white p-5">
+            <div className="h-5 w-36 animate-pulse rounded bg-neutral-200" />
+            <div className="mt-5 space-y-3">
+              <div className="h-10 animate-pulse rounded-lg bg-neutral-100" />
+              <div className="h-10 animate-pulse rounded-lg bg-neutral-100" />
+              <div className="h-10 w-3/4 animate-pulse rounded-lg bg-neutral-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ProfileView() {
   const { user, logout } = useAuth();
   const { addToast } = useToast();
@@ -371,11 +413,7 @@ export function ProfileView() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center bg-surface">
-        <div className="text-neutral-500">Loading profile...</div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   return (

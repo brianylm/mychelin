@@ -7,6 +7,8 @@ export interface CalendarEvent {
   location?: string;
 }
 
+const MYCHELIN_APP_URL = "https://mychelin-sg.vercel.app/app";
+
 const MEAL_TIMES: Record<string, { hour: number; minute: number }> = {
   breakfast: { hour: 8, minute: 0 },
   lunch: { hour: 12, minute: 30 },
@@ -23,6 +25,12 @@ export function getMealDateTime(dateStr: string, meal: string): Date {
 
 function formatICSDate(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function withMychelinBacklink(description?: string): string {
+  return [description?.trim(), "Open in Mychelin: " + MYCHELIN_APP_URL]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function escapeICS(str: string): string {
@@ -50,9 +58,7 @@ export function generateICS(events: CalendarEvent[]): Blob {
     lines.push(`DTSTART:${formatICSDate(event.startDate)}`);
     lines.push(`DTEND:${formatICSDate(event.endDate)}`);
     lines.push(`SUMMARY:${escapeICS(event.title)}`);
-    if (event.description) {
-      lines.push(`DESCRIPTION:${escapeICS(event.description)}`);
-    }
+    lines.push(`DESCRIPTION:${escapeICS(withMychelinBacklink(event.description))}`);
     if (event.location) {
       lines.push(`LOCATION:${escapeICS(event.location)}`);
     }
@@ -86,9 +92,7 @@ export function buildGoogleCalendarUrl(event: CalendarEvent): string {
     text: event.title,
     dates: `${formatDate(event.startDate)}/${formatDate(event.endDate)}`,
   });
-  if (event.description) {
-    params.set("details", event.description);
-  }
+  params.set("details", withMychelinBacklink(event.description));
   if (event.location) {
     params.set("location", event.location);
   }
@@ -105,9 +109,7 @@ export function buildOutlookUrl(event: CalendarEvent): string {
     startdt: formatDate(event.startDate),
     enddt: formatDate(event.endDate),
   });
-  if (event.description) {
-    params.set("body", event.description);
-  }
+  params.set("body", withMychelinBacklink(event.description));
   if (event.location) {
     params.set("location", event.location);
   }

@@ -406,9 +406,9 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                             </button>
                           </div>
                           <div className="mt-3 grid grid-cols-3 gap-2">
-                            <button type="button" onClick={() => adjustTimer(recipe, -60)} className="flex items-center justify-center gap-1 rounded-lg bg-white px-2 py-2 text-xs font-medium text-neutral-700 shadow-sm"><Minus className="h-3.5 w-3.5" />1 min</button>
-                            <button type="button" onClick={() => resetTimer(recipe)} className="flex items-center justify-center gap-1 rounded-lg bg-white px-2 py-2 text-xs font-medium text-neutral-700 shadow-sm"><TimerReset className="h-3.5 w-3.5" />Reset</button>
-                            <button type="button" onClick={() => adjustTimer(recipe, 60)} className="flex items-center justify-center gap-1 rounded-lg bg-white px-2 py-2 text-xs font-medium text-neutral-700 shadow-sm"><Plus className="h-3.5 w-3.5" />1 min</button>
+                            <button type="button" onClick={() => adjustTimer(recipe, -60)} className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-lg bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"><Minus className="h-3.5 w-3.5" />-1m</button>
+                            <button type="button" onClick={() => resetTimer(recipe)} className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-lg bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"><TimerReset className="h-3.5 w-3.5" />Reset</button>
+                            <button type="button" onClick={() => adjustTimer(recipe, 60)} className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-lg bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"><Plus className="h-3.5 w-3.5" />+1m</button>
                           </div>
                         </div>
 

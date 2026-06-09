@@ -126,26 +126,30 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
         </div>
 
         {/* Date range picker */}
-        <div className="mb-4 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white p-3">
-          <div className="flex flex-1 items-center gap-2">
-            <label className="text-xs font-medium text-neutral-500">From</label>
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) =>
-                setDateRange((r) => ({ ...r, start: e.target.value }))
-              }
-              className="rounded-lg border border-neutral-200 px-2 py-1 text-sm outline-none focus:border-neutral-400"
-            />
-            <label className="text-xs font-medium text-neutral-500">To</label>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) =>
-                setDateRange((r) => ({ ...r, end: e.target.value }))
-              }
-              className="rounded-lg border border-neutral-200 px-2 py-1 text-sm outline-none focus:border-neutral-400"
-            />
+        <div className="mb-4 grid gap-3 rounded-2xl border border-neutral-200 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+            <label className="min-w-0 text-xs font-medium text-neutral-500">
+              <span className="mb-1 block">From</span>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) =>
+                  setDateRange((r) => ({ ...r, start: e.target.value }))
+                }
+                className="w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-[13px] outline-none focus:border-neutral-400"
+              />
+            </label>
+            <label className="min-w-0 text-xs font-medium text-neutral-500">
+              <span className="mb-1 block">To</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) =>
+                  setDateRange((r) => ({ ...r, end: e.target.value }))
+                }
+                className="w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-[13px] outline-none focus:border-neutral-400"
+              />
+            </label>
           </div>
           <Button size="1" variant="soft" onClick={fetchList}>
             Refresh

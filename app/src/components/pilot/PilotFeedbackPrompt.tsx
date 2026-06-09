@@ -16,8 +16,8 @@ interface PilotFeedbackPromptProps {
 
 const COPY: Record<PilotFeedbackStage, { title: string; body: string }> = {
   first_capture: {
-    title: "How was that first recipe capture?",
-    body: "A short note helps us find the rough edges before pilot users hit them.",
+    title: "Was this recipe capture useful?",
+    body: "After reviewing the generated recipe, tell us what felt useful or what still needs work.",
   },
   first_cook: {
     title: "How did cook-with-me feel?",

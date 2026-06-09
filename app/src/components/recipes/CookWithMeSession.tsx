@@ -467,23 +467,23 @@ export function CookWithMeSession({
                     <button
                       type="button"
                       onClick={() => adjustTimer(-60)}
-                      className="flex items-center justify-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-medium text-neutral-700 shadow-sm"
+                      className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-xl bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"
                     >
-                      <Minus className="h-3.5 w-3.5" /> 1 min
+                      <Minus className="h-3.5 w-3.5" /> -1m
                     </button>
                     <button
                       type="button"
                       onClick={resetTimer}
-                      className="flex items-center justify-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-medium text-neutral-700 shadow-sm"
+                      className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-xl bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"
                     >
                       <TimerReset className="h-3.5 w-3.5" /> Reset
                     </button>
                     <button
                       type="button"
                       onClick={() => adjustTimer(60)}
-                      className="flex items-center justify-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-medium text-neutral-700 shadow-sm"
+                      className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-xl bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"
                     >
-                      <Plus className="h-3.5 w-3.5" /> 1 min
+                      <Plus className="h-3.5 w-3.5" /> +1m
                     </button>
                   </div>
                 </div>
