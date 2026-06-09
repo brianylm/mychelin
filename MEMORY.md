@@ -1669,3 +1669,32 @@ Follow-ups:
 - Manually test logged-in browser behavior: click a recipe and confirm URL becomes `/app?recipe=<id>`; refresh and confirm the same recipe opens; clear back to recipe grid and confirm the query clears.
 - Verify exported calendar events include `Open in Mychelin: https://mychelin-sg.vercel.app/app?recipe=<id>` for planned meals.
 - Shared `/shared/<token>` links remain separate from private authenticated deep links.
+
+### 2026-06-09 - Internal usage analytics dashboard
+
+Changed/decided:
+
+- Added an internal product usage dashboard at `/admin/analytics`.
+- Added a protected aggregate analytics API at `/api/admin/analytics`, gated by logged-in email in `ANALYTICS_ADMIN_EMAILS` or `ADMIN_EMAILS`.
+- Dashboard tracks total/new/active users, activation funnel, daily event volume, top usage events, capture sources/providers, onboarding goals, cooking rhythm, first capture modes, pilot feedback, and recent event metadata.
+- Kept the dashboard privacy-safe: it does not return recipe text, prompts, transcripts, photos, family stories, or uploaded content.
+- Deployed the dashboard to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/app/admin/analytics/page.tsx`
+- `app/src/app/api/admin/analytics/route.ts`
+
+Checks:
+
+- Focused `npx eslint src/app/api/admin/analytics/route.ts src/app/admin/analytics/page.tsx` passed.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/`, `/app`, and `/admin/analytics` returned HTTP 200.
+- Production `/api/admin/analytics` returned HTTP 401 without auth, as intended.
+
+Follow-ups:
+
+- Add the operator login email to Vercel `ANALYTICS_ADMIN_EMAILS` or `ADMIN_EMAILS`; otherwise the dashboard shell loads but the API will return 403 after login.
+- As pilot usage grows, consider adding cohort filtering by signup date/source and exportable CSV snapshots.
