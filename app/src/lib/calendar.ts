@@ -5,6 +5,7 @@ export interface CalendarEvent {
   endDate: Date;
   description?: string;
   location?: string;
+  recipeId?: number | null;
 }
 
 const MYCHELIN_APP_URL = "https://mychelin-sg.vercel.app/app";
@@ -27,8 +28,13 @@ function formatICSDate(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 }
 
-function withMychelinBacklink(description?: string): string {
-  return [description?.trim(), "Open in Mychelin: " + MYCHELIN_APP_URL]
+function buildMychelinAppLink(recipeId?: number | null): string {
+  if (!recipeId) return MYCHELIN_APP_URL;
+  return MYCHELIN_APP_URL + "?recipe=" + encodeURIComponent(String(recipeId));
+}
+
+function withMychelinBacklink(event: CalendarEvent): string {
+  return [event.description?.trim(), "Open in Mychelin: " + buildMychelinAppLink(event.recipeId)]
     .filter(Boolean)
     .join("\n\n");
 }
@@ -58,7 +64,7 @@ export function generateICS(events: CalendarEvent[]): Blob {
     lines.push(`DTSTART:${formatICSDate(event.startDate)}`);
     lines.push(`DTEND:${formatICSDate(event.endDate)}`);
     lines.push(`SUMMARY:${escapeICS(event.title)}`);
-    lines.push(`DESCRIPTION:${escapeICS(withMychelinBacklink(event.description))}`);
+    lines.push(`DESCRIPTION:${escapeICS(withMychelinBacklink(event))}`);
     if (event.location) {
       lines.push(`LOCATION:${escapeICS(event.location)}`);
     }
@@ -92,7 +98,7 @@ export function buildGoogleCalendarUrl(event: CalendarEvent): string {
     text: event.title,
     dates: `${formatDate(event.startDate)}/${formatDate(event.endDate)}`,
   });
-  params.set("details", withMychelinBacklink(event.description));
+  params.set("details", withMychelinBacklink(event));
   if (event.location) {
     params.set("location", event.location);
   }
@@ -109,7 +115,7 @@ export function buildOutlookUrl(event: CalendarEvent): string {
     startdt: formatDate(event.startDate),
     enddt: formatDate(event.endDate),
   });
-  params.set("body", withMychelinBacklink(event.description));
+  params.set("body", withMychelinBacklink(event));
   if (event.location) {
     params.set("location", event.location);
   }

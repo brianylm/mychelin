@@ -388,6 +388,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
         startDate: start,
         endDate: end,
         description: `Planned meal: ${plan.recipe?.title || "Meal"}`,
+        recipeId: plan.recipeId,
       };
     });
   };

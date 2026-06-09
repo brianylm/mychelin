@@ -4,6 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -87,8 +89,14 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
-  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const rawRecipeId = new URLSearchParams(window.location.search).get("recipe");
+    const recipeId = rawRecipeId ? Number(rawRecipeId) : NaN;
+    return Number.isInteger(recipeId) && recipeId > 0 ? recipeId : null;
+  });
   const [justCreatedRecipeId, setJustCreatedRecipeId] = useState<number | null>(null);
+  const hasMountedRef = useRef(false);
 
   // Fetch all recipes (list)
   const {
@@ -305,6 +313,36 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       qc.invalidateQueries({ queryKey: ["recipe", vars.recipeId] });
     },
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    const url = new URL(window.location.href);
+    const current = url.searchParams.get("recipe");
+    const next = selectedRecipeId ? String(selectedRecipeId) : null;
+
+    if (next && current !== next) {
+      url.searchParams.set("recipe", next);
+      window.history.replaceState(window.history.state, "", url.toString());
+    } else if (!next && current !== null) {
+      url.searchParams.delete("recipe");
+      window.history.replaceState(window.history.state, "", url.toString());
+    }
+  }, [selectedRecipeId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handlePopState = () => {
+      const rawRecipeId = new URLSearchParams(window.location.search).get("recipe");
+      const recipeId = rawRecipeId ? Number(rawRecipeId) : NaN;
+      setSelectedRecipeId(Number.isInteger(recipeId) && recipeId > 0 ? recipeId : null);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Stable callbacks
   const selectRecipe = useCallback((id: number | null) => {
