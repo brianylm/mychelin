@@ -1639,3 +1639,33 @@ Follow-ups:
 
 - User should test the three-step onboarding on a fresh account, Profile loading skeletons, shopping date controls on mobile, calendar export descriptions, cook-with-me timer button alignment, and first-capture feedback prompt timing.
 - Recipe-specific calendar backlinks still require a reliable deep-link route/query handling for selected recipes; current implementation links back to the app.
+
+### 2026-06-09 - Authenticated recipe deep links
+
+Changed/decided:
+
+- Added authenticated private recipe deep links via `/app?recipe=<id>` by hydrating `selectedRecipeId` from the URL in `RecipeStoreProvider`.
+- Recipe selection now keeps the `recipe` query parameter in sync, and clearing selection removes the query parameter.
+- Browser back/forward listens for `popstate` and restores selection from the URL.
+- Calendar event descriptions now link to the exact recipe when the meal plan has a recipe id, falling back to `/app` otherwise.
+- Deployed the deep-link update to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/store/RecipeStore.tsx`
+- `app/src/lib/calendar.ts`
+- `app/src/components/planner/MealPlanView.tsx`
+
+Checks:
+
+- Focused `npx eslint src/store/RecipeStore.tsx src/lib/calendar.ts src/components/planner/MealPlanView.tsx` passed.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/`, `/app`, and `/app?recipe=1` returned HTTP 200.
+
+Follow-ups:
+
+- Manually test logged-in browser behavior: click a recipe and confirm URL becomes `/app?recipe=<id>`; refresh and confirm the same recipe opens; clear back to recipe grid and confirm the query clears.
+- Verify exported calendar events include `Open in Mychelin: https://mychelin-sg.vercel.app/app?recipe=<id>` for planned meals.
+- Shared `/shared/<token>` links remain separate from private authenticated deep links.
