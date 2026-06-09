@@ -1698,3 +1698,47 @@ Follow-ups:
 
 - Add the operator login email to Vercel `ANALYTICS_ADMIN_EMAILS` or `ADMIN_EMAILS`; otherwise the dashboard shell loads but the API will return 403 after login.
 - As pilot usage grows, consider adding cohort filtering by signup date/source and exportable CSV snapshots.
+
+### 2026-06-09 - Privacy and access-control hardening
+
+Changed/decided:
+
+- Audited high-risk API surfaces for cross-user access: auth, recipes, recipe search, recipe versions, attempts, photos, books, book recipes, book analysis, sharing, meal plans, shopping list, inventory, notifications, pilot feedback, and admin analytics.
+- Fixed recipe search diagnostics so debug/sample ingredient counts are scoped only to recipes visible to the current user.
+- Fixed recipe share-link creation so users can only create share links for recipes they can access.
+- Fixed book recipe add/remove paths so editors can only add recipes they can access and remove logging no longer reveals guessed recipe titles.
+- Fixed book principle analysis so recipe contents are read only after book membership is verified.
+- Fixed recipe version tree/base-version/compare queries so guessed version ids or fork descendants outside the user's visible recipes are not returned or used.
+- Fixed cover-photo selection so the cover must be one of the recipe's uploaded photos.
+- Added shared admin email gating in `app/src/lib/admin-auth.ts` and applied it to admin analytics, the version migration endpoint, and global ingredient-catalog writes.
+- Deployed the privacy hardening to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/lib/admin-auth.ts`
+- `app/src/app/api/admin/analytics/route.ts`
+- `app/src/app/api/admin/migrate-versions/route.ts`
+- `app/src/app/api/books/[id]/analyze-principles/route.ts`
+- `app/src/app/api/books/[id]/recipes/route.ts`
+- `app/src/app/api/ingredient-catalog/route.ts`
+- `app/src/app/api/ingredient-catalog/[id]/route.ts`
+- `app/src/app/api/recipes/[id]/photos/route.ts`
+- `app/src/app/api/recipes/[id]/versions/route.ts`
+- `app/src/app/api/recipes/[id]/versions/compare/route.ts`
+- `app/src/app/api/recipes/search/route.ts`
+- `app/src/app/api/share/route.ts`
+
+Checks:
+
+- Focused ESLint on touched files passed.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/` and `/app` returned HTTP 200.
+- Production unauthenticated checks returned HTTP 401 for `/api/recipes/search`, `/api/share`, `/api/books/1/analyze-principles`, and catalog write `/api/ingredient-catalog`.
+
+Follow-ups:
+
+- Uploaded recipe photos and voice clips are still public Vercel Blob URLs once someone has the URL; access to URL discovery/listing is gated, but true private media would require signed/private blob delivery.
+- Shared links remain intentionally public to anyone with the token; token management/revocation should stay visible in the sharing UI.
+- Consider adding automated two-user isolation tests before pilot launch.
