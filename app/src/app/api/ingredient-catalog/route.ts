@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { ingredientCatalog } from "@/db/schema";
 import { asc } from "drizzle-orm";
+import { requireAdminUser } from "@/lib/admin-auth";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -28,6 +29,9 @@ export async function GET() {
 // Creates a new ingredient catalog item
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAdminUser();
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const { name, category, defaultUnit } = body;
 

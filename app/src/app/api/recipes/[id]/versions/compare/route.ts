@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeVersions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 
@@ -59,10 +59,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const [baseVersion, compareVersion] = await Promise.all([
       db.query.recipeVersions.findFirst({
-        where: eq(recipeVersions.id, baseId),
+        where: and(eq(recipeVersions.id, baseId), eq(recipeVersions.recipeId, recipeId)),
       }),
       db.query.recipeVersions.findFirst({
-        where: eq(recipeVersions.id, compareId),
+        where: and(eq(recipeVersions.id, compareId), eq(recipeVersions.recipeId, recipeId)),
       }),
     ]);
 
@@ -70,13 +70,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "One or both versions not found" },
         { status: 404 }
-      );
-    }
-
-    if (baseVersion.recipeId !== recipeId || compareVersion.recipeId !== recipeId) {
-      return NextResponse.json(
-        { error: "Versions do not belong to this recipe" },
-        { status: 400 }
       );
     }
 

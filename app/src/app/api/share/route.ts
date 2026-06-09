@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { shareLinks, recipes, books } from "@/db/schema";
+import { shareLinks, books } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { eq, and } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -63,12 +64,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid permission" }, { status: 400 });
     }
 
-    // Verify ownership
+    // Verify access before creating a public share token.
     if (resourceType === "recipe") {
-      const recipe = await db.query.recipes.findFirst({
-        where: eq(recipes.id, resourceId),
-      });
-      if (!recipe) {
+      if (!(await canUserAccessRecipe(currentUser.id, Number(resourceId)))) {
         return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
       }
     } else {

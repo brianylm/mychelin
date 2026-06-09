@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@libsql/client/web";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdminUser } from "@/lib/admin-auth";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -14,11 +14,9 @@ export const preferredRegion = "hnd1";
 // 2. Backfills version_label for existing rows from version_number
 // 3. For every recipe with zero versions, creates a v1 row from the recipe's
 //    current ingredients/instructions and points active_version_id at it
-export async function POST(_request: NextRequest) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function POST() {
+  const auth = await requireAdminUser();
+  if (auth.response) return auth.response;
 
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -34,11 +32,12 @@ export async function POST(_request: NextRequest) {
     try {
       await client.execute(`ALTER TABLE recipe_versions ADD COLUMN version_label text`);
       report.addColumn = "added";
-    } catch (e: any) {
-      if (String(e?.message ?? "").toLowerCase().includes("duplicate")) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (message.toLowerCase().includes("duplicate")) {
         report.addColumn = "already exists";
       } else {
-        report.addColumn = `skipped: ${e?.message ?? e}`;
+        report.addColumn = `skipped: ${message}`;
       }
     }
 
@@ -73,18 +72,18 @@ export async function POST(_request: NextRequest) {
       });
 
       const ingredientsJson = JSON.stringify(
-        ingRes.rows.map((r: any) => ({
-          name: r.name,
-          quantity: r.quantity,
-          unit: r.unit,
-          notes: r.notes,
+        ingRes.rows.map((row) => ({
+          name: row.name,
+          quantity: row.quantity,
+          unit: row.unit,
+          notes: row.notes,
         }))
       );
       const instructionsJson = JSON.stringify(
-        instRes.rows.map((r: any) => ({
-          content: r.content,
-          tip: r.tip,
-          imageUrl: r.image_url,
+        instRes.rows.map((row) => ({
+          content: row.content,
+          tip: row.tip,
+          imageUrl: row.image_url,
         }))
       );
 
@@ -112,10 +111,10 @@ export async function POST(_request: NextRequest) {
     report.createdV1ForRecipes = createdV1Count;
 
     return NextResponse.json({ ok: true, report });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Migration error:", error);
     return NextResponse.json(
-      { error: error?.message ?? "Migration failed", report },
+      { error: error instanceof Error ? error.message : "Migration failed", report },
       { status: 500 }
     );
   }

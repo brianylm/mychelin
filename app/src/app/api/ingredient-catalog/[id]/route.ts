@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { ingredientCatalog } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAdminUser } from "@/lib/admin-auth";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -39,6 +40,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 // Update an ingredient catalog item (partial update supported)
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
+    const auth = await requireAdminUser();
+    if (auth.response) return auth.response;
+
     const { id } = await context.params;
     const itemId = Number(id);
     const body = await request.json();
@@ -56,8 +60,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const { name, category, defaultUnit } = body;
-    const updateFields: any = {};
-    
+    const updateFields: Partial<typeof ingredientCatalog.$inferInsert> = {};
+
     if (name !== undefined) updateFields.name = name;
     if (category !== undefined) updateFields.category = category;
     if (defaultUnit !== undefined) updateFields.defaultUnit = defaultUnit;
@@ -97,6 +101,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ─── DELETE /api/ingredient-catalog/:id ────────────────────
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
+    const auth = await requireAdminUser();
+    if (auth.response) return auth.response;
+
     const { id } = await context.params;
     const itemId = Number(id);
 

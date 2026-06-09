@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeVersions, recipes } from "@/db/schema";
-import { eq, desc, max, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, like, max, or } from "drizzle-orm";
 import { ensureVersionLabelColumn } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, recipesVisibleTo } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -73,10 +73,14 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const allRecipeIds = new Set<number>([rootId]);
     let frontier: number[] = [rootId];
     for (let depth = 0; depth < 20 && frontier.length > 0; depth++) {
+      const childPredicates = frontier.flatMap((parentId) => [
+        eq(recipes.forkedFrom, String(parentId)),
+        like(recipes.forkedFrom, String(parentId) + ":%"),
+      ]);
       const children = await db
         .select({ id: recipes.id, forkedFrom: recipes.forkedFrom })
         .from(recipes)
-        .where(inArray(recipes.forkedFrom, frontier.map((n) => String(n))));
+        .where(and(recipesVisibleTo(currentUser.id), or(...childPredicates)));
       const next: number[] = [];
       for (const child of children) {
         if (!allRecipeIds.has(child.id)) {
@@ -173,7 +177,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (baseVersionId && (!newIngredients || !newInstructions)) {
       const baseVersion = await db.query.recipeVersions.findFirst({
-        where: eq(recipeVersions.id, Number(baseVersionId)),
+        where: and(
+          eq(recipeVersions.id, Number(baseVersionId)),
+          eq(recipeVersions.recipeId, recipeId)
+        ),
       });
       if (baseVersion) {
         if (!newIngredients) {

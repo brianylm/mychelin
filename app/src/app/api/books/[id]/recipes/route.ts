@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { bookMembers, bookRecipes, bookActivityLog, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { eq, and } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -107,19 +108,20 @@ export async function POST(
       );
     }
 
-    // Check if recipe exists
-    const recipe = await db
-      .select({ title: recipes.title })
-      .from(recipes)
-      .where(eq(recipes.id, recipeId))
-      .limit(1);
-
-    if (!recipe.length) {
+    // Check if recipe exists and the editor can access it before adding
+    // it to a shared book.
+    if (!(await canUserAccessRecipe(currentUser.id, Number(recipeId)))) {
       return NextResponse.json(
         { error: "Recipe not found" },
         { status: 404 }
       );
     }
+
+    const recipe = await db
+      .select({ title: recipes.title })
+      .from(recipes)
+      .where(eq(recipes.id, recipeId))
+      .limit(1);
 
     // Check if recipe is already in the book
     const existing = await db
@@ -224,15 +226,20 @@ export async function DELETE(
       );
     }
 
-    // Get recipe title for logging
+    // Get recipe title for logging, scoped to the book membership row so
+    // a guessed recipe id cannot reveal another recipe title.
     const recipe = await db
       .select({ title: recipes.title })
-      .from(recipes)
-      .where(eq(recipes.id, recipeId))
+      .from(bookRecipes)
+      .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
+      .where(and(
+        eq(bookRecipes.bookId, bookId),
+        eq(bookRecipes.recipeId, recipeId)
+      ))
       .limit(1);
 
     // Remove recipe from book
-    const deletedRows = await db
+    await db
       .delete(bookRecipes)
       .where(and(
         eq(bookRecipes.bookId, bookId),

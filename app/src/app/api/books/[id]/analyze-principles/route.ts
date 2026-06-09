@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { books, bookRecipes, recipes, ingredients, instructions } from "@/db/schema";
+import { books, bookMembers, bookRecipes, recipes, ingredients, instructions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -50,8 +50,16 @@ export async function POST(
       return NextResponse.json({ error: "Invalid book id" }, { status: 400 });
     }
 
-    // Verify the book exists. (Membership scoping is lax on this project
-    // and matches the existing books routes, so we don't re-gate here.)
+    // Verify membership before reading recipe contents from the book.
+    const [membership] = await db
+      .select({ role: bookMembers.role })
+      .from(bookMembers)
+      .where(and(eq(bookMembers.bookId, bookId), eq(bookMembers.userId, user.id)))
+      .limit(1);
+    if (!membership) {
+      return NextResponse.json({ error: "Book not found" }, { status: 404 });
+    }
+
     const [book] = await db
       .select()
       .from(books)

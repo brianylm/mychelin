@@ -3,7 +3,7 @@ import { desc, gte } from "drizzle-orm";
 import { db } from "@/db";
 import { pilotFeedback, usageEvents, users } from "@/db/schema";
 import { ensurePilotFeedbackTable, ensureUsageEventsTable } from "@/db/ensure-schema";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAdminUser } from "@/lib/admin-auth";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -17,20 +17,6 @@ const FUNNEL_STEPS = [
   { id: "cook", label: "Cook attempt", eventNames: ["cook_attempt_created"] },
   { id: "version", label: "Promoted version", eventNames: ["attempt_promoted_to_version"] },
 ];
-
-function adminEmails(): Set<string> {
-  const raw = process.env.ANALYTICS_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "";
-  return new Set(
-    raw
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
-function isAdminEmail(email: string): boolean {
-  return adminEmails().has(email.trim().toLowerCase());
-}
 
 function dayKey(iso: string): string {
   return iso.slice(0, 10);
@@ -75,14 +61,8 @@ function pct(value: number, total: number): number {
 
 export async function GET() {
   try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (!isAdminEmail(currentUser.email)) {
-      return NextResponse.json(
-        { error: "Forbidden", detail: "Add this email to ANALYTICS_ADMIN_EMAILS or ADMIN_EMAILS." },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdminUser();
+    if (auth.response) return auth.response;
 
     await ensureUsageEventsTable();
     await ensurePilotFeedbackTable();

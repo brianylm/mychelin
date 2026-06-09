@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { db } from "@/db";
 import { recipePhotos, recipes } from "@/db/schema";
-import { eq, max } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
@@ -50,6 +50,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (!photoUrl) {
       return NextResponse.json({ error: "photoUrl is required" }, { status: 400 });
+    }
+
+    const photo = await db.query.recipePhotos.findFirst({
+      where: and(
+        eq(recipePhotos.recipeId, recipeId),
+        eq(recipePhotos.blobUrl, photoUrl)
+      ),
+    });
+
+    if (!photo) {
+      return NextResponse.json({ error: "Photo not found" }, { status: 404 });
     }
 
     await db

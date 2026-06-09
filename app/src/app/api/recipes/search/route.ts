@@ -91,20 +91,25 @@ export async function GET(request: NextRequest) {
       // differently than we expect.
       const [ingCount] = await db
         .select({ n: sql<number>`count(*)` })
-        .from(ingredients);
+        .from(ingredients)
+        .innerJoin(recipes, eq(recipes.id, ingredients.recipeId))
+        .where(visible);
       const [recCount] = await db
         .select({ n: sql<number>`count(*)` })
-        .from(recipes);
+        .from(recipes)
+        .where(visible);
       const sampleIngredients = await db
         .select({ name: ingredients.name })
         .from(ingredients)
+        .innerJoin(recipes, eq(recipes.id, ingredients.recipeId))
+        .where(visible)
         .limit(20);
       debugPayload = {
         query: q,
         titleMatchCount: titleMatches.length,
         ingredientMatchCount: ingredientMatches.length,
-        totalIngredientsInDb: ingCount?.n ?? 0,
-        totalRecipesInDb: recCount?.n ?? 0,
+        visibleIngredientsInDb: ingCount?.n ?? 0,
+        visibleRecipesInDb: recCount?.n ?? 0,
         sampleIngredientNames: sampleIngredients.map((s) => s.name),
       };
     }
