@@ -1603,3 +1603,39 @@ Follow-ups:
 
 - User should retest by speaking immediately after recording starts. Expected: audio meter moves; if live caption events fire, text appears directly; if not, the chat shows the listening placeholder and short-batch transcript should appear when speech transcription is available.
 - If no transcript appears after this change, inspect production logs for `/api/capture/transcribe-whisper` and `/api/capture/realtime-transcription`; likely remaining cause is OpenAI billing/tier or unsupported browser speech recognition on the test device.
+
+### 2026-06-09 - Pilot onboarding and utility UI polish
+
+Changed/decided:
+
+- Split onboarding into a three-step flow: goals, cooking rhythm, and first recipe capture path.
+- Replaced Profile plain loading text with skeleton loading sections that match the profile layout.
+- Added a Mychelin `/app` backlink to Google Calendar, Outlook, and ICS event descriptions.
+- Fixed shopping-list date selector overflow by stacking/wrapping date fields on small screens.
+- Tightened cook-with-me timer controls from `1 min` labels to `-1m` and `+1m` with smaller non-wrapping text in single and multi-dish sessions.
+- Delayed the first-capture pilot feedback prompt by 60 seconds and updated copy so it asks after users have had time to review the generated recipe.
+- Deployed the UI batch to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/components/onboarding/OnboardingFlow.tsx`
+- `app/src/components/profile/ProfileView.tsx`
+- `app/src/lib/calendar.ts`
+- `app/src/components/shopping/ShoppingListView.tsx`
+- `app/src/components/recipes/CookWithMeSession.tsx`
+- `app/src/components/recipes/MultiCookWithMeSession.tsx`
+- `app/src/components/RecipeWorkspace.tsx`
+- `app/src/components/pilot/PilotFeedbackPrompt.tsx`
+
+Checks:
+
+- Focused ESLint on touched app files passed with only the existing onboarding `<img>` warning.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/` and `/app` returned HTTP 200.
+
+Follow-ups:
+
+- User should test the three-step onboarding on a fresh account, Profile loading skeletons, shopping date controls on mobile, calendar export descriptions, cook-with-me timer button alignment, and first-capture feedback prompt timing.
+- Recipe-specific calendar backlinks still require a reliable deep-link route/query handling for selected recipes; current implementation links back to the app.
