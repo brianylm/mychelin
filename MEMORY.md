@@ -1742,3 +1742,31 @@ Follow-ups:
 - Uploaded recipe photos and voice clips are still public Vercel Blob URLs once someone has the URL; access to URL discovery/listing is gated, but true private media would require signed/private blob delivery.
 - Shared links remain intentionally public to anyone with the token; token management/revocation should stay visible in the sharing UI.
 - Consider adding automated two-user isolation tests before pilot launch.
+
+### 2026-06-10 - Sidebar library hierarchy and OCR placement
+
+Changed/decided:
+
+- Renamed the authenticated sidebar's top recipe section from `Recipes` to `Recipe library` so it reads as the user's saved/captured recipe library rather than another create action.
+- Demoted the Books create action from a `+ New` text button to a compact icon-only `Create book` action, reducing mid-screen pull away from the primary Create recipe path.
+- Updated empty Books copy so books are framed as later organization, not a required first action.
+- Decided OCR should be a dedicated `Scan recipe photo` capture path under Create recipe, separate from Import URL and Paste recipe text. OCR output should feed the same recipe parser as pasted text while preserving the original image as provenance.
+- Updated `ROADMAP.md` to include scanned recipe photos in AI recipe capture and a dedicated OCR/photo import workflow.
+- Deployed the sidebar copy/hierarchy update to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/components/layout/RecipeSidebar.tsx`
+- `ROADMAP.md`
+
+Checks:
+
+- Focused `npx eslint src/components/layout/RecipeSidebar.tsx` passed.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/` and `/app` returned HTTP 200.
+
+Follow-ups:
+
+- Implement the actual OCR flow as a new Create recipe action: capture/upload image, run OCR, show extracted text for correction, then parse into recipe fields.
