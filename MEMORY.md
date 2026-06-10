@@ -1770,3 +1770,29 @@ Checks:
 Follow-ups:
 
 - Implement the actual OCR flow as a new Create recipe action: capture/upload image, run OCR, show extracted text for correction, then parse into recipe fields.
+
+### 2026-06-10 - One-click Create recipe route presentation
+
+Changed/decided:
+
+- Removed the Create recipe accordion interaction from the authenticated sidebar because it added an unnecessary extra click before recipe capture.
+- Kept the input-route mental model as visual grouping only: `Capture from real life`, `Import existing recipe`, and `Start from scratch`.
+- Existing route buttons are now directly visible and one-click: Live conversation, Import URL/video, Paste recipe text, Ask Mychelin, and Manual recipe.
+- Did not add a disabled Scan photo/OCR button yet; the OCR route should appear when the actual OCR flow exists, not as a dead affordance.
+- Deployed the sidebar route-presentation update to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `app/src/components/layout/sidebar/SidebarToolbar.tsx`
+
+Checks:
+
+- Focused `npx eslint src/components/layout/sidebar/SidebarToolbar.tsx` passed.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/` and `/app` returned HTTP 200.
+
+Follow-ups:
+
+- When OCR is implemented, add `Scan recipe photo` as the first one-click route under `Capture from real life`, alongside Live conversation.
