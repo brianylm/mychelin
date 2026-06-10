@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Link2Icon } from "@radix-ui/react-icons";
-import { ChevronDown, ClipboardPaste, Mic2, PencilLine, Sparkles } from "lucide-react";
+import { ClipboardPaste, Mic2, PencilLine, Sparkles } from "lucide-react";
 
 interface SidebarToolbarProps {
   onCreateOpen: () => void;
@@ -13,13 +13,21 @@ interface SidebarToolbarProps {
 }
 
 const actionClass =
-  "flex w-full items-start gap-3 rounded-2xl border border-[#ebe5dc] bg-white px-3.5 py-3.5 text-left transition hover:border-[#800020]/25 hover:bg-[#800020]/5 disabled:cursor-not-allowed disabled:opacity-50";
+  "flex w-full items-start gap-3 rounded-xl border border-[#ebe5dc] bg-white px-3 py-2.5 text-left transition hover:border-[#800020]/25 hover:bg-[#800020]/5 disabled:cursor-not-allowed disabled:opacity-50";
 
 function ActionIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020]">
       {children}
     </span>
+  );
+}
+
+function GroupLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="px-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400 first:pt-0">
+      {children}
+    </div>
   );
 }
 
@@ -30,31 +38,28 @@ export function SidebarToolbar({
   onCaptureConversation,
   onAiDraft,
 }: SidebarToolbarProps) {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-
   return (
     <section className="rounded-2xl border border-[#800020]/10 bg-[#fffdfb]/85 p-3.5 shadow-sm">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-1 text-left"
-        aria-expanded={isCreateOpen}
-        onClick={() => setIsCreateOpen((value) => !value)}
-      >
-        <span>
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
-            Create recipe
-          </h2>
-          <p className="mt-1 text-xs leading-4 text-stone-500">
-            Link, notes, live conversation, AI draft, or manual entry.
-          </p>
-        </span>
-        <ChevronDown
-          className={"h-4 w-4 shrink-0 text-[#800020] transition-transform " + (isCreateOpen ? "rotate-180" : "")}
-          aria-hidden="true"
-        />
-      </button>
+      <div className="px-1">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
+          Create recipe
+        </h2>
+        <p className="mt-1 text-xs leading-4 text-stone-500">
+          Pick the source. Each route starts in one tap.
+        </p>
+      </div>
 
-      <div className={"mt-3 grid gap-2.5 " + (isCreateOpen ? "" : "hidden")}>
+      <div className="mt-3 grid gap-2.5">
+        <GroupLabel>Capture from real life</GroupLabel>
+        <button type="button" className={actionClass} onClick={onCaptureConversation} disabled={!onCaptureConversation}>
+          <ActionIcon><Mic2 className="h-4 w-4" /></ActionIcon>
+          <span>
+            <span className="block text-sm font-semibold text-stone-900">Live conversation</span>
+            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Record, translate the gist, and get questions to ask while family narrates.</span>
+          </span>
+        </button>
+
+        <GroupLabel>Import existing recipe</GroupLabel>
         <button type="button" className={actionClass} onClick={onImportUrl} disabled={!onImportUrl}>
           <ActionIcon><Link2Icon className="h-4 w-4" /></ActionIcon>
           <span>
@@ -67,18 +72,11 @@ export function SidebarToolbar({
           <ActionIcon><ClipboardPaste className="h-4 w-4" /></ActionIcon>
           <span>
             <span className="block text-sm font-semibold text-stone-900">Paste recipe text</span>
-            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Drop in a plain text dump and let Mychelin parse it.</span>
+            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Drop in plain text, OCR text, or message notes.</span>
           </span>
         </button>
 
-        <button type="button" className={actionClass} onClick={onCaptureConversation} disabled={!onCaptureConversation}>
-          <ActionIcon><Mic2 className="h-4 w-4" /></ActionIcon>
-          <span>
-            <span className="block text-sm font-semibold text-stone-900">Live conversation</span>
-            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Record, translate the gist, and get questions to ask while family narrates.</span>
-          </span>
-        </button>
-
+        <GroupLabel>Start from scratch</GroupLabel>
         <button type="button" className={actionClass} onClick={onAiDraft} disabled={!onAiDraft}>
           <ActionIcon><Sparkles className="h-4 w-4" /></ActionIcon>
           <span>
