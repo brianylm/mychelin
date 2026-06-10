@@ -76,8 +76,11 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 ### Import workflows
 
 - Add a dedicated Scan recipe photo/OCR capture path under Create recipe, separate from Import URL and Paste recipe text.
+- OCR MVP flow: upload or take a photo, extract text, show editable OCR text for correction, then send the confirmed text through the existing paste parser to produce recipe fields.
 - Import handwritten recipe cards, cookbook pages, WhatsApp screenshots, and old family photos.
-- Extract ingredients/steps while preserving the original image as provenance.
+- Use a vision/OCR provider for image-to-text; keep DeepSeek focused on text reasoning and recipe extraction after OCR text is available.
+- Make image retention explicit: allow OCR without storing the source image, or preserve the original image as provenance when the user chooses it.
+- If provenance images are stored, revisit private/signed media delivery because current Vercel Blob URLs are gated by discovery but public to anyone with the exact URL.
 - Support source URLs for recipes adapted from online references.
 
 ### Demo and documentation assets
