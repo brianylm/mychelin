@@ -6,7 +6,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 ### AI recipe capture
 
-- Turn conversations, pasted notes, and rough instructions into structured recipes.
+- Turn conversations, pasted notes, rough instructions, and scanned recipe photos into structured recipes.
 - Ask clarifying questions for missing timings, quantities, substitutions, and sensory cues.
 - Preserve uncertainty instead of hallucinating precision where family cooks say "agak-agak".
 
@@ -75,7 +75,8 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 ### Import workflows
 
-- Import handwritten recipe cards and old family photos.
+- Add a dedicated Scan recipe photo/OCR capture path under Create recipe, separate from Import URL and Paste recipe text.
+- Import handwritten recipe cards, cookbook pages, WhatsApp screenshots, and old family photos.
 - Extract ingredients/steps while preserving the original image as provenance.
 - Support source URLs for recipes adapted from online references.
 

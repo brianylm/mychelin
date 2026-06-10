@@ -7,7 +7,7 @@ import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
 import { ShareModal } from "@/components/sharing/ShareModal";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 
 interface Book {
   id: number;
@@ -229,7 +229,7 @@ export function RecipeSidebar({
               onClick={() => setIsRecipesOpen((value) => !value)}
             >
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
-                {hasQuery ? "Search results" : "Recipes"}
+                {hasQuery ? "Search results" : "Recipe library"}
               </span>
               <span className="flex items-center gap-2">
                 {!hasQuery && filteredRecipes.length > 0 && (
@@ -335,9 +335,11 @@ export function RecipeSidebar({
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
-                className="shrink-0 rounded-full px-2 py-1 text-[10px] font-medium text-[#800020] transition hover:bg-[#800020]/10"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#800020]/10 text-[#800020] transition hover:border-[#800020]/25 hover:bg-[#800020]/10"
+                aria-label="Create book"
+                title="Create book"
               >
-                + New
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
             {isBooksOpen && (books.length > 0 ? (
@@ -413,7 +415,7 @@ export function RecipeSidebar({
               </ul>
             ) : (
               <p className="px-3 py-2 text-xs text-neutral-400">
-                No books yet. Create one to organize recipes.
+                No books yet. Use books later to organize recipes into collections.
               </p>
             ))}
           </section>
