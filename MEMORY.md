@@ -1796,3 +1796,34 @@ Checks:
 Follow-ups:
 
 - When OCR is implemented, add `Scan recipe photo` as the first one-click route under `Capture from real life`, alongside Live conversation.
+
+### 2026-06-11 - Pilot control-plane pause: privacy smoke, runbook, analytics
+
+Changed/decided:
+
+- Paused feature progress to regain operational clarity before inviting pilot users.
+- Added a two-user privacy smoke test that creates synthetic users and verifies User A cannot access User B private recipes, recipe search results, share-link creation, books/book recipes/book analysis, meal plans, attempts, versions, version compare, or admin analytics.
+- Added optional Turso cleanup for the synthetic smoke-test users when `MYCHELIN_CLEANUP_USERS=1`, `TURSO_DATABASE_URL`, and `TURSO_AUTH_TOKEN` are available in the shell.
+- Added a pilot runbook centered on the core MVP loop: signup/onboarding, first recipe capture, meal plan, shopping list, cook-with-me, attempt notes, and promote-to-version.
+- Added an analytics operating guide for the existing first-party `/admin/analytics` dashboard and privacy-safe event rules.
+
+Files touched:
+
+- `ANALYTICS.md`
+- `PILOT_RUNBOOK.md`
+- `app/package.json`
+- `app/scripts/privacy-smoke.mjs`
+
+Checks:
+
+- `node --check app/scripts/privacy-smoke.mjs` passed.
+- Focused `npx eslint scripts/privacy-smoke.mjs` passed from `app/`.
+- `git diff --check` passed.
+- Production privacy smoke passed against `https://mychelin-sg.vercel.app`: 32 assertions, including cross-user denials and synthetic Turso user cleanup.
+- Full `npm run lint` still fails on pre-existing unrelated lint debt across scripts/books/capture/PWA/version components; not introduced by this batch.
+
+Follow-ups:
+
+- Use `cd app && MYCHELIN_BASE_URL=https://mychelin-sg.vercel.app npm run smoke:privacy` before each pilot wave or risky privacy-related change.
+- Add operator emails to `ANALYTICS_ADMIN_EMAILS` or `ADMIN_EMAILS` in Vercel before relying on the analytics dashboard in pilot operations.
+- Clear the pre-existing full-project lint debt separately so future pilot-readiness checks can use full `npm run lint` as a clean gate.
