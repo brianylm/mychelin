@@ -1845,3 +1845,34 @@ Checks:
 Follow-ups:
 
 - Log in as `brianyaplm@hotmail.com` and open `/admin/analytics` to confirm the authenticated API path returns data instead of 403.
+
+### 2026-06-11 - Admin analytics registered-user outreach view
+
+Changed/decided:
+
+- Added an admin-only registered-users section to `/admin/analytics` so pilot operators can see user id, name, email, signup date, last tracked activity, onboarding fields, 30-day privacy-safe usage counts, and latest feedback metadata.
+- Added copy-all-emails and per-user mailto links for pilot feedback outreach.
+- Extended `/api/admin/analytics` to return the registered-user usage array only after the existing `ANALYTICS_ADMIN_EMAILS` / `ADMIN_EMAILS` gate passes.
+- Updated `ANALYTICS.md` to document that email/name/id are PII and only allowed inside the protected admin outreach view.
+- Deployed the change to production at `https://mychelin-sg.vercel.app`.
+
+Files touched:
+
+- `ANALYTICS.md`
+- `app/src/app/admin/analytics/page.tsx`
+- `app/src/app/api/admin/analytics/route.ts`
+
+Checks:
+
+- Focused `npx eslint src/app/api/admin/analytics/route.ts src/app/admin/analytics/page.tsx` passed from `app/`.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/admin/analytics` returned HTTP 200.
+- Production unauthenticated `/api/admin/analytics` returned HTTP 401.
+- Production privacy smoke passed: 32 assertions, including authenticated non-admin `/api/admin/analytics` returning 403 and synthetic Turso user cleanup.
+
+Follow-ups:
+
+- Log in as `brianyaplm@hotmail.com` and open `/admin/analytics`; the registered-users table should appear under the summary cards.
+- Consider CSV export later if outreach volume grows beyond manual pilot follow-up.
