@@ -1827,3 +1827,21 @@ Follow-ups:
 - Use `cd app && MYCHELIN_BASE_URL=https://mychelin-sg.vercel.app npm run smoke:privacy` before each pilot wave or risky privacy-related change.
 - Add operator emails to `ANALYTICS_ADMIN_EMAILS` or `ADMIN_EMAILS` in Vercel before relying on the analytics dashboard in pilot operations.
 - Clear the pre-existing full-project lint debt separately so future pilot-readiness checks can use full `npm run lint` as a clean gate.
+
+### 2026-06-11 - Analytics admin email added
+
+Changed/decided:
+
+- Added `brianyaplm@hotmail.com` to the production `ANALYTICS_ADMIN_EMAILS` Vercel environment variable.
+- Redeployed production so the live `/admin/analytics` API can read the new env value.
+
+Checks:
+
+- `npx vercel env ls` confirmed no prior analytics admin env var was configured before this addition.
+- `npx vercel --prod --yes` completed and aliased production to `https://mychelin-sg.vercel.app`.
+- Production `/admin/analytics` returned HTTP 200.
+- Production unauthenticated `/api/admin/analytics` returned HTTP 401, as intended.
+
+Follow-ups:
+
+- Log in as `brianyaplm@hotmail.com` and open `/admin/analytics` to confirm the authenticated API path returns data instead of 403.
