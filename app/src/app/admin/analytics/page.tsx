@@ -5,6 +5,8 @@ import {
   Activity,
   BarChart3,
   ChefHat,
+  Copy,
+  Mail,
   MessageSquareText,
   RefreshCw,
   ShieldCheck,
@@ -22,6 +24,36 @@ interface FunnelItem {
   label: string;
   users: number;
   rate: number;
+}
+
+interface UserUsage {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+  onboardingCompleted: boolean;
+  cookingGoals: string[];
+  cookingFrequency: string | null;
+  firstCaptureMode: string | null;
+  activationStage: string;
+  feedbackCount: number;
+  latestFeedback: {
+    stage: string;
+    rating: number | null;
+    comment: string | null;
+    source: string | null;
+    createdAt: string;
+  } | null;
+  events30: number;
+  lastActivityAt: string | null;
+  recipeCaptures30: number;
+  aiDrafts30: number;
+  transcriptions30: number;
+  conversationAssists30: number;
+  mealPlans30: number;
+  shoppingLists30: number;
+  cookAttempts30: number;
+  promotedVersions30: number;
 }
 
 interface AnalyticsData {
@@ -73,6 +105,7 @@ interface AnalyticsData {
     path: string | null;
     createdAt: string;
   }>;
+  users: UserUsage[];
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -157,6 +190,133 @@ function HorizontalBars({ items, emptyLabel = "No data yet" }: { items: CountIte
         </div>
       ))}
     </div>
+  );
+}
+
+function UsageChip({ label, value }: { label: string; value: number }) {
+  return (
+    <span
+      className={
+        "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium " +
+        (value > 0 ? "border-[#e4d9ca] bg-[#fffdf9] text-neutral-800" : "border-neutral-200 bg-neutral-50 text-neutral-400")
+      }
+    >
+      {label} <span className="tabular-nums">{value}</span>
+    </span>
+  );
+}
+
+function UserUsagePanel({ users }: { users: UserUsage[] }) {
+  const [copied, setCopied] = useState(false);
+  const emails = users.map((user) => user.email).filter(Boolean).join(", ");
+
+  const copyEmails = async () => {
+    if (!emails) return;
+    try {
+      await navigator.clipboard.writeText(emails);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <section className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-neutral-950">Registered users</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-600">
+            Admin-only outreach view. Shows email addresses and privacy-safe usage counts so pilot follow-up can be targeted without exposing recipe content.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void copyEmails()}
+          disabled={!emails}
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#d8c8b6] bg-[#fffdf9] px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-[#f7efe4] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Copy size={16} />
+          {copied ? "Copied" : "Copy emails"}
+        </button>
+      </div>
+
+      <div className="mt-5 overflow-x-auto rounded-lg border border-neutral-200">
+        <div className="min-w-[980px]">
+          <div className="grid grid-cols-[1.45fr_1fr_1.7fr_1.1fr_0.8fr] bg-[#f7efe4] px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-neutral-600">
+            <span>User</span>
+            <span>Status</span>
+            <span>Usage in 30 days</span>
+            <span>Feedback</span>
+            <span>Contact</span>
+          </div>
+          <div className="divide-y divide-neutral-100">
+            {users.length === 0 ? (
+              <div className="px-3 py-6 text-sm text-neutral-500">No registered users yet.</div>
+            ) : (
+              users.map((user) => {
+                const captureCount = user.recipeCaptures30 + user.aiDrafts30 + user.transcriptions30 + user.conversationAssists30;
+                return (
+                  <article key={user.id} className="grid grid-cols-[1.45fr_1fr_1.7fr_1.1fr_0.8fr] gap-3 px-3 py-4 text-sm">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-neutral-900">{user.name || "Unnamed user"}</div>
+                      <div className="mt-0.5 truncate text-neutral-600">{user.email}</div>
+                      <div className="mt-1 text-xs text-neutral-500">User {user.id} - joined {shortDate(user.createdAt)}</div>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="inline-flex rounded-md bg-[#f7efe4] px-2 py-1 text-xs font-semibold text-[#8a2f2b]">{user.activationStage}</span>
+                      <div className="mt-2 truncate text-xs text-neutral-500">
+                        {user.lastActivityAt ? "Last active " + formatDate(user.lastActivityAt) : "No tracked activity"}
+                      </div>
+                      <div className="mt-1 truncate text-xs text-neutral-500">
+                        {user.cookingGoals.length ? user.cookingGoals.map(formatLabel).join(", ") : user.cookingFrequency || "No onboarding goal"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <UsageChip label="Events" value={user.events30} />
+                        <UsageChip label="Capture" value={captureCount} />
+                        <UsageChip label="Plan" value={user.mealPlans30} />
+                        <UsageChip label="Shop" value={user.shoppingLists30} />
+                        <UsageChip label="Cook" value={user.cookAttempts30} />
+                        <UsageChip label="Version" value={user.promotedVersions30} />
+                      </div>
+                      <div className="mt-2 text-xs text-neutral-500">
+                        First route: {user.firstCaptureMode ? formatLabel(user.firstCaptureMode) : "unset"}
+                      </div>
+                    </div>
+                    <div className="min-w-0 text-sm text-neutral-700">
+                      {user.feedbackCount > 0 ? (
+                        <>
+                          <div className="font-medium text-neutral-900">{user.feedbackCount} response{user.feedbackCount === 1 ? "" : "s"}</div>
+                          {user.latestFeedback ? (
+                            <div className="mt-1 text-xs leading-5 text-neutral-500">
+                              {formatLabel(user.latestFeedback.stage)}
+                              {user.latestFeedback.rating ? " - " + user.latestFeedback.rating + "/5" : ""}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="text-neutral-500">No feedback yet</span>
+                      )}
+                    </div>
+                    <div>
+                      <a
+                        href={"mailto:" + user.email + "?subject=Mychelin%20pilot%20feedback"}
+                        className="inline-flex items-center gap-2 rounded-lg border border-[#d8c8b6] px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-[#f7efe4]"
+                      >
+                        <Mail size={15} />
+                        Email
+                      </a>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -280,6 +440,8 @@ export default function AnalyticsDashboardPage() {
           <StatCard icon={ChefHat} label="Cooking loop" value={data.funnel.find((item) => item.id === "cook")?.users ?? 0} detail="Users with cook attempts" />
           <StatCard icon={MessageSquareText} label="Feedback" value={data.summary.feedbackCount} detail={data.summary.averageFeedbackRating ? `${data.summary.averageFeedbackRating}/5 average` : "No ratings yet"} />
         </section>
+
+        <UserUsagePanel users={data.users} />
 
         <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">

@@ -34,6 +34,16 @@ function parseProperties(value: string | null): Record<string, unknown> {
   }
 }
 
+function parseStringArray(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 function countBy<T extends string>(items: T[]): Array<{ key: T; count: number }> {
   const counts = new Map<T, number>();
   for (const item of items) counts.set(item, (counts.get(item) ?? 0) + 1);
@@ -91,6 +101,8 @@ export async function GET() {
       db
         .select({
           id: users.id,
+          name: users.name,
+          email: users.email,
           createdAt: users.createdAt,
           onboardingCompleted: users.onboardingCompleted,
           cookingGoal: users.cookingGoal,
@@ -110,7 +122,7 @@ export async function GET() {
         })
         .from(pilotFeedback)
         .orderBy(desc(pilotFeedback.createdAt))
-        .limit(100),
+        .limit(500),
     ]);
 
     const activeUserIds30 = new Set(eventRows.map((event) => event.userId).filter((id): id is number => id != null));
@@ -188,17 +200,135 @@ export async function GET() {
       createdAt: event.createdAt,
     }));
 
-    const onboardingGoals = countBy(
-      userRows.flatMap((user) => {
-        if (!user.cookingGoal) return [];
-        try {
-          const parsed = JSON.parse(user.cookingGoal) as unknown;
-          return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-        } catch {
-          return [];
-        }
+    const usageByUser = new Map<
+      number,
+      {
+        events30: number;
+        lastActivityAt: string | null;
+        recipeCaptures30: number;
+        aiDrafts30: number;
+        transcriptions30: number;
+        conversationAssists30: number;
+        mealPlans30: number;
+        shoppingLists30: number;
+        cookAttempts30: number;
+        promotedVersions30: number;
+      }
+    >();
+
+    for (const event of eventRows) {
+      if (event.userId == null) continue;
+      const usage =
+        usageByUser.get(event.userId) ??
+        {
+          events30: 0,
+          lastActivityAt: null,
+          recipeCaptures30: 0,
+          aiDrafts30: 0,
+          transcriptions30: 0,
+          conversationAssists30: 0,
+          mealPlans30: 0,
+          shoppingLists30: 0,
+          cookAttempts30: 0,
+          promotedVersions30: 0,
+        };
+
+      usage.events30 += 1;
+      if (!usage.lastActivityAt || event.createdAt > usage.lastActivityAt) usage.lastActivityAt = event.createdAt;
+      if (event.eventName === "recipe_capture_completed" || event.eventName === "recipe_created") usage.recipeCaptures30 += 1;
+      if (event.eventName === "ai_draft_completed") usage.aiDrafts30 += 1;
+      if (event.eventName === "transcription_completed") usage.transcriptions30 += 1;
+      if (event.eventName === "conversation_assist_completed") usage.conversationAssists30 += 1;
+      if (event.eventName === "meal_planned") usage.mealPlans30 += 1;
+      if (event.eventName === "shopping_list_generated") usage.shoppingLists30 += 1;
+      if (event.eventName === "cook_attempt_created") usage.cookAttempts30 += 1;
+      if (event.eventName === "attempt_promoted_to_version") usage.promotedVersions30 += 1;
+      usageByUser.set(event.userId, usage);
+    }
+
+    const feedbackByUser = new Map<
+      number,
+      {
+        count: number;
+        latest: {
+          stage: string;
+          rating: number | null;
+          comment: string | null;
+          source: string | null;
+          createdAt: string;
+        } | null;
+      }
+    >();
+
+    for (const feedback of feedbackRows) {
+      if (feedback.userId == null) continue;
+      const current = feedbackByUser.get(feedback.userId) ?? { count: 0, latest: null };
+      current.count += 1;
+      if (!current.latest || feedback.createdAt > current.latest.createdAt) {
+        current.latest = {
+          stage: feedback.stage,
+          rating: feedback.rating,
+          comment: feedback.comment ? feedback.comment.slice(0, 240) : null,
+          source: feedback.source,
+          createdAt: feedback.createdAt,
+        };
+      }
+      feedbackByUser.set(feedback.userId, current);
+    }
+
+    const emptyUsage = {
+      events30: 0,
+      lastActivityAt: null,
+      recipeCaptures30: 0,
+      aiDrafts30: 0,
+      transcriptions30: 0,
+      conversationAssists30: 0,
+      mealPlans30: 0,
+      shoppingLists30: 0,
+      cookAttempts30: 0,
+      promotedVersions30: 0,
+    };
+
+    const userUsage = userRows
+      .map((user) => {
+        const usage = usageByUser.get(user.id) ?? emptyUsage;
+        const feedback = feedbackByUser.get(user.id) ?? { count: 0, latest: null };
+        const activationStage = usage.promotedVersions30
+          ? "Promoted version"
+          : usage.cookAttempts30
+            ? "Cooked"
+            : usage.shoppingLists30
+              ? "Shopping list"
+              : usage.mealPlans30
+                ? "Meal planned"
+                : usage.recipeCaptures30 || usage.aiDrafts30 || usage.transcriptions30 || usage.conversationAssists30
+                  ? "Recipe captured"
+                  : user.onboardingCompleted
+                    ? "Onboarded"
+                    : "Signed up";
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          createdAt: user.createdAt,
+          onboardingCompleted: user.onboardingCompleted,
+          cookingGoals: parseStringArray(user.cookingGoal),
+          cookingFrequency: user.cookingFrequency,
+          firstCaptureMode: user.firstCaptureMode,
+          activationStage,
+          feedbackCount: feedback.count,
+          latestFeedback: feedback.latest,
+          ...usage,
+        };
       })
-    ).slice(0, 8);
+      .sort((a, b) => {
+        const aDate = a.lastActivityAt || a.createdAt;
+        const bDate = b.lastActivityAt || b.createdAt;
+        return bDate.localeCompare(aDate);
+      });
+
+    const onboardingGoals = countBy(userRows.flatMap((user) => parseStringArray(user.cookingGoal))).slice(0, 8);
 
     const onboarding = {
       completedUsers: onboardedUsers,
@@ -234,6 +364,7 @@ export async function GET() {
         recent: recentFeedback,
       },
       recentEvents,
+      users: userUsage,
     });
   } catch (error) {
     console.error("GET /api/admin/analytics error:", error);

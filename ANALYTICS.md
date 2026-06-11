@@ -31,6 +31,19 @@ Use comma-separated emails for multiple operators.
 
 Review after each pilot session and weekly during the pilot.
 
+### Registered Users And Outreach
+
+The dashboard includes an admin-only registered-users table with:
+
+- user id, name, and email
+- signup date and last tracked activity
+- onboarding goal/frequency/first capture mode
+- privacy-safe 30-day usage counts for capture, planning, shopping, cooking, and version promotion
+- latest pilot-feedback stage/rating metadata
+- copy-all-emails and individual mail links for pilot follow-up
+
+This is intentionally restricted to analytics admins because email addresses are personally identifiable information. Do not expose this table in ordinary product surfaces.
+
 ### Activation Funnel
 
 Watch drop-off across:
@@ -81,8 +94,9 @@ Use comments to explain funnel behavior. Do not rely on event counts alone.
 
 ## Privacy Rules
 
-Allowed event metadata:
+Allowed analytics metadata:
 
+- user email, name, and id inside the admin-only registered-users table
 - event name
 - user id
 - recipe id / book id / meal plan id
