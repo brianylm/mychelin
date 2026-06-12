@@ -79,9 +79,19 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - OCR MVP flow: upload or take a photo, extract text, show editable OCR text for correction, then send the confirmed text through the existing paste parser to produce recipe fields.
 - Import handwritten recipe cards, cookbook pages, WhatsApp screenshots, and old family photos.
 - Use a vision/OCR provider for image-to-text; keep DeepSeek focused on text reasoning and recipe extraction after OCR text is available.
+- Discovery note from local-food AI competitors such as the unverified HawkerSense example: generic food vision/object-detection is likely weak for Singaporean dishes with overlapping components, dark sauces, hidden gravies/oils, and family-specific preparation habits. When Mychelin adds photo/OCR capture, treat the image as recipe provenance plus cultural context, not just pixels to OCR.
+- Build a Singapore-aware multimodal recipe-capture prompt layer after OCR MVP: identify likely dish family, preserve local/dialect terms, flag hidden or ambiguous preparation details, ask follow-up questions for missing quantities/timings/heat/sensory cues, and avoid pretending uncertain ingredients are confirmed.
+- Prefer Mychelin-specific confidence signals over health-style grades: `cook-ready`, `missing details`, `needs family confirmation`, `provenance captured`, and `closer to home` are more aligned than calorie/Nutri-Grade-style scoring.
 - Make image retention explicit: allow OCR without storing the source image, or preserve the original image as provenance when the user chooses it.
 - If provenance images are stored, revisit private/signed media delivery because current Vercel Blob URLs are gated by discovery but public to anyone with the exact URL.
 - Support source URLs for recipes adapted from online references.
+
+### Discovery: localized multimodal food understanding
+
+- Public verification for the specific HawkerSense/Wong Qi Han claims is pending; searches did not surface reliable primary/public sources for the app architecture or quoted UX details. Treat it as unverified competitor intelligence unless a primary source is found.
+- The broader technical direction is still valid: current food-image nutrition research increasingly points to specialized multimodal/VLM approaches and curated food benchmarks because generic food recognition struggles with portion size, hidden ingredients, and nutrition inference.
+- Mychelin should not become a nutrition tracker, but it should borrow the localized reasoning idea for recipe capture: Singapore family food requires context about preparation method, sauce/gravy, dialect naming, substitutions, and "agak-agak" sensory cues.
+- Revisit this after the first pilot dry-run, before implementing Scan recipe photo/OCR beyond the basic text-extraction path.
 
 ### Demo and documentation assets
 

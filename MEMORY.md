@@ -1935,3 +1935,30 @@ Checks:
 Follow-ups:
 
 - Deploy to production and verify on mobile: hamburger from Fridge/Shopping/Meal Plan, collapsed Create recipe section, Profile dish-goal wording, and quieter install prompt behavior.
+
+### 2026-06-12 - Discovery note: localized multimodal food understanding
+
+Changed/decided:
+
+- Treated the HawkerSense/Wong Qi Han note as discovery input for Mychelin rather than a current pilot feature.
+- Public web search did not surface reliable primary/public sources confirming the specific HawkerSense architecture, App Store/AsiaOne claims, or quoted UX details, so the roadmap marks those claims as unverified competitor intelligence.
+- Added a roadmap section for localized multimodal food understanding: Mychelin should eventually treat scanned/photo recipe inputs as provenance plus Singapore family-cooking context, not generic OCR/object detection only.
+- Added future prompt-layer notes for Singapore-aware multimodal capture: dish-family context, local/dialect term preservation, hidden/ambiguous sauce/gravy/oil handling, follow-up questions, and uncertainty instead of hallucinated precision.
+- Reaffirmed that Mychelin should not become a nutrition tracker; use confidence/cookability/family-confirmation signals instead of health-style grades.
+
+Files touched:
+
+- `ROADMAP.md`
+
+Checks:
+
+- `git diff --check` passed for the docs-only roadmap update.
+
+References used:
+
+- Nutrition5k paper: food-image nutritional understanding is challenging and needs richer datasets/labels.
+- FoodLMM paper: general multimodal models still underperform in specialized food domains, motivating food-specific multimodal training/prompting.
+
+Follow-ups:
+
+- Revisit this after the first pilot dry-run, before building Scan recipe photo/OCR beyond basic text extraction.
