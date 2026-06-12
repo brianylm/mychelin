@@ -1906,3 +1906,32 @@ Follow-ups:
 
 - The core API pilot path currently has no automated blocker based on production smoke results.
 - The next real blocker pass should be a human UI dry-run using the runbook, because the smoke verifies APIs but not mobile interaction friction, copy clarity, camera/photo flows, or cook-with-me ergonomics.
+
+### 2026-06-12 - Pilot navigation and install-prompt polish
+
+Changed/decided:
+
+- Fixed the left-panel Create recipe section so it is collapsed by default and can be expanded from the Create recipe header.
+- Made the mobile hamburger open the recipe drawer from Fridge, Shopping, and Meal Plan views, not only the Recipes view. Non-recipe views use a mobile-only drawer so desktop layouts are unchanged.
+- Clarified Profile cooking rhythm copy: the weekly goal is a dish goal and counts completed cook-with-me attempts, not cooking days or generic meals.
+- Reduced Add to Home Screen prompt aggressiveness: it now waits two minutes, appears at most once per session, snoozes for seven days after being shown, and snoozes for thirty days after dismissal.
+- Added an in-app changelog entry for this pilot polish batch.
+
+Files touched:
+
+- `app/src/components/InstallPrompt.tsx`
+- `app/src/components/RecipeWorkspace.tsx`
+- `app/src/components/layout/RecipeSidebar.tsx`
+- `app/src/components/layout/sidebar/SidebarToolbar.tsx`
+- `app/src/components/profile/ProfileView.tsx`
+- `app/src/lib/changelog.ts`
+
+Checks:
+
+- Focused `npx eslint src/components/RecipeWorkspace.tsx src/components/layout/RecipeSidebar.tsx src/components/layout/sidebar/SidebarToolbar.tsx src/components/profile/ProfileView.tsx src/components/InstallPrompt.tsx` passed from `app/`.
+- `git diff --check` passed.
+- `npm run build` passed from `app/`.
+
+Follow-ups:
+
+- Deploy to production and verify on mobile: hamburger from Fridge/Shopping/Meal Plan, collapsed Create recipe section, Profile dish-goal wording, and quieter install prompt behavior.

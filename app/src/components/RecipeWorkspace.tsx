@@ -158,8 +158,9 @@ function RecipeWorkspaceContent({
     if (view === "recipes") {
       selectRecipe(null);
     }
+    setSidebarOpen(false);
     setCurrentView(view);
-  }, [selectRecipe, setCurrentView]);
+  }, [selectRecipe, setCurrentView, setSidebarOpen]);
 
   const startCookSession = useCallback(
     async (recipeId: number, mealPlanId?: number, keepCurrentView = false) => {
@@ -463,11 +464,7 @@ function RecipeWorkspaceContent({
   return (
     <>
       <Header
-        onMenuClick={
-          currentView === "recipes"
-            ? () => setSidebarOpen(true)
-            : undefined
-        }
+        onMenuClick={() => setSidebarOpen(true)}
         onProfileClick={() => handleViewChange("profile")}
         onLogoClick={() => handleViewChange("recipes")}
         onSearchClick={() => setSearchOpen(true)}
@@ -483,6 +480,18 @@ function RecipeWorkspaceContent({
       )}
 
       <div className="flex h-[calc(100dvh-68px)] w-full bg-transparent text-foreground">
+        {currentView !== "recipes" && (
+          <RecipeSidebar
+            mobileOnly
+            isOpen={isSidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            onPasteText={handleQuickCapture}
+            onImportUrl={handleImportUrl}
+            onCookRecipe={handleCookRecipe}
+            onCaptureConversation={createDraftForConversation}
+            onAiDraft={() => setAiDraftOpen(true)}
+          />
+        )}
         {currentView === "recipes" && (
           <>
             <RecipeSidebar

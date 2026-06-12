@@ -84,9 +84,9 @@ function formatWeekRange(summary: RhythmSummary | null): string {
 }
 
 function rhythmMessage(summary: RhythmSummary | null): string {
-  if (!summary) return "Set a cooking rhythm that matches your onboarding goal.";
-  if (summary.status === "on_track") return "You have hit this week's cooking promise.";
-  if (summary.status === "planned") return "Your plan can still get you to this week's promise.";
+  if (!summary) return "Set a weekly dish goal that matches your onboarding rhythm.";
+  if (summary.status === "on_track") return "You have hit this week's dish goal.";
+  if (summary.status === "planned") return "Your planned meals can still get you to this week's dish goal.";
   return "Plan or cook one more dish to keep the week moving.";
 }
 
@@ -430,7 +430,7 @@ export function ProfileView() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">Cooking rhythm</p>
-              <h2 className="mt-2 text-base font-semibold text-neutral-900">Your weekly home-cooking promise</h2>
+              <h2 className="mt-2 text-base font-semibold text-neutral-900">Your weekly dish goal</h2>
               <p className="mt-1 text-xs leading-5 text-neutral-600">{rhythmMessage(rhythm)}</p>
             </div>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#800020] text-white">
@@ -441,19 +441,19 @@ export function ProfileView() {
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-[#eadfce] bg-white p-3">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                <CheckCircle2 className="h-4 w-4 text-[#800020]" /> Cooked
+                <CheckCircle2 className="h-4 w-4 text-[#800020]" /> Dishes cooked
               </div>
               <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.cookedThisWeek ?? 0}</p>
             </div>
             <div className="rounded-xl border border-[#eadfce] bg-white p-3">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                <CalendarClock className="h-4 w-4 text-[#800020]" /> Planned
+                <CalendarClock className="h-4 w-4 text-[#800020]" /> Meals planned
               </div>
               <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.plannedThisWeek ?? 0}</p>
             </div>
             <div className="rounded-xl border border-[#eadfce] bg-white p-3">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                <Target className="h-4 w-4 text-[#800020]" /> Goal
+                <Target className="h-4 w-4 text-[#800020]" /> Dish goal
               </div>
               <p className="mt-2 text-2xl font-semibold text-neutral-900">{notificationPrefs.weeklyCookingGoal}</p>
             </div>
@@ -470,7 +470,8 @@ export function ProfileView() {
           </div>
 
           <div className="mt-5">
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Weekly cooking goal</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Weekly dish goal</label>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">This counts completed cook-with-me attempts, so one finished dish equals one point. It is not a daily streak.</p>
             <div className="mt-2 grid grid-cols-6 gap-1.5">
               {GOAL_OPTIONS.map((goal) => (
                 <button

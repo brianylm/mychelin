@@ -1,8 +1,8 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link2Icon } from "@radix-ui/react-icons";
-import { ClipboardPaste, Mic2, PencilLine, Sparkles } from "lucide-react";
+import { ChevronDown, ClipboardPaste, Mic2, PencilLine, Sparkles } from "lucide-react";
 
 interface SidebarToolbarProps {
   onCreateOpen: () => void;
@@ -38,18 +38,31 @@ export function SidebarToolbar({
   onCaptureConversation,
   onAiDraft,
 }: SidebarToolbarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <section className="rounded-2xl border border-[#800020]/10 bg-[#fffdfb]/85 p-3.5 shadow-sm">
-      <div className="px-1">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
-          Create recipe
-        </h2>
-        <p className="mt-1 text-xs leading-4 text-stone-500">
-          Pick the source. Each route starts in one tap.
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={() => setIsOpen((value) => !value)}
+        aria-expanded={isOpen}
+        className="flex w-full items-start justify-between gap-3 rounded-xl px-1 py-0.5 text-left"
+      >
+        <span>
+          <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
+            Create recipe
+          </span>
+          <span className="mt-1 block text-xs leading-4 text-stone-500">
+            Capture, import, or start from scratch.
+          </span>
+        </span>
+        <ChevronDown
+          className={"mt-1 h-4 w-4 shrink-0 text-[#800020] transition-transform " + (isOpen ? "rotate-180" : "")}
+          aria-hidden="true"
+        />
+      </button>
 
-      <div className="mt-3 grid gap-2.5">
+      {isOpen && <div className="mt-3 grid gap-2.5">
         <GroupLabel>Capture from real life</GroupLabel>
         <button type="button" className={actionClass} onClick={onCaptureConversation} disabled={!onCaptureConversation}>
           <ActionIcon><Mic2 className="h-4 w-4" /></ActionIcon>
@@ -92,7 +105,7 @@ export function SidebarToolbar({
             <span className="mt-0.5 block text-xs leading-4 text-stone-500">Fill in the blanks yourself.</span>
           </span>
         </button>
-      </div>
+      </div>}
     </section>
   );
 }

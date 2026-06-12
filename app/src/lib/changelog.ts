@@ -6,6 +6,16 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-06-12",
+    title: "Pilot navigation polish",
+    items: [
+      "The mobile header menu now opens the recipe drawer from Fridge, Shopping, and Meal Plan views, not only from Recipes.",
+      "Create recipe in the left panel now starts collapsed so the recipe library and books are easier to scan.",
+      "Profile now labels the weekly rhythm as a dish goal and explains that it counts completed cook-with-me attempts, not days cooked.",
+      "The Add to Home Screen prompt now waits longer and snoozes after dismissal so it appears less aggressively.",
+    ],
+  },
+  {
     date: "2026-06-08",
     title: "Realtime recipe conversation capture",
     items: [

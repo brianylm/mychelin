@@ -1,29 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-// Simple SVG icons as components
-const XIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="6" x2="6" y2="18"></line>
-    <line x1="6" y1="6" x2="18" y2="18"></line>
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-);
-
-const ShareIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-    <polyline points="16,6 12,2 8,6"></polyline>
-    <line x1="12" y1="2" x2="12" y2="15"></line>
-  </svg>
-);
+import { useEffect, useState } from "react";
+import { Plus, Share, X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -34,139 +12,156 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+type NavigatorWithStandalone = Navigator & { standalone?: boolean };
+
+const DISMISS_KEY = "pwa-install-dismissed-at";
+const SHOWN_KEY = "pwa-install-shown-at";
+const SESSION_KEY = "pwa-install-shown-this-session";
+const PROMPT_DELAY_MS = 2 * 60 * 1000;
+const DISMISS_SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
+const SHOWN_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getInstallEnvironment() {
+  if (typeof window === "undefined") return { isIOS: false, isStandalone: true };
+  const nav = window.navigator as NavigatorWithStandalone;
+  return {
+    isIOS: /iPad|iPhone|iPod/.test(window.navigator.userAgent),
+    isStandalone:
+      window.matchMedia("(display-mode: standalone)").matches ||
+      Boolean(nav.standalone) ||
+      document.referrer.includes("android-app://"),
+  };
+}
+
+function withinWindow(key: string, durationMs: number): boolean {
+  if (typeof window === "undefined") return true;
+  const value = window.localStorage.getItem(key);
+  if (!value) return false;
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp)) {
+    window.localStorage.removeItem(key);
+    return false;
+  }
+  if (Date.now() - timestamp < durationMs) return true;
+  window.localStorage.removeItem(key);
+  return false;
+}
+
 export function InstallPrompt() {
+  const [environment] = useState(getInstallEnvironment);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [hasBeenDismissed, setHasBeenDismissed] = useState(false);
+  const [suppressed, setSuppressed] = useState(() =>
+    environment.isStandalone ||
+    withinWindow(DISMISS_KEY, DISMISS_SNOOZE_MS) ||
+    withinWindow(SHOWN_KEY, SHOWN_SNOOZE_MS) ||
+    (typeof window !== "undefined" && window.sessionStorage.getItem(SESSION_KEY) === "1")
+  );
 
   useEffect(() => {
-    // Check if running in standalone mode (already installed)
-    const standalone = 
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone ||
-      document.referrer.includes('android-app://');
-    
-    setIsStandalone(standalone);
+    if (environment.isStandalone) return;
 
-    // Detect iOS
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(ios);
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+    };
 
-    // Check if user previously dismissed
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      const dismissedTime = parseInt(dismissed);
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      if (Date.now() - dismissedTime < twentyFourHours) {
-        setHasBeenDismissed(true);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+  }, [environment.isStandalone]);
+
+  useEffect(() => {
+    if (suppressed || environment.isStandalone) return;
+
+    const timer = window.setTimeout(() => {
+      const canInstall = Boolean(deferredPrompt) || environment.isIOS;
+      if (!canInstall) return;
+      if (withinWindow(DISMISS_KEY, DISMISS_SNOOZE_MS) || withinWindow(SHOWN_KEY, SHOWN_SNOOZE_MS)) {
+        setSuppressed(true);
         return;
-      } else {
-        // Clear old dismissal
-        localStorage.removeItem('pwa-install-dismissed');
       }
-    }
+      window.localStorage.setItem(SHOWN_KEY, Date.now().toString());
+      window.sessionStorage.setItem(SESSION_KEY, "1");
+      setShowPrompt(true);
+    }, PROMPT_DELAY_MS);
 
-    // Listen for beforeinstallprompt (Android Chrome)
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
+    return () => window.clearTimeout(timer);
+  }, [deferredPrompt, environment.isIOS, environment.isStandalone, suppressed]);
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Show prompt after 30 seconds if not standalone and not dismissed
-    const timer = setTimeout(() => {
-      if (!standalone && !hasBeenDismissed && (deferredPrompt || ios)) {
-        setShowPrompt(true);
-      }
-    }, 30000);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      clearTimeout(timer);
-    };
-  }, [deferredPrompt, isIOS, hasBeenDismissed]);
+  const dismiss = () => {
+    setShowPrompt(false);
+    setSuppressed(true);
+    window.localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    window.sessionStorage.setItem(SESSION_KEY, "1");
+  };
 
   const handleInstall = async () => {
     if (deferredPrompt) {
-      // Android Chrome install
-      deferredPrompt.prompt();
+      await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
+      if (outcome === "accepted") {
         setDeferredPrompt(null);
-        setShowPrompt(false);
       }
     }
-    // For iOS, the instructions are already visible - just dismiss
-    handleDismiss();
+    dismiss();
   };
 
-  const handleDismiss = () => {
-    setShowPrompt(false);
-    setHasBeenDismissed(true);
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-  };
-
-  // Don't show if already installed, dismissed, or no install capability
-  if (isStandalone || hasBeenDismissed || (!deferredPrompt && !isIOS) || !showPrompt) {
+  if (environment.isStandalone || suppressed || (!deferredPrompt && !environment.isIOS) || !showPrompt) {
     return null;
   }
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white border border-[#800020]/15 rounded-lg shadow-lg p-4 max-w-sm mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-[#800020]/10 rounded-lg flex items-center justify-center">
-              <span className="text-lg">🍽️</span>
+      <div className="mx-auto max-w-sm rounded-lg border border-[#800020]/15 bg-white p-4 shadow-lg">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#800020]/10 text-sm font-semibold text-[#800020]">
+              M
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">Add to Home Screen</h3>
-              <p className="text-xs text-gray-600">Get the best experience</p>
+              <h3 className="text-sm font-semibold text-gray-900">Add to Home Screen</h3>
+              <p className="text-xs text-gray-600">Quick kitchen access</p>
             </div>
           </div>
           <button
-            onClick={handleDismiss}
-            className="text-gray-400 hover:text-gray-600 p-1"
-            aria-label="Dismiss"
+            type="button"
+            onClick={dismiss}
+            className="rounded-md p-1 text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+            aria-label="Dismiss install prompt"
           >
-            <XIcon />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Content */}
-        <p className="text-sm text-gray-700 mb-4">
-          Add Mychelin to your home screen for quick access and the best experience.
+        <p className="mb-4 text-sm leading-5 text-gray-700">
+          Install Mychelin when you want faster access from your phone. You can keep using it in the browser.
         </p>
 
-        {/* Install buttons/instructions */}
-        <div className="flex space-x-3">
+        <div className="flex gap-3">
           {deferredPrompt ? (
-            // Android Chrome - show install button
             <button
-              onClick={handleInstall}
-              className="flex-1 bg-[#17131f] text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-[#800020] transition-colors flex items-center justify-center space-x-2"
+              type="button"
+              onClick={() => void handleInstall()}
+              className="flex flex-1 items-center justify-center gap-2 rounded-md bg-[#17131f] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#800020]"
             >
-              <PlusIcon />
+              <Plus className="h-4 w-4" />
               <span>Install</span>
             </button>
-          ) : isIOS ? (
-            // iOS Safari - show instructions
-            <div className="flex-1 bg-gray-50 p-3 rounded-md">
-              <div className="flex items-center space-x-2 text-sm text-gray-700">
-                <ShareIcon />
-                <span>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></span>
+          ) : environment.isIOS ? (
+            <div className="flex-1 rounded-md bg-gray-50 p-3">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Share className="h-4 w-4" />
+                <span>
+                  Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>
+                </span>
               </div>
             </div>
           ) : null}
-          
+
           <button
-            onClick={handleDismiss}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            type="button"
+            onClick={dismiss}
+            className="rounded-md px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-800"
           >
             Later
           </button>

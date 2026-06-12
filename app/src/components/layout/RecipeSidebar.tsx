@@ -29,6 +29,7 @@ interface RecipeSidebarProps {
   onCookRecipe?: (recipeId: number) => void;
   onCaptureConversation?: () => void;
   onAiDraft?: () => void;
+  mobileOnly?: boolean;
 }
 
 export function RecipeSidebar({
@@ -39,6 +40,7 @@ export function RecipeSidebar({
   onCookRecipe,
   onCaptureConversation,
   onAiDraft,
+  mobileOnly = false,
 }: RecipeSidebarProps) {
   const {
     recipes,
@@ -190,7 +192,8 @@ export function RecipeSidebar({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[#800020]/10 bg-[#fffdfb]/95 shadow-[0_24px_80px_rgba(60,43,25,0.16)] backdrop-blur-xl transition-transform md:static md:z-auto md:h-full md:w-80 md:translate-x-0 md:shadow-none",
+          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[#800020]/10 bg-[#fffdfb]/95 shadow-[0_24px_80px_rgba(60,43,25,0.16)] backdrop-blur-xl transition-transform",
+          mobileOnly ? "md:hidden" : "md:static md:z-auto md:h-full md:w-80 md:translate-x-0 md:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
