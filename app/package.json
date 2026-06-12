@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "smoke:privacy": "node scripts/privacy-smoke.mjs"
+    "smoke:privacy": "node scripts/privacy-smoke.mjs",
+    "smoke:pilot": "node scripts/pilot-smoke.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",

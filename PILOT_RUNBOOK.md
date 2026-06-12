@@ -18,6 +18,13 @@ cd /home/cluser/projects/mychelin/app
 MYCHELIN_BASE_URL=https://mychelin-sg.vercel.app npm run smoke:privacy
 ```
 
+- Core pilot-loop smoke test passes:
+
+```bash
+cd /home/cluser/projects/mychelin/app
+MYCHELIN_BASE_URL=https://mychelin-sg.vercel.app npm run smoke:pilot
+```
+
 - Admin analytics access works at `/admin/analytics`.
 - Known AI env vars are configured for the routes being tested:
   - `DEEPSEEK_API_KEY` for text reasoning and recipe extraction

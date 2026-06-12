@@ -127,6 +127,13 @@ cd /home/cluser/projects/mychelin/app
 MYCHELIN_BASE_URL=https://mychelin-sg.vercel.app npm run smoke:privacy
 ```
 
+Run the pilot core-loop smoke test:
+
+```bash
+cd /home/cluser/projects/mychelin/app
+MYCHELIN_BASE_URL=https://mychelin-sg.vercel.app npm run smoke:pilot
+```
+
 Optional cleanup of synthetic users, if Turso credentials are available in the shell:
 
 ```bash

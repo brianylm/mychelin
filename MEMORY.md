@@ -1876,3 +1876,33 @@ Follow-ups:
 
 - Log in as `brianyaplm@hotmail.com` and open `/admin/analytics`; the registered-users table should appear under the summary cards.
 - Consider CSV export later if outreach volume grows beyond manual pilot follow-up.
+
+### 2026-06-12 - Pilot blocker pass and core-loop smoke test
+
+Changed/decided:
+
+- User confirmed admin analytics access works for `brianyaplm@hotmail.com`.
+- Kept feature progress paused and ran a pilot-blocker pass focused only on the MVP loop and privacy boundaries.
+- Added `app/scripts/pilot-smoke.mjs`, a single-user production smoke for signup, recipe creation, planner recipe discovery, meal planning, shopping-list generation, cook attempt creation, attempt promotion to version/definitive version, pilot checklist status, pilot feedback, and non-admin analytics denial.
+- Added `npm run smoke:pilot` and documented it in `PILOT_RUNBOOK.md` and `ANALYTICS.md` as a pre-pilot gate alongside `smoke:privacy`.
+- No production runtime code changed and no deploy was needed for this tooling/docs checkpoint.
+
+Files touched:
+
+- `ANALYTICS.md`
+- `PILOT_RUNBOOK.md`
+- `app/package.json`
+- `app/scripts/pilot-smoke.mjs`
+
+Checks:
+
+- `node --check app/scripts/pilot-smoke.mjs` passed.
+- Focused `npx eslint scripts/pilot-smoke.mjs scripts/privacy-smoke.mjs` passed from `app/`.
+- `git diff --check` passed.
+- Production `smoke:pilot` passed against `https://mychelin-sg.vercel.app`: 42 assertions and synthetic Turso user cleanup.
+- Production `smoke:privacy` passed against `https://mychelin-sg.vercel.app`: 32 assertions and synthetic Turso user cleanup.
+
+Follow-ups:
+
+- The core API pilot path currently has no automated blocker based on production smoke results.
+- The next real blocker pass should be a human UI dry-run using the runbook, because the smoke verifies APIs but not mobile interaction friction, copy clarity, camera/photo flows, or cook-with-me ergonomics.
