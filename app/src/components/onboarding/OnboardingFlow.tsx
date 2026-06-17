@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@radix-ui/themes";
+import { starterRecipes } from "@/lib/starter-recipes";
 
 type Goal = "learn" | "regular" | "family" | "plan" | "waste";
 type Frequency = "daily" | "most_weekdays" | "weekly" | "occasional";
-type CaptureMode = "voice" | "paste" | "url" | "scratch";
+type CaptureMode = "starter" | "voice" | "paste" | "url" | "scratch";
 type OnboardingStep = "goals" | "rhythm" | "capture";
 
 interface OnboardingFlowProps {
@@ -29,6 +30,7 @@ const frequencies: Array<{ value: Frequency; label: string; body: string }> = [
 ];
 
 const captureModes: Array<{ value: CaptureMode; title: string; body: string }> = [
+  { value: "starter", title: "Start from a sample dish", body: "Copy a simple local recipe into your library and edit it as you cook." },
   { value: "voice", title: "Live recipe conversation", body: "Sit with a family cook while Mychelin captures the gist and suggests what to ask." },
   { value: "paste", title: "Paste notes", body: "Use WhatsApp messages, rough lists, or old docs." },
   { value: "url", title: "Import a URL", body: "Adapt an online recipe into your own style." },
@@ -41,7 +43,8 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedGoals, setSelectedGoals] = useState<Goal[]>(["family"]);
   const [frequency, setFrequency] = useState<Frequency>("most_weekdays");
-  const [firstCaptureMode, setFirstCaptureMode] = useState<CaptureMode>("voice");
+  const [firstCaptureMode, setFirstCaptureMode] = useState<CaptureMode>("starter");
+  const [selectedStarterSlug, setSelectedStarterSlug] = useState(starterRecipes[0]?.slug ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +79,32 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
     });
   };
 
+  const createStarterRecipe = async () => {
+    const starter = starterRecipes.find((item) => item.slug === selectedStarterSlug);
+    if (!starter || firstCaptureMode !== "starter") return;
+
+    const response = await fetch("/api/recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: starter.title,
+        status: "active",
+        description: starter.description,
+        cuisine: starter.cuisine,
+        yield: starter.yield,
+        prepTime: starter.prepTime,
+        cookTime: starter.cookTime,
+        ingredients: starter.ingredients,
+        instructions: starter.instructions,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Failed to create starter recipe");
+    }
+  };
+
   const save = async (skip = false) => {
     setSaving(true);
     setError(null);
@@ -97,6 +126,9 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error || "Failed to save onboarding");
+      }
+      if (!skip) {
+        await createStarterRecipe();
       }
       window.localStorage.removeItem("mychelin_onboarding_pending");
       onComplete();
@@ -224,6 +256,33 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   <span className="mt-1 block text-xs leading-5 text-stone-500">{item.body}</span>
                 </button>
               ))}
+              {firstCaptureMode === "starter" && (
+                <div className="sm:col-span-2">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    Choose a starter recipe
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {starterRecipes.map((recipe) => (
+                      <button
+                        key={recipe.slug}
+                        type="button"
+                        onClick={() => setSelectedStarterSlug(recipe.slug)}
+                        className={
+                          "rounded-2xl border px-4 py-4 text-left transition " +
+                          (selectedStarterSlug === recipe.slug
+                            ? "border-[#17131f] bg-[#17131f] text-white shadow-sm"
+                            : "border-[#ebe5dc] bg-white text-stone-700 hover:border-[#800020]/25")
+                        }
+                      >
+                        <span className="block text-sm font-semibold">{recipe.title}</span>
+                        <span className={"mt-1 block text-xs leading-5 " + (selectedStarterSlug === recipe.slug ? "text-white/70" : "text-stone-500")}>
+                          {recipe.subtitle}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

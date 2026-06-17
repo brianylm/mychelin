@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { notificationJobs, notificationPreferences, recipeAttempts, recipes } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { ensureNotificationTables, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
+import { ensureNotificationTables, ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
@@ -39,12 +39,12 @@ async function queuePostCookReviewReminder(userId: number) {
     });
     if (prefs && !prefs.reviewReminders) return;
 
-    const dueAt = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+    const dueAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     await db.insert(notificationJobs).values({
       userId,
       type: "post_cook_review",
       title: "Review your latest cook",
-      body: "Turn today's attempt notes into a clearer next version while it is still fresh.",
+      body: "Rate the dish after eating and turn fresh notes into a clearer next version.",
       url: "/app",
       dueAt,
       createdAt: new Date().toISOString(),
@@ -71,6 +71,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     }
 
     await ensureRecipeAttemptsTable();
+    await ensureRecipeAttemptDishRatingColumn();
     const { id } = await context.params;
     const recipeId = Number(id);
 
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     await ensureRecipeAttemptsTable();
+    await ensureRecipeAttemptDishRatingColumn();
     const { id } = await context.params;
     const recipeId = Number(id);
 
@@ -121,10 +123,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const now = new Date().toISOString();
     const rating = normalizeRating(body.rating);
+    const dishRating = normalizeRating(body.dishRating);
 
     if (body.rating !== undefined && body.rating !== null && rating === null) {
       return NextResponse.json(
         { error: "rating must be a half-star value from 0.5 to 5" },
+        { status: 400 }
+      );
+    }
+
+    if (body.dishRating !== undefined && body.dishRating !== null && dishRating === null) {
+      return NextResponse.json(
+        { error: "dishRating must be a half-star value from 0.5 to 5" },
         { status: 400 }
       );
     }
@@ -138,6 +148,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         userId: currentUser.id,
         cookedAt: typeof body.cookedAt === "string" ? body.cookedAt : now,
         rating,
+        dishRating,
         notes: body.notes ?? null,
         changeNotes: Array.isArray(body.changeNotes)
           ? JSON.stringify(body.changeNotes)
@@ -163,6 +174,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       properties: {
         has_rating: rating !== null,
         rating: rating ?? null,
+        has_dish_rating: dishRating !== null,
         has_next_time: Boolean(body.nextTime),
         change_notes_count: Array.isArray(body.changeNotes) ? body.changeNotes.length : 0,
         ingredients_count: Array.isArray(body.ingredientsSnapshot) ? body.ingredientsSnapshot.length : 0,

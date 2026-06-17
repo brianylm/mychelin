@@ -1,10 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, CalendarDays, Refrigerator, ShoppingBasket } from "lucide-react";
+import { BookOpen, CalendarDays, ClipboardList, Refrigerator, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AppView = "recipes" | "fridge" | "shopping" | "plan" | "discover" | "profile";
+export type AppView = "recipes" | "activity" | "fridge" | "shopping" | "plan" | "discover" | "profile";
 
 interface BottomNavProps {
   current: AppView;
@@ -13,6 +13,7 @@ interface BottomNavProps {
 
 const tabs: { id: AppView; label: string; icon: LucideIcon }[] = [
   { id: "recipes", label: "Recipes", icon: BookOpen },
+  { id: "activity", label: "Activity", icon: ClipboardList },
   { id: "fridge", label: "Fridge", icon: Refrigerator },
   { id: "shopping", label: "Shopping", icon: ShoppingBasket },
   { id: "plan", label: "Plan", icon: CalendarDays },

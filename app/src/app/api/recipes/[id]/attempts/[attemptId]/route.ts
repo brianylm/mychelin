@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeAttempts } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { ensureRecipeAttemptsTable } from "@/db/ensure-schema";
+import { ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 
@@ -60,6 +60,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await ensureRecipeAttemptsTable();
+    await ensureRecipeAttemptDishRatingColumn();
     const { id, attemptId } = await context.params;
     const recipeId = Number(id);
     const attemptIdNumber = Number(attemptId);
@@ -80,6 +81,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "rating must be a half-star value from 0.5 to 5" }, { status: 400 });
       }
       updateData.rating = rating;
+    }
+    if (body.dishRating !== undefined) {
+      const dishRating = normalizeRating(body.dishRating);
+      if (body.dishRating !== null && body.dishRating !== "" && dishRating === null) {
+        return NextResponse.json({ error: "dishRating must be a half-star value from 0.5 to 5" }, { status: 400 });
+      }
+      updateData.dishRating = dishRating;
     }
     if (body.notes !== undefined) updateData.notes = body.notes ?? null;
     if (body.nextTime !== undefined) updateData.nextTime = body.nextTime ?? null;
@@ -106,6 +114,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await ensureRecipeAttemptsTable();
+    await ensureRecipeAttemptDishRatingColumn();
     const { id, attemptId } = await context.params;
     const recipeId = Number(id);
     const attemptIdNumber = Number(attemptId);

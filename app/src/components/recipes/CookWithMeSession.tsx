@@ -18,6 +18,8 @@ import { StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
 import type { RecipeWithRelations } from "@/store/RecipeStore";
 import { playTimerAlarm, primeTimerAlarm } from "@/lib/timer-alarm";
 import { detectStepTimerSeconds } from "@/lib/step-timers";
+import { parseHeatFromTip } from "@/lib/instruction-heat";
+import { HeatChip } from "./HeatChip";
 
 interface CookWithMeSessionProps {
   recipe: RecipeWithRelations;
@@ -68,7 +70,7 @@ function HalfStarRating({
 }) {
   return (
     <div>
-      <div className="flex gap-1.5" role="radiogroup" aria-label="Dish rating">
+      <div className="flex gap-1.5" role="radiogroup" aria-label="Cooking ease rating">
         {[1, 2, 3, 4, 5].map((star) => {
           const fill = value >= star ? "full" : value >= star - 0.5 ? "half" : "empty";
           return (
@@ -105,9 +107,9 @@ function HalfStarRating({
         })}
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px] text-white/45">
-        <span>Needs work</span>
+        <span>Hard</span>
         <span className="text-white/70">{value > 0 ? value.toFixed(1).replace(".0", "") + "/5" : "Not rated"}</span>
-        <span>Cook again</span>
+        <span>Easy</span>
       </div>
     </div>
   );
@@ -127,13 +129,14 @@ export function CookWithMeSession({
   const [changeDraft, setChangeDraft] = useState("");
   const [showChangeCapture, setShowChangeCapture] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [dishRating, setDishRating] = useState(0);
+  const [sessionEaseRating, setSessionEaseRating] = useState(0);
   const [nextTimeNotes, setNextTimeNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const currentInstruction = instructions[stepIndex];
+  const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
   const totalSteps = instructions.length;
   const progress = totalSteps > 0 ? ((stepIndex + 1) / totalSteps) * 100 : 0;
 
@@ -148,14 +151,14 @@ export function CookWithMeSession({
         parts.push(`${index + 1}. ${note}`);
       });
     }
-    if (dishRating > 0) {
-      parts.push(`Dish rating: ${dishRating}/5`);
+    if (sessionEaseRating > 0) {
+      parts.push(`Cooking ease rating: ${sessionEaseRating}/5`);
     }
     if (nextTimeNotes.trim()) {
       parts.push(`Next time: ${nextTimeNotes.trim()}`);
     }
     return parts.join("\n");
-  }, [changeNotes, dishRating, nextTimeNotes]);
+  }, [changeNotes, sessionEaseRating, nextTimeNotes]);
 
   useEffect(() => {
     const activeEntries = Object.entries(timers).filter(
@@ -299,7 +302,7 @@ export function CookWithMeSession({
         body: JSON.stringify({
           versionId: recipe.activeVersionId ?? null,
           mealPlanId: mealPlanId ?? null,
-          rating: dishRating || null,
+          rating: sessionEaseRating || null,
           notes: sessionSummary || null,
           changeNotes,
           nextTime: nextTimeNotes.trim() || null,
@@ -321,7 +324,7 @@ export function CookWithMeSession({
     } finally {
       setSaving(false);
     }
-  }, [changeNotes, dishRating, mealPlanId, nextTimeNotes, onClose, onComplete, recipe, sessionSummary]);
+  }, [changeNotes, sessionEaseRating, mealPlanId, nextTimeNotes, onClose, onComplete, recipe, sessionSummary]);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#17131f] text-white">
@@ -372,11 +375,14 @@ export function CookWithMeSession({
                   Session complete
                 </p>
                 <h3 className="mt-3 text-3xl font-semibold leading-tight">
-                  How would you rate this dish?
+                  How easy was this cooking session?
                 </h3>
+                <p className="mt-3 text-sm leading-6 text-white/60">
+                  Rate the cooking flow now. You can rate the dish later from Activity after eating.
+                </p>
 
                 <div className="mt-6">
-                  <HalfStarRating value={dishRating} onChange={setDishRating} />
+                  <HalfStarRating value={sessionEaseRating} onChange={setSessionEaseRating} />
                 </div>
 
                 <label className="mt-6 block text-sm font-medium text-white/80">
@@ -429,13 +435,19 @@ export function CookWithMeSession({
                   </p>
                 </div>
 
+                {currentStepMeta.heat && (
+                  <div className="mt-5">
+                    <HeatChip heat={currentStepMeta.heat} />
+                  </div>
+                )}
+
                 <p className="mt-6 text-3xl font-semibold leading-tight tracking-normal sm:text-5xl">
                   {currentInstruction?.content}
                 </p>
 
-                {currentInstruction?.tip && (
+                {currentStepMeta.cleanTip && (
                   <p className="mt-5 rounded-2xl bg-[#800020]/5 px-4 py-3 text-base leading-7 text-[#521224]">
-                    {currentInstruction.tip}
+                    {currentStepMeta.cleanTip}
                   </p>
                 )}
 

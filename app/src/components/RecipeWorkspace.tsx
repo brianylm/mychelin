@@ -13,6 +13,7 @@ import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { MealPlanView } from "@/components/planner/MealPlanView";
 import { ProfileView } from "@/components/profile/ProfileView";
+import { ActivityView } from "@/components/activity/ActivityView";
 import { DiscoverView } from "@/components/discover/DiscoverView";
 import { FridgeView } from "@/components/fridge/FridgeView";
 import { ShoppingListView } from "@/components/shopping/ShoppingListView";
@@ -509,6 +510,7 @@ function RecipeWorkspaceContent({
             />
           </>
         )}
+        {currentView === "activity" && <ActivityView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "fridge" && <FridgeView />}
         {currentView === "shopping" && (
           <ShoppingListView initialDateRange={shoppingDateRange} />

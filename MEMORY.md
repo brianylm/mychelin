@@ -1962,3 +1962,49 @@ References used:
 Follow-ups:
 
 - Revisit this after the first pilot dry-run, before building Scan recipe photo/OCR beyond basic text extraction.
+
+### 2026-06-17 - Starter recipes, heat chips, and activity reviews
+
+Changed/decided:
+
+- Added editable onboarding starter recipes for tau yu bak, garlicky xiao bai cai, and onion omelette. Selecting a starter creates a private recipe through the normal authenticated recipe API.
+- Centralized heat metadata parsing from instruction tips and rendered heat as chips in step editing, single cook-with-me, and multi-dish cook-with-me instead of showing raw [heat:...] tags.
+- Split cook-session ease from dish rating: cook-with-me completion now asks how easy the cooking session was; dish ratings happen later from Activity after eating.
+- Added dish_rating to recipe attempts with a Drizzle migration and lazy production schema ensure helper.
+- Added an authenticated Activity tab/API that lists the current user attempts by day/meal and lets users save half-star dish ratings. The activity API is scoped to recipe_attempts.user_id, not other book members attempts.
+- Updated roadmap follow-up for making Heritage & Family and versions/refinement less dense and more prompt-driven.
+- Added an in-app changelog entry for this batch.
+
+Files touched:
+
+- ROADMAP.md
+- app/drizzle/0025_recipe_attempt_dish_rating.sql
+- app/src/app/api/activity/route.ts
+- app/src/app/api/recipes/[id]/attempts/route.ts
+- app/src/app/api/recipes/[id]/attempts/[attemptId]/route.ts
+- app/src/components/RecipeWorkspace.tsx
+- app/src/components/activity/ActivityView.tsx
+- app/src/components/layout/BottomNav.tsx
+- app/src/components/layout/DesktopNav.tsx
+- app/src/components/onboarding/OnboardingFlow.tsx
+- app/src/components/recipes/AttemptHistory.tsx
+- app/src/components/recipes/CookWithMeSession.tsx
+- app/src/components/recipes/HeatChip.tsx
+- app/src/components/recipes/MultiCookWithMeSession.tsx
+- app/src/components/recipes/RecipeSteps.tsx
+- app/src/db/ensure-schema.ts
+- app/src/db/schema.ts
+- app/src/lib/changelog.ts
+- app/src/lib/instruction-heat.ts
+- app/src/lib/starter-recipes.ts
+
+Checks:
+
+- Focused npx eslint passed for touched app files with two existing-style @next/next/no-img-element warnings.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Human-test onboarding starter creation on a fresh account.
+- Human-test Activity after a cook-with-me attempt, especially saving dish rating and navigating back to recipe.
+- Heritage/family and versions/refinement UI simplification remains roadmap work.

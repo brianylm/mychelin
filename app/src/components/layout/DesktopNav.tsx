@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, CalendarDays, Refrigerator, ShoppingBasket } from "lucide-react";
+import { BookOpen, CalendarDays, ClipboardList, Refrigerator, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppView } from "./BottomNav";
 
@@ -12,6 +12,7 @@ interface DesktopNavProps {
 
 const tabs: { id: AppView; label: string; icon: LucideIcon }[] = [
   { id: "recipes", label: "Recipes", icon: BookOpen },
+  { id: "activity", label: "Activity", icon: ClipboardList },
   { id: "fridge", label: "Fridge", icon: Refrigerator },
   { id: "shopping", label: "Shopping", icon: ShoppingBasket },
   { id: "plan", label: "Meal Plan", icon: CalendarDays },

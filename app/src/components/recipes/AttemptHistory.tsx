@@ -8,6 +8,7 @@ interface RecipeAttempt {
   id: number;
   cookedAt: string;
   rating: number | null;
+  dishRating: number | null;
   notes: string | null;
   nextTime: string | null;
   changeNotes: string[];
@@ -30,13 +31,13 @@ function formatCookedAt(value: string): string {
   });
 }
 
-function RatingPill({ rating }: { rating: number | null }) {
+function RatingPill({ rating, label }: { rating: number | null; label: string }) {
   if (!rating) return <span className="text-xs text-[var(--ui-muted)]">Unrated</span>;
 
   return (
     <span className="inline-flex items-center gap-1 rounded-md bg-[#f7c86a]/20 px-2 py-1 text-xs font-semibold text-[#5a3500]">
       <Star className="h-3.5 w-3.5 fill-[#f7c86a] text-[#c68a18]" />
-      {rating.toFixed(1).replace(".0", "")}/5
+      {label}: {rating.toFixed(1).replace(".0", "")}/5
     </span>
   );
 }
@@ -194,7 +195,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
         <EmptyState
           className="mt-4"
           title="No attempts yet"
-          description="Finish a cook-with-me session to log the dish rating, changes, and next-time notes."
+          description="Finish a cook-with-me session to log cooking ease, changes, and next-time notes. Rate the dish later from Activity."
         />
       ) : (
         <div className="mt-4 space-y-3">
@@ -211,7 +212,8 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                       {formatCookedAt(attempt.cookedAt)}
                     </p>
                     <div className="mt-1">
-                      <RatingPill rating={attempt.rating} />
+                      <RatingPill rating={attempt.rating} label="Ease" />
+                      {attempt.dishRating && <div className="mt-1"><RatingPill rating={attempt.dishRating} label="Dish" /></div>}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -253,7 +255,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                 {isEditing ? (
                   <div className="mt-3 space-y-2 rounded-lg border border-[var(--ui-border)] bg-white p-3">
                     <label className="block text-xs font-semibold text-[var(--ui-muted)]">
-                      Rating
+                      Cooking ease
                       <input
                         value={draftRating}
                         onChange={(event) => setDraftRating(event.target.value)}

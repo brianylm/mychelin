@@ -62,6 +62,13 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 ## Medium term
 
+### Recipe refinement and heritage field ergonomics
+
+- Simplify the recipe page so the main path stays focused on title, photos, ingredients, steps, timing, and cookability.
+- Move Heritage & Family into progressive prompts instead of a dense form: who taught it, when it is cooked, original dialect terms, sensory cues, and family story can be captured gradually.
+- Redesign versions/refinement as an improvement journal: what changed this attempt, what should change next time, whether it got closer to home, and a clear promote-to-version action.
+- Make fields feel explicit and inviting with one-question cards, examples, saved-state feedback, and optional prompts rather than intimidating blank sections.
+
 
 ### Planning and calendar workflows
 

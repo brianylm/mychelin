@@ -5,6 +5,12 @@ import { Button } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { Trash2 } from "lucide-react";
 import type { Instruction } from "@/db/schema";
+import {
+  encodeHeatInTip,
+  HEAT_CONFIG,
+  HEAT_LEVELS,
+  parseHeatFromTip,
+} from "@/lib/instruction-heat";
 
 interface RecipeStepsProps {
   instructions: Instruction[];
@@ -24,33 +30,10 @@ interface RecipeStepsProps {
 const fieldBase =
   "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
 
-const HEAT_LEVELS = [null, "low", "medium", "high"] as const;
-type HeatLevel = (typeof HEAT_LEVELS)[number];
-
-const HEAT_CONFIG: Record<string, { label: string; emoji: string; color: string }> = {
-  low: { label: "Low", emoji: "🔵", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  medium: { label: "Med", emoji: "🟠", color: "bg-orange-50 text-orange-700 border-orange-200" },
-  high: { label: "High", emoji: "🔴", color: "bg-red-50 text-red-700 border-red-200" },
-};
 
 function capitalize(s: string): string {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function parseHeatFromTip(tip: string | null): { heat: HeatLevel; cleanTip: string } {
-  if (!tip) return { heat: null, cleanTip: "" };
-  const match = tip.match(/^\[heat:(low|medium|high)\]\s*/);
-  if (match) {
-    return { heat: match[1] as HeatLevel, cleanTip: tip.slice(match[0].length) };
-  }
-  return { heat: null, cleanTip: tip };
-}
-
-function encodeHeatInTip(heat: HeatLevel, cleanTip: string): string | null {
-  if (!heat && !cleanTip) return null;
-  if (!heat) return cleanTip;
-  return `[heat:${heat}]${cleanTip ? " " + cleanTip : ""}`;
 }
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -318,16 +301,13 @@ export function RecipeSteps({
                     onClick={() => cycleHeat(step)}
                     className={`mt-1 ml-2 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition ${
                       heat && HEAT_CONFIG[heat]
-                        ? HEAT_CONFIG[heat].color
+                        ? HEAT_CONFIG[heat].className
                         : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300"
                     }`}
-                    title="Cycle heat: off → low → medium → high"
+                    title="Cycle heat: off to low to medium to high"
                   >
                     {heat && HEAT_CONFIG[heat] ? (
-                      <>
-                        <span>{HEAT_CONFIG[heat].emoji}</span>
-                        <span>{HEAT_CONFIG[heat].label} heat</span>
-                      </>
+                      <span>{HEAT_CONFIG[heat].label}</span>
                     ) : (
                       <span>No heat</span>
                     )}

@@ -6,6 +6,8 @@ import { StarFilledIcon, StarIcon } from "@radix-ui/react-icons";
 import type { RecipeWithRelations } from "@/store/RecipeStore";
 import { playTimerAlarm, primeTimerAlarm } from "@/lib/timer-alarm";
 import { detectStepTimerSeconds } from "@/lib/step-timers";
+import { parseHeatFromTip } from "@/lib/instruction-heat";
+import { HeatChip } from "./HeatChip";
 
 interface BatchCookMeal {
   recipe: RecipeWithRelations;
@@ -57,7 +59,7 @@ function toAttemptInstructions(recipe: RecipeWithRelations) {
 
 function HalfStarRating({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Dish rating">
+    <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Cooking ease rating">
       {[1, 2, 3, 4, 5].map((star) => {
         const fill = value >= star ? "full" : value >= star - 0.5 ? "half" : "empty";
         return (
@@ -98,7 +100,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
   const [timers, setTimers] = useState<Record<string, TimerState>>({});
   const previousTimersRef = useRef<Record<string, TimerState>>({});
   const [reviewing, setReviewing] = useState(false);
-  const [ratings, setRatings] = useState<Record<number, number>>({});
+  const [sessionEaseRatings, setSessionEaseRatings] = useState<Record<number, number>>({});
   const [nextTimeNotes, setNextTimeNotes] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
@@ -235,7 +237,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
           body: JSON.stringify({
             versionId: meal.recipe.activeVersionId ?? null,
             mealPlanId: meal.mealPlanId ?? null,
-            rating: ratings[meal.recipe.id] || null,
+            rating: sessionEaseRatings[meal.recipe.id] || null,
             notes: "Batch cook-with-me session",
             changeNotes: [],
             nextTime: nextTimeNotes[meal.recipe.id]?.trim() || null,
@@ -257,7 +259,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
     } finally {
       setSaving(false);
     }
-  }, [meals, nextTimeNotes, onClose, onComplete, ratings]);
+  }, [meals, nextTimeNotes, onClose, onComplete, sessionEaseRatings]);
 
   const activeTimerRows = useMemo(() => {
     return Object.entries(timers)
@@ -304,22 +306,23 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
             <div className="mx-auto max-w-3xl space-y-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f7c86a]">Session complete</p>
-                <h3 className="mt-2 text-3xl font-semibold">Rate each dish</h3>
+                <h3 className="mt-2 text-3xl font-semibold">Rate each cooking session</h3>
+                <p className="mt-2 text-sm leading-6 text-white/60">Dish ratings happen later from Activity after everyone has eaten.</p>
               </div>
               {meals.map((meal) => (
                 <section key={meal.recipe.id} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
                   <h4 className="text-base font-semibold">{meal.recipe.title}</h4>
                   <div className="mt-3">
                     <HalfStarRating
-                      value={ratings[meal.recipe.id] ?? 0}
-                      onChange={(value) => setRatings((state) => ({ ...state, [meal.recipe.id]: value }))}
+                      value={sessionEaseRatings[meal.recipe.id] ?? 0}
+                      onChange={(value) => setSessionEaseRatings((state) => ({ ...state, [meal.recipe.id]: value }))}
                     />
                   </div>
                   <textarea
                     value={nextTimeNotes[meal.recipe.id] ?? ""}
                     onChange={(event) => setNextTimeNotes((state) => ({ ...state, [meal.recipe.id]: event.target.value }))}
                     rows={2}
-                    placeholder="What should change next time?"
+                    placeholder="What should change next cook?"
                     className="mt-3 w-full resize-none rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
                   />
                 </section>
@@ -362,6 +365,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                 const instructions = recipe.instructions ?? [];
                 const stepIndex = getStepIndex(recipe.id);
                 const currentInstruction = instructions[stepIndex];
+                const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
                 const isDone = Boolean(completedRecipes[recipe.id]);
                 const key = timerKey(recipe.id, stepIndex);
                 const currentTimer = timers[key];
@@ -385,8 +389,13 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                           <span>Step {stepIndex + 1} of {instructions.length}</span>
                           <span>{Math.round(((stepIndex + 1) / instructions.length) * 100)}%</span>
                         </div>
+                        {currentStepMeta.heat && (
+                          <div className="mt-3">
+                            <HeatChip heat={currentStepMeta.heat} />
+                          </div>
+                        )}
                         <p className="mt-3 min-h-[5rem] text-2xl font-semibold leading-snug">{currentInstruction?.content}</p>
-                        {currentInstruction?.tip && <p className="mt-3 rounded-xl bg-[#800020]/5 px-3 py-2 text-sm text-[#521224]">{currentInstruction.tip}</p>}
+                        {currentStepMeta.cleanTip && <p className="mt-3 rounded-xl bg-[#800020]/5 px-3 py-2 text-sm text-[#521224]">{currentStepMeta.cleanTip}</p>}
 
                         <div className="mt-4 rounded-xl border border-[#800020]/10 bg-[#800020]/5 p-3">
                           <div className="flex items-center justify-between gap-2">

@@ -14,6 +14,7 @@ let versionLabelEnsured = false;
 let planningOwnershipEnsured = false;
 let mealPlanCookedAtEnsured = false;
 let recipeAttemptsEnsured = false;
+let recipeAttemptDishRatingEnsured = false;
 let userOnboardingEnsured = false;
 let usageEventsEnsured = false;
 let notificationsEnsured = false;
@@ -121,6 +122,7 @@ export async function ensureRecipeAttemptsTable(): Promise<void> {
       user_id integer REFERENCES users(id) ON DELETE cascade,
       cooked_at text NOT NULL,
       rating real,
+      dish_rating real,
       notes text,
       change_notes text,
       what_worked text,
@@ -149,6 +151,28 @@ export async function ensureRecipeAttemptsTable(): Promise<void> {
   }
 
   recipeAttemptsEnsured = true;
+}
+
+
+export async function ensureRecipeAttemptDishRatingColumn(): Promise<void> {
+  if (recipeAttemptDishRatingEnsured) return;
+
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) return;
+
+  const client = createClient({ url, authToken });
+  try {
+    await client.execute("ALTER TABLE recipe_attempts ADD COLUMN dish_rating real");
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    const msg = message.toLowerCase();
+    if (!msg.includes("duplicate") && !msg.includes("already exists")) {
+      console.warn("ensureRecipeAttemptDishRatingColumn:", message);
+    }
+  }
+
+  recipeAttemptDishRatingEnsured = true;
 }
 
 
