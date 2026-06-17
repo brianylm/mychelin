@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-17",
+    title: "Ingredient paste and details saving fixes",
+    items: [
+      "Ingredient paste now understands trailing amounts such as potato 1kg, potato 1 kg, and garlic 3 cloves.",
+      "Cuisine selection now saves the chosen value immediately instead of using the previous selection.",
+      "Save now now flushes all dirty title and detail fields instead of only blurring the active input.",
+    ],
+  },
+  {
+    date: "2026-06-17",
     title: "Starter recipes and cooking activity",
     items: [
       "Onboarding can now start a new user with editable sample recipes for tau yu bak, garlicky xiao bai cai, and onion omelette.",

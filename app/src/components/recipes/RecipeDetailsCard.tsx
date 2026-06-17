@@ -67,7 +67,7 @@ interface RecipeDetailsCardProps {
   onCookTimeChange: (cookTime: string) => void;
   recipeYield: string;
   onYieldChange: (recipeYield: string) => void;
-  onBlur: (field: "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => void;
+  onBlur: (field: "description" | "cuisine" | "prepTime" | "cookTime" | "yield", value?: string) => void;
   savingDescription: boolean;
   savingCuisine: boolean;
   savingPrepTime: boolean;
@@ -121,7 +121,7 @@ export function RecipeDetailsCard({
         placeholder="Search or select cuisine..."
         onChange={(val) => {
           onCuisineChange(val);
-          setTimeout(() => onBlur("cuisine"), 0);
+          onBlur("cuisine", val);
         }}
         isSaving={savingCuisine}
       />

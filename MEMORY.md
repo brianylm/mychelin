@@ -2008,3 +2008,30 @@ Follow-ups:
 - Human-test onboarding starter creation on a fresh account.
 - Human-test Activity after a cook-with-me attempt, especially saving dish rating and navigating back to recipe.
 - Heritage/family and versions/refinement UI simplification remains roadmap work.
+
+### 2026-06-17 - Ingredient trailing quantity parser and details autosave fix
+
+Changed/decided:
+
+- Fixed ingredient paste parsing for trailing quantities/units such as potato 1kg, potato 1 kg, garlic 3 cloves, and onion 2 pcs.
+- Fixed cuisine autosave by passing the selected combobox value directly into the recipe field save path instead of relying on same-tick React state.
+- Updated Save now to explicitly flush title, description, cuisine, prep time, cook time, and yield, not only blur the currently focused field.
+- Left unrelated AGENTS.md worktree changes untouched.
+
+Files touched:
+
+- app/src/components/recipes/IngredientList.tsx
+- app/src/components/recipes/RecipeDetailsCard.tsx
+- app/src/components/recipes/RecipeView.tsx
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- Focused npx eslint passed for IngredientList, RecipeDetailsCard, and RecipeView with existing no-img warnings in RecipeView.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Human-test paste list with potato 1kg, potato 1 kg, 1kg potato, and a comma-separated list.
+- Human-test Details cuisine change and Save now on an existing recipe.

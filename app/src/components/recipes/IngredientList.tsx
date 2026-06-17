@@ -113,6 +113,21 @@ function parseNumberToken(token: string): number | null {
   return null;
 }
 
+function parseQuantityUnitToken(token: string): {
+  quantity: number;
+  unit?: string;
+} | null {
+  const compact = token.match(/^(\d+(?:\.\d+)?|\d+\/\d+)([a-zA-Z]+)$/);
+  if (compact) {
+    const quantity = parseNumberToken(compact[1]);
+    const unit = normalizeUnit(compact[2]);
+    if (quantity !== null && unit) return { quantity, unit };
+  }
+
+  const quantity = parseNumberToken(token);
+  return quantity !== null ? { quantity } : null;
+}
+
 function parseIngredientLine(rawLine: string): IngredientDraft | null {
   let line = rawLine
     .replace(/^\s*(?:[-*]|\d+[.)])\s+/, "")
@@ -152,6 +167,35 @@ function parseIngredientLine(rawLine: string): IngredientDraft | null {
     const name = parts.slice(index).join(" ").replace(/,$/, "").trim();
     if (name) {
       return { name: capitalize(name), quantity, unit, notes };
+    }
+  }
+
+  const lastPart = parts.at(-1);
+  const secondLastPart = parts.at(-2);
+  const trailingUnit = lastPart ? normalizeUnit(lastPart) : undefined;
+  const trailingQuantity = secondLastPart ? parseNumberToken(secondLastPart) : null;
+  if (trailingUnit && trailingQuantity !== null && parts.length > 2) {
+    const name = parts.slice(0, -2).join(" ").replace(/,$/, "").trim();
+    if (name) {
+      return {
+        name: capitalize(name),
+        quantity: trailingQuantity,
+        unit: trailingUnit,
+        notes,
+      };
+    }
+  }
+
+  const trailingAmount = lastPart ? parseQuantityUnitToken(lastPart) : null;
+  if (trailingAmount && parts.length > 1) {
+    const name = parts.slice(0, -1).join(" ").replace(/,$/, "").trim();
+    if (name) {
+      return {
+        name: capitalize(name),
+        quantity: trailingAmount.quantity,
+        unit: trailingAmount.unit,
+        notes,
+      };
     }
   }
 

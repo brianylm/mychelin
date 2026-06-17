@@ -315,7 +315,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   ]);
 
   const handleBlur = useCallback(
-    async (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield") => {
+    async (field: "title" | "description" | "cuisine" | "prepTime" | "cookTime" | "yield", nextValue?: string) => {
       if (!selectedRecipe) return;
 
       const setters = {
@@ -327,6 +327,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         yield: setSavingYield,
       };
       const values = { title, description, cuisine, prepTime, cookTime, yield: recipeYield };
+      if (nextValue !== undefined) values[field] = nextValue;
       const originals = {
         title: selectedRecipe.title,
         description: selectedRecipe.description ?? "",
@@ -966,12 +967,21 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     selectedRecipe.nostalgiaRating,
   ].filter((v) => v !== null && v !== undefined && v !== "").length;
 
-  const handleSaveNow = () => {
-    // Blur whatever is currently focused — fires any pending onBlur
-    // autosave handlers so in-progress edits get persisted without
-    // waiting for the user to click elsewhere.
+  const handleSaveNow = async () => {
+    // Blur whatever is currently focused, then explicitly flush every
+    // editable detail field. This catches controls such as comboboxes where
+    // selection does not behave like a plain input blur.
     const active = document.activeElement as HTMLElement | null;
     if (active && typeof active.blur === "function") active.blur();
+
+    await Promise.all([
+      handleBlur("title"),
+      handleBlur("description"),
+      handleBlur("cuisine"),
+      handleBlur("prepTime"),
+      handleBlur("cookTime"),
+      handleBlur("yield"),
+    ]);
     addToast("Changes saved", "success");
   };
 
