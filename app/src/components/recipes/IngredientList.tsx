@@ -164,6 +164,21 @@ function parseIngredientLine(rawLine: string): IngredientDraft | null {
     const unit = parts[index] ? normalizeUnit(parts[index]) : undefined;
     if (unit) index += 1;
 
+    if (!unit) {
+      const quantityFirstTrailingUnit = parts.at(-1) ? normalizeUnit(parts.at(-1)!) : undefined;
+      if (quantityFirstTrailingUnit && parts.length > index + 1) {
+        const name = parts.slice(index, -1).join(" ").replace(/,$/, "").trim();
+        if (name) {
+          return {
+            name: capitalize(name),
+            quantity,
+            unit: quantityFirstTrailingUnit,
+            notes,
+          };
+        }
+      }
+    }
+
     const name = parts.slice(index).join(" ").replace(/,$/, "").trim();
     if (name) {
       return { name: capitalize(name), quantity, unit, notes };
@@ -224,6 +239,21 @@ function parseBulkIngredients(text: string): IngredientDraft[] {
 function capitalize(s: string): string {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function displayUnit(unit?: string, quantity?: number): string | undefined {
+  if (!unit) return undefined;
+  if (unit === "clove" && quantity !== 1) return "cloves";
+  return unit;
+}
+
+function formatIngredientDraftPreview(item: IngredientDraft): string {
+  if (item.approximate) {
+    return [item.quantityText, item.name].filter(Boolean).join(" ");
+  }
+  return [item.quantity, displayUnit(item.unit, item.quantity), item.name]
+    .filter((part) => part !== undefined && part !== "")
+    .join(" ");
 }
 
 export function IngredientList({
@@ -518,7 +548,7 @@ a handful coriander`}
             </Button>
             {parsedBulkIngredients.length > 0 && (
               <span className="text-xs text-[#521224]">
-                Preview: {parsedBulkIngredients.slice(0, 3).map((item) => item.name).join(", ")}
+                Preview: {parsedBulkIngredients.slice(0, 3).map(formatIngredientDraftPreview).join(", ")}
                 {parsedBulkIngredients.length > 3 ? "..." : ""}
               </span>
             )}

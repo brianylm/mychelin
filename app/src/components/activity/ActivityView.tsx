@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChefHat, Clock3, Star, Utensils } from "lucide-react";
 import { EmptyState, Panel } from "@/components/ui";
+import { HalfStarRating } from "@/components/recipes/HalfStarRating";
 
 interface ActivityAttempt {
   id: number;
@@ -68,43 +69,6 @@ function RatingPill({
       <Star className="h-3.5 w-3.5 fill-[#f7c86a] text-[#c68a18]" />
       {label}: {value.toFixed(1).replace(".0", "")}/5
     </span>
-  );
-}
-
-function DishRatingControl({
-  value,
-  disabled,
-  onChange,
-}: {
-  value: number | null;
-  disabled: boolean;
-  onChange: (value: number) => void;
-}) {
-  const options = [1, 2, 3, 4, 5].flatMap((star) => [star - 0.5, star]);
-  return (
-    <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Dish rating">
-      {options.map((option) => {
-        const active = value === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(option)}
-            className={
-              "min-h-8 rounded-full border px-2.5 text-xs font-semibold transition disabled:opacity-55 " +
-              (active
-                ? "border-[#800020] bg-[#800020] text-white"
-                : "border-[#eadfce] bg-white text-neutral-600 hover:border-[#800020]/35")
-            }
-            role="radio"
-            aria-checked={active}
-          >
-            {option.toFixed(1).replace(".0", "")}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -184,7 +148,7 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
             Cooking log
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
-            Cook-with-me saves the cooking experience first. Come back after eating to rate the dish and decide what should become the next version.
+            Cook-with-me saves the cooking session first. After the meal, rate how the dish turned out and keep next-time notes close by.
           </p>
         </div>
 
@@ -274,12 +238,16 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
 
                             <div className="mt-3 rounded-xl border border-[#f0e5d8] bg-white px-3 py-3">
                               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                                Dish rating after eating
+                                How did the dish turn out?
                               </p>
-                              <DishRatingControl
+                              <HalfStarRating
                                 value={attempt.dishRating}
                                 disabled={savingId === attempt.id}
                                 onChange={(rating) => saveDishRating(attempt, rating)}
+                                ariaLabel="Dish rating"
+                                size="sm"
+                                leftLabel="Needs work"
+                                rightLabel="Cook again"
                               />
                             </div>
 

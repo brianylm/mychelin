@@ -139,7 +139,7 @@ function RecipeWorkspaceContent({
       window.setTimeout(() => {
         window.localStorage.removeItem(pendingKey);
         showPrompt();
-      }, 60000);
+      }, 10 * 60 * 1000);
       return;
     }
 

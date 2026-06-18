@@ -6,6 +6,16 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-06-18",
+    title: "Rating and prompt polish",
+    items: [
+      "Pasted ingredient parsing now handles quantity-first clove wording such as 3 garlic cloves and previews parsed quantity/unit/name before saving.",
+      "First-capture feedback is delayed longer so users can read the created recipe before being asked for comments.",
+      "The automatic Add to Home Screen popup has been removed from the main app shell.",
+      "Dish ratings now use half-star controls and can be updated from both Activity and the recipe attempt history.",
+    ],
+  },
+  {
     date: "2026-06-17",
     title: "Ingredient paste and details saving fixes",
     items: [

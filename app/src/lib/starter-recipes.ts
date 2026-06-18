@@ -57,7 +57,7 @@ export const starterRecipes: StarterRecipeTemplate[] = [
     cookTime: 5,
     ingredients: [
       { name: "xiao bai cai", quantity: 300, unit: "g", notes: "washed; stems separated from leaves" },
-      { name: "garlic", quantity: 3, unit: "cloves", notes: "minced" },
+      { name: "garlic", quantity: 3, unit: "clove", notes: "minced" },
       { name: "cooking oil", quantity: 1, unit: "tbsp" },
       { name: "light soy sauce", quantity: 1, unit: "tsp" },
       { name: "water", quantity: 2, unit: "tbsp" },

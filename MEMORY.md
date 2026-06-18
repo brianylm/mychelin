@@ -2035,3 +2035,40 @@ Follow-ups:
 
 - Human-test paste list with potato 1kg, potato 1 kg, 1kg potato, and a comma-separated list.
 - Human-test Details cuisine change and Save now on an existing recipe.
+
+
+### 2026-06-18 - Rating, prompt, and install prompt polish
+
+Changed/decided:
+
+- Improved paste-list ingredient parsing for quantity-first clove phrasing such as 3 garlic cloves, while keeping the stored unit canonical as clove.
+- Changed the paste-list preview to show parsed quantity, unit, and ingredient name before saving, making parser mistakes easier to catch.
+- Delayed first recipe-capture pilot feedback from 1 minute to 10 minutes so users can read the created recipe before being asked for comments.
+- Removed the automatic Add to Home Screen popup from the root app shell while keeping PWA registration intact.
+- Added a shared half-star dish rating component and wired the same dishRating attempt field into Activity and recipe Attempt history.
+- Updated post-cook reminder and Activity/Attempts copy to ask how the dish turned out instead of using the awkward rate-after-eating phrasing.
+
+Files touched:
+
+- app/src/app/api/recipes/[id]/attempts/route.ts
+- app/src/app/layout.tsx
+- app/src/components/RecipeWorkspace.tsx
+- app/src/components/activity/ActivityView.tsx
+- app/src/components/recipes/AttemptHistory.tsx
+- app/src/components/recipes/HalfStarRating.tsx
+- app/src/components/recipes/IngredientList.tsx
+- app/src/lib/changelog.ts
+- app/src/lib/starter-recipes.ts
+
+Checks:
+
+- git diff --check passed.
+- Targeted npx eslint passed for touched files with one existing no-img warning in ActivityView.
+- npm run build passed from app/.
+- Full npm run lint still fails on older unrelated repo-wide lint issues (scripts any types, books unescaped text/any types, older hook lint rules, etc.).
+
+Follow-ups:
+
+- Human-test paste list examples: 3 garlic cloves, garlic 3 cloves, potato 1kg, and comma-separated mixed lists.
+- Human-test saving dish rating from Activity and from a recipe attempt; both should update the same attempt rating.
+- If users still want install guidance, expose it as a quiet Profile action instead of an automatic popup.

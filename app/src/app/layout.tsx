@@ -3,7 +3,6 @@ import { DM_Sans, Libre_Baskerville, Newsreader } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { PWARegister } from "@/components/PWARegister";
-import { InstallPrompt } from "@/components/InstallPrompt";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -59,7 +58,6 @@ export default function RootLayout({
       <body className="min-h-screen bg-surface text-foreground antialiased">
         <AppProviders>
           <PWARegister />
-          <InstallPrompt />
           <main>{children}</main>
         </AppProviders>
       </body>

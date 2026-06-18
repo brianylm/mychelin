@@ -44,7 +44,7 @@ async function queuePostCookReviewReminder(userId: number) {
       userId,
       type: "post_cook_review",
       title: "Review your latest cook",
-      body: "Rate the dish after eating and turn fresh notes into a clearer next version.",
+      body: "How did the dish turn out? Add a quick rating while the meal is still fresh.",
       url: "/app",
       dueAt,
       createdAt: new Date().toISOString(),

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowUpRight, ChevronUp, History, Pencil, Star, Trash2 } from "lucide-react";
 import { Button, EmptyState, Panel } from "@/components/ui";
+import { HalfStarRating } from "./HalfStarRating";
 
 interface RecipeAttempt {
   id: number;
@@ -138,6 +139,31 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
     }
   }, [draftNextTime, draftNotes, draftRating, loadAttempts, recipeId]);
 
+  const saveDishRating = useCallback(async (attemptId: number, rating: number) => {
+    setSavingId(attemptId);
+    setError(null);
+    try {
+      const response = await fetch("/api/recipes/" + recipeId + "/attempts/" + attemptId, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dishRating: rating }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to save dish rating");
+      }
+      setAttempts((current) =>
+        current.map((attempt) =>
+          attempt.id === attemptId ? { ...attempt, dishRating: rating } : attempt
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save dish rating");
+    } finally {
+      setSavingId(null);
+    }
+  }, [recipeId]);
+
   const deleteAttempt = useCallback(async (attemptId: number) => {
     if (!window.confirm("Delete this attempt? This cannot be undone.")) return;
     setSavingId(attemptId);
@@ -195,7 +221,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
         <EmptyState
           className="mt-4"
           title="No attempts yet"
-          description="Finish a cook-with-me session to log cooking ease, changes, and next-time notes. Rate the dish later from Activity."
+          description="Finish a cook-with-me session to log cooking ease, changes, and next-time notes. Rate the dish here or from Activity after eating."
         />
       ) : (
         <div className="mt-4 space-y-3">
@@ -295,6 +321,20 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                   </div>
                 ) : (
                   <>
+                    <div className="mt-3 rounded-lg border border-[#f0e5d8] bg-white px-3 py-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted)]">
+                        How did the dish turn out?
+                      </p>
+                      <HalfStarRating
+                        value={attempt.dishRating}
+                        onChange={(rating) => saveDishRating(attempt.id, rating)}
+                        ariaLabel="Dish rating"
+                        disabled={savingId === attempt.id}
+                        size="sm"
+                        leftLabel="Needs work"
+                        rightLabel="Cook again"
+                      />
+                    </div>
                     {attempt.changeNotes.length > 0 && (
                       <ul className="mt-3 space-y-1 text-sm text-[var(--ui-muted)]">
                         {attempt.changeNotes.slice(0, 3).map((note, index) => (
