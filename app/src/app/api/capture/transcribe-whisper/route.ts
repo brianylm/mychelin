@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "audio file is required" }, { status: 400 });
     }
 
-    const model = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-transcribe-diarize";
+    const model = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-transcribe";
     const formData = new FormData();
     formData.set("file", audio, audio.name || "conversation-chunk.webm");
     formData.set("model", model);
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       formData.set("response_format", "json");
       formData.set(
         "prompt",
-        "This is a family recipe conversation. Preserve dialect-specific cooking terms and do not translate."
+        "This is a Singapore family recipe conversation. Speech may code-switch between English, Mandarin, Hokkien/Minnan, Teochew, Cantonese, Malay, and family cooking terms. Preserve dialect words phonetically when unsure, keep ingredient names as spoken, and do not translate into English."
       );
       if (typeof language === "string" && language && language !== "auto") {
         formData.set("language", language);

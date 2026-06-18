@@ -63,7 +63,7 @@ interface ConversationCaptureProps {
 type ModalStep = "recording" | "naming" | "processing" | "review";
 type TranscriptionMode = "idle" | "realtime" | "browser" | "chunked";
 
-const CHUNK_DURATION_MS = 2500;
+const CHUNK_DURATION_MS = 4500;
 
 interface BrowserSpeechRecognitionResult {
   isFinal: boolean;
@@ -346,6 +346,7 @@ export function ConversationCapture({
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const assistRequestSignatureRef = useRef<string>("");
+  const transcriptionModeRef = useRef<TranscriptionMode>("idle");
 
   const transcriptSignature = useMemo(
     () => messages.map((m) => m.speakerLabel + ":" + m.text).join("\n").slice(-5000),
@@ -355,6 +356,10 @@ export function ConversationCapture({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    transcriptionModeRef.current = transcriptionMode;
+  }, [transcriptionMode]);
 
 
   useEffect(() => {
@@ -534,7 +539,7 @@ export function ConversationCapture({
           body: JSON.stringify({
             audioBase64,
             mimeType,
-            language: "auto",
+            language: "hokkien",
           }),
         });
         if (!res.ok) {
@@ -548,17 +553,18 @@ export function ConversationCapture({
 
       let data: { segments?: Array<{ speaker: string; text: string }> };
       try {
-        data = await transcribeWithOpenAI();
-      } catch (openAiError) {
-        console.warn("OpenAI transcription unavailable, trying Gemini fallback:", openAiError);
         data = await transcribeWithGemini();
+      } catch (geminiError) {
+        console.warn("Gemini dialect transcription unavailable, trying OpenAI fallback:", geminiError);
+        data = await transcribeWithOpenAI();
       }
 
       const segments = data.segments ?? [];
       if (segments.length === 0) return;
 
       const recentLiveTranscript = Date.now() - lastLiveTranscriptAtRef.current < CHUNK_DURATION_MS * 3;
-      if (recentLiveTranscript) return;
+      const hasReliableRealtimeStream = transcriptionModeRef.current === "realtime";
+      if (hasReliableRealtimeStream && recentLiveTranscript) return;
 
       setMessages((prev) => {
         const next = [...prev];
@@ -907,10 +913,10 @@ export function ConversationCapture({
       const browserStarted = startBrowserSpeechRecognition();
       if (browserStarted) {
         setTranscriptionMode("browser");
-        setAssistError("Recording is live. Words should appear here as captions; backup transcription is also running if live captions stall.");
+        setAssistError("Recording is live. Browser captions may be rough for dialect; Mychelin is also checking short AI transcript batches.");
       } else {
         setTranscriptionMode("chunked");
-        setAssistError("Recording is live. Live captions are unavailable in this browser, so backup captions will arrive in short batches if speech transcription is available.");
+        setAssistError("Recording is live. Dialect-aware AI captions will arrive in short batches if speech transcription is available.");
       }
 
       const attemptId = realtimeAttemptRef.current + 1;
@@ -931,18 +937,18 @@ export function ConversationCapture({
         }
         if (browserStarted) {
           setTranscriptionMode("browser");
-          setAssistError("OpenAI Realtime is unavailable, but recording is active. Browser captions should appear as you speak; backup transcription is also checking short audio batches.");
+          setAssistError("OpenAI Realtime is unavailable, but recording is active. Browser captions may be rough for dialect; AI transcript batches will keep checking the audio.");
         } else {
           setTranscriptionMode("chunked");
-          setAssistError("OpenAI Realtime is unavailable. Recording is active; backup captions may arrive after each short audio batch.");
+          setAssistError("OpenAI Realtime is unavailable. Recording is active; dialect-aware captions may arrive after each short audio batch.");
         }
       }).catch((error: unknown) => {
         if (!recordingActiveRef.current || realtimeAttemptRef.current !== attemptId) return;
         console.warn("Realtime transcription background start failed:", error);
         setAssistError(
           browserStarted
-            ? "OpenAI Realtime is unavailable, but recording is active and browser live captions should appear as you speak."
-            : "OpenAI Realtime is unavailable. Recording is active; backup captions may arrive after each short audio batch."
+            ? "OpenAI Realtime is unavailable, but recording is active. Browser captions may be rough for dialect; AI transcript batches will keep checking the audio."
+            : "OpenAI Realtime is unavailable. Recording is active; dialect-aware captions may arrive after each short audio batch."
         );
       });
     } catch (err: unknown) {
@@ -1216,7 +1222,7 @@ export function ConversationCapture({
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                     </span>
-                    {transcriptionMode === "browser" ? "Browser live captions active. Speak and watch this area." : "Realtime stream connected. Speak and watch this area."}
+                    {transcriptionMode === "browser" ? "Browser captions active. Dialect AI batches may add fuller text shortly." : "Realtime stream connected. Speak and watch this area."}
                   </div>
                 </div>
               )}
@@ -1228,7 +1234,7 @@ export function ConversationCapture({
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-[#800020]/50" />
                     </span>
-                    Transcribing the last few seconds…
+                    Transcribing the last few seconds...
                   </div>
                 </div>
               )}
@@ -1279,9 +1285,9 @@ export function ConversationCapture({
                 {transcriptionMode === "realtime"
                   ? "Realtime captions stream as the conversation happens; original terms are kept for review."
                   : transcriptionMode === "browser"
-                    ? "Browser live captions stream as the conversation happens; backup AI extraction still runs after review."
+                    ? "Browser captions are rough for dialect; Mychelin also checks AI transcript batches while you talk."
                     : transcriptionMode === "chunked"
-                      ? "Backup captions arrive every few seconds and preserve original terms for review."
+                      ? "Dialect-aware backup captions arrive every few seconds and preserve original terms for review."
                       : "Auto-detects mixed family language and preserves original terms for review after the conversation."}
               </p>
             </div>

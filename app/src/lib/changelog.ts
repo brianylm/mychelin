@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-18",
+    title: "Dialect transcription fallback hotfix",
+    items: [
+      "Conversation capture now keeps AI chunk transcription running even when rough browser captions appear, so dialect speech is less likely to be dropped.",
+      "Hokkien/Minnan is now prioritized for the dialect-aware chunk fallback path.",
+      "OpenAI batch transcription now defaults to the standard gpt-4o-transcribe model with a Singapore family-recipe dialect prompt.",
+    ],
+  },
+  {
+    date: "2026-06-18",
     title: "Capture review before saving",
     items: [
       "Pasted-text recipe extraction now opens a review screen before updating the recipe.",

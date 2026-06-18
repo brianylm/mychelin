@@ -2165,3 +2165,33 @@ Follow-ups:
 
 - Human-test URL import against common recipe pages and blocked sites.
 - Human-test conversation capture with a short mixed-language transcript to confirm review provenance feels useful.
+
+
+### 2026-06-18 - Dialect transcription fallback hotfix
+
+Changed/decided:
+
+- Production testing showed conversation capture still reports OpenAI Realtime unavailable and Hokkien transcription quality is poor.
+- Kept the realtime attempt path, but stopped browser live captions from suppressing chunked AI transcription results unless a reliable realtime stream is actually active.
+- Increased chunk length from 2.5s to 4.5s to give dialect transcription more context.
+- Switched chunk fallback priority to Gemini dialect transcription first when configured, then OpenAI.
+- Sent Hokkien/Minnan as the dialect hint to the Gemini chunk fallback.
+- Changed OpenAI batch transcription default from gpt-4o-transcribe-diarize to gpt-4o-transcribe and strengthened the Singapore family-recipe dialect prompt.
+
+Files touched:
+
+- app/src/components/capture/ConversationCapture.tsx
+- app/src/app/api/capture/transcribe-whisper/route.ts
+- app/src/lib/changelog.ts
+
+Checks:
+
+- Targeted npx eslint passed for ConversationCapture and transcribe-whisper route.
+- git diff --check passed.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Human-test live conversation capture on production with Hokkien speech after deploy.
+- If OpenAI Realtime remains unavailable, inspect runtime logs for /api/capture/realtime-transcription immediately after a test attempt.
+- Consider adding an explicit dialect selector before recording instead of hard-coding Hokkien for the pilot path.
