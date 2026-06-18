@@ -943,7 +943,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   // tier have content. Helps users see at a glance that there's data tucked
   // away without having to open the section.
   //
-  // Details (6 fields): description, cuisine, prep time, cook time, yield, book
+  // Library info (6 fields): summary, cuisine/style, prep time, cook time, yield, book
   const detailsFilled = [
     selectedRecipe.description,
     selectedRecipe.cuisine,
@@ -953,7 +953,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     selectedRecipe.bookId,
   ].filter((v) => v !== null && v !== undefined && v !== "").length;
 
-  // Heritage (9 fields): story, origin, dialect, occasion, familyMember,
+  // Heritage (9 fields): story, origin, spoken language, occasion, family source,
   // generation, authenticityRating, tasteRating, nostalgiaRating
   const heritageFilled = [
     selectedRecipe.story,
@@ -1171,10 +1171,10 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           onDelete={deleteInstruction}
         />
 
-        {/* ─── Details tier — collapsed by default ───────── */}
+        {/* ─── Library info tier — collapsed by default ───── */}
         <CollapsibleSection
-          title="Details"
-          subtitle="Description, cuisine, timing, yield, book"
+          title="Library info"
+          subtitle="Short summary, dish style, timing, yield, book"
           badge={`${detailsFilled}/6`}
         >
           <div className="grid gap-4">
@@ -1206,7 +1206,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         {/* ─── Heritage & Family tier — collapsed by default ── */}
         <CollapsibleSection
           title="Heritage & Family"
-          subtitle="Story, cultural context, voice recordings, ratings"
+          subtitle="Family story, source, language, voice, ratings"
           badge={`${heritageFilled}/9`}
         >
           <div className="grid gap-4">

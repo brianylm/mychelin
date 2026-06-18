@@ -125,8 +125,8 @@ export function CulturalContextCard({
 
   return (
     <CollapsibleSection
-      title="Cultural Context"
-      subtitle="Where this recipe comes from"
+      title="Source & context"
+      subtitle="Where it came from, who passed it down, and what language it lives in"
       badge={filledCount > 0 ? filledCount : undefined}
       defaultOpen={filledCount > 0}
     >
@@ -141,7 +141,7 @@ export function CulturalContextCard({
           />
         </FieldRow>
 
-        <FieldRow label="Dialect / Language" savingField={savingField} currentField="dialect">
+        <FieldRow label="Language spoken" savingField={savingField} currentField="dialect">
           <select
             value={values.dialect}
             onChange={(e) => {
@@ -193,7 +193,7 @@ export function CulturalContextCard({
         </FieldRow>
 
         <FieldRow
-          label="Family Member"
+          label="Family source"
           savingField={savingField}
           currentField="familyMember"
         >

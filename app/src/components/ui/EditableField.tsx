@@ -8,6 +8,7 @@ interface EditableFieldProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  helpText?: string;
   multiline?: boolean;
   rows?: number;
   onBlur?: () => void;
@@ -23,6 +24,7 @@ export function EditableField({
   value,
   onChange,
   placeholder,
+  helpText,
   multiline,
   rows = 3,
   onBlur,
@@ -36,7 +38,6 @@ export function EditableField({
       inputRef.current.focus();
       inputRef.current.select();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFocusAndSelect]);
 
   const inputClasses =
@@ -50,6 +51,7 @@ export function EditableField({
         </span>
         <SaveIndicator isSaving={isSaving} />
       </div>
+      {helpText && <p className="text-xs leading-5 text-neutral-500">{helpText}</p>}
       {multiline ? (
         <textarea
           ref={(el) => {

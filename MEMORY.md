@@ -2072,3 +2072,35 @@ Follow-ups:
 - Human-test paste list examples: 3 garlic cloves, garlic 3 cloves, potato 1kg, and comma-separated mixed lists.
 - Human-test saving dish rating from Activity and from a recipe attempt; both should update the same attempt rating.
 - If users still want install guidance, expose it as a quiet Profile action instead of an automatic popup.
+
+
+### 2026-06-18 - Recipe input form metadata vs heritage cleanup
+
+Changed/decided:
+
+- Kept the recipe description field because it powers recipe cards/search, but relabeled it as Quick summary and clarified that family memories/provenance belong in Heritage.
+- Renamed the collapsed Details section to Library info: short summary, cuisine/dish style, timing, yield, and book placement.
+- Clarified cuisine as Cuisine / dish style and renamed the Singapore option group from Singapore Heritage to Singapore dish styles to avoid collision with Heritage & Family.
+- Clarified Heritage & Family as the place for family story, source, spoken language, voice recordings, and ratings.
+- Added optional helper text support to EditableField and Combobox to guide users without adding new fields.
+
+Files touched:
+
+- app/src/components/ui/EditableField.tsx
+- app/src/components/ui/Combobox.tsx
+- app/src/components/recipes/RecipeDetailsCard.tsx
+- app/src/components/recipes/RecipeView.tsx
+- app/src/components/recipes/StorySection.tsx
+- app/src/components/heritage/CulturalContextCard.tsx
+- app/src/lib/changelog.ts
+
+Checks:
+
+- git diff --check passed.
+- Targeted npx eslint passed for touched files with existing no-img warnings in RecipeView.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Human-test whether Library info feels optional enough on mobile.
+- Consider a later structural pass to flatten nested collapsible sections inside Heritage & Family if the section still feels too dense.

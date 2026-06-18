@@ -14,6 +14,7 @@ interface ComboboxProps {
   value: string;
   options: ComboboxOption[];
   placeholder?: string;
+  helpText?: string;
   onChange: (value: string) => void;
   isSaving?: boolean;
 }
@@ -23,6 +24,7 @@ export function Combobox({
   value,
   options,
   placeholder = "Search or select...",
+  helpText,
   onChange,
   isSaving = false,
 }: ComboboxProps) {
@@ -139,6 +141,8 @@ export function Combobox({
         </label>
         <SaveIndicator isSaving={isSaving} />
       </div>
+
+      {helpText && <p className="text-xs leading-5 text-neutral-500">{helpText}</p>}
 
       <div className="relative">
         <input

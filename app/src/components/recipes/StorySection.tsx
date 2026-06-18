@@ -30,15 +30,15 @@ export function StorySection({ story, onSave }: StorySectionProps) {
 
   return (
     <CollapsibleSection
-      title="Family Story"
-      subtitle="The memories and traditions behind this recipe"
+      title="Family story"
+      subtitle="Memories, provenance, and why this dish matters"
       badge={story ? "✓" : undefined}
       defaultOpen={!!story}
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-            Story & Cultural Context
+            Story
           </span>
           <SaveIndicator isSaving={isSaving} />
         </div>
@@ -46,12 +46,12 @@ export function StorySection({ story, onSave }: StorySectionProps) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={handleBlur}
-          placeholder="Share the story behind this recipe — who taught it to you, when it's traditionally made, what it means to your family..."
+          placeholder="Who taught this recipe, what occasion it belongs to, or what makes it feel like home?"
           rows={5}
           className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400"
         />
         <p className="text-[10px] text-neutral-400">
-          Every recipe tells a story. Capture the memories before they fade.
+          This is for memory and provenance, not the short recipe-card summary.
         </p>
       </div>
     </CollapsibleSection>

@@ -5,18 +5,18 @@ import { Combobox } from "@/components/ui/Combobox";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 
 export const CUISINE_OPTIONS = [
-  // Singapore Heritage
-  { value: "Hokkien", label: "Hokkien", group: "Singapore Heritage" },
-  { value: "Teochew", label: "Teochew", group: "Singapore Heritage" },
-  { value: "Cantonese", label: "Cantonese", group: "Singapore Heritage" },
-  { value: "Hakka", label: "Hakka", group: "Singapore Heritage" },
-  { value: "Hainanese", label: "Hainanese", group: "Singapore Heritage" },
-  { value: "Nyonya", label: "Nyonya / Peranakan", group: "Singapore Heritage" },
-  { value: "Peranakan", label: "Peranakan", group: "Singapore Heritage" },
-  { value: "Malay Kampung", label: "Malay Kampung", group: "Singapore Heritage" },
-  { value: "Tamil", label: "Tamil", group: "Singapore Heritage" },
-  { value: "Punjabi", label: "Punjabi", group: "Singapore Heritage" },
-  { value: "Eurasian", label: "Eurasian", group: "Singapore Heritage" },
+  // Singapore dish styles
+  { value: "Hokkien", label: "Hokkien", group: "Singapore dish styles" },
+  { value: "Teochew", label: "Teochew", group: "Singapore dish styles" },
+  { value: "Cantonese", label: "Cantonese", group: "Singapore dish styles" },
+  { value: "Hakka", label: "Hakka", group: "Singapore dish styles" },
+  { value: "Hainanese", label: "Hainanese", group: "Singapore dish styles" },
+  { value: "Nyonya", label: "Nyonya / Peranakan", group: "Singapore dish styles" },
+  { value: "Peranakan", label: "Peranakan", group: "Singapore dish styles" },
+  { value: "Malay Kampung", label: "Malay Kampung", group: "Singapore dish styles" },
+  { value: "Tamil", label: "Tamil", group: "Singapore dish styles" },
+  { value: "Punjabi", label: "Punjabi", group: "Singapore dish styles" },
+  { value: "Eurasian", label: "Eurasian", group: "Singapore dish styles" },
   // Asian
   { value: "Chinese", label: "Chinese", group: "Asian" },
   { value: "Malay", label: "Malay", group: "Asian" },
@@ -79,9 +79,8 @@ const inputClass =
   "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
 
 /**
- * The "details" tier of progressive disclosure — description, cuisine,
- * timing, and yield. Rendered inside a CollapsibleSection in RecipeView
- * so it's tucked away by default and doesn't overwhelm quick capture.
+ * The library-info tier of progressive disclosure: short browsing/search
+ * metadata plus timing and yield. Family provenance stays in Heritage.
  */
 export function RecipeDetailsCard({
   description,
@@ -104,21 +103,23 @@ export function RecipeDetailsCard({
   return (
     <div className="grid gap-4">
       <EditableField
-        label="Description"
+        label="Quick summary"
         value={description}
         onChange={onDescriptionChange}
-        placeholder="Describe this recipe — its origins, memories, or special touches."
+        placeholder="e.g. Peppery soy-braised pork belly with soft eggs"
+        helpText="Shown on recipe cards and search. Keep family memories and provenance in Heritage."
         multiline
-        rows={3}
+        rows={2}
         onBlur={() => onBlur("description")}
         isSaving={savingDescription}
       />
 
       <Combobox
-        label="Cuisine"
+        label="Cuisine / dish style"
         value={cuisine}
         options={CUISINE_OPTIONS}
-        placeholder="Search or select cuisine..."
+        placeholder="Search or select dish style..."
+        helpText="Use this for browsing and meal planning; dialect or spoken language belongs under Heritage."
         onChange={(val) => {
           onCuisineChange(val);
           onBlur("cuisine", val);

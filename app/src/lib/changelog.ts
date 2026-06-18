@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-18",
+    title: "Recipe form copy cleanup",
+    items: [
+      "The old Details section is now Library info, clarifying that it is for recipe-card summary, dish style, timing, yield, and book placement.",
+      "Description is now Quick summary with helper copy that sends family memories and provenance to Heritage instead.",
+      "Heritage fields now use clearer labels for family story, source, and spoken language so they do not feel like duplicates of recipe metadata.",
+    ],
+  },
+  {
+    date: "2026-06-18",
     title: "Rating and prompt polish",
     items: [
       "Pasted ingredient parsing now handles quantity-first clove wording such as 3 garlic cloves and previews parsed quantity/unit/name before saving.",
