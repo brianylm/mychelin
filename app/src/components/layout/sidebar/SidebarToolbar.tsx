@@ -101,8 +101,8 @@ export function SidebarToolbar({
         <button type="button" className={actionClass} onClick={onCreateOpen}>
           <ActionIcon><PencilLine className="h-4 w-4" /></ActionIcon>
           <span>
-            <span className="block text-sm font-semibold text-stone-900">Manual recipe</span>
-            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Fill in the blanks yourself.</span>
+            <span className="block text-sm font-semibold text-stone-900">Manual scratchpad</span>
+            <span className="mt-0.5 block text-xs leading-4 text-stone-500">Type naturally, then review structured steps and ingredients.</span>
           </span>
         </button>
       </div>}

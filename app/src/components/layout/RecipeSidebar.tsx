@@ -29,6 +29,7 @@ interface RecipeSidebarProps {
   onCookRecipe?: (recipeId: number) => void;
   onCaptureConversation?: () => void;
   onAiDraft?: () => void;
+  onManualRecipe?: () => void;
   mobileOnly?: boolean;
 }
 
@@ -40,6 +41,7 @@ export function RecipeSidebar({
   onCookRecipe,
   onCaptureConversation,
   onAiDraft,
+  onManualRecipe,
   mobileOnly = false,
 }: RecipeSidebarProps) {
   const {
@@ -48,7 +50,6 @@ export function RecipeSidebar({
     error,
     selectedRecipeId,
     selectRecipe,
-    createRecipe,
     deleteRecipe,
   } = useRecipeStore();
 
@@ -70,27 +71,19 @@ export function RecipeSidebar({
       .catch(() => {});
   }, []);
 
-  // Handler that creates a blank recipe and navigates straight to it,
-  // skipping the "enter a name first" step. Used by the sidebar New
-  // Recipe button AND the mobile "New" button event. RecipeView will
-  // auto-focus and select the title so the user can immediately rename.
-  const handleCreateBlank = useCallback(async () => {
-    try {
-      await createRecipe();
-      onClose();
-    } catch (err) {
-      console.error("Failed to create recipe:", err);
-    }
-  }, [createRecipe, onClose]);
+  const handleManualRecipe = useCallback(() => {
+    onManualRecipe?.();
+    onClose();
+  }, [onClose, onManualRecipe]);
 
   // Listen for create-recipe event from mobile "New" button
   useEffect(() => {
     const handler = () => {
-      handleCreateBlank();
+      handleManualRecipe();
     };
     window.addEventListener("mychelin:create-recipe", handler);
     return () => window.removeEventListener("mychelin:create-recipe", handler);
-  }, [handleCreateBlank]);
+  }, [handleManualRecipe]);
 
   const toggleBook = useCallback(async (bookId: number) => {
     setExpandedBooks((prev) => {
@@ -214,7 +207,7 @@ export function RecipeSidebar({
           )}
 
           <SidebarToolbar
-            onCreateOpen={handleCreateBlank}
+            onCreateOpen={handleManualRecipe}
             onPasteText={onPasteText}
             onImportUrl={onImportUrl}
             onCaptureConversation={onCaptureConversation}

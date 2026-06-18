@@ -21,6 +21,7 @@ import { RecipeSearchModal } from "@/components/search/RecipeSearchModal";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
 import { ConversationCapture } from "@/components/capture/ConversationCapture";
 import { AiDraftRecipeModal } from "@/components/capture/AiDraftRecipeModal";
+import { ManualRecipeScratchpadModal } from "@/components/capture/ManualRecipeScratchpadModal";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { CookWithMeSession } from "@/components/recipes/CookWithMeSession";
 import { MultiCookWithMeSession } from "@/components/recipes/MultiCookWithMeSession";
@@ -106,11 +107,12 @@ function RecipeWorkspaceContent({
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }) {
-  const { selectRecipe, createRecipe } = useRecipeStore();
+  const { selectRecipe } = useRecipeStore();
   const qc = useQueryClient();
   const { addToast } = useToast();
   const [searchOpen, setSearchOpen] = useState(false);
   const [shoppingDateRange, setShoppingDateRange] = useState<{ start: string; end: string } | undefined>();
+  const [manualScratchpadOpen, setManualScratchpadOpen] = useState(false);
   const [activeCookMeal, setActiveCookMeal] = useState<{
     recipe: RecipeWithRelations;
     mealPlanId?: number;
@@ -313,14 +315,12 @@ function RecipeWorkspaceContent({
     return () => document.removeEventListener("keydown", handler);
   }, [fabOpen]);
 
-  const handleFromScratch = useCallback(async () => {
+  const handleFromScratch = useCallback(() => {
     setFabOpen(false);
-    try {
-      await createRecipe();
-    } catch (err) {
-      console.error("Failed to create recipe:", err);
-    }
-  }, [createRecipe]);
+    setSidebarOpen(false);
+    setCurrentView("recipes");
+    setManualScratchpadOpen(true);
+  }, [setCurrentView, setSidebarOpen]);
 
   const createDraftForCapture = useCallback(async (mode: "paste" | "url") => {
     setFabOpen(false);
@@ -397,6 +397,38 @@ function RecipeWorkspaceContent({
     addToast("Recipe captured from conversation", "success");
     promptPilotFeedback("first_capture");
   }, [addToast, conversationRecipeId, promptPilotFeedback, qc]);
+
+  const handleCreateManualRecipe = useCallback(async (draft: {
+    title: string;
+    ingredients: Array<{
+      name: string;
+      quantity?: number | null;
+      unit?: string | null;
+      approximate?: boolean;
+      quantityText?: string | null;
+      notes?: string;
+    }>;
+    instructions: Array<{ content: string; tip?: string }>;
+  }) => {
+    const response = await fetch("/api/recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...draft, status: "active" }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Failed to create recipe");
+    }
+    const recipe = await response.json();
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    qc.invalidateQueries({ queryKey: ["recipe", recipe.id] });
+    selectRecipe(recipe.id);
+    setCurrentView("recipes");
+    setSidebarOpen(false);
+    setManualScratchpadOpen(false);
+    addToast("Recipe created", "success");
+    promptPilotFeedback("first_capture");
+  }, [addToast, promptPilotFeedback, qc, selectRecipe, setCurrentView, setSidebarOpen]);
 
   const handleCreateAiDraft = useCallback(async (draft: {
     title: string;
@@ -491,6 +523,7 @@ function RecipeWorkspaceContent({
             onCookRecipe={handleCookRecipe}
             onCaptureConversation={createDraftForConversation}
             onAiDraft={() => setAiDraftOpen(true)}
+            onManualRecipe={handleFromScratch}
           />
         )}
         {currentView === "recipes" && (
@@ -503,6 +536,7 @@ function RecipeWorkspaceContent({
               onCookRecipe={handleCookRecipe}
               onCaptureConversation={createDraftForConversation}
               onAiDraft={() => setAiDraftOpen(true)}
+              onManualRecipe={handleFromScratch}
             />
             <RecipeView
               onOpenSidebar={() => setSidebarOpen(true)}
@@ -530,8 +564,8 @@ function RecipeWorkspaceContent({
       </div>
 
       {/* ── Mobile FAB speed-dial ─────────────────────────────
-          Three entry routes: import URL, paste text, or start from
-          scratch. Only on the Recipes tab, only on mobile, hidden when
+          Entry routes: import URL, paste text, conversation, Ask Mychelin,
+          or manual scratchpad. Only on the Recipes tab, only on mobile, hidden when
           the sidebar drawer is open. */}
       {showFab && (
         <>
@@ -609,7 +643,7 @@ function RecipeWorkspaceContent({
                   className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
-                    Manual recipe
+                    Manual scratchpad
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
                     <PencilLine className="h-[18px] w-[18px]" />
@@ -650,6 +684,13 @@ function RecipeWorkspaceContent({
           recipeId={conversationRecipeId}
           onClose={handleConversationClose}
           onRecipeUpdated={handleConversationDone}
+        />
+      )}
+
+      {manualScratchpadOpen && (
+        <ManualRecipeScratchpadModal
+          onClose={() => setManualScratchpadOpen(false)}
+          onCreateRecipe={handleCreateManualRecipe}
         />
       )}
 

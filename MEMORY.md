@@ -2104,3 +2104,36 @@ Follow-ups:
 
 - Human-test whether Library info feels optional enough on mobile.
 - Consider a later structural pass to flatten nested collapsible sections inside Heritage & Family if the section still feels too dense.
+
+
+### 2026-06-18 - Manual recipe scratchpad replacement
+
+Changed/decided:
+
+- Replaced the manual recipe entry point with a scratchpad-first modal instead of immediately creating a blank draft recipe.
+- Added a deterministic manual recipe parser for common ingredient quantity/unit patterns, section headings, cooking steps, heat cues, and visible timer text.
+- Manual scratchpad flow requires a recipe title and at least one step before creating the recipe. Ingredients are parsed and encouraged but not required.
+- The review screen shows parsed ingredients, parsed steps, heat chips, timer chips, and unstructured leftovers before saving.
+- Sidebar Manual recipe, mobile FAB Manual recipe, and the card-grid create-recipe event now open the same scratchpad flow.
+- Created recipes are saved through the existing /api/recipes POST path with status active and version 1 creation, preserving the rest of the recipe workflow.
+
+Files touched:
+
+- app/src/lib/manual-recipe-parser.ts
+- app/src/components/capture/ManualRecipeScratchpadModal.tsx
+- app/src/components/RecipeWorkspace.tsx
+- app/src/components/layout/RecipeSidebar.tsx
+- app/src/components/layout/sidebar/SidebarToolbar.tsx
+- app/src/lib/changelog.ts
+
+Checks:
+
+- Targeted npx eslint passed for touched files.
+- git diff --check passed.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Human-test the manual scratchpad with headings and no headings, especially ingredient-only lines versus step lines.
+- Consider adding an AI fallback for messy conversational scratchpad text after pilot feedback.
+- Consider inline editing on the review screen if users find returning to the scratchpad too indirect.

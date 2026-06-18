@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-18",
+    title: "Manual recipe scratchpad",
+    items: [
+      "Manual recipe creation now opens a scratchpad-first flow instead of a blank long-form editor.",
+      "The scratchpad parses common ingredient quantities, steps, heat cues, and timer text into a review screen before saving.",
+      "Manual recipes now require a title and at least one step; ingredients are encouraged but can be completed later.",
+    ],
+  },
+  {
+    date: "2026-06-18",
     title: "Recipe form copy cleanup",
     items: [
       "The old Details section is now Library info, clarifying that it is for recipe-card summary, dish style, timing, yield, and book placement.",
