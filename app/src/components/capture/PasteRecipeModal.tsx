@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@radix-ui/themes";
 import { Cross2Icon, MagicWandIcon, Link2Icon } from "@radix-ui/react-icons";
+import { RecipeCaptureReview } from "./RecipeCaptureReview";
 
 interface ExtractedRecipe {
   title?: string;
@@ -36,7 +37,7 @@ interface PasteRecipeModalProps {
   initialMode?: "paste" | "url";
 }
 
-type Step = "paste" | "processing" | "saving" | "error";
+type Step = "paste" | "processing" | "review" | "saving" | "error";
 
 function looksLikeUrl(text: string): boolean {
   const trimmed = text.trim();
@@ -76,6 +77,8 @@ export function PasteRecipeModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [processingLabel, setProcessingLabel] = useState("");
   const [captureMode, setCaptureMode] = useState<"paste" | "url">(initialMode);
+  const [reviewRecipe, setReviewRecipe] = useState<ExtractedRecipe | null>(null);
+  const [reviewSourceUrl, setReviewSourceUrl] = useState<string | undefined>();
 
   const urlMode = captureMode === "url";
   const hasValidUrl = looksLikeUrl(text);
@@ -137,6 +140,8 @@ export function PasteRecipeModal({
       return;
     }
     setErrorMessage(null);
+    setReviewRecipe(null);
+    setReviewSourceUrl(undefined);
     setStep("processing");
 
     if (isUrl) {
@@ -157,10 +162,9 @@ export function PasteRecipeModal({
           (recipe.title?.trim() || recipe.ingredients?.length || recipe.instructions?.length);
 
         if (hasContent) {
-          setProcessingLabel("Saving recipe…");
-          await patchRecipe(recipe, sourceUrl);
-          onRecipeUpdated?.();
-          onClose();
+          setReviewRecipe(recipe);
+          setReviewSourceUrl(sourceUrl);
+          setStep("review");
           return;
         }
 
@@ -193,14 +197,29 @@ export function PasteRecipeModal({
           throw new Error("AI extraction returned an empty recipe object");
         }
 
-        await patchRecipe(recipe);
-        onRecipeUpdated?.();
-        onClose();
+        setReviewRecipe(recipe);
+        setReviewSourceUrl(undefined);
+        setStep("review");
       } catch (err: unknown) {
         console.error("Paste extract failed:", err);
         setErrorMessage(messageFromError(err, "Unknown error"));
         setStep("error");
       }
+    }
+  };
+
+  const handleSaveReviewedRecipe = async () => {
+    if (!reviewRecipe) return;
+    setProcessingLabel("Saving recipe...");
+    setStep("saving");
+    try {
+      await patchRecipe(reviewRecipe, reviewSourceUrl);
+      onRecipeUpdated?.();
+      onClose();
+    } catch (err: unknown) {
+      console.error("Failed to save reviewed recipe:", err);
+      setErrorMessage(messageFromError(err, "Failed to save reviewed recipe"));
+      setStep("review");
     }
   };
 
@@ -218,7 +237,7 @@ export function PasteRecipeModal({
 
   const isSetupError =
     errorMessage != null &&
-    /not configured|google_api_key|gemini_api_key/i.test(errorMessage);
+    /not configured|google_api_key|gemini_api_key|deepseek_api_key/i.test(errorMessage);
 
   return (
     <div
@@ -250,7 +269,8 @@ export function PasteRecipeModal({
                       ? "Paste a full URL starting with https:// or http://"
                       : "Paste a recipe page link and we’ll extract the recipe")}
                 {step === "processing" && processingLabel}
-                {step === "saving" && "Saving your text…"}
+                {step === "review" && "Review before saving"}
+                {step === "saving" && "Saving your recipe..."}
                 {step === "error" && "Extraction didn\u2019t work"}
               </p>
             </div>
@@ -355,6 +375,16 @@ export function PasteRecipeModal({
           </>
         )}
 
+        {step === "review" && reviewRecipe && (
+          <RecipeCaptureReview
+            recipe={reviewRecipe}
+            sourceLabel={reviewSourceUrl ? hostnameFrom(reviewSourceUrl) : "Pasted text"}
+            saveLabel="Save reviewed recipe"
+            onBack={() => setStep("paste")}
+            onSave={handleSaveReviewedRecipe}
+          />
+        )}
+
         {(step === "processing" || step === "saving") && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#800020]/15 border-t-[#800020]" />
@@ -382,17 +412,25 @@ export function PasteRecipeModal({
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {isUrl ? (
-                <Button
-                  variant="soft"
-                  onClick={() => {
-                    switchCaptureMode("paste");
-                    setText("");
-                    setErrorMessage(null);
-                    setStep("paste");
-                  }}
-                >
-                  Paste text instead
-                </Button>
+                <>
+                  <Button
+                    variant="soft"
+                    onClick={() => {
+                      switchCaptureMode("paste");
+                      setText("");
+                      setErrorMessage(null);
+                      setStep("paste");
+                    }}
+                  >
+                    Paste text instead
+                  </Button>
+                  <Button
+                    variant="soft"
+                    onClick={() => saveDraft(text.trim(), text.trim())}
+                  >
+                    Save source link only
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button

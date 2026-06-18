@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-06-18",
+    title: "Capture review before saving",
+    items: [
+      "Pasted-text recipe extraction now opens a review screen before updating the recipe.",
+      "URL imports now show extracted title, metadata, ingredients, and steps for review before saving.",
+      "Conversation capture now extracts to a review screen with the transcript context, instead of immediately overwriting recipe fields.",
+    ],
+  },
+  {
+    date: "2026-06-18",
     title: "Manual recipe scratchpad",
     items: [
       "Manual recipe creation now opens a scratchpad-first flow instead of a blank long-form editor.",

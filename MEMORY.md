@@ -2137,3 +2137,31 @@ Follow-ups:
 - Human-test the manual scratchpad with headings and no headings, especially ingredient-only lines versus step lines.
 - Consider adding an AI fallback for messy conversational scratchpad text after pilot feedback.
 - Consider inline editing on the review screen if users find returning to the scratchpad too indirect.
+
+
+### 2026-06-18 - Capture review before saving extracted recipes
+
+Changed/decided:
+
+- Added a shared captured-recipe review surface for AI/import outputs before they mutate an existing recipe.
+- Paste text and URL import now extract into a review screen showing recipe summary, source, ingredients, and steps; Save reviewed recipe performs the PATCH.
+- Conversation capture now extracts to review after speaker naming, keeps a transcript excerpt visible for provenance, and only saves after explicit confirmation.
+- URL import failures now offer paste fallback or saving the source link only.
+
+Files touched:
+
+- app/src/components/capture/RecipeCaptureReview.tsx
+- app/src/components/capture/PasteRecipeModal.tsx
+- app/src/components/capture/ConversationCapture.tsx
+- app/src/lib/changelog.ts
+
+Checks:
+
+- Targeted npx eslint passed for capture review, paste modal, and conversation capture.
+- git diff --check passed.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Human-test URL import against common recipe pages and blocked sites.
+- Human-test conversation capture with a short mixed-language transcript to confirm review provenance feels useful.

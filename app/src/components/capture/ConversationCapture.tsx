@@ -5,6 +5,7 @@ import { Button } from "@radix-ui/themes";
 import { StopIcon, MagicWandIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower } from "lucide-react";
 import { ChatBubble } from "./ChatBubble";
+import { RecipeCaptureReview } from "./RecipeCaptureReview";
 
 // Modal-based conversation facilitation. Opens from the recipe page,
 // records the family recipe conversation with zero pre-setup, streams
@@ -59,7 +60,7 @@ interface ConversationCaptureProps {
   onRecipeUpdated?: () => void;
 }
 
-type ModalStep = "recording" | "naming" | "processing";
+type ModalStep = "recording" | "naming" | "processing" | "review";
 type TranscriptionMode = "idle" | "realtime" | "browser" | "chunked";
 
 const CHUNK_DURATION_MS = 2500;
@@ -322,6 +323,8 @@ export function ConversationCapture({
   const [isAssisting, setIsAssisting] = useState(false);
   const [assistError, setAssistError] = useState<string | null>(null);
   const [copiedQuestion, setCopiedQuestion] = useState<string | null>(null);
+  const [reviewRecipe, setReviewRecipe] = useState<ExtractedRecipe | null>(null);
+  const [reviewTranscript, setReviewTranscript] = useState<Array<{ speaker: string; text: string; timestamp: string }>>([]);
 
   // Map from raw Gemini speaker label to the real name the user assigns
   // in the naming step. Defaults below give the user something to edit.
@@ -986,20 +989,48 @@ export function ConversationCapture({
     setStep("naming");
   };
 
+  const namedConversation = () => messages.map((m) => ({
+    speaker: speakerNameMap[m.speakerLabel]?.trim() || m.speakerLabel,
+    text: m.text,
+    language: "auto",
+    timestamp: m.timestamp,
+  }));
+
+  const patchRecipe = async (recipe: ExtractedRecipe) => {
+    const patchRes = await fetch(`/api/recipes/${recipeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: recipe.title || undefined,
+        description: recipe.description || undefined,
+        cuisine: recipe.cuisine || undefined,
+        yield: recipe.yield || undefined,
+        prepTime: recipe.prepTime ? Number(recipe.prepTime) || undefined : undefined,
+        cookTime: recipe.cookTime ? Number(recipe.cookTime) || undefined : undefined,
+        story: recipe.story || undefined,
+        origin: recipe.origin || undefined,
+        dialect: recipe.dialect || undefined,
+        occasion: recipe.occasion || undefined,
+        familyMember: recipe.familyMember || undefined,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+      }),
+    });
+    if (!patchRes.ok) {
+      throw new Error("Failed to update recipe");
+    }
+  };
+
   // Replace raw labels in messages with user-provided names and send
-  // the conversation to the extract endpoint, then PATCH the target
-  // recipe with the extracted fields.
-  const saveConversation = async () => {
+  // the conversation to the extract endpoint. The user reviews the
+  // structured recipe before we PATCH the target recipe.
+  const extractConversationForReview = async () => {
     setStep("processing");
     setErrorMessage(null);
+    setReviewRecipe(null);
+    setReviewTranscript([]);
     try {
-      const named = messages.map((m) => ({
-        speaker: speakerNameMap[m.speakerLabel]?.trim() || m.speakerLabel,
-        text: m.text,
-        language: "auto",
-        timestamp: m.timestamp,
-      }));
-
+      const named = namedConversation();
       const extractRes = await fetch("/api/capture/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1009,38 +1040,31 @@ export function ConversationCapture({
         throw new Error("Failed to extract recipe from conversation");
       }
       const extractData = (await extractRes.json()) as { recipe: ExtractedRecipe };
-      const recipe = extractData.recipe;
-
-      // PATCH the existing recipe with the extracted data.
-      const patchRes = await fetch(`/api/recipes/${recipeId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: recipe.title || undefined,
-          description: recipe.description || undefined,
-          cuisine: recipe.cuisine || undefined,
-          yield: recipe.yield || undefined,
-          prepTime: recipe.prepTime ? Number(recipe.prepTime) || undefined : undefined,
-          cookTime: recipe.cookTime ? Number(recipe.cookTime) || undefined : undefined,
-          story: recipe.story || undefined,
-          origin: recipe.origin || undefined,
-          dialect: recipe.dialect || undefined,
-          occasion: recipe.occasion || undefined,
-          familyMember: recipe.familyMember || undefined,
-          ingredients: recipe.ingredients,
-          instructions: recipe.instructions,
-        }),
-      });
-      if (!patchRes.ok) {
-        throw new Error("Failed to update recipe");
+      if (!extractData.recipe) {
+        throw new Error("AI extraction returned an empty recipe object");
       }
+      setReviewRecipe(extractData.recipe);
+      setReviewTranscript(named.map(({ speaker, text, timestamp }) => ({ speaker, text, timestamp })));
+      setStep("review");
+    } catch (err: unknown) {
+      console.error("Extract conversation failed:", err);
+      setErrorMessage(getErrorMessage(err, "Failed to extract. Please try again."));
+      setStep("naming");
+    }
+  };
 
+  const saveReviewedConversation = async () => {
+    if (!reviewRecipe) return;
+    setStep("processing");
+    setErrorMessage(null);
+    try {
+      await patchRecipe(reviewRecipe);
       onRecipeUpdated?.();
       onClose();
     } catch (err: unknown) {
       console.error("Save conversation failed:", err);
       setErrorMessage(getErrorMessage(err, "Failed to save. Please try again."));
-      setStep("naming");
+      setStep("review");
     }
   };
 
@@ -1080,7 +1104,8 @@ export function ConversationCapture({
                 {step === "recording" && !isRecording && messages.length === 0 && "Start while the recipe is being narrated"}
                 {step === "recording" && !isRecording && messages.length > 0 && "Keep talking, or review and save"}
                 {step === "naming" && "Confirm who was speaking"}
-                {step === "processing" && "Extracting your recipe..."}
+                {step === "processing" && (reviewRecipe ? "Saving reviewed recipe..." : "Extracting your recipe...")}
+                {step === "review" && "Review before saving"}
               </p>
             </div>
           </div>
@@ -1320,27 +1345,54 @@ export function ConversationCapture({
                 Back
               </Button>
               <Button
-                onClick={saveConversation}
+                onClick={extractConversationForReview}
                 className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
                 disabled={uniqueSpeakerLabels.some(
                   (l) => !speakerNameMap[l]?.trim()
                 )}
               >
                 <MagicWandIcon />
-                Extract &amp; save recipe
+                Review extracted recipe
               </Button>
             </div>
           </>
+        )}
+
+        {step === "review" && reviewRecipe && (
+          <RecipeCaptureReview
+            recipe={reviewRecipe}
+            sourceLabel="Recorded conversation"
+            saveLabel="Save reviewed recipe"
+            onBack={() => setStep("naming")}
+            onSave={saveReviewedConversation}
+          >
+            <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-stone-900">Transcript used</p>
+                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500">
+                  {reviewTranscript.length} turns
+                </span>
+              </div>
+              <div className="space-y-2">
+                {reviewTranscript.slice(-8).map((turn, index) => (
+                  <div key={index} className="rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-600">
+                    <span className="font-semibold text-stone-900">{turn.speaker}: </span>
+                    {turn.text}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </RecipeCaptureReview>
         )}
 
         {step === "processing" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#800020]/15 border-t-[#800020]" />
             <p className="text-center text-sm text-neutral-700">
-              Extracting the recipe from your conversation…
+              {reviewRecipe ? "Saving the reviewed recipe..." : "Extracting the recipe from your conversation..."}
             </p>
             <p className="text-center text-xs text-neutral-400">
-              This usually takes 5–15 seconds.
+              This usually takes 5-15 seconds.
             </p>
           </div>
         )}
