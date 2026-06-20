@@ -2195,3 +2195,22 @@ Follow-ups:
 - Human-test live conversation capture on production with Hokkien speech after deploy.
 - If OpenAI Realtime remains unavailable, inspect runtime logs for /api/capture/realtime-transcription immediately after a test attempt.
 - Consider adding an explicit dialect selector before recording instead of hard-coding Hokkien for the pilot path.
+
+
+### 2026-06-20 - Roadmap: nutrition estimates and tracker export
+
+Changed/decided:
+
+- Added medium-term roadmap item for opt-in recipe nutrition estimates from ingredients, quantities, servings/yield, and cooking method.
+- Roadmap frames calories/macros as estimates with explicit assumptions and uncertainty, especially for Singapore family dishes with shared portions, sauces, braises, soups, frying oil, and agak-agak quantities.
+- Export sequencing: Mychelin-owned nutrition summary and CSV/copyable meal log first; evaluate Apple HealthKit and Android Health Connect for native nutrition writes; direct MyFitnessPal integration remains partner/API-dependent unless a supported public write API is confirmed.
+- Reaffirmed that nutrition should stay separate from Mychelin's heritage/cookability quality signals.
+
+Files touched:
+
+- ROADMAP.md
+- MEMORY.md
+
+Checks:
+
+- `git diff --check` passed; targeted eslint passed for ConversationCapture; `npm run build` passed from app/.

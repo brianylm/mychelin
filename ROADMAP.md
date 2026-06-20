@@ -69,6 +69,14 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Redesign versions/refinement as an improvement journal: what changed this attempt, what should change next time, whether it got closer to home, and a clear promote-to-version action.
 - Make fields feel explicit and inviting with one-question cards, examples, saved-state feedback, and optional prompts rather than intimidating blank sections.
 
+### Nutrition estimates and fitness tracker export
+
+- Explore opt-in nutrition estimation for recipes using ingredients, quantities, yield/servings, and cooking method to estimate calories, protein, carbohydrates, fat, and key uncertainty ranges.
+- Treat nutrition as an estimate, not a definitive health claim: show assumptions such as portion size, oil absorbed, sauce/gravy retained, ingredient brand, and whether quantities are approximate/agak-agak.
+- Build the model around recipe-level and attempt-level nutrition: recipe baseline, per-serving estimate, and post-cook adjustments when the user records substitutions, leftovers, or actual servings eaten.
+- Prioritize Singapore home-cooking edge cases: shared dishes, family-style portions, braises/soups where liquid may not be fully consumed, deep-frying/oil absorption, hidden sugar/salt in sauces, and hawker-style ingredient ambiguity.
+- Export path sequencing: start with Mychelin-owned nutrition summary and CSV/copyable meal log; then evaluate Apple HealthKit on iOS and Android Health Connect for native nutrition writes; treat direct MyFitnessPal integration as partner/API-dependent unless a supported public write API is confirmed.
+- Keep this separate from Mychelin's heritage/cookability scoring. Do not let calorie or macro estimates become the primary recipe quality signal.
 
 ### Planning and calendar workflows
 

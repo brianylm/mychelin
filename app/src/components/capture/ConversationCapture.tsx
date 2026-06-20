@@ -347,6 +347,8 @@ export function ConversationCapture({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const assistRequestSignatureRef = useRef<string>("");
   const transcriptionModeRef = useRef<TranscriptionMode>("idle");
+  const lastChunkFailureNoticeAtRef = useRef(0);
+  const chunkFailureCountRef = useRef(0);
 
   const transcriptSignature = useMemo(
     () => messages.map((m) => m.speakerLabel + ":" + m.text).join("\n").slice(-5000),
@@ -556,8 +558,15 @@ export function ConversationCapture({
         data = await transcribeWithGemini();
       } catch (geminiError) {
         console.warn("Gemini dialect transcription unavailable, trying OpenAI fallback:", geminiError);
-        data = await transcribeWithOpenAI();
+        try {
+          data = await transcribeWithOpenAI();
+        } catch (openAiError) {
+          console.warn("OpenAI transcription fallback unavailable:", openAiError);
+          throw new Error("AI transcription is temporarily unavailable");
+        }
       }
+
+      chunkFailureCountRef.current = 0;
 
       const segments = data.segments ?? [];
       if (segments.length === 0) return;
@@ -591,8 +600,17 @@ export function ConversationCapture({
         return next;
       });
     } catch (err: unknown) {
-      console.error("Chunk upload failed:", err);
-      setErrorMessage(getErrorMessage(err, "Transcription failed"));
+      console.warn("Chunk transcription failed:", err);
+      chunkFailureCountRef.current += 1;
+      const now = Date.now();
+      if (now - lastChunkFailureNoticeAtRef.current > 20000) {
+        lastChunkFailureNoticeAtRef.current = now;
+        setAssistError(
+          chunkFailureCountRef.current >= 2
+            ? "Recording is still running, but AI transcription is currently unavailable. You can stop and save the captured transcript if any text appears."
+            : "Recording is still running. Mychelin is retrying AI transcription in the background."
+        );
+      }
     } finally {
       setProcessingChunks((n) => Math.max(0, n - 1));
     }
@@ -906,6 +924,8 @@ export function ConversationCapture({
       recordingActiveRef.current = true;
       chunkBackupActiveRef.current = true;
       lastLiveTranscriptAtRef.current = 0;
+      lastChunkFailureNoticeAtRef.current = 0;
+      chunkFailureCountRef.current = 0;
       setIsRecording(true);
       setConnecting(false);
       startChunkRecorder();
