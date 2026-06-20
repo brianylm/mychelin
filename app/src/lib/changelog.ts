@@ -6,6 +6,15 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-06-20",
+    title: "Conversation transcription reliability",
+    items: [
+      "Conversation recording now skips silent audio chunks before sending them to AI transcription.",
+      "OpenAI transcription now treats empty or invalid audio chunks as no transcript instead of failing the whole recording path.",
+      "The backup chunk recorder continues listening for actual speech while realtime setup is unavailable.",
+    ],
+  },
+  {
     date: "2026-06-18",
     title: "Dialect transcription fallback hotfix",
     items: [

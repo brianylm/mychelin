@@ -64,6 +64,7 @@ type ModalStep = "recording" | "naming" | "processing" | "review";
 type TranscriptionMode = "idle" | "realtime" | "browser" | "chunked";
 
 const CHUNK_DURATION_MS = 4500;
+const SPEECH_RMS_THRESHOLD = 0.012;
 
 interface BrowserSpeechRecognitionResult {
   isFinal: boolean;
@@ -349,6 +350,7 @@ export function ConversationCapture({
   const transcriptionModeRef = useRef<TranscriptionMode>("idle");
   const lastChunkFailureNoticeAtRef = useRef(0);
   const chunkFailureCountRef = useRef(0);
+  const currentChunkHasSpeechRef = useRef(false);
 
   const transcriptSignature = useMemo(
     () => messages.map((m) => m.speakerLabel + ":" + m.text).join("\n").slice(-5000),
@@ -719,6 +721,9 @@ export function ConversationCapture({
           sum += centered * centered;
         }
         const rms = Math.sqrt(sum / samples.length);
+        if (recordingActiveRef.current && rms > SPEECH_RMS_THRESHOLD) {
+          currentChunkHasSpeechRef.current = true;
+        }
         setInputLevel(Math.min(1, rms * 8));
         audioLevelRafRef.current = window.requestAnimationFrame(tick);
       };
@@ -869,12 +874,17 @@ export function ConversationCapture({
     mediaRecorderRef.current = recorder;
 
     const chunks: BlobPart[] = [];
+    currentChunkHasSpeechRef.current = false;
     recorder.ondataavailable = (ev) => {
       if (ev.data && ev.data.size > 0) chunks.push(ev.data);
     };
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
-      void uploadChunk(blob, mimeType);
+      const hadSpeech = currentChunkHasSpeechRef.current;
+      currentChunkHasSpeechRef.current = false;
+      if (hadSpeech) {
+        void uploadChunk(blob, mimeType);
+      }
       if (recordingActiveRef.current && chunkBackupActiveRef.current) {
         startChunkRecorder();
       }
@@ -926,6 +936,7 @@ export function ConversationCapture({
       lastLiveTranscriptAtRef.current = 0;
       lastChunkFailureNoticeAtRef.current = 0;
       chunkFailureCountRef.current = 0;
+      currentChunkHasSpeechRef.current = false;
       setIsRecording(true);
       setConnecting(false);
       startChunkRecorder();

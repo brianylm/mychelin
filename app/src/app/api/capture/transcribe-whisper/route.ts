@@ -27,6 +27,22 @@ function normalizeSpeaker(speaker: unknown, index: number): string {
   return match ? "Speaker " + match[1] : raw;
 }
 
+
+function isBenignAudioError(status: number, body: string): boolean {
+  const normalized = body.toLowerCase();
+  return (
+    status === 400 &&
+    (normalized.includes("audio") || normalized.includes("file")) &&
+    (normalized.includes("too short") ||
+      normalized.includes("too small") ||
+      normalized.includes("no speech") ||
+      normalized.includes("silent") ||
+      normalized.includes("decode") ||
+      normalized.includes("could not be decoded") ||
+      normalized.includes("invalid file format"))
+  );
+}
+
 function segmentsFromDiarizedJson(data: OpenAITranscriptionResponse): Array<{ speaker: string; text: string }> {
   const rawSegments = Array.isArray(data?.segments)
     ? data.segments
@@ -98,6 +114,10 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const text = await response.text();
+      if (isBenignAudioError(response.status, text)) {
+        console.warn("OpenAI transcribe skipped empty/invalid audio chunk:", response.status, text.slice(0, 300));
+        return NextResponse.json({ segments: [] });
+      }
       console.error("OpenAI transcribe error:", response.status, text);
       return NextResponse.json({ error: "OpenAI transcription failed" }, { status: 502 });
     }

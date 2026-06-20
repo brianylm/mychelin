@@ -2214,3 +2214,30 @@ Files touched:
 Checks:
 
 - `git diff --check` passed; targeted eslint passed for ConversationCapture; `npm run build` passed from app/.
+
+
+### 2026-06-20 - Conversation transcription reliability fix
+
+Changed/decided:
+
+- Fixed underlying conversation transcription failure mode where silent/near-silent MediaRecorder chunks were still sent to transcription providers and could surface as repeated OpenAI transcription failures.
+- Added client-side speech gating using the existing audio meter: chunks are uploaded only if meaningful microphone energy was detected during that chunk.
+- Added server-side tolerance for OpenAI empty/silent/undecodable audio errors by returning an empty transcript instead of a 502 for benign audio chunks.
+- Kept the provider chain intact: Gemini dialect chunk transcription first, OpenAI fallback second, browser/realtime live captions as available.
+
+Files touched:
+
+- app/src/components/capture/ConversationCapture.tsx
+- app/src/app/api/capture/transcribe-whisper/route.ts
+- app/src/lib/changelog.ts
+
+Checks:
+
+- Targeted npx eslint passed for ConversationCapture and transcribe-whisper route.
+- git diff --check passed.
+- npm run build passed from app/.
+
+Follow-ups:
+
+- Production test: click Record, wait silently for one chunk, then speak Hokkien for at least 8-10 seconds. Expected: no repeated OpenAI transcription failed errors; transcript should appear from browser captions or AI chunks.
+- If transcript still does not appear while speech is detected, pull production logs immediately for /api/capture/transcribe-chunk and /api/capture/transcribe-whisper.
