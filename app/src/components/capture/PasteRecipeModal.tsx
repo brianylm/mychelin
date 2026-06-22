@@ -247,40 +247,42 @@ export function PasteRecipeModal({
       }}
     >
       <div
-        className="flex h-full w-full flex-col bg-[#fffdfb] sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-[2rem] sm:border sm:border-white/70 sm:shadow-[0_24px_80px_rgba(60,43,25,0.18)]"
+        className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#fffdfb] sm:h-[90vh] sm:max-h-[760px] sm:max-w-2xl sm:rounded-[2rem] sm:border sm:border-white/70 sm:shadow-[0_24px_80px_rgba(60,43,25,0.18)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#800020]/10 bg-white/[0.58] px-4 py-3 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020] ring-1 ring-[#800020]/10">
-              {isUrl ? <Link2Icon className="h-4 w-4" /> : <MagicWandIcon className="h-4 w-4" />}
+        <div className="shrink-0 border-b border-[#800020]/10 bg-white/[0.58] px-4 py-3 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020] ring-1 ring-[#800020]/10">
+                {isUrl ? <Link2Icon className="h-4 w-4" /> : <MagicWandIcon className="h-4 w-4" />}
+              </div>
+              <div className="min-w-0">
+                <h2 className="app-editorial-title text-xl leading-none text-[#1A1A1A]">
+                  {isUrl ? "Import recipe" : "Quick capture"}
+                </h2>
+                <p className="truncate text-[11px] text-neutral-500">
+                  {step === "paste" && !isUrl &&
+                    "Paste a message, notes, photo OCR, or any loose recipe text"}
+                  {step === "paste" && isUrl &&
+                    (hasValidUrl
+                      ? `Import recipe from ${hostnameFrom(text.trim())}`
+                      : text.trim()
+                        ? "Paste a full URL starting with https:// or http://"
+                        : "Paste a recipe page link and we'll extract the recipe")}
+                  {step === "processing" && processingLabel}
+                  {step === "review" && "Review before saving"}
+                  {step === "saving" && "Saving your recipe..."}
+                  {step === "error" && "Extraction didn't work"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="app-editorial-title text-xl leading-none text-[#1A1A1A]">
-                {isUrl ? "Import recipe" : "Quick capture"}
-              </h2>
-              <p className="text-[11px] text-neutral-500">
-                {step === "paste" && !isUrl &&
-                  "Paste a message, notes, photo OCR, or any loose recipe text"}
-                {step === "paste" && isUrl &&
-                  (hasValidUrl
-                    ? `Import recipe from ${hostnameFrom(text.trim())}`
-                    : text.trim()
-                      ? "Paste a full URL starting with https:// or http://"
-                      : "Paste a recipe page link and we’ll extract the recipe")}
-                {step === "processing" && processingLabel}
-                {step === "review" && "Review before saving"}
-                {step === "saving" && "Saving your recipe..."}
-                {step === "error" && "Extraction didn\u2019t work"}
-              </p>
-            </div>
+            <button
+              onClick={onClose}
+              className="shrink-0 rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+            >
+              <Cross2Icon className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
-          >
-            <Cross2Icon className="h-4 w-4" />
-          </button>
         </div>
 
         {step === "paste" && (
@@ -304,7 +306,7 @@ export function PasteRecipeModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               <textarea
                 id="paste-recipe-text"
                 value={text}
@@ -350,7 +352,8 @@ export function PasteRecipeModal({
               </div>
             )}
 
-            <div className="flex items-center gap-2 border-t border-neutral-200 bg-white px-4 py-3">
+            <div className="shrink-0 border-t border-neutral-200 bg-white px-4 py-3">
+              <div className="flex items-center gap-2">
               <Button variant="soft" color="gray" onClick={onClose}>
                 Cancel
               </Button>
@@ -371,6 +374,7 @@ export function PasteRecipeModal({
                 {isUrl ? <Link2Icon /> : <MagicWandIcon />}
                 {isUrl ? "Import recipe" : "Extract recipe"}
               </Button>
+              </div>
             </div>
           </>
         )}

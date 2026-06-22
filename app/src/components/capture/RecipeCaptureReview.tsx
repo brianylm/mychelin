@@ -67,8 +67,8 @@ export function RecipeCaptureReview({
   ].filter(Boolean);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-5">
         <div className="rounded-2xl border border-[#eadfce] bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
@@ -173,7 +173,7 @@ export function RecipeCaptureReview({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-[#eadfce] bg-white px-4 py-3">
+      <div className="sticky bottom-0 z-10 flex shrink-0 items-center gap-2 border-t border-[#eadfce] bg-white px-4 py-3 shadow-[0_-12px_32px_rgba(60,43,25,0.08)]">
         <button
           type="button"
           onClick={onBack}

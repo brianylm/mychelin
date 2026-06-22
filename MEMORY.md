@@ -2241,3 +2241,24 @@ Follow-ups:
 
 - Production test: click Record, wait silently for one chunk, then speak Hokkien for at least 8-10 seconds. Expected: no repeated OpenAI transcription failed errors; transcript should appear from browser captions or AI chunks.
 - If transcript still does not appear while speech is detected, pull production logs immediately for /api/capture/transcribe-chunk and /api/capture/transcribe-whisper.
+
+
+### 2026-06-22 - Quick capture modal polish
+
+Changed/decided:
+
+- Fixed Quick capture desktop modal shell so rounded top/bottom corners are clipped by the modal container instead of being visually overwritten by inner panels.
+- Constrained desktop modal height and widened the review surface to 2xl so parsed recipe review has a stable viewport.
+- Made the shared capture review footer sticky/shrink-safe so Save reviewed recipe remains visible after parsing instead of falling below the viewport.
+
+Files touched:
+
+- app/src/components/capture/PasteRecipeModal.tsx
+- app/src/components/capture/RecipeCaptureReview.tsx
+- app/src/lib/changelog.ts
+
+Checks:
+
+- Targeted npx eslint passed for PasteRecipeModal and RecipeCaptureReview.
+- git diff --check passed.
+- npm run build passed from app/.

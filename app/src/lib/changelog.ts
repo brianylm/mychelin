@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-06-22",
+    title: "Quick capture modal polish",
+    items: [
+      "Quick capture now clips its rounded desktop modal shell cleanly at the top and bottom.",
+      "The recipe review screen now keeps Save reviewed recipe visible at the bottom of the modal after parsing.",
+    ],
+  },
+  {
     date: "2026-06-20",
     title: "Conversation transcription reliability",
     items: [
