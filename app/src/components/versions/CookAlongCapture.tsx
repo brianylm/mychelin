@@ -3,12 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Cross2Icon,
-  StarIcon,
-  StarFilledIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
   CheckIcon,
 } from "@radix-ui/react-icons";
+import { HalfStarRating } from "@/components/recipes/HalfStarRating";
 
 interface Ingredient {
   name: string;
@@ -17,12 +16,18 @@ interface Ingredient {
   notes?: string;
 }
 
+interface VersionInstruction {
+  content: string;
+  stepNumber?: number;
+  tip?: string | null;
+}
+
 interface Version {
   id: number;
   versionNumber: number;
   versionLabel: string | null;
   ingredients: Ingredient[];
-  instructions: any[];
+  instructions: VersionInstruction[];
 }
 
 const labelOf = (v: { versionLabel?: string | null; versionNumber: number }) =>
@@ -86,7 +91,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
   }, [selectedVersion]);
 
   const updateIngredient = useCallback(
-    (index: number, field: "actualQuantity" | "actualUnit", value: any) => {
+    (index: number, field: "actualQuantity" | "actualUnit", value: number | string | undefined) => {
       setAdjustedIngredients((prev) =>
         prev.map((ing, i) => (i === index ? { ...ing, [field]: value, adjusted: true } : ing))
       );
@@ -243,18 +248,13 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                 <div className="space-y-4">
                   <div>
                     <p className="mb-2 text-sm font-medium text-neutral-700">How close was this to the &quot;real&quot; recipe?</p>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button key={star} onClick={() => setClosenessRating(star)} className="rounded-lg p-1 transition-transform hover:scale-110">
-                          {star <= closenessRating
-                            ? <StarFilledIcon className="h-7 w-7 text-[#800020]/70" />
-                            : <StarIcon className="h-7 w-7 text-neutral-300" />}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mt-1 flex justify-between text-[10px] text-neutral-400">
-                      <span>Way off</span><span>Spot on!</span>
-                    </div>
+                    <HalfStarRating
+                      value={closenessRating || null}
+                      onChange={setClosenessRating}
+                      ariaLabel="Version closeness rating"
+                      leftLabel="Way off"
+                      rightLabel="Spot on"
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-neutral-700">What was different?</label>
@@ -276,11 +276,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                       {closenessRating > 0 && (
                         <div className="flex items-center gap-1">
                           <span>Closeness:</span>
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            s <= closenessRating
-                              ? <StarFilledIcon key={s} className="h-2.5 w-2.5 text-[#800020]" />
-                              : <StarIcon key={s} className="h-2.5 w-2.5 text-amber-300" />
-                          ))}
+                          <span>{closenessRating.toFixed(1).replace(".0", "")}/5</span>
                         </div>
                       )}
                       {closenessNotes && <p>Notes: {closenessNotes}</p>}

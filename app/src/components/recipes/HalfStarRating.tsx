@@ -35,7 +35,7 @@ export function HalfStarRating({
   const classes = sizeClasses[size];
 
   return (
-    <div>
+    <div className="inline-flex flex-col">
       <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={ariaLabel}>
         {[1, 2, 3, 4, 5].map((star) => (
           <div key={star} className={`relative ${classes.button}`}>
@@ -70,7 +70,7 @@ export function HalfStarRating({
         ))}
       </div>
       {(leftLabel || rightLabel) && (
-        <div className="mt-1 flex max-w-xs justify-between gap-3 text-[11px] font-medium text-neutral-500">
+        <div className="mt-1 flex w-full justify-between gap-3 text-[11px] font-medium text-neutral-500">
           <span>{leftLabel}</span>
           <span>{rightLabel}</span>
         </div>

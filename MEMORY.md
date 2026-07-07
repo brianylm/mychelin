@@ -2283,3 +2283,26 @@ Checks:
 
 - `npx eslint src/components/profile/ProfileView.tsx src/components/pilot/PilotChecklistPanel.tsx` passed.
 - `npm run build` passed from app/.
+
+
+### 2026-07-07 - Recipe editing polish
+
+Changed/decided:
+
+- Log version / cook-along closeness now uses the shared half-star rating control.
+- Half-star rating labels now align to the width of the star row instead of stretching across their parent container.
+- Ingredient rows now stack fields on mobile, giving ingredient names full width before quantity/unit and action controls.
+- Product note: desktop is currently a mobile-first PWA layout widened with a persistent sidebar. This is acceptable for MVP consistency, but a later desktop workspace should use a wider recipe canvas and persistent secondary panels for ingredients, steps, attempts, and versions.
+
+Files touched:
+
+- app/src/components/recipes/HalfStarRating.tsx
+- app/src/components/recipes/IngredientList.tsx
+- app/src/components/versions/CookAlongCapture.tsx
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- `npx eslint src/components/recipes/HalfStarRating.tsx src/components/versions/CookAlongCapture.tsx src/components/recipes/IngredientList.tsx` passed.
+- `npm run build` passed from app/.

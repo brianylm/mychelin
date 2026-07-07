@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-07",
+    title: "Recipe editing polish",
+    items: [
+      "Log version now uses the same half-star rating control as dish ratings.",
+      "Version closeness labels now align to the star control instead of stretching across the modal.",
+      "Ingredient rows stack more cleanly on mobile so long ingredient names are easier to read and edit.",
+    ],
+  },
+  {
+    date: "2026-07-07",
     title: "Profile page cleanup",
     items: [
       "Profile now shows only the latest three changelog updates by default, with older entries behind View more.",

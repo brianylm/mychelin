@@ -398,13 +398,13 @@ export function IngredientList({
           {ingredients.map((ing) => (
             <li
               key={ing.id}
-              className="group flex items-center gap-2 rounded-xl border border-neutral-100 bg-neutral-50/50 px-3 py-2.5"
+              className="group flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/50 px-3 py-2.5 sm:flex-row sm:items-center"
             >
               <div
-                className={`grid flex-1 items-center gap-2 ${
+                className={`grid w-full flex-1 items-center gap-2 ${
                   ing.approximate
-                    ? "grid-cols-[1fr_1.4fr]"
-                    : "grid-cols-[1fr_auto_auto]"
+                    ? "grid-cols-1 sm:grid-cols-[1fr_1.4fr]"
+                    : "grid-cols-1 sm:grid-cols-[1fr_auto_auto]"
                 }`}
               >
                 {/* Name first */}
@@ -436,7 +436,7 @@ export function IngredientList({
                   <>
                     {/* Qty */}
                     {scale !== 1 && ing.quantity ? (
-                      <span className="w-14 px-1 text-center text-sm tabular-nums text-[#800020] font-medium">
+                      <span className="w-full rounded bg-white px-2 py-1.5 text-left text-sm font-medium tabular-nums text-[#800020] sm:w-14 sm:bg-transparent sm:px-1 sm:py-0 sm:text-center">
                         {formatScaledQuantity(ing.quantity, scale)}
                       </span>
                     ) : (
@@ -449,7 +449,7 @@ export function IngredientList({
                             e.target.value ? parseFloat(e.target.value) : null
                           )
                         }
-                        className="w-14 rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
+                        className="w-full rounded border border-transparent bg-transparent px-1 text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:w-14 sm:text-center"
                         placeholder="qty"
                       />
                     )}
@@ -459,7 +459,7 @@ export function IngredientList({
                       onChange={(e) =>
                         handleFieldBlur(ing, "unit", e.target.value || null)
                       }
-                      className="w-[85px] rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
+                      className="w-full rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:w-[85px]"
                     >
                       <option value="">unit</option>
                       {UNIT_OPTIONS.filter(Boolean).map((u) => (
@@ -472,40 +472,42 @@ export function IngredientList({
                 )}
               </div>
 
-              <SaveIndicator isSaving={savingId === ing.id} />
+              <div className="flex items-center justify-end gap-2 sm:justify-start">
+                <SaveIndicator isSaving={savingId === ing.id} />
 
-              {/* Toggle: precise ↔ approximate */}
-              <button
-                type="button"
-                className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold transition ${
-                  ing.approximate
-                    ? "border-[#800020]/25 bg-[#800020]/10 text-[#800020]"
-                    : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/20 hover:text-[#800020]"
-                }`}
-                onClick={() => toggleApproximate(ing)}
-                aria-label={
-                  ing.approximate
-                    ? "Switch to precise quantity"
-                    : "Switch to approximate quantity"
-                }
-                title={
-                  ing.approximate
-                    ? "Switch to precise quantity"
-                    : "Switch to approximate quantity (agak-agak)"
-                }
-              >
-                ≈
-              </button>
+                {/* Toggle: precise ↔ approximate */}
+                <button
+                  type="button"
+                  className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold transition ${
+                    ing.approximate
+                      ? "border-[#800020]/25 bg-[#800020]/10 text-[#800020]"
+                      : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/20 hover:text-[#800020]"
+                  }`}
+                  onClick={() => toggleApproximate(ing)}
+                  aria-label={
+                    ing.approximate
+                      ? "Switch to precise quantity"
+                      : "Switch to approximate quantity"
+                  }
+                  title={
+                    ing.approximate
+                      ? "Switch to precise quantity"
+                      : "Switch to approximate quantity (agak-agak)"
+                  }
+                >
+                  ≈
+                </button>
 
-              <button
-                type="button"
-                className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
-                onClick={() => onDelete(recipeId, ing.id)}
-                aria-label="Remove ingredient"
-                title="Remove ingredient"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                <button
+                  type="button"
+                  className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
+                  onClick={() => onDelete(recipeId, ing.id)}
+                  aria-label="Remove ingredient"
+                  title="Remove ingredient"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </li>
           ))}
         </ul>
