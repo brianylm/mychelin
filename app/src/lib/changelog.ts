@@ -6,6 +6,15 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-07-07",
+    title: "Profile page cleanup",
+    items: [
+      "Profile now shows only the latest three changelog updates by default, with older entries behind View more.",
+      "Cooking rhythm and Pilot loop now start collapsed so Profile is easier to scan.",
+      "Unused preference fields such as favorite cuisines, dietary restrictions, skill level, and household size are hidden for now.",
+    ],
+  },
+  {
     date: "2026-06-22",
     title: "Quick capture modal polish",
     items: [

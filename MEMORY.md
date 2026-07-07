@@ -2262,3 +2262,24 @@ Checks:
 - Targeted npx eslint passed for PasteRecipeModal and RecipeCaptureReview.
 - git diff --check passed.
 - npm run build passed from app/.
+
+
+### 2026-07-07 - Profile page cleanup
+
+Changed/decided:
+
+- Profile changelog now shows the latest three updates by default, with older updates behind a View more button that can be collapsed again.
+- Cooking rhythm and Pilot loop cards are collapsed by default and use stronger headers so Profile is easier to scan.
+- Hidden currently unused preference fields: favorite cuisines, dietary restrictions, cooking skill level, and household size.
+
+Files touched:
+
+- app/src/components/profile/ProfileView.tsx
+- app/src/components/pilot/PilotChecklistPanel.tsx
+- app/src/lib/changelog.ts
+- MEMORY.md
+
+Checks:
+
+- `npx eslint src/components/profile/ProfileView.tsx src/components/pilot/PilotChecklistPanel.tsx` passed.
+- `npm run build` passed from app/.
