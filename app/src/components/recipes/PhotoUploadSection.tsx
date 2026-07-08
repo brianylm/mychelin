@@ -18,6 +18,10 @@ export interface RecipePhoto {
 
 interface PhotoUploadSectionProps {
   photos: RecipePhoto[];
+  variant?: "card" | "cover";
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  actions?: React.ReactNode;
   coverUrl?: string | null;
   onUpload: (file: File) => Promise<void>;
   onRemove: (photoId: string) => Promise<void>;
@@ -31,6 +35,10 @@ const MAX_PHOTOS = 10;
 
 export function PhotoUploadSection({
   photos,
+  variant = "card",
+  title,
+  subtitle,
+  actions,
   coverUrl,
   onUpload,
   onRemove,
@@ -100,6 +108,137 @@ export function PhotoUploadSection({
   const coverPhoto = coverUrl
     ? photos.find((p) => p.url === coverUrl)
     : null;
+
+  if (variant === "cover") {
+    return (
+      <>
+        <section className="relative -mx-5 -mt-4 overflow-hidden bg-neutral-100 md:mx-0 md:mt-0 md:rounded-[1.75rem]">
+          <div className="relative h-[245px] sm:h-[310px]">
+            {coverUrl ? (
+              <img src={coverUrl} alt="Recipe cover" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center bg-[#f4eee7] text-neutral-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                  <circle cx="9" cy="9" r="2"/>
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                </svg>
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+
+            <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap gap-2">
+                {photos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => openGallery(Math.max(0, photos.findIndex((photo) => photo.url === coverUrl)))}
+                    className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white/85 transition hover:bg-black/50"
+                  >
+                    {photos.length} photo{photos.length === 1 ? "" : "s"}
+                  </button>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                {actions}
+              </div>
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+              {title}
+              {subtitle}
+            </div>
+          </div>
+
+          {!readOnly && (
+            <div className="flex items-center justify-between gap-3 bg-white px-4 py-3 md:px-5">
+              <div className="flex min-w-0 gap-2 overflow-x-auto">
+                {photos.map((photo, index) => (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    onClick={() => openGallery(index)}
+                    className={`relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors hover:border-[#800020]/45 ${photo.url === coverUrl ? "border-[#800020]/45" : "border-neutral-200"}`}
+                  >
+                    <img src={photo.url} alt={`Recipe photo ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+              {canAddMore && (
+                <label className="flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#800020]/20 bg-[#800020]/5 px-3 text-xs font-semibold text-[#800020] transition hover:bg-[#800020]/10">
+                  Add photos
+                  <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={isUploading} />
+                </label>
+              )}
+            </div>
+          )}
+
+          {uploadError && (
+            <p className="border-t border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600">{uploadError}</p>
+          )}
+        </section>
+
+        {galleryIndex !== null && photos[galleryIndex] && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+          >
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={closeGallery} />
+            {photos.length > 1 && (
+              <>
+                <button onClick={goPrev} className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex">
+                  <ChevronLeftIcon className="h-6 w-6 text-white" />
+                </button>
+                <button onClick={goNext} className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex">
+                  <ChevronRightIcon className="h-6 w-6 text-white" />
+                </button>
+              </>
+            )}
+            <div className="absolute right-4 top-4 z-20 flex flex-wrap gap-2">
+              {!readOnly && onSetCover && photos[galleryIndex].url !== coverUrl && (
+                <button onClick={() => onSetCover(photos[galleryIndex].url)} className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f]">
+                  Set as cover
+                </button>
+              )}
+              {photos[galleryIndex].url === coverUrl && (
+                <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-medium text-white">Current cover</span>
+              )}
+              <button onClick={rotatePhoto} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Rotate">
+                <RotateCounterClockwiseIcon className="h-4 w-4 text-white" />
+              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => {
+                    if (!confirm("Remove this photo?")) return;
+                    onRemove(photos[galleryIndex].id);
+                    if (photos.length <= 1) closeGallery();
+                    else if (galleryIndex >= photos.length - 1) setGalleryIndex(galleryIndex - 1);
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
+                  title="Delete photo"
+                >
+                  <TrashIcon className="h-4 w-4 text-white" />
+                </button>
+              )}
+              <button onClick={closeGallery} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Close">
+                <Cross2Icon className="h-4 w-4 text-white" />
+              </button>
+            </div>
+            {photos.length > 1 && (
+              <div className="absolute left-4 top-4 z-20 rounded-full bg-black/50 px-3 py-1 text-sm text-white">
+                {galleryIndex + 1} / {photos.length}
+              </div>
+            )}
+            <img src={photos[galleryIndex].url} alt={`Recipe photo ${galleryIndex + 1}`} className="relative z-10 max-h-full max-w-full object-contain transition-transform duration-200" style={{ transform: `rotate(${rotation}deg)` }} />
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <>

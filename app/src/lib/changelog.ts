@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-08",
+    title: "Recipe cover header cleanup",
+    items: [
+      "Recipe photos now render as a cover-style header instead of a separate photo card.",
+      "The recipe title sits inside the cover header so the page starts closer to the dish itself.",
+      "Reading mode and save status controls are now compact, with save controls shown only while editing.",
+    ],
+  },
+  {
+    date: "2026-07-08",
     title: "Recipe page layout fixes",
     items: [
       "Contentful existing recipes now open in reading mode instead of edit mode.",

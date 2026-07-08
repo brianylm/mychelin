@@ -1214,47 +1214,69 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
 
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-5 py-4 md:gap-8 md:py-6">
-        <RecipeSaveStatus
-          isSaving={anyFieldSaving}
-          updatedAt={selectedRecipe.updatedAt}
-          onSaveNow={handleSaveNow}
-        />
-
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#800020]/10 bg-white px-4 py-3 shadow-sm">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">
-              {recipeEditMode ? "Editing recipe" : "Reading mode"}
-            </p>
-            <p className="mt-0.5 text-sm font-medium text-neutral-800">
-              {recipeEditMode ? "Recipe fields are unlocked" : "Recipe fields are locked"}
-            </p>
-          </div>
-          {recipeEditMode ? (
-            <button
-              type="button"
-              onClick={handleSaveAndLock}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]"
-            >
-              <Check className="h-4 w-4" />
-              Save and lock
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setRecipeEditMode(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#800020]/20 bg-white px-4 text-sm font-semibold text-[#800020] transition hover:bg-[#800020]/5"
-            >
-              <PencilLine className="h-4 w-4" />
-              Edit recipe
-            </button>
-          )}
-        </section>
-
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-5 py-4 md:gap-7 md:py-6">
         {/* ─── Core tier — always visible ──────────────── */}
 
-        {/* Photos */}
         <PhotoUploadSection
+          variant="cover"
+          title={
+            <RecipeTitleCard
+              recipe={selectedRecipe}
+              title={title}
+              onTitleChange={setTitle}
+              onBlur={() => handleBlur("title")}
+              isSaving={savingTitle}
+              autoFocusTitle={
+                !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
+              }
+              readOnly={!recipeEditMode}
+              variant="cover"
+            />
+          }
+          subtitle={
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/75">
+              {recipeEditMode ? (
+                <span className="rounded-full bg-[#f7c86a]/95 px-2.5 py-1 font-semibold text-[#17131f]">Editing</span>
+              ) : (
+                <span className="rounded-full bg-black/35 px-2.5 py-1 font-semibold text-white">Reading mode</span>
+              )}
+              {selectedRecipe.cuisine && <span>{selectedRecipe.cuisine}</span>}
+              {(selectedRecipe.prepTime || selectedRecipe.cookTime) && (
+                <span>{[selectedRecipe.prepTime ? selectedRecipe.prepTime + "m prep" : null, selectedRecipe.cookTime ? selectedRecipe.cookTime + "m cook" : null].filter(Boolean).join(" · ")}</span>
+              )}
+            </div>
+          }
+          actions={
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {recipeEditMode && (
+                <RecipeSaveStatus
+                  isSaving={anyFieldSaving}
+                  updatedAt={selectedRecipe.updatedAt}
+                  onSaveNow={handleSaveNow}
+                  compact
+                />
+              )}
+              {recipeEditMode ? (
+                <button
+                  type="button"
+                  onClick={handleSaveAndLock}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#17131f] shadow-sm transition hover:bg-[#fff7e8]"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  Save and lock
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRecipeEditMode(true)}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#17131f] shadow-sm transition hover:bg-[#fff7e8]"
+                >
+                  <PencilLine className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+              )}
+            </div>
+          }
           photos={(selectedRecipe.photos ?? []).map((p) => ({
             id: String(p.id),
             url: p.blobUrl,
@@ -1284,20 +1306,6 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             qc.invalidateQueries({ queryKey: ["recipes"] });
             addToast("Cover photo updated", "success");
           }}
-        />
-
-        {/* Title — first so it's always reachable on mobile
-            even with the keyboard raised */}
-        <RecipeTitleCard
-          recipe={selectedRecipe}
-          title={title}
-          onTitleChange={setTitle}
-          onBlur={() => handleBlur("title")}
-          isSaving={savingTitle}
-          autoFocusTitle={
-            !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
-          }
-          readOnly={!recipeEditMode}
         />
 
         {nextTry && (

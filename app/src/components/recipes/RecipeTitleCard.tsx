@@ -13,6 +13,7 @@ interface RecipeTitleCardProps {
   isSaving: boolean;
   autoFocusTitle?: boolean;
   readOnly?: boolean;
+  variant?: "card" | "cover";
 }
 
 const UNTITLED_RECIPE = "Untitled recipe";
@@ -29,6 +30,7 @@ export function RecipeTitleCard({
   isSaving,
   autoFocusTitle = false,
   readOnly = false,
+  variant = "card",
 }: RecipeTitleCardProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [editingPlaceholder, setEditingPlaceholder] = useState(false);
@@ -42,6 +44,43 @@ export function RecipeTitleCard({
   }, [autoFocusTitle, readOnly, showingSoftPlaceholder]);
 
   const inputValue = editingPlaceholder && showingSoftPlaceholder ? "" : title;
+
+  if (variant === "cover") {
+    return (
+      <section className="min-w-0 text-white">
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/65">
+            Recipe name
+          </span>
+          <SaveIndicator isSaving={isSaving} />
+        </div>
+        {readOnly ? (
+          <h1 className="max-w-[34rem] text-3xl font-semibold leading-[0.98] tracking-normal text-white drop-shadow-sm sm:text-5xl">
+            {title || UNTITLED_RECIPE}
+          </h1>
+        ) : (
+          <input
+            ref={inputRef}
+            value={inputValue}
+            onFocus={() => {
+              if (showingSoftPlaceholder) setEditingPlaceholder(true);
+            }}
+            onChange={(event) => {
+              if (editingPlaceholder) setEditingPlaceholder(false);
+              onTitleChange(event.target.value);
+            }}
+            onBlur={() => {
+              setEditingPlaceholder(false);
+              onBlur();
+            }}
+            placeholder={UNTITLED_RECIPE}
+            className="w-full max-w-[34rem] rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-3xl font-semibold leading-none tracking-normal text-white outline-none transition placeholder:text-white/45 hover:border-white/35 focus:border-white/55 focus:bg-black/35 focus:ring-4 focus:ring-white/15 sm:text-5xl"
+          />
+        )}
+        <span className="sr-only">Last updated {formatDateTime(recipe.updatedAt)}</span>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-[#800020]/10 bg-[#fff8f4] px-4 py-4 shadow-sm ring-1 ring-white/70 sm:px-5">

@@ -8,11 +8,12 @@ interface RecipeSaveStatusProps {
   isSaving: boolean;
   updatedAt: string;
   onSaveNow: () => void;
+  compact?: boolean;
 }
 
 // Inline status row shown above the editable recipe body. It stays visually
 // quiet so it does not read as a second panel below the top navigation.
-export function RecipeSaveStatus({ isSaving, updatedAt, onSaveNow }: RecipeSaveStatusProps) {
+export function RecipeSaveStatus({ isSaving, updatedAt, onSaveNow, compact = false }: RecipeSaveStatusProps) {
   // Debounce the "just saved" glow so it's visible even when saves are fast.
   const [justSaved, setJustSaved] = useState(false);
   const prevSavingRef = useRef(isSaving);
@@ -35,6 +36,33 @@ export function RecipeSaveStatus({ isSaving, updatedAt, onSaveNow }: RecipeSaveS
       window.clearTimeout(hideTimer);
     };
   }, [isSaving]);
+
+  if (compact) {
+    return (
+      <div className="flex min-w-0 items-center gap-2 text-[11px]">
+        {isSaving ? (
+          <>
+            <ReloadIcon className="h-3 w-3 animate-spin text-[#800020]" />
+            <span className="font-medium text-[#800020]">Saving</span>
+          </>
+        ) : (
+          <>
+            <CheckIcon className={`h-3 w-3 ${justSaved ? "text-emerald-500" : "text-neutral-400"}`} />
+            <span className="hidden font-medium text-neutral-500 sm:inline">
+              {justSaved ? "Saved" : "Saved"}
+            </span>
+            <span className="hidden text-neutral-400 md:inline">{formatDateTime(updatedAt)}</span>
+          </>
+        )}
+        <button
+          onClick={onSaveNow}
+          className="rounded-full border border-[#800020]/20 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-[#521224] transition-colors hover:bg-white"
+        >
+          Save now
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="-mx-1 mb-2 flex items-center justify-between gap-3 px-1 text-xs">

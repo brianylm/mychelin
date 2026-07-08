@@ -2344,3 +2344,11 @@ Checks:
 - Tightened editable ingredient row layout so ingredient, quantity, unit, approximate toggle, and delete remain on one row.
 - Improved step ingredient matching with simple singular/plural token variants, e.g. red onion can match onion/onions in step text.
 - Validation: targeted eslint passed with existing img warnings; npm run build passed; git diff --check passed.
+
+## 2026-07-08 - Recipe cover header cleanup
+
+- Changed the recipe page masthead so recipe photos render as a cover-style header rather than a contained photo card.
+- Moved the recipe name into the cover header and made the title component support a dedicated cover variant.
+- Demoted reading/editing and save controls into compact header actions; save status now appears only while editing.
+- Files touched: app/src/components/recipes/RecipeView.tsx, app/src/components/recipes/PhotoUploadSection.tsx, app/src/components/recipes/RecipeTitleCard.tsx, app/src/components/recipes/RecipeSaveStatus.tsx, app/src/lib/changelog.ts, MEMORY.md.
+- Validation: targeted eslint passed with existing img warnings; npm run build passed.
