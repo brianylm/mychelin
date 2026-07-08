@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import { BookOpen, ChefHat, ClipboardPaste, Clock3, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
+import { BookOpen, ChefHat, Check, ClipboardPaste, Clock3, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
@@ -276,6 +276,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [surpriseByQuery, setSurpriseByQuery] = useState("");
   const [nextTry, setNextTry] = useState<RecipeNextTry | null>(null);
   const [nextTryBusy, setNextTryBusy] = useState<string | null>(null);
+  const [recipeEditMode, setRecipeEditMode] = useState(false);
+  const selectedRecipeRef = useRef(selectedRecipe);
 
   const promptVersionFeedback = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -376,6 +378,26 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       setIngredientScale(1);
     }
   }, [selectedRecipe]);
+
+  useEffect(() => {
+    selectedRecipeRef.current = selectedRecipe;
+  }, [selectedRecipe]);
+
+  // Seed edit mode only when the selected recipe changes. Updates while editing
+  // should not relock the page mid-edit.
+  useEffect(() => {
+    const recipe = selectedRecipeRef.current;
+    if (!recipe) {
+      setRecipeEditMode(false);
+      return;
+    }
+    const isFreshRecipe =
+      recipe.status === "draft" ||
+      recipe.id === justCreatedRecipeId ||
+      ((recipe.ingredients?.length ?? 0) === 0 &&
+        (recipe.instructions?.length ?? 0) === 0);
+    setRecipeEditMode(isFreshRecipe);
+  }, [selectedRecipe?.id, justCreatedRecipeId]);
 
   const loadNextTry = useCallback(async () => {
     if (!selectedRecipe) {
@@ -1183,6 +1205,11 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     addToast("Changes saved", "success");
   };
 
+  const handleSaveAndLock = async () => {
+    await handleSaveNow();
+    setRecipeEditMode(false);
+  };
+
 
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
@@ -1192,6 +1219,36 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           updatedAt={selectedRecipe.updatedAt}
           onSaveNow={handleSaveNow}
         />
+
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#800020]/10 bg-white px-4 py-3 shadow-sm">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">
+              {recipeEditMode ? "Editing recipe" : "Reading mode"}
+            </p>
+            <p className="mt-0.5 text-sm font-medium text-neutral-800">
+              {recipeEditMode ? "Recipe fields are unlocked" : "Recipe fields are locked"}
+            </p>
+          </div>
+          {recipeEditMode ? (
+            <button
+              type="button"
+              onClick={handleSaveAndLock}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]"
+            >
+              <Check className="h-4 w-4" />
+              Save and lock
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setRecipeEditMode(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#800020]/20 bg-white px-4 text-sm font-semibold text-[#800020] transition hover:bg-[#800020]/5"
+            >
+              <PencilLine className="h-4 w-4" />
+              Edit recipe
+            </button>
+          )}
+        </section>
 
         {/* ─── Core tier — always visible ──────────────── */}
 
@@ -1206,6 +1263,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           autoFocusTitle={
             !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
           }
+          readOnly={!recipeEditMode}
         />
 
         {nextTry && (
@@ -1333,6 +1391,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           coverUrl={selectedRecipe.imageUrl}
           onUpload={handlePhotoUpload}
           onRemove={handlePhotoRemove}
+          readOnly={!recipeEditMode}
           onSetCover={async (photoUrl) => {
             if (!selectedRecipe) return;
             const response = await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
@@ -1369,6 +1428,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           onUpdate={updateIngredient}
           onDelete={deleteIngredient}
           scale={ingredientScale}
+          readOnly={!recipeEditMode}
         />
 
         {/* Steps */}
@@ -1379,6 +1439,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           onUpdate={updateInstruction}
           onDelete={deleteInstruction}
           ingredients={selectedRecipe.ingredients ?? []}
+          readOnly={!recipeEditMode}
         />
 
         {/* ─── Library info tier — collapsed by default ───── */}

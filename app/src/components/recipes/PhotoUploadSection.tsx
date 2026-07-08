@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { IconButton } from "@radix-ui/themes";
 import {
   Cross2Icon,
   PlusIcon,
@@ -25,6 +24,7 @@ interface PhotoUploadSectionProps {
   onSetCover?: (photoUrl: string) => Promise<void>;
   isUploading?: boolean;
   uploadError?: string | null;
+  readOnly?: boolean;
 }
 
 const MAX_PHOTOS = 10;
@@ -37,6 +37,7 @@ export function PhotoUploadSection({
   onSetCover,
   isUploading = false,
   uploadError,
+  readOnly = false,
 }: PhotoUploadSectionProps) {
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
@@ -44,7 +45,7 @@ export function PhotoUploadSection({
   const cameraRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const canAddMore = photos.length < MAX_PHOTOS;
+  const canAddMore = !readOnly && photos.length < MAX_PHOTOS;
 
   const openGallery = useCallback((index: number) => {
     setGalleryIndex(index);
@@ -140,11 +141,20 @@ export function PhotoUploadSection({
                     }}
                     className="flex h-8 items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60"
                   >
-                    Edit
+                    {readOnly ? "View" : "Edit"}
                   </button>
                 )}
               </div>
             </div>
+          </div>
+        ) : readOnly ? (
+          <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <circle cx="9" cy="9" r="2"/>
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            <span className="text-xs font-medium text-neutral-400">No cover photo</span>
           </div>
         ) : (
           <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-[#800020]/5">
@@ -292,7 +302,7 @@ export function PhotoUploadSection({
 
           {/* Toolbar */}
           <div className="absolute right-4 top-4 z-20 flex flex-wrap gap-2">
-            {onSetCover && photos[galleryIndex].url !== coverUrl && (
+            {!readOnly && onSetCover && photos[galleryIndex].url !== coverUrl && (
               <button
                 onClick={() => onSetCover(photos[galleryIndex].url)}
                 className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f]"
@@ -313,9 +323,10 @@ export function PhotoUploadSection({
             >
               <RotateCounterClockwiseIcon className="h-4 w-4 text-white" />
             </button>
-            <button
-              onClick={() => {
-                if (!confirm("Remove this photo?")) return;
+            {!readOnly && (
+              <button
+                onClick={() => {
+                  if (!confirm("Remove this photo?")) return;
                 onRemove(photos[galleryIndex].id);
                 if (photos.length <= 1) closeGallery();
                 else if (galleryIndex >= photos.length - 1)
@@ -324,8 +335,9 @@ export function PhotoUploadSection({
               className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
               title="Delete photo"
             >
-              <TrashIcon className="h-4 w-4 text-white" />
-            </button>
+                <TrashIcon className="h-4 w-4 text-white" />
+              </button>
+            )}
             <button
               onClick={closeGallery}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"

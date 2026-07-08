@@ -12,6 +12,7 @@ interface RecipeTitleCardProps {
   onBlur: () => void;
   isSaving: boolean;
   autoFocusTitle?: boolean;
+  readOnly?: boolean;
 }
 
 const UNTITLED_RECIPE = "Untitled recipe";
@@ -27,17 +28,18 @@ export function RecipeTitleCard({
   onBlur,
   isSaving,
   autoFocusTitle = false,
+  readOnly = false,
 }: RecipeTitleCardProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [editingPlaceholder, setEditingPlaceholder] = useState(false);
   const showingSoftPlaceholder = isUntitled(title);
 
   useEffect(() => {
-    if (autoFocusTitle && inputRef.current) {
+    if (!readOnly && autoFocusTitle && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [autoFocusTitle, showingSoftPlaceholder]);
+  }, [autoFocusTitle, readOnly, showingSoftPlaceholder]);
 
   const inputValue = editingPlaceholder && showingSoftPlaceholder ? "" : title;
 
@@ -49,23 +51,29 @@ export function RecipeTitleCard({
         </span>
         <SaveIndicator isSaving={isSaving} />
       </div>
-      <input
-        ref={inputRef}
-        value={inputValue}
-        onFocus={() => {
-          if (showingSoftPlaceholder) setEditingPlaceholder(true);
-        }}
-        onChange={(event) => {
-          if (editingPlaceholder) setEditingPlaceholder(false);
-          onTitleChange(event.target.value);
-        }}
-        onBlur={() => {
-          setEditingPlaceholder(false);
-          onBlur();
-        }}
-        placeholder={UNTITLED_RECIPE}
-        className="w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-2xl font-semibold leading-tight text-[#1A1A1A] outline-none transition placeholder:text-[#800020]/35 hover:border-[#800020]/15 focus:border-[#800020]/35 focus:bg-white focus:ring-4 focus:ring-[#800020]/10 sm:text-3xl"
-      />
+      {readOnly ? (
+        <div className="w-full rounded-xl border border-transparent bg-white/45 px-3 py-2 text-2xl font-semibold leading-tight text-[#1A1A1A] sm:text-3xl">
+          {title || UNTITLED_RECIPE}
+        </div>
+      ) : (
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onFocus={() => {
+            if (showingSoftPlaceholder) setEditingPlaceholder(true);
+          }}
+          onChange={(event) => {
+            if (editingPlaceholder) setEditingPlaceholder(false);
+            onTitleChange(event.target.value);
+          }}
+          onBlur={() => {
+            setEditingPlaceholder(false);
+            onBlur();
+          }}
+          placeholder={UNTITLED_RECIPE}
+          className="w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-2xl font-semibold leading-tight text-[#1A1A1A] outline-none transition placeholder:text-[#800020]/35 hover:border-[#800020]/15 focus:border-[#800020]/35 focus:bg-white focus:ring-4 focus:ring-[#800020]/10 sm:text-3xl"
+        />
+      )}
       <span className="mt-2 block text-xs text-neutral-400">
         Last updated {formatDateTime(recipe.updatedAt)}
       </span>

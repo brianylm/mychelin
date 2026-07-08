@@ -27,6 +27,7 @@ interface RecipeStepsProps {
     data: Partial<Instruction>
   ) => Promise<void>;
   onDelete: (recipeId: number, instructionId: number) => Promise<void>;
+  readOnly?: boolean;
 }
 
 const fieldBase =
@@ -98,6 +99,7 @@ export function RecipeSteps({
   onAdd,
   onUpdate,
   onDelete,
+  readOnly = false,
 }: RecipeStepsProps) {
   const [newStep, setNewStep] = useState("");
   const addingRef = useRef(false);
@@ -221,6 +223,58 @@ export function RecipeSteps({
     },
     [onUpdate, recipeId]
   );
+
+  if (readOnly) {
+    return (
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+            {sorted.length}
+          </span>
+        </div>
+
+        {sorted.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-neutral-400">
+            No steps yet
+          </p>
+        ) : (
+          <ol className="space-y-3">
+            {sorted.map((step) => {
+              const { heat, cleanTip } = parseHeatFromTip(step.tip);
+              const amountHints = matchIngredientsForStep(step.content, ingredients);
+              return (
+                <li key={step.id} className="rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-3">
+                  <div className="flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
+                      {step.stepNumber}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm leading-6 text-neutral-800">{step.content}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {heat && HEAT_CONFIG[heat] && (
+                          <span className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${HEAT_CONFIG[heat].className}`}>
+                            {HEAT_CONFIG[heat].label}
+                          </span>
+                        )}
+                        {amountHints.map((hint) => (
+                          <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#800020]/10 bg-white px-2 py-1 text-[11px] text-neutral-600">
+                            <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                            <span className="truncate">{hint.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                      {cleanTip && <p className="mt-2 text-xs leading-5 text-neutral-500">{cleanTip}</p>}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-5">

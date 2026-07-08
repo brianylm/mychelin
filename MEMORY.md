@@ -2326,3 +2326,13 @@ Checks:
 - Recipe attempt history can save next-time notes as a private next try; recipe pages show the active next try with promote, promote-and-set-definitive, and discard actions.
 - Updated ROADMAP.md and in-app changelog for the private next try / definitive sharing model.
 - Validation: targeted eslint passed with existing img/savedId warnings; npm run build passed; git diff --check passed. npm run smoke:privacy was blocked by existing local Edge signup/bcrypt setImmediate failure before reaching privacy assertions.
+
+## 2026-07-08 - Recipe read mode and structured Cook With Me snapshots
+
+- Existing recipe pages now open in reading mode, with core title/photos/ingredients/steps locked until the user taps Edit recipe; new, draft, and empty recipes still open editable.
+- Added Save and lock to flush editable fields and return the recipe page to reading mode.
+- Ingredient, step, title, and photo components now have read-only display paths for the locked recipe view.
+- Cook With Me now keeps a structured this-cook snapshot separate from the definitive recipe: users can edit the current step text, heat, timer reference, and matched ingredient quantities/names while cooking.
+- Cook With Me completion can save a private next-try draft with editable ingredients and steps via the existing /next-try API, without promoting it to a version or changing the definitive recipe.
+- Updated ROADMAP.md and the in-app changelog for this edit/save and structured cook-change slice.
+- Validation: targeted eslint passed with existing img warnings; npm run build passed; git diff --check passed.

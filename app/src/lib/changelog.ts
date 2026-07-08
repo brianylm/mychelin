@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-08",
+    title: "Safer recipe editing and structured cook changes",
+    items: [
+      "Existing recipes now open in reading mode, with an explicit Edit recipe and Save and lock flow for core recipe fields.",
+      "Cook With Me can record structured changes to the step, heat, timer, and ingredient amounts used during the session.",
+      "Cook With Me completion can save a private next-try draft with editable ingredients and steps, without changing the definitive recipe.",
+    ],
+  },
+  {
+    date: "2026-07-08",
     title: "Private next tries and safer sharing",
     items: [
       "Attempts can now be saved as a private next try before changing the recipe version history.",

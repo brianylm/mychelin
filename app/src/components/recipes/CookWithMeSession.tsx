@@ -17,7 +17,7 @@ import {
 import type { RecipeWithRelations } from "@/store/RecipeStore";
 import { playTimerAlarm, primeTimerAlarm } from "@/lib/timer-alarm";
 import { detectStepTimerSeconds } from "@/lib/step-timers";
-import { parseHeatFromTip } from "@/lib/instruction-heat";
+import { encodeHeatInTip, HEAT_CONFIG, HEAT_LEVELS, parseHeatFromTip, type HeatLevel } from "@/lib/instruction-heat";
 import { HeatChip } from "./HeatChip";
 import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
 
@@ -34,6 +34,32 @@ type TimerState = {
   running: boolean;
 };
 
+type SessionIngredient = {
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  approximate?: boolean | null;
+  quantityText?: string | null;
+  notes?: string | null;
+};
+
+type SessionInstruction = {
+  stepNumber: number;
+  content: string;
+  tip?: string | null;
+  imageUrl?: string | null;
+};
+
+const SNAPSHOT_UNITS = ["", "g", "kg", "ml", "L", "tsp", "tbsp", "cup", "pcs", "slice", "clove", "pinch", "handful", "bunch", "stalk", "can", "packet"];
+
+
+function normalizeInstructions(instructions: SessionInstruction[]): SessionInstruction[] {
+  return instructions.map((instruction, index) => ({
+    ...instruction,
+    stepNumber: index + 1,
+    content: instruction.content.trim() || "Untitled step",
+  }));
+}
 
 function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
@@ -41,7 +67,7 @@ function formatTime(totalSeconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function toAttemptIngredients(recipe: RecipeWithRelations) {
+function toAttemptIngredients(recipe: RecipeWithRelations): SessionIngredient[] {
   return (recipe.ingredients ?? []).map((ingredient) => ({
     name: ingredient.name,
     quantity: ingredient.quantity,
@@ -52,7 +78,7 @@ function toAttemptIngredients(recipe: RecipeWithRelations) {
   }));
 }
 
-function toAttemptInstructions(recipe: RecipeWithRelations) {
+function toAttemptInstructions(recipe: RecipeWithRelations): SessionInstruction[] {
   return (recipe.instructions ?? []).map((instruction) => ({
     stepNumber: instruction.stepNumber,
     content: instruction.content,
@@ -113,7 +139,11 @@ export function CookWithMeSession({
   onComplete,
   mealPlanId,
 }: CookWithMeSessionProps) {
-  const instructions = recipe.instructions ?? [];
+  const [actualIngredients, setActualIngredients] = useState<SessionIngredient[]>(() => toAttemptIngredients(recipe));
+  const [actualInstructions, setActualInstructions] = useState<SessionInstruction[]>(() => toAttemptInstructions(recipe));
+  const [nextTryIngredients, setNextTryIngredients] = useState<SessionIngredient[]>(() => toAttemptIngredients(recipe));
+  const [nextTryInstructions, setNextTryInstructions] = useState<SessionInstruction[]>(() => toAttemptInstructions(recipe));
+  const instructions = actualInstructions;
   const [stepIndex, setStepIndex] = useState(0);
   const [timers, setTimers] = useState<Record<number, TimerState>>({});
   const previousTimersRef = useRef<Record<number, TimerState>>({});
@@ -123,6 +153,8 @@ export function CookWithMeSession({
   const [completed, setCompleted] = useState(false);
   const [sessionEaseRating, setSessionEaseRating] = useState(0);
   const [nextTimeNotes, setNextTimeNotes] = useState("");
+  const [saveNextTry, setSaveNextTry] = useState(false);
+  const [showNextTryEditor, setShowNextTryEditor] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,9 +162,15 @@ export function CookWithMeSession({
   const currentInstruction = instructions[stepIndex];
   const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
   const currentStepIngredients = useMemo(
-    () => matchIngredientsForStep(currentInstruction?.content ?? "", recipe.ingredients ?? []),
-    [currentInstruction?.content, recipe.ingredients]
+    () => matchIngredientsForStep(currentInstruction?.content ?? "", actualIngredients),
+    [actualIngredients, currentInstruction?.content]
   );
+  const currentStepIngredientEdits = useMemo(() => {
+    const names = new Set(currentStepIngredients.map((hint) => hint.name.toLowerCase()));
+    return actualIngredients
+      .map((ingredient, index) => ({ ingredient, index }))
+      .filter(({ ingredient }) => names.has(ingredient.name.toLowerCase()));
+  }, [actualIngredients, currentStepIngredients]);
   const totalSteps = instructions.length;
   const progress = totalSteps > 0 ? ((stepIndex + 1) / totalSteps) * 100 : 0;
 
@@ -249,16 +287,62 @@ export function CookWithMeSession({
     });
   }, [currentInstruction, stepIndex]);
 
+  const updateActualInstruction = useCallback((index: number, patch: Partial<SessionInstruction>) => {
+    setActualInstructions((items) =>
+      items.map((instruction, itemIndex) =>
+        itemIndex === index ? { ...instruction, ...patch } : instruction
+      )
+    );
+  }, []);
+
+  const updateActualInstructionHeat = useCallback((index: number, heat: HeatLevel) => {
+    setActualInstructions((items) =>
+      items.map((instruction, itemIndex) => {
+        if (itemIndex !== index) return instruction;
+        const { cleanTip } = parseHeatFromTip(instruction.tip);
+        return { ...instruction, tip: encodeHeatInTip(heat, cleanTip) };
+      })
+    );
+  }, []);
+
+  const updateActualIngredient = useCallback((index: number, patch: Partial<SessionIngredient>) => {
+    setActualIngredients((items) =>
+      items.map((ingredient, itemIndex) =>
+        itemIndex === index ? { ...ingredient, ...patch } : ingredient
+      )
+    );
+  }, []);
+
+  const updateNextTryIngredient = useCallback((index: number, patch: Partial<SessionIngredient>) => {
+    setSaveNextTry(true);
+    setNextTryIngredients((items) =>
+      items.map((ingredient, itemIndex) =>
+        itemIndex === index ? { ...ingredient, ...patch } : ingredient
+      )
+    );
+  }, []);
+
+  const updateNextTryInstruction = useCallback((index: number, patch: Partial<SessionInstruction>) => {
+    setSaveNextTry(true);
+    setNextTryInstructions((items) =>
+      items.map((instruction, itemIndex) =>
+        itemIndex === index ? { ...instruction, ...patch } : instruction
+      )
+    );
+  }, []);
+
   const saveChangeNote = useCallback(() => {
     const trimmed = changeDraft.trim();
-    if (!trimmed) return;
     const stepLabel = currentInstruction
-      ? `Step ${currentInstruction.stepNumber}: ${trimmed}`
-      : trimmed;
+      ? `Step ${currentInstruction.stepNumber}: ${trimmed || "Updated step, heat, or ingredient amounts"}`
+      : trimmed || "Updated cooking details";
     setChangeNotes((notes) => [...notes, stepLabel]);
+    setNextTryIngredients(actualIngredients);
+    setNextTryInstructions(actualInstructions);
+    setSaveNextTry(true);
     setChangeDraft("");
     setShowChangeCapture(false);
-  }, [changeDraft, currentInstruction]);
+  }, [actualIngredients, actualInstructions, changeDraft, currentInstruction]);
 
   const goNext = useCallback(() => {
     if (stepIndex >= totalSteps - 1) {
@@ -302,8 +386,8 @@ export function CookWithMeSession({
           notes: sessionSummary || null,
           changeNotes,
           nextTime: nextTimeNotes.trim() || null,
-          ingredientsSnapshot: toAttemptIngredients(recipe),
-          instructionsSnapshot: toAttemptInstructions(recipe),
+          ingredientsSnapshot: actualIngredients,
+          instructionsSnapshot: normalizeInstructions(actualInstructions),
           cookedAt: new Date().toISOString(),
         }),
       });
@@ -313,6 +397,25 @@ export function CookWithMeSession({
         throw new Error(body.error || "Failed to save cooking attempt");
       }
 
+      const savedAttempt = await response.json().catch(() => null);
+
+      if (saveNextTry) {
+        const nextTryResponse = await fetch(`/api/recipes/${recipe.id}/next-try`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourceAttemptId: savedAttempt?.id ?? null,
+            notes: nextTimeNotes.trim() || sessionSummary || null,
+            ingredients: nextTryIngredients,
+            instructions: normalizeInstructions(nextTryInstructions),
+          }),
+        });
+        if (!nextTryResponse.ok) {
+          const body = await nextTryResponse.json().catch(() => ({}));
+          throw new Error(body.error || "Attempt saved, but next try could not be saved");
+        }
+      }
+
       await onComplete?.();
       onClose();
     } catch (err) {
@@ -320,7 +423,7 @@ export function CookWithMeSession({
     } finally {
       setSaving(false);
     }
-  }, [changeNotes, sessionEaseRating, mealPlanId, nextTimeNotes, onClose, onComplete, recipe, sessionSummary]);
+  }, [actualIngredients, actualInstructions, changeNotes, sessionEaseRating, mealPlanId, nextTimeNotes, nextTryIngredients, nextTryInstructions, onClose, onComplete, recipe, saveNextTry, sessionSummary]);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#17131f] text-white">
@@ -386,11 +489,111 @@ export function CookWithMeSession({
                 </label>
                 <textarea
                   value={nextTimeNotes}
-                  onChange={(event) => setNextTimeNotes(event.target.value)}
+                  onChange={(event) => {
+                    setNextTimeNotes(event.target.value);
+                    if (event.target.value.trim()) setSaveNextTry(true);
+                  }}
                   rows={4}
                   placeholder="Texture, timing, seasoning, missing family trick..."
                   className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
                 />
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <label className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={saveNextTry}
+                      onChange={(event) => setSaveNextTry(event.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 accent-[#f7c86a]"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-white">Save as private next try</span>
+                      <span className="block text-xs leading-5 text-white/55">Keeps this as the version to test next time without changing the definitive recipe.</span>
+                    </span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNextTryEditor((open) => !open);
+                      setSaveNextTry(true);
+                    }}
+                    className="mt-3 rounded-full border border-[#f7c86a]/35 px-3 py-2 text-xs font-semibold text-[#f7c86a] transition hover:bg-[#f7c86a]/10"
+                  >
+                    {showNextTryEditor ? "Hide next try draft" : "Edit next try draft"}
+                  </button>
+
+                  {showNextTryEditor && (
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Ingredients next time</p>
+                        <div className="mt-2 space-y-2">
+                          {nextTryIngredients.map((ingredient, index) => (
+                            <div key={index} className="grid grid-cols-[1fr_72px_84px] gap-2">
+                              <input
+                                value={ingredient.name}
+                                onChange={(event) => updateNextTryIngredient(index, { name: event.target.value })}
+                                className="min-w-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                              />
+                              <input
+                                value={ingredient.quantity ?? ""}
+                                onChange={(event) => updateNextTryIngredient(index, { quantity: event.target.value ? Number(event.target.value) : null })}
+                                inputMode="decimal"
+                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                placeholder="qty"
+                              />
+                              <select
+                                value={ingredient.unit ?? ""}
+                                onChange={(event) => updateNextTryIngredient(index, { unit: event.target.value || null })}
+                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                              >
+                                {SNAPSHOT_UNITS.map((unit) => (
+                                  <option key={unit || "none"} value={unit} className="text-[#17131f]">{unit || "unit"}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Steps next time</p>
+                        <div className="mt-2 space-y-2">
+                          {nextTryInstructions.map((instruction, index) => {
+                            const { heat } = parseHeatFromTip(instruction.tip);
+                            return (
+                              <div key={index} className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                                <div className="mb-2 flex items-center gap-2">
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">{index + 1}</span>
+                                  <select
+                                    value={heat ?? ""}
+                                    onChange={(event) => {
+                                      const { cleanTip } = parseHeatFromTip(instruction.tip);
+                                      updateNextTryInstruction(index, { tip: encodeHeatInTip((event.target.value || null) as HeatLevel, cleanTip) });
+                                    }}
+                                    className="rounded-lg border border-white/10 bg-white/10 px-2 py-1 text-xs text-white outline-none"
+                                  >
+                                    {HEAT_LEVELS.map((level) => (
+                                      <option key={level ?? "none"} value={level ?? ""} className="text-[#17131f]">
+                                        {level && HEAT_CONFIG[level] ? HEAT_CONFIG[level].shortLabel : "No heat"}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <textarea
+                                  value={instruction.content}
+                                  onChange={(event) => updateNextTryInstruction(index, { content: event.target.value })}
+                                  rows={2}
+                                  className="w-full resize-none rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {changeNotes.length > 0 && (
                   <div className="mt-5 rounded-2xl bg-black/20 p-4">
@@ -513,25 +716,91 @@ export function CookWithMeSession({
 
               <section className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4">
                 {showChangeCapture ? (
-                  <div>
-                    <label className="text-sm font-medium text-white/80">
-                      What changed on this step?
-                    </label>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-white/80">
+                        This cook
+                      </label>
+                      <textarea
+                        value={currentInstruction?.content ?? ""}
+                        onChange={(event) => updateActualInstruction(stepIndex, { content: event.target.value })}
+                        rows={3}
+                        autoFocus
+                        className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                      <label className="block">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Heat used</span>
+                        <select
+                          value={currentStepMeta.heat ?? ""}
+                          onChange={(event) => updateActualInstructionHeat(stepIndex, (event.target.value || null) as HeatLevel)}
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                        >
+                          {HEAT_LEVELS.map((heat) => (
+                            <option key={heat ?? "none"} value={heat ?? ""} className="text-[#17131f]">
+                              {heat && HEAT_CONFIG[heat] ? HEAT_CONFIG[heat].label : "No heat"}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Timer tried</span>
+                        <div className="mt-1 rounded-xl border border-white/10 bg-white/10 px-3 py-2 font-mono text-sm text-white">
+                          {formatTime(currentTimer?.duration ?? detectStepTimerSeconds(currentInstruction?.content ?? ""))}
+                        </div>
+                      </label>
+                    </div>
+
+                    {currentStepIngredientEdits.length > 0 && (
+                      <div className="rounded-2xl border border-white/10 bg-black/15 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Amounts used</p>
+                        <div className="mt-2 space-y-2">
+                          {currentStepIngredientEdits.map(({ ingredient, index }) => (
+                            <div key={index} className="grid grid-cols-[1fr_72px_84px] gap-2">
+                              <input
+                                value={ingredient.name}
+                                onChange={(event) => updateActualIngredient(index, { name: event.target.value })}
+                                className="min-w-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                              />
+                              <input
+                                value={ingredient.quantity ?? ""}
+                                onChange={(event) => updateActualIngredient(index, { quantity: event.target.value ? Number(event.target.value) : null })}
+                                inputMode="decimal"
+                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                placeholder="qty"
+                              />
+                              <select
+                                value={ingredient.unit ?? ""}
+                                onChange={(event) => updateActualIngredient(index, { unit: event.target.value || null })}
+                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                              >
+                                {SNAPSHOT_UNITS.map((unit) => (
+                                  <option key={unit || "none"} value={unit} className="text-[#17131f]">{unit || "unit"}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <textarea
                       value={changeDraft}
                       onChange={(event) => setChangeDraft(event.target.value)}
-                      rows={3}
-                      autoFocus
-                      placeholder="I used less soy sauce, cooked longer, swapped ingredient..."
-                      className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
+                      rows={2}
+                      placeholder="Optional note: why this changed, sensory cue, family tip..."
+                      className="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
                     />
-                    <div className="mt-3 flex gap-2">
+
+                    <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={saveChangeNote}
                         className="rounded-full bg-[#f7c86a] px-4 py-2 text-sm font-semibold text-[#17131f]"
                       >
-                        Save note
+                        Save structured change
                       </button>
                       <button
                         type="button"
