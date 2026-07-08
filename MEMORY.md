@@ -2306,3 +2306,14 @@ Checks:
 
 - `npx eslint src/components/recipes/HalfStarRating.tsx src/components/versions/CookAlongCapture.tsx src/components/recipes/IngredientList.tsx` passed.
 - `npm run build` passed from app/.
+
+## 2026-07-08 - Attempts, versions, cook difficulty, and step amount cues
+
+- Clarified the product model in UI: `Log cook` now creates an attempt directly, with explicit `Attempt only` vs `Attempt + version` save choices. Version creation no longer reads as the default outcome of logging a cook.
+- Added attempt creation support to `POST /api/recipes/:id/versions` only when `createAttempt` is explicitly requested, and kept direct `POST /api/recipes/:id/attempts` for attempt-only logs.
+- Cook-with-me completion now asks `How hard was this session?` and uses a 1-5 emoji difficulty scale; attempts/activity labels now read `Difficulty` instead of `Ease`.
+- Added read-only ingredient amount hints under matched steps in recipe steps, single-dish Cook with Me, and multi-dish Cook with Me. Recipe title input now uses the app sans styling instead of the editorial serif.
+- Fixed activity grouping to use the actual attempt cooked date rather than the meal-plan scheduled date.
+- Updated `ROADMAP.md` with the next slice: structured Cook with Me ingredient/step/heat/timer edits, next-time edits that can become candidate versions, and explicit Edit/Save mode on recipe core sections.
+- Validation: targeted `npx eslint` passed with existing `<img>` warnings only; `npm run build` passed; `git diff --check` passed.
+- Follow-up: Cook with Me still has free-text change/next-time notes in the session itself; the structured editor is intentionally roadmaped rather than partially patched.

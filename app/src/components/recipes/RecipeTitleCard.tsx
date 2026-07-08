@@ -64,7 +64,7 @@ export function RecipeTitleCard({
           onBlur();
         }}
         placeholder={UNTITLED_RECIPE}
-        className="app-editorial-title w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-3xl leading-tight text-[#1A1A1A] outline-none transition placeholder:text-[#800020]/35 hover:border-[#800020]/15 focus:border-[#800020]/35 focus:bg-white focus:ring-4 focus:ring-[#800020]/10 sm:text-4xl"
+        className="w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-2xl font-semibold leading-tight text-[#1A1A1A] outline-none transition placeholder:text-[#800020]/35 hover:border-[#800020]/15 focus:border-[#800020]/35 focus:bg-white focus:ring-4 focus:ring-[#800020]/10 sm:text-3xl"
       />
       <span className="mt-2 block text-xs text-neutral-400">
         Last updated {formatDateTime(recipe.updatedAt)}

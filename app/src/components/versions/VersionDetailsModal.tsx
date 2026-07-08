@@ -40,7 +40,7 @@ interface VersionDetailsModalProps {
 
 const METHOD_LABELS: Record<string, { icon: string; label: string }> = {
   ai_capture: { icon: "🎙️", label: "AI Capture" },
-  cook_along: { icon: "👨‍🍳", label: "Cook Along" },
+  cook_along: { icon: "👨‍🍳", label: "Logged Cook" },
   manual: { icon: "✏️", label: "Manual Edit" },
   refinement: { icon: "🔄", label: "Refinement" },
 };

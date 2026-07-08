@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { recipeVersions, recipes } from "@/db/schema";
+import { recipeAttempts, recipeVersions, recipes } from "@/db/schema";
 import { and, desc, eq, inArray, like, max, or } from "drizzle-orm";
-import { ensureVersionLabelColumn } from "@/db/ensure-schema";
+import { ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable, ensureVersionLabelColumn } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe, recipesVisibleTo } from "@/lib/recipe-access";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+function normalizeRating(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const rating = Number(value);
+  if (!Number.isFinite(rating)) return null;
+  const rounded = Math.round(rating * 2) / 2;
+  if (rounded < 0.5 || rounded > 5) return null;
+  return rounded;
+}
 
 // ─── GET /api/recipes/:id/versions ─────────────────────────
 // Returns the full fork tree's versions so the timeline can show the
@@ -161,7 +171,35 @@ export async function POST(request: NextRequest, context: RouteContext) {
       cookingSessionDate,
       photos,
       setActive = false,
+      createAttempt = false,
+      attemptNotes,
+      attemptChangeNotes,
+      attemptCookedAt,
+      attemptRating,
+      attemptDishRating,
     } = body;
+
+    const normalizedAttemptRating = normalizeRating(attemptRating);
+    const normalizedAttemptDishRating = normalizeRating(attemptDishRating);
+
+    if (createAttempt && attemptRating !== undefined && attemptRating !== null && normalizedAttemptRating === null) {
+      return NextResponse.json(
+        { error: "attemptRating must be a half-star value from 0.5 to 5" },
+        { status: 400 }
+      );
+    }
+
+    if (createAttempt && attemptDishRating !== undefined && attemptDishRating !== null && normalizedAttemptDishRating === null) {
+      return NextResponse.json(
+        { error: "attemptDishRating must be a half-star value from 0.5 to 5" },
+        { status: 400 }
+      );
+    }
+
+    if (createAttempt) {
+      await ensureRecipeAttemptsTable();
+      await ensureRecipeAttemptDishRatingColumn();
+    }
 
     // Get next version number
     const maxResult = await db
@@ -244,11 +282,64 @@ export async function POST(request: NextRequest, context: RouteContext) {
         .where(eq(recipes.id, recipeId));
     }
 
+    let createdAttempt: typeof recipeAttempts.$inferSelect | null = null;
+    if (createAttempt) {
+      const now = new Date().toISOString();
+      const notes = typeof attemptNotes === "string" && attemptNotes.trim()
+        ? attemptNotes.trim()
+        : null;
+      const changeNotes = Array.isArray(attemptChangeNotes)
+        ? attemptChangeNotes.filter((note) => typeof note === "string" && note.trim()).map((note) => note.trim())
+        : [];
+      const cookedAt = typeof attemptCookedAt === "string" && attemptCookedAt.trim()
+        ? attemptCookedAt
+        : now;
+
+      const [attempt] = await db
+        .insert(recipeAttempts)
+        .values({
+          recipeId,
+          versionId: newVersion.id,
+          promotedVersionId: newVersion.id,
+          userId: currentUser.id,
+          cookedAt,
+          rating: normalizedAttemptRating,
+          dishRating: normalizedAttemptDishRating,
+          notes,
+          changeNotes: changeNotes.length ? JSON.stringify(changeNotes) : null,
+          ingredientsSnapshot: ingredientsData ? JSON.stringify(ingredientsData) : null,
+          instructionsSnapshot: instructionsData ? JSON.stringify(instructionsData) : null,
+          createdAt: now,
+        })
+        .returning();
+
+      createdAttempt = attempt;
+
+      await trackUsageEvent({
+        userId: currentUser.id,
+        eventName: "cook_attempt_created",
+        source: "log_cook",
+        recipeId,
+        properties: {
+          version_id: newVersion.id,
+          has_rating: normalizedAttemptRating !== null,
+          rating: normalizedAttemptRating ?? null,
+          has_dish_rating: normalizedAttemptDishRating !== null,
+          change_notes_count: changeNotes.length,
+          ingredients_count: Array.isArray(ingredientsData) ? ingredientsData.length : 0,
+          steps_count: Array.isArray(instructionsData) ? instructionsData.length : 0,
+          created_version: true,
+        },
+        path: requestPath(request),
+      });
+    }
+
     return NextResponse.json({
       ...newVersion,
       ingredients: ingredientsData ?? [],
       instructions: instructionsData ?? [],
       photos: photos ?? [],
+      createdAttempt,
     }, { status: 201 });
   } catch (error) {
     console.error("POST /api/recipes/[id]/versions error:", error);

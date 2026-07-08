@@ -168,7 +168,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     await trackUsageEvent({
       userId: currentUser.id,
       eventName: "cook_attempt_created",
-      source: "cook_with_me",
+      source: typeof body.source === "string" ? body.source : "cook_with_me",
       recipeId,
       mealPlanId: body.mealPlanId ? Number(body.mealPlanId) : null,
       properties: {

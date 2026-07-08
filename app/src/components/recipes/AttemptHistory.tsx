@@ -29,6 +29,7 @@ function formatCookedAt(value: string): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "Asia/Singapore",
   });
 }
 
@@ -221,7 +222,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
         <EmptyState
           className="mt-4"
           title="No attempts yet"
-          description="Finish a cook-with-me session to log cooking ease, changes, and next-time notes. Rate the dish here or from Activity after eating."
+          description="Use Log cook or finish a cook-with-me session to record an attempt, changes, and next-time notes. Rate the dish here or from Activity after eating."
         />
       ) : (
         <div className="mt-4 space-y-3">
@@ -238,7 +239,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                       {formatCookedAt(attempt.cookedAt)}
                     </p>
                     <div className="mt-1">
-                      <RatingPill rating={attempt.rating} label="Ease" />
+                      <RatingPill rating={attempt.rating} label="Difficulty" />
                       {attempt.dishRating && <div className="mt-1"><RatingPill rating={attempt.dishRating} label="Dish" /></div>}
                     </div>
                   </div>
@@ -281,7 +282,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                 {isEditing ? (
                   <div className="mt-3 space-y-2 rounded-lg border border-[var(--ui-border)] bg-white p-3">
                     <label className="block text-xs font-semibold text-[var(--ui-muted)]">
-                      Cooking ease
+                      Cooking difficulty
                       <input
                         value={draftRating}
                         onChange={(event) => setDraftRating(event.target.value)}
@@ -290,7 +291,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                         max="5"
                         step="0.5"
                         className="mt-1 h-9 w-full rounded-md border border-[var(--ui-border)] px-2 text-sm text-[var(--ui-text)]"
-                        placeholder="4.5"
+                        placeholder="1 calm, 5 too much"
                       />
                     </label>
                     <label className="block text-xs font-semibold text-[var(--ui-muted)]">

@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChefHat, Clock3, Minus, Plus, TimerReset, X } from "lucide-react";
-import { StarFilledIcon, StarIcon } from "@radix-ui/react-icons";
 import type { RecipeWithRelations } from "@/store/RecipeStore";
 import { playTimerAlarm, primeTimerAlarm } from "@/lib/timer-alarm";
 import { detectStepTimerSeconds } from "@/lib/step-timers";
 import { parseHeatFromTip } from "@/lib/instruction-heat";
 import { HeatChip } from "./HeatChip";
+import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
 
 interface BatchCookMeal {
   recipe: RecipeWithRelations;
@@ -57,39 +57,42 @@ function toAttemptInstructions(recipe: RecipeWithRelations) {
   }));
 }
 
-function HalfStarRating({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+const DIFFICULTY_OPTIONS = [
+  { value: 1, emoji: "🙂", label: "Calm" },
+  { value: 2, emoji: "😐", label: "Manageable" },
+  { value: 3, emoji: "😅", label: "Busy" },
+  { value: 4, emoji: "😰", label: "Stressful" },
+  { value: 5, emoji: "🤯", label: "Too much" },
+];
+
+function DifficultyRating({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Cooking ease rating">
-      {[1, 2, 3, 4, 5].map((star) => {
-        const fill = value >= star ? "full" : value >= star - 0.5 ? "half" : "empty";
-        return (
-          <div key={star} className="relative h-8 w-8">
-            <StarIcon className="absolute inset-0 h-8 w-8 text-white/30" />
-            {fill !== "empty" && (
-              <div className={fill === "half" ? "absolute inset-0 w-4 overflow-hidden" : "absolute inset-0"} aria-hidden="true">
-                <StarFilledIcon className="h-8 w-8 text-[#f7c86a]" />
-              </div>
+    <div>
+      <div className="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="Cooking difficulty rating">
+        {DIFFICULTY_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            role="radio"
+            aria-checked={value === option.value}
+            aria-label={"Difficulty " + option.value + " out of 5: " + option.label}
+            className={"flex min-h-14 flex-col items-center justify-center rounded-xl border px-1.5 py-2 transition " + (
+              value === option.value
+                ? "border-[#f7c86a] bg-[#f7c86a]/20 text-white ring-2 ring-[#f7c86a]/30"
+                : "border-white/10 bg-white/10 text-white/70 hover:border-[#f7c86a]/45 hover:bg-white/15"
             )}
-            <button
-              type="button"
-              onClick={() => onChange(star - 0.5)}
-              className="absolute inset-y-0 left-0 w-1/2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-[#f7c86a]/50"
-              role="radio"
-              aria-checked={value === star - 0.5}
-              aria-label={"Rate " + (star - 0.5).toFixed(1).replace(".0", "") + " out of 5"}
-            />
-            <button
-              type="button"
-              onClick={() => onChange(star)}
-              className="absolute inset-y-0 right-0 w-1/2 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-[#f7c86a]/50"
-              role="radio"
-              aria-checked={value === star}
-              aria-label={"Rate " + star + " out of 5"}
-            />
-          </div>
-        );
-      })}
-      <span className="ml-1 text-xs text-white/60">{value > 0 ? value.toFixed(1).replace(".0", "") + "/5" : "Not rated"}</span>
+          >
+            <span className="text-lg" aria-hidden="true">{option.emoji}</span>
+            <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.08em]">{option.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-1 flex items-center justify-between text-[10px] text-white/45">
+        <span>Not hard</span>
+        <span className="text-white/70">{value > 0 ? value + "/5" : "Not rated"}</span>
+        <span>Very hard</span>
+      </div>
     </div>
   );
 }
@@ -306,14 +309,14 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
             <div className="mx-auto max-w-3xl space-y-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f7c86a]">Session complete</p>
-                <h3 className="mt-2 text-3xl font-semibold">Rate each cooking session</h3>
+                <h3 className="mt-2 text-3xl font-semibold">How hard was each session?</h3>
                 <p className="mt-2 text-sm leading-6 text-white/60">Dish ratings happen later from Activity after everyone has eaten.</p>
               </div>
               {meals.map((meal) => (
                 <section key={meal.recipe.id} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
                   <h4 className="text-base font-semibold">{meal.recipe.title}</h4>
                   <div className="mt-3">
-                    <HalfStarRating
+                    <DifficultyRating
                       value={sessionEaseRatings[meal.recipe.id] ?? 0}
                       onChange={(value) => setSessionEaseRatings((state) => ({ ...state, [meal.recipe.id]: value }))}
                     />
@@ -366,6 +369,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                 const stepIndex = getStepIndex(recipe.id);
                 const currentInstruction = instructions[stepIndex];
                 const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
+                const stepIngredientHints = matchIngredientsForStep(currentInstruction?.content ?? "", recipe.ingredients ?? []);
                 const isDone = Boolean(completedRecipes[recipe.id]);
                 const key = timerKey(recipe.id, stepIndex);
                 const currentTimer = timers[key];
@@ -395,6 +399,19 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                           </div>
                         )}
                         <p className="mt-3 min-h-[5rem] text-2xl font-semibold leading-snug">{currentInstruction?.content}</p>
+                        {stepIngredientHints.length > 0 && (
+                          <div className="mt-3 rounded-xl border border-[#800020]/10 bg-[#800020]/5 px-3 py-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#800020]">Amounts in this step</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {stepIngredientHints.map((hint) => (
+                                <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs text-neutral-700 shadow-sm">
+                                  <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                                  <span className="truncate">{hint.name}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         {currentStepMeta.cleanTip && <p className="mt-3 rounded-xl bg-[#800020]/5 px-3 py-2 text-sm text-[#521224]">{currentStepMeta.cleanTip}</p>}
 
                         <div className="mt-4 rounded-xl border border-[#800020]/10 bg-[#800020]/5 p-3">

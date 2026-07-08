@@ -4,16 +4,18 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { Trash2 } from "lucide-react";
-import type { Instruction } from "@/db/schema";
+import type { Ingredient, Instruction } from "@/db/schema";
 import {
   encodeHeatInTip,
   HEAT_CONFIG,
   HEAT_LEVELS,
   parseHeatFromTip,
 } from "@/lib/instruction-heat";
+import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
 
 interface RecipeStepsProps {
   instructions: Instruction[];
+  ingredients?: Ingredient[];
   recipeId: number;
   onAdd: (
     recipeId: number,
@@ -91,6 +93,7 @@ function GripIcon({ className }: { className?: string }) {
 
 export function RecipeSteps({
   instructions,
+  ingredients = [],
   recipeId,
   onAdd,
   onUpdate,
@@ -237,6 +240,7 @@ export function RecipeSteps({
         >
           {displayOrder.map(({ step, displayIdx }) => {
             const { heat } = parseHeatFromTip(step.tip);
+            const amountHints = matchIngredientsForStep(step.content, ingredients);
             const isDragging =
               dragIdx !== null &&
               step.id === sorted[dragIdx]?.id;
@@ -295,6 +299,19 @@ export function RecipeSteps({
                     }}
                     className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                   />
+                  {amountHints.length > 0 && (
+                    <div className="mt-2 ml-2 flex flex-wrap gap-1.5" aria-label="Ingredient amounts mentioned in this step">
+                      {amountHints.map((hint) => (
+                        <span
+                          key={hint.name}
+                          className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#800020]/10 bg-white px-2 py-1 text-[11px] text-neutral-600"
+                        >
+                          <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                          <span className="truncate">{hint.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {/* Heat indicator */}
                   <button
                     type="button"

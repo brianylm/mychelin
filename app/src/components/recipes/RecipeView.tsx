@@ -1169,6 +1169,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           onAdd={addInstruction}
           onUpdate={updateInstruction}
           onDelete={deleteInstruction}
+          ingredients={selectedRecipe.ingredients ?? []}
         />
 
         {/* ─── Library info tier — collapsed by default ───── */}
@@ -1251,7 +1252,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
               Versions & Refinement
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 onClick={() => setShowCookWithMe(true)}
                 className="flex items-center gap-1 rounded-xl bg-[#17131f] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#800020]"
@@ -1261,10 +1262,10 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               </button>
               <button
                 onClick={() => setShowCookAlong(true)}
-                className="hidden items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15 sm:flex"
+                className="flex items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15"
               >
                 <PencilLine className="h-3.5 w-3.5" />
-                Log version
+                Log cook
               </button>
             </div>
           </div>
@@ -1359,7 +1360,13 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         <CookAlongCapture
           recipeId={selectedRecipe.id}
           onClose={() => setShowCookAlong(false)}
-          onComplete={() => setVersionTimelineKey((k) => k + 1)}
+          onComplete={(mode) => {
+            setVersionTimelineKey((k) => k + 1);
+            qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+            qc.invalidateQueries({ queryKey: ["recipes"] });
+            addToast(mode === "attempt_only" ? "Attempt saved" : "Attempt and version saved", "success");
+            if (mode === "attempt_and_version") promptVersionFeedback();
+          }}
         />
       )}
 

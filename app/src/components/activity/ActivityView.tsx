@@ -103,7 +103,9 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
   const groups = useMemo(() => {
     const byDate = new Map<string, ActivityAttempt[]>();
     for (const attempt of attempts) {
-      const key = attempt.mealDate ?? formatDateKey(attempt.cookedAt);
+      // Activity is the actual cooking log, so group by when the attempt was saved,
+      // not by the meal plan's scheduled date. The meal plan still supplies meal type.
+      const key = formatDateKey(attempt.cookedAt);
       byDate.set(key, [...(byDate.get(key) ?? []), attempt]);
     }
     return Array.from(byDate.entries()).sort(([a], [b]) => b.localeCompare(a));
@@ -230,7 +232,7 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
                                     <Clock3 className="h-3.5 w-3.5" />
                                     {formatTime(attempt.cookedAt)}
                                   </span>
-                                  <RatingPill value={attempt.sessionEaseRating} label="Ease" />
+                                  <RatingPill value={attempt.sessionEaseRating} label="Difficulty" />
                                   <RatingPill value={attempt.dishRating} label="Dish" />
                                 </div>
                               </div>

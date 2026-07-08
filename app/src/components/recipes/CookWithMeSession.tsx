@@ -14,12 +14,12 @@ import {
   TimerReset,
   X,
 } from "lucide-react";
-import { StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
 import type { RecipeWithRelations } from "@/store/RecipeStore";
 import { playTimerAlarm, primeTimerAlarm } from "@/lib/timer-alarm";
 import { detectStepTimerSeconds } from "@/lib/step-timers";
 import { parseHeatFromTip } from "@/lib/instruction-heat";
 import { HeatChip } from "./HeatChip";
+import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
 
 interface CookWithMeSessionProps {
   recipe: RecipeWithRelations;
@@ -61,7 +61,15 @@ function toAttemptInstructions(recipe: RecipeWithRelations) {
   }));
 }
 
-function HalfStarRating({
+const DIFFICULTY_OPTIONS = [
+  { value: 1, emoji: "🙂", label: "Calm" },
+  { value: 2, emoji: "😐", label: "Manageable" },
+  { value: 3, emoji: "😅", label: "Busy" },
+  { value: 4, emoji: "😰", label: "Stressful" },
+  { value: 5, emoji: "🤯", label: "Too much" },
+];
+
+function DifficultyRating({
   value,
   onChange,
 }: {
@@ -70,46 +78,30 @@ function HalfStarRating({
 }) {
   return (
     <div>
-      <div className="flex gap-1.5" role="radiogroup" aria-label="Cooking ease rating">
-        {[1, 2, 3, 4, 5].map((star) => {
-          const fill = value >= star ? "full" : value >= star - 0.5 ? "half" : "empty";
-          return (
-            <div key={star} className="relative h-11 w-11">
-              <StarIcon className="absolute inset-1 h-9 w-9 text-white/30" />
-              {fill !== "empty" && (
-                <div
-                  className={fill === "half" ? "absolute inset-1 w-[18px] overflow-hidden" : "absolute inset-1"}
-                  aria-hidden="true"
-                >
-                  <StarFilledIcon className="h-9 w-9 text-[#f7c86a]" />
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => onChange(star - 0.5)}
-                className="absolute inset-y-0 left-0 w-1/2 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-[#f7c86a]/50"
-                role="radio"
-                aria-checked={value === star - 0.5}
-                aria-label={
-                  "Rate " + (star - 0.5).toFixed(1).replace(".0", "") + " out of 5"
-                }
-              />
-              <button
-                type="button"
-                onClick={() => onChange(star)}
-                className="absolute inset-y-0 right-0 w-1/2 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#f7c86a]/50"
-                role="radio"
-                aria-checked={value === star}
-                aria-label={"Rate " + star + " out of 5"}
-              />
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Cooking difficulty rating">
+        {DIFFICULTY_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            role="radio"
+            aria-checked={value === option.value}
+            aria-label={"Difficulty " + option.value + " out of 5: " + option.label}
+            className={"flex min-h-20 flex-col items-center justify-center rounded-2xl border px-2 py-3 transition " + (
+              value === option.value
+                ? "border-[#f7c86a] bg-[#f7c86a]/20 text-white ring-2 ring-[#f7c86a]/30"
+                : "border-white/10 bg-white/10 text-white/70 hover:border-[#f7c86a]/45 hover:bg-white/15"
+            )}
+          >
+            <span className="text-2xl" aria-hidden="true">{option.emoji}</span>
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em]">{option.label}</span>
+          </button>
+        ))}
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px] text-white/45">
-        <span>Hard</span>
-        <span className="text-white/70">{value > 0 ? value.toFixed(1).replace(".0", "") + "/5" : "Not rated"}</span>
-        <span>Easy</span>
+        <span>Not hard</span>
+        <span className="text-white/70">{value > 0 ? value + "/5" : "Not rated"}</span>
+        <span>Very hard</span>
       </div>
     </div>
   );
@@ -137,6 +129,10 @@ export function CookWithMeSession({
 
   const currentInstruction = instructions[stepIndex];
   const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
+  const currentStepIngredients = useMemo(
+    () => matchIngredientsForStep(currentInstruction?.content ?? "", recipe.ingredients ?? []),
+    [currentInstruction?.content, recipe.ingredients]
+  );
   const totalSteps = instructions.length;
   const progress = totalSteps > 0 ? ((stepIndex + 1) / totalSteps) * 100 : 0;
 
@@ -152,7 +148,7 @@ export function CookWithMeSession({
       });
     }
     if (sessionEaseRating > 0) {
-      parts.push(`Cooking ease rating: ${sessionEaseRating}/5`);
+      parts.push("Cooking difficulty rating: " + sessionEaseRating + "/5");
     }
     if (nextTimeNotes.trim()) {
       parts.push(`Next time: ${nextTimeNotes.trim()}`);
@@ -375,14 +371,14 @@ export function CookWithMeSession({
                   Session complete
                 </p>
                 <h3 className="mt-3 text-3xl font-semibold leading-tight">
-                  How easy was this cooking session?
+                  How hard was this session?
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-white/60">
-                  Rate the cooking flow now. You can rate the dish later from Activity after eating.
+                  Rate how stressful the cook felt now. You can rate the dish later from Activity after eating.
                 </p>
 
                 <div className="mt-6">
-                  <HalfStarRating value={sessionEaseRating} onChange={setSessionEaseRating} />
+                  <DifficultyRating value={sessionEaseRating} onChange={setSessionEaseRating} />
                 </div>
 
                 <label className="mt-6 block text-sm font-medium text-white/80">
@@ -444,6 +440,20 @@ export function CookWithMeSession({
                 <p className="mt-6 text-3xl font-semibold leading-tight tracking-normal sm:text-5xl">
                   {currentInstruction?.content}
                 </p>
+
+                {currentStepIngredients.length > 0 && (
+                  <div className="mt-5 rounded-2xl border border-[#800020]/10 bg-[#800020]/5 px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]">Amounts in this step</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {currentStepIngredients.map((hint) => (
+                        <span key={hint.name} className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm">
+                          <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                          <span className="truncate">{hint.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {currentStepMeta.cleanTip && (
                   <p className="mt-5 rounded-2xl bg-[#800020]/5 px-4 py-3 text-base leading-7 text-[#521224]">

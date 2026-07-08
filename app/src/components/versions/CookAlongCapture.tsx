@@ -42,15 +42,30 @@ interface AdjustedIngredient extends Ingredient {
 interface CookAlongCaptureProps {
   recipeId: number;
   onClose: () => void;
-  onComplete?: () => void;
+  onComplete?: (mode: "attempt_only" | "attempt_and_version") => void;
 }
 
 const STEPS = [
-  { label: "Choose Version", icon: "📋" },
-  { label: "Cook & Adjust", icon: "🍳" },
-  { label: "Rate & Notes", icon: "⭐" },
+  { label: "Choose version", icon: "📋" },
+  { label: "Adjust amounts", icon: "🍳" },
+  { label: "Rate & notes", icon: "⭐" },
   { label: "Save", icon: "✅" },
 ];
+
+function formatAmount(quantity?: number, unit?: string) {
+  return [quantity ?? "agak-agak", unit].filter(Boolean).join(" ");
+}
+
+function describeIngredientChange(ingredient: AdjustedIngredient) {
+  return ingredient.name + ": " + formatAmount(ingredient.quantity, ingredient.unit) + " -> " + formatAmount(ingredient.actualQuantity, ingredient.actualUnit);
+}
+
+function buildAttemptNotes(closenessRating: number, closenessNotes: string) {
+  const parts: string[] = [];
+  if (closenessRating > 0) parts.push("Closeness: " + closenessRating.toFixed(1).replace(".0", "") + "/5");
+  if (closenessNotes.trim()) parts.push(closenessNotes.trim());
+  return parts.length ? parts.join("\n") : null;
+}
 
 export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCaptureProps) {
   const [step, setStep] = useState(0);
@@ -59,8 +74,10 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
   const [adjustedIngredients, setAdjustedIngredients] = useState<AdjustedIngredient[]>([]);
   const [closenessRating, setClosenessRating] = useState(0);
   const [closenessNotes, setClosenessNotes] = useState("");
+  const [saveMode, setSaveMode] = useState<"attempt_only" | "attempt_and_version">("attempt_and_version");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -101,6 +118,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
   const handleSave = async () => {
     if (!selectedVersion) return;
     setSaving(true);
+    setError(null);
     try {
       const actualIngredients = adjustedIngredients.map((ing) => ({
         name: ing.name,
@@ -110,6 +128,35 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
           ? `${ing.notes ? ing.notes + " | " : ""}Originally: ${ing.quantity} ${ing.unit}`
           : ing.notes,
       }));
+      const changedIngredientNotes = adjustedIngredients
+        .filter((ing) => ing.adjusted)
+        .map(describeIngredientChange);
+      const cookedAt = new Date().toISOString();
+      const attemptNotes = buildAttemptNotes(closenessRating, closenessNotes);
+
+      if (saveMode === "attempt_only") {
+        const response = await fetch(`/api/recipes/${recipeId}/attempts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            versionId: selectedVersion.id,
+            notes: attemptNotes,
+            changeNotes: changedIngredientNotes,
+            ingredientsSnapshot: actualIngredients,
+            instructionsSnapshot: selectedVersion.instructions,
+            cookedAt,
+            source: "log_cook",
+          }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || "Failed to save attempt");
+        }
+        onComplete?.("attempt_only");
+        onClose();
+        return;
+      }
+
       const res = await fetch(`/api/recipes/${recipeId}/versions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -118,15 +165,26 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
           captureMethod: "cook_along",
           ingredients: actualIngredients,
           instructions: selectedVersion.instructions,
-          changeNote: `Cook-along from v${labelOf(selectedVersion)}`,
+          changeNote: `Logged cook from v${labelOf(selectedVersion)}`,
           closenessRating: closenessRating || null,
           closenessNotes: closenessNotes || null,
-          cookingSessionDate: Math.floor(Date.now() / 1000),
+          cookingSessionDate: Math.floor(new Date(cookedAt).getTime() / 1000),
+          createAttempt: true,
+          attemptNotes,
+          attemptChangeNotes: changedIngredientNotes,
+          attemptCookedAt: cookedAt,
           setActive: false,
         }),
       });
-      if (res.ok) { onComplete?.(); onClose(); }
-    } catch { /* silent */ } finally {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to save cooked version");
+      }
+      onComplete?.("attempt_and_version");
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save cooked version");
+    } finally {
       setSaving(false);
     }
   };
@@ -141,7 +199,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
             <span>👨‍🍳</span>
-            <h3 className="text-sm font-semibold text-neutral-800">Cook Along</h3>
+            <h3 className="text-sm font-semibold text-neutral-800">Log cook</h3>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100">
             <Cross2Icon className="h-4 w-4" />
@@ -172,7 +230,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
               {/* Step 0: Choose Version */}
               {step === 0 && (
                 <div className="space-y-3">
-                  <p className="text-sm text-neutral-600">Which version are you cooking from?</p>
+                  <p className="text-sm text-neutral-600">Which version did you cook from?</p>
                   {versions.length === 0 ? (
                     <p className="py-8 text-center text-sm text-neutral-400">No versions yet. Create one first!</p>
                   ) : (
@@ -203,7 +261,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
               {/* Step 1: Adjust Ingredients */}
               {step === 1 && (
                 <div className="space-y-3">
-                  <p className="text-sm text-neutral-600">Note the actual measurements you used:</p>
+                  <p className="text-sm text-neutral-600">Record any actual measurements you used. Changed ingredients become attempt notes automatically.</p>
                   <div className="space-y-2">
                     {adjustedIngredients.map((ing, i) => (
                       <div key={i} className={`rounded-xl border px-3 py-3 ${ing.adjusted ? "border-[#800020]/30 bg-[#800020]/5" : "border-neutral-200"}`}>
@@ -247,7 +305,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <p className="mb-2 text-sm font-medium text-neutral-700">How close was this to the &quot;real&quot; recipe?</p>
+                    <p className="mb-2 text-sm font-medium text-neutral-700">How close was this cook to the version you want?</p>
                     <HalfStarRating
                       value={closenessRating || null}
                       onChange={setClosenessRating}
@@ -269,10 +327,11 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
               {step === 3 && (
                 <div className="space-y-4">
                   <div className="rounded-xl bg-[#800020]/5 p-4">
-                    <h4 className="mb-2 text-sm font-semibold text-[#521224]">Session Summary</h4>
+                    <h4 className="mb-2 text-sm font-semibold text-[#521224]">Cook log summary</h4>
                     <div className="space-y-1 text-xs text-[#800020]">
                       <p>Cooked from: v{selectedVersion ? labelOf(selectedVersion) : ""}</p>
                       <p>Adjusted: {adjustedIngredients.filter((i) => i.adjusted).length} ingredients</p>
+                      <p>Attempt: will be saved to cooking log</p>
                       {closenessRating > 0 && (
                         <div className="flex items-center gap-1">
                           <span>Closeness:</span>
@@ -282,14 +341,41 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                       {closenessNotes && <p>Notes: {closenessNotes}</p>}
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Save as</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setSaveMode("attempt_and_version")}
+                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_and_version" ? "border-[#800020]/40 bg-[#800020]/5" : "border-neutral-200 bg-white hover:border-[#800020]/20")}
+                      >
+                        <span className="text-sm font-semibold text-neutral-900">Attempt + version</span>
+                        <span className="mt-1 block text-xs leading-5 text-neutral-500">Use this when the cook changed the recipe enough to preserve a new version.</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSaveMode("attempt_only")}
+                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_only" ? "border-[#800020]/40 bg-[#800020]/5" : "border-neutral-200 bg-white hover:border-[#800020]/20")}
+                      >
+                        <span className="text-sm font-semibold text-neutral-900">Attempt only</span>
+                        <span className="mt-1 block text-xs leading-5 text-neutral-500">Use this when you cooked it but are not ready to change the recipe.</span>
+                      </button>
+                    </div>
+                  </div>
                   <p className="text-xs text-neutral-500">
-                    This will create a new &quot;cook along&quot; version with your actual measurements.
+                    New versions are not definitive unless you set them later.
                   </p>
                 </div>
               )}
             </>
           )}
         </div>
+
+        {error && (
+          <p className="mx-4 mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        )}
 
         {/* Navigation */}
         <div className="sticky bottom-0 flex items-center justify-between border-t border-neutral-100 bg-white px-4 py-3">
@@ -309,7 +395,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
               {saving
                 ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 : <CheckIcon className="h-3 w-3" />}
-              Save Version
+              {saveMode === "attempt_only" ? "Save attempt" : "Save attempt + version"}
             </button>
           )}
         </div>
