@@ -4,7 +4,7 @@ import { ingredients, recipes } from "@/db/schema";
 import { eq, max } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -23,6 +23,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe ingredients" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

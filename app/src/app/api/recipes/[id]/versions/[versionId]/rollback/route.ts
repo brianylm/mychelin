@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { recipeVersions, recipes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -26,6 +26,13 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "Version not found" },
         { status: 404 }
+      );
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to set the definitive version" },
+        { status: 403 }
       );
     }
 

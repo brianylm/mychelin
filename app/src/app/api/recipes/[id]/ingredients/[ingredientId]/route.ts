@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { ingredients } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -23,6 +23,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "Ingredient not found" },
         { status: 404 }
+      );
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, Number(id)))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe ingredients" },
+        { status: 403 }
       );
     }
 
@@ -69,6 +76,13 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "Ingredient not found" },
         { status: 404 }
+      );
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, Number(id)))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe ingredients" },
+        { status: 403 }
       );
     }
 

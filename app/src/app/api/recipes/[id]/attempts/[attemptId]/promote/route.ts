@@ -7,7 +7,7 @@ import {
   ensureVersionLabelColumn,
 } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -46,6 +46,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to promote attempts for this recipe" },
+        { status: 403 }
+      );
     }
 
     const [attempt] = await db

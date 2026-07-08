@@ -4,7 +4,7 @@ import { recipes, ingredients, instructions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -72,6 +72,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "Recipe not found" },
         { status: 404 }
+      );
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe" },
+        { status: 403 }
       );
     }
 
@@ -215,6 +222,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
     }
 
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     const existing = await db.query.recipes.findFirst({
@@ -350,6 +364,13 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       return NextResponse.json(
         { error: "Recipe not found" },
         { status: 404 }
+      );
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe" },
+        { status: 403 }
       );
     }
 

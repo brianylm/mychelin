@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { recipePhotos, recipes } from "@/db/schema";
 import { and, eq, max } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -44,6 +44,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe photos" },
+        { status: 403 }
+      );
     }
 
     const { photoUrl } = await request.json();
@@ -87,6 +94,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
+    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit this recipe photos" },
+        { status: 403 }
+      );
     }
 
     // Verify recipe exists

@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
     // else's collection.
     if (bookId != null) {
       const membership = await db
-        .select({ id: bookMembers.id })
+        .select({ id: bookMembers.id, role: bookMembers.role })
         .from(bookMembers)
         .where(
           and(
@@ -241,9 +241,9 @@ export async function POST(request: NextRequest) {
           )
         )
         .limit(1);
-      if (!membership.length) {
+      if (!membership.length || !["owner", "editor"].includes(membership[0].role)) {
         return NextResponse.json(
-          { error: "You don't have access to that book" },
+          { error: "You don't have edit access to that book" },
           { status: 403 }
         );
       }

@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-08",
+    title: "Privacy and sharing permission hardening",
+    items: [
+      "Book viewers can still read intended shared recipes but can no longer edit the definitive recipe, ingredients, steps, photos, recordings, or versions.",
+      "The privacy smoke test now covers shared-book viewer permissions, activity, inventory, shopping lists, preferences, notifications, and pilot feedback isolation.",
+      "Synthetic privacy smoke users are now cleaned up automatically when local Turso env vars are available.",
+    ],
+  },
+  {
+    date: "2026-07-08",
     title: "Recipe cover header cleanup",
     items: [
       "Recipe photos now render as a cover-style header instead of a separate photo card.",

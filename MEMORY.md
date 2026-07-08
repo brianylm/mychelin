@@ -2352,3 +2352,12 @@ Checks:
 - Demoted reading/editing and save controls into compact header actions; save status now appears only while editing.
 - Files touched: app/src/components/recipes/RecipeView.tsx, app/src/components/recipes/PhotoUploadSection.tsx, app/src/components/recipes/RecipeTitleCard.tsx, app/src/components/recipes/RecipeSaveStatus.tsx, app/src/lib/changelog.ts, MEMORY.md.
 - Validation: targeted eslint passed with existing img warnings; npm run build passed.
+
+## 2026-07-08 - Privacy access-control hardening
+
+- Tightened definitive recipe mutation routes so book viewers can read intended shared recipes but cannot edit the recipe, ingredients, instructions, photos, recordings, versions, definitive version, or promote attempts into shared versions.
+- Changed recipe creation with a bookId to require owner/editor membership rather than any book membership.
+- Expanded the two-user privacy smoke test to cover shared-book viewer permissions, activity, inventory, shopping-list, preferences, notifications, pilot feedback, admin-only routes, and production cleanup of synthetic users.
+- Added signup-rate-limit resilience to the smoke script: when production signup throttles synthetic users, the script seeds them directly in Turso and still verifies login through the app.
+- Files touched: app/src/app/api/recipes/route.ts, recipe mutation routes under app/src/app/api/recipes/[id]/, app/scripts/privacy-smoke.mjs, app/src/lib/changelog.ts, MEMORY.md.
+- Validation: node --check privacy-smoke passed; targeted npx eslint passed; npm run build passed; git diff --check passed; production deploy aliased to mychelin-sg.vercel.app; production privacy smoke passed 85 assertions and deleted synthetic privacy-smoke users.
