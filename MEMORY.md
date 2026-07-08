@@ -2336,3 +2336,11 @@ Checks:
 - Cook With Me completion can save a private next-try draft with editable ingredients and steps via the existing /next-try API, without promoting it to a version or changing the definitive recipe.
 - Updated ROADMAP.md and the in-app changelog for this edit/save and structured cook-change slice.
 - Validation: targeted eslint passed with existing img warnings; npm run build passed; git diff --check passed.
+
+## 2026-07-08 - Recipe page read-mode and ingredient layout fixes
+
+- Fixed recipe edit-mode seeding so contentful existing recipes open in reading mode; only just-created recipes and truly empty drafts auto-open editable.
+- Moved the photo section above the recipe title so the recipe page starts with a visual header image.
+- Tightened editable ingredient row layout so ingredient, quantity, unit, approximate toggle, and delete remain on one row.
+- Improved step ingredient matching with simple singular/plural token variants, e.g. red onion can match onion/onions in step text.
+- Validation: targeted eslint passed with existing img warnings; npm run build passed; git diff --check passed.

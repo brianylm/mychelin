@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-08",
+    title: "Recipe page layout fixes",
+    items: [
+      "Contentful existing recipes now open in reading mode instead of edit mode.",
+      "Recipe photos now sit above the title as the visual header for the recipe page.",
+      "Ingredient edit rows keep name, quantity, unit, approximate, and delete controls on one row, and step amount matching handles simple singular/plural cases.",
+    ],
+  },
+  {
+    date: "2026-07-08",
     title: "Safer recipe editing and structured cook changes",
     items: [
       "Existing recipes now open in reading mode, with an explicit Edit recipe and Save and lock flow for core recipe fields.",

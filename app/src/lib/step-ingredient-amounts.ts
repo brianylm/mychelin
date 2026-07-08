@@ -46,6 +46,27 @@ function significantTokens(value: string): string[] {
     .filter((token) => token.length >= 3 && !STOP_WORDS.has(token));
 }
 
+function singularize(token: string): string {
+  if (token.endsWith("ies") && token.length > 4) return token.slice(0, -3) + "y";
+  if (token.endsWith("oes") || token.endsWith("xes") || token.endsWith("ches") || token.endsWith("shes")) {
+    return token.slice(0, -2);
+  }
+  if (token.endsWith("s") && token.length > 3) return token.slice(0, -1);
+  return token;
+}
+
+function tokenVariants(token: string): string[] {
+  const base = singularize(token);
+  const variants = new Set([token, base, base + "s"]);
+  if (base.endsWith("y")) variants.add(base.slice(0, -1) + "ies");
+  if (base.endsWith("o") || base.endsWith("x") || base.endsWith("ch") || base.endsWith("sh")) variants.add(base + "es");
+  return Array.from(variants).filter((item) => item.length >= 3);
+}
+
+function tokenAppears(stepTokens: Set<string>, token: string): boolean {
+  return tokenVariants(token).some((variant) => stepTokens.has(variant));
+}
+
 export function formatIngredientAmount(ingredient: IngredientLike): string {
   const quantityText = ingredient.quantityText?.trim();
   if (quantityText) return quantityText;
@@ -70,6 +91,7 @@ export function matchIngredientsForStep(
   if (!step) return [];
 
   const paddedStep = " " + step + " ";
+  const stepTokens = new Set(step.split(" ").filter(Boolean));
   const matches: StepIngredientAmount[] = [];
 
   for (const ingredient of ingredients) {
@@ -80,7 +102,7 @@ export function matchIngredientsForStep(
     const phraseMatches = normalizedName && paddedStep.includes(" " + normalizedName + " ");
     const tokenMatches =
       !phraseMatches &&
-      significantTokens(name).some((token) => paddedStep.includes(" " + token + " "));
+      significantTokens(name).some((token) => tokenAppears(stepTokens, token));
 
     if (phraseMatches || tokenMatches) {
       matches.push({

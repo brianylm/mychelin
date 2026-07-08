@@ -444,13 +444,13 @@ export function IngredientList({
           {ingredients.map((ing) => (
             <li
               key={ing.id}
-              className="group flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/50 px-3 py-2.5 sm:flex-row sm:items-center"
+              className="group flex items-center gap-2 rounded-xl border border-neutral-100 bg-neutral-50/50 px-3 py-2.5"
             >
               <div
-                className={`grid w-full flex-1 items-center gap-2 ${
+                className={`grid min-w-0 flex-1 items-center gap-2 ${
                   ing.approximate
-                    ? "grid-cols-1 sm:grid-cols-[1fr_1.4fr]"
-                    : "grid-cols-1 sm:grid-cols-[1fr_auto_auto]"
+                    ? "grid-cols-[minmax(0,1fr)_minmax(84px,0.7fr)]"
+                    : "grid-cols-[minmax(0,1fr)_56px_74px] sm:grid-cols-[minmax(0,1fr)_64px_86px]"
                 }`}
               >
                 {/* Name first */}
@@ -482,7 +482,7 @@ export function IngredientList({
                   <>
                     {/* Qty */}
                     {scale !== 1 && ing.quantity ? (
-                      <span className="w-full rounded bg-white px-2 py-1.5 text-left text-sm font-medium tabular-nums text-[#800020] sm:w-14 sm:bg-transparent sm:px-1 sm:py-0 sm:text-center">
+                      <span className="w-full rounded bg-white px-1.5 py-1.5 text-center text-sm font-medium tabular-nums text-[#800020]">
                         {formatScaledQuantity(ing.quantity, scale)}
                       </span>
                     ) : (
@@ -495,7 +495,7 @@ export function IngredientList({
                             e.target.value ? parseFloat(e.target.value) : null
                           )
                         }
-                        className="w-full rounded border border-transparent bg-transparent px-1 text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:w-14 sm:text-center"
+                        className="w-full rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                         placeholder="qty"
                       />
                     )}
@@ -505,7 +505,7 @@ export function IngredientList({
                       onChange={(e) =>
                         handleFieldBlur(ing, "unit", e.target.value || null)
                       }
-                      className="w-full rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:w-[85px]"
+                      className="w-full rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
                     >
                       <option value="">unit</option>
                       {UNIT_OPTIONS.filter(Boolean).map((u) => (
@@ -518,7 +518,7 @@ export function IngredientList({
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 sm:justify-start">
+              <div className="flex shrink-0 items-center justify-end gap-1.5">
                 <SaveIndicator isSaving={savingId === ing.id} />
 
                 {/* Toggle: precise ↔ approximate */}

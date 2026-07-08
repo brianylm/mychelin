@@ -391,11 +391,12 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       setRecipeEditMode(false);
       return;
     }
+    const isEmptyRecipe =
+      (recipe.ingredients?.length ?? 0) === 0 &&
+      (recipe.instructions?.length ?? 0) === 0;
     const isFreshRecipe =
-      recipe.status === "draft" ||
       recipe.id === justCreatedRecipeId ||
-      ((recipe.ingredients?.length ?? 0) === 0 &&
-        (recipe.instructions?.length ?? 0) === 0);
+      (recipe.status === "draft" && isEmptyRecipe);
     setRecipeEditMode(isFreshRecipe);
   }, [selectedRecipe?.id, justCreatedRecipeId]);
 
@@ -1252,6 +1253,39 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
 
         {/* ─── Core tier — always visible ──────────────── */}
 
+        {/* Photos */}
+        <PhotoUploadSection
+          photos={(selectedRecipe.photos ?? []).map((p) => ({
+            id: String(p.id),
+            url: p.blobUrl,
+            sortOrder: p.sortOrder ?? 0,
+          }))}
+          coverUrl={selectedRecipe.imageUrl}
+          onUpload={handlePhotoUpload}
+          onRemove={handlePhotoRemove}
+          readOnly={!recipeEditMode}
+          onSetCover={async (photoUrl) => {
+            if (!selectedRecipe) return;
+            const response = await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ photoUrl }),
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              addToast(body.error || "Failed to update cover photo", "error");
+              return;
+            }
+            qc.setQueryData<import("@/store/RecipeStore").RecipeWithRelations | null>(
+              ["recipe", selectedRecipe.id],
+              (current) => current ? { ...current, imageUrl: photoUrl } : current
+            );
+            qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+            qc.invalidateQueries({ queryKey: ["recipes"] });
+            addToast("Cover photo updated", "success");
+          }}
+        />
+
         {/* Title — first so it's always reachable on mobile
             even with the keyboard raised */}
         <RecipeTitleCard
@@ -1380,39 +1414,6 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             </a>
           </div>
         )}
-
-        {/* Photos */}
-        <PhotoUploadSection
-          photos={(selectedRecipe.photos ?? []).map((p) => ({
-            id: String(p.id),
-            url: p.blobUrl,
-            sortOrder: p.sortOrder ?? 0,
-          }))}
-          coverUrl={selectedRecipe.imageUrl}
-          onUpload={handlePhotoUpload}
-          onRemove={handlePhotoRemove}
-          readOnly={!recipeEditMode}
-          onSetCover={async (photoUrl) => {
-            if (!selectedRecipe) return;
-            const response = await fetch(`/api/recipes/${selectedRecipe.id}/photos`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ photoUrl }),
-            });
-            const body = await response.json().catch(() => ({}));
-            if (!response.ok) {
-              addToast(body.error || "Failed to update cover photo", "error");
-              return;
-            }
-            qc.setQueryData<import("@/store/RecipeStore").RecipeWithRelations | null>(
-              ["recipe", selectedRecipe.id],
-              (current) => current ? { ...current, imageUrl: photoUrl } : current
-            );
-            qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
-            qc.invalidateQueries({ queryKey: ["recipes"] });
-            addToast("Cover photo updated", "success");
-          }}
-        />
 
         {/* Serving Scaler */}
         <ServingScaler
