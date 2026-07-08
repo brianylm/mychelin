@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { RecipeStoreProvider, useRecipeStore, type RecipeWithRelations } from "@/store/RecipeStore";
@@ -11,23 +12,67 @@ import { AuthScreen } from "@/components/auth/AuthScreen";
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
-import { MealPlanView } from "@/components/planner/MealPlanView";
-import { ProfileView } from "@/components/profile/ProfileView";
-import { ActivityView } from "@/components/activity/ActivityView";
-import { DiscoverView } from "@/components/discover/DiscoverView";
-import { FridgeView } from "@/components/fridge/FridgeView";
-import { ShoppingListView } from "@/components/shopping/ShoppingListView";
-import { RecipeSearchModal } from "@/components/search/RecipeSearchModal";
-import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
-import { ConversationCapture } from "@/components/capture/ConversationCapture";
-import { AiDraftRecipeModal } from "@/components/capture/AiDraftRecipeModal";
-import { ManualRecipeScratchpadModal } from "@/components/capture/ManualRecipeScratchpadModal";
-import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
-import { CookWithMeSession } from "@/components/recipes/CookWithMeSession";
-import { MultiCookWithMeSession } from "@/components/recipes/MultiCookWithMeSession";
-import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import { useToast } from "@/context/ToastContext";
 import { ClipboardPaste, Link, Mic2, PencilLine, Sparkles } from "lucide-react";
+
+const LazyPanelFallback = () => (
+  <div className="flex flex-1 items-center justify-center bg-surface">
+    <LoadingAnimation />
+  </div>
+);
+
+const MealPlanView = dynamic(
+  () => import("@/components/planner/MealPlanView").then((mod) => mod.MealPlanView),
+  { loading: LazyPanelFallback }
+);
+const ProfileView = dynamic(
+  () => import("@/components/profile/ProfileView").then((mod) => mod.ProfileView),
+  { loading: LazyPanelFallback }
+);
+const ActivityView = dynamic(
+  () => import("@/components/activity/ActivityView").then((mod) => mod.ActivityView),
+  { loading: LazyPanelFallback }
+);
+const DiscoverView = dynamic(
+  () => import("@/components/discover/DiscoverView").then((mod) => mod.DiscoverView),
+  { loading: LazyPanelFallback }
+);
+const FridgeView = dynamic(
+  () => import("@/components/fridge/FridgeView").then((mod) => mod.FridgeView),
+  { loading: LazyPanelFallback }
+);
+const ShoppingListView = dynamic(
+  () => import("@/components/shopping/ShoppingListView").then((mod) => mod.ShoppingListView),
+  { loading: LazyPanelFallback }
+);
+const RecipeSearchModal = dynamic(
+  () => import("@/components/search/RecipeSearchModal").then((mod) => mod.RecipeSearchModal)
+);
+const PasteRecipeModal = dynamic(
+  () => import("@/components/capture/PasteRecipeModal").then((mod) => mod.PasteRecipeModal)
+);
+const ConversationCapture = dynamic(
+  () => import("@/components/capture/ConversationCapture").then((mod) => mod.ConversationCapture)
+);
+const AiDraftRecipeModal = dynamic(
+  () => import("@/components/capture/AiDraftRecipeModal").then((mod) => mod.AiDraftRecipeModal)
+);
+const ManualRecipeScratchpadModal = dynamic(
+  () => import("@/components/capture/ManualRecipeScratchpadModal").then((mod) => mod.ManualRecipeScratchpadModal)
+);
+const OnboardingFlow = dynamic(
+  () => import("@/components/onboarding/OnboardingFlow").then((mod) => mod.OnboardingFlow),
+  { loading: LazyPanelFallback }
+);
+const CookWithMeSession = dynamic(
+  () => import("@/components/recipes/CookWithMeSession").then((mod) => mod.CookWithMeSession)
+);
+const MultiCookWithMeSession = dynamic(
+  () => import("@/components/recipes/MultiCookWithMeSession").then((mod) => mod.MultiCookWithMeSession)
+);
+const PilotFeedbackPrompt = dynamic(
+  () => import("@/components/pilot/PilotFeedbackPrompt").then((mod) => mod.PilotFeedbackPrompt)
+);
 
 type PilotFeedbackStage = "first_capture" | "first_cook" | "first_version" | "pilot_general";
 

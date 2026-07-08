@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Libre_Baskerville, Newsreader } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 
 const brandSerif = Newsreader({
@@ -65,10 +66,12 @@ export function LandingPage() {
       <header className="fixed top-4 left-1/2 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">
         <nav className="relative flex items-center justify-between gap-3 rounded-full bg-white/75 px-3 py-2 shadow-[0_14px_38px_rgba(40,26,19,0.12)] ring-1 ring-white/70 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/60 sm:px-5 sm:py-3">
           <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
-            <img
-              src="/images/mychelin-icon.png"
+            <Image
+              src="/images/mychelin-icon-96.webp"
               alt=""
               aria-hidden="true"
+              width={28}
+              height={28}
               className="h-7 w-7 shrink-0 object-contain"
             />
             <span
@@ -118,9 +121,12 @@ export function LandingPage() {
       {/* ==================== HERO ==================== */}
       <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
         {/* Background image */}
-        <img
-          src="/images/hero-family-table.jpg"
+        <Image
+          src="/images/hero-family-table-1600.avif"
           alt="A family sharing a home-cooked meal together"
+          fill
+          priority
+          sizes="100vw"
           className="landing-hero-image absolute inset-0 h-full w-full object-cover"
         />
         {/* Mobile readability scrim. Keeps faces visible and reserves
