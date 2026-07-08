@@ -2317,3 +2317,12 @@ Checks:
 - Updated `ROADMAP.md` with the next slice: structured Cook with Me ingredient/step/heat/timer edits, next-time edits that can become candidate versions, and explicit Edit/Save mode on recipe core sections.
 - Validation: targeted `npx eslint` passed with existing `<img>` warnings only; `npm run build` passed; `git diff --check` passed.
 - Follow-up: Cook with Me still has free-text change/next-time notes in the session itself; the structured editor is intentionally roadmaped rather than partially patched.
+
+## 2026-07-08 - Definitive sharing and private next tries
+
+- Added a definitive shared-recipe DTO and rewired public share APIs so shared recipes expose only whitelisted definitive recipe fields, not attempts, next tries, private ratings, meal plans, or owner metadata.
+- Tightened share creation so public recipe links are owner-controlled, while shared book recipe details validate membership through direct and join-table book links.
+- Added recipe_next_tries schema/migration/ensure-schema support plus APIs to save, dismiss, and promote a private next try into a version; promotion now requires recipe owner/editor permission.
+- Recipe attempt history can save next-time notes as a private next try; recipe pages show the active next try with promote, promote-and-set-definitive, and discard actions.
+- Updated ROADMAP.md and in-app changelog for the private next try / definitive sharing model.
+- Validation: targeted eslint passed with existing img/savedId warnings; npm run build passed; git diff --check passed. npm run smoke:privacy was blocked by existing local Edge signup/bcrypt setImmediate failure before reaching privacy assertions.

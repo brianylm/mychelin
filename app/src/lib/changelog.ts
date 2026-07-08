@@ -6,6 +6,15 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-07-08",
+    title: "Private next tries and safer sharing",
+    items: [
+      "Attempts can now be saved as a private next try before changing the recipe version history.",
+      "A next try can be promoted to a version, or promoted and set as the definitive recipe when it is ready.",
+      "Shared recipe links now expose the definitive recipe snapshot only; attempts, next tries, private ratings, meal plans, and owner metadata are not included.",
+    ],
+  },
+  {
     date: "2026-07-07",
     title: "Recipe editing polish",
     items: [

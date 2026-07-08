@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { shareLinks, recipes, books, ingredients, instructions } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { shareLinks, books } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import {
+  getSharedRecipeDTO,
+  isRecipeInSharedBook,
+  listSharedBookRecipeCards,
+} from "@/lib/shared-recipe";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
-// GET /api/share/:token — public access to shared resource
-// Optional: ?recipeId=X to fetch a full recipe within a shared book
+// GET /api/share/:token - public access to shared resource.
+// Recipe payloads are definitive-version DTOs only: no attempts, next-try
+// plans, internal ids, private ratings, meal plans, or owner metadata.
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { token } = await context.params;
@@ -27,19 +33,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const shareLink = link[0];
 
-    // Fetch a specific recipe within a shared book
     if (recipeId && shareLink.resourceType === "book") {
-      const recipe = await db.query.recipes.findFirst({
-        where: and(
-          eq(recipes.id, Number(recipeId)),
-          eq(recipes.bookId, shareLink.resourceId)
-        ),
-        with: {
-          ingredients: { orderBy: (ing, { asc }) => [asc(ing.sortOrder)] },
-          instructions: { orderBy: (inst, { asc }) => [asc(inst.stepNumber)] },
-          photos: { orderBy: (p, { asc }) => [asc(p.sortOrder)] },
-        },
-      });
+      const recipeNumber = Number(recipeId);
+      const belongsToBook = Number.isFinite(recipeNumber)
+        ? await isRecipeInSharedBook(recipeNumber, shareLink.resourceId)
+        : false;
+      const recipe = belongsToBook ? await getSharedRecipeDTO(recipeNumber) : null;
 
       if (!recipe) {
         return NextResponse.json({ error: "Recipe not found in this book" }, { status: 404 });
@@ -53,14 +52,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     if (shareLink.resourceType === "recipe") {
-      const recipe = await db.query.recipes.findFirst({
-        where: eq(recipes.id, shareLink.resourceId),
-        with: {
-          ingredients: { orderBy: (ing, { asc }) => [asc(ing.sortOrder)] },
-          instructions: { orderBy: (inst, { asc }) => [asc(inst.stepNumber)] },
-          photos: { orderBy: (p, { asc }) => [asc(p.sortOrder)] },
-        },
-      });
+      const recipe = await getSharedRecipeDTO(shareLink.resourceId);
 
       if (!recipe) {
         return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
@@ -82,23 +74,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "Book not found" }, { status: 404 });
       }
 
-      // Get recipes in this book
-      const bookRecipes = await db
-        .select({
-          id: recipes.id,
-          title: recipes.title,
-          cuisine: recipes.cuisine,
-          imageUrl: recipes.imageUrl,
-          description: recipes.description,
-        })
-        .from(recipes)
-        .where(eq(recipes.bookId, book.id))
-        .orderBy(recipes.title);
+      const bookRecipes = await listSharedBookRecipeCards(book.id);
 
       return NextResponse.json({
         type: "book",
         permission: shareLink.permission,
-        data: { ...book, recipes: bookRecipes },
+        data: {
+          id: book.id,
+          title: book.title,
+          description: book.description,
+          coverEmoji: book.coverEmoji,
+          coverColor: book.coverColor,
+          recipes: bookRecipes,
+        },
       });
     }
 

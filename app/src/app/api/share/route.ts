@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { shareLinks, books } from "@/db/schema";
+import { shareLinks, books, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { eq, and } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -64,14 +63,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid permission" }, { status: 400 });
     }
 
-    // Verify access before creating a public share token.
+    // Public sharing is owner-controlled. Book membership grants in-app
+    // access, but should not let a viewer/editor mint a public recipe link.
     if (resourceType === "recipe") {
-      if (!(await canUserAccessRecipe(currentUser.id, Number(resourceId)))) {
-        return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+      const recipe = await db.query.recipes.findFirst({
+        where: eq(recipes.id, Number(resourceId)),
+        columns: { userId: true },
+      });
+      if (!recipe || recipe.userId !== currentUser.id) {
+        return NextResponse.json({ error: "Recipe not found or not owned" }, { status: 404 });
       }
     } else {
       const book = await db.query.books.findFirst({
-        where: eq(books.id, resourceId),
+        where: eq(books.id, Number(resourceId)),
       });
       if (!book || book.createdBy !== currentUser.id) {
         return NextResponse.json({ error: "Book not found or not owned" }, { status: 404 });
@@ -85,7 +89,7 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(shareLinks.resourceType, resourceType),
-          eq(shareLinks.resourceId, resourceId),
+          eq(shareLinks.resourceId, Number(resourceId)),
           eq(shareLinks.permission, permission),
           eq(shareLinks.createdBy, currentUser.id)
         )

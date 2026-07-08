@@ -13,6 +13,9 @@ export type UsageEventName =
   | "shopping_list_generated"
   | "cook_attempt_created"
   | "attempt_promoted_to_version"
+  | "next_try_created"
+  | "next_try_dismissed"
+  | "next_try_promoted_to_version"
   | "transcription_completed"
   | "conversation_assist_completed"
   | "pilot_feedback_submitted";

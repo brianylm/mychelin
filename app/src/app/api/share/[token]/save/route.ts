@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
+import { getSharedRecipeDTO } from "@/lib/shared-recipe";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -17,10 +18,10 @@ type RouteContext = { params: Promise<{ token: string }> };
 
 // POST /api/share/[token]/save
 //
-// Save (fork) a shared recipe into the authenticated user's collection.
-// Access is via the share token, not via recipe ownership — this is the
-// public-page "Save to my Mychelin" flow.
-export async function POST(request: NextRequest, context: RouteContext) {
+// Save a shared definitive recipe snapshot into the authenticated user's
+// collection. Attempts, next-try plans, private ratings, meal plans, and
+// owner metadata are intentionally not copied.
+export async function POST(_request: NextRequest, context: RouteContext) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -42,26 +43,30 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const original = await db.query.recipes.findFirst({
+    const originalRow = await db.query.recipes.findFirst({
       where: eq(recipes.id, link.resourceId),
-      with: {
-        ingredients: { orderBy: (ing, { asc }) => [asc(ing.sortOrder)] },
-        instructions: { orderBy: (inst, { asc }) => [asc(inst.stepNumber)] },
-      },
+      columns: { id: true, userId: true },
     });
 
-    if (!original) {
+    if (!originalRow) {
       return NextResponse.json(
         { error: "Original recipe not found" },
         { status: 404 }
       );
     }
 
-    // Don't let users save their own recipe
-    if (original.userId === currentUser.id) {
+    if (originalRow.userId === currentUser.id) {
       return NextResponse.json(
         { error: "This is already your recipe" },
         { status: 409 }
+      );
+    }
+
+    const original = await getSharedRecipeDTO(link.resourceId);
+    if (!original) {
+      return NextResponse.json(
+        { error: "Original recipe not found" },
+        { status: 404 }
       );
     }
 
@@ -86,7 +91,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         familyMember: original.familyMember,
         generation: original.generation,
         sourceUrl: original.sourceUrl,
-        forkedFrom: `${original.id}:${original.title}`,
+        forkedFrom: original.id + ":" + original.title,
         status: "active",
         createdAt: now,
         updatedAt: now,
@@ -95,25 +100,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (original.ingredients.length > 0) {
       await db.insert(ingredients).values(
-        original.ingredients.map((ing) => ({
+        original.ingredients.map((ing, index) => ({
           recipeId: saved.id,
-          catalogIngredientId: ing.catalogIngredientId,
           name: ing.name,
           quantity: ing.quantity,
           unit: ing.unit,
           approximate: ing.approximate,
           quantityText: ing.quantityText,
           notes: ing.notes,
-          sortOrder: ing.sortOrder,
+          sortOrder: index,
         }))
       );
     }
 
     if (original.instructions.length > 0) {
       await db.insert(instructions).values(
-        original.instructions.map((inst) => ({
+        original.instructions.map((inst, index) => ({
           recipeId: saved.id,
-          stepNumber: inst.stepNumber,
+          stepNumber: inst.stepNumber || index + 1,
           content: inst.content,
           tip: inst.tip,
           imageUrl: inst.imageUrl,
@@ -121,7 +125,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Create initial version
     const [version] = await db
       .insert(recipeVersions)
       .values({
@@ -129,25 +132,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
         versionNumber: 1,
         versionLabel: "1",
         captureMethod: "manual",
-        ingredients: JSON.stringify(
-          original.ingredients.map((ing) => ({
-            name: ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            approximate: ing.approximate,
-            quantityText: ing.quantityText,
-            notes: ing.notes,
-          }))
-        ),
-        instructions: JSON.stringify(
-          original.instructions.map((inst) => ({
-            content: inst.content,
-            tip: inst.tip,
-            imageUrl: inst.imageUrl,
-          }))
-        ),
+        ingredients: JSON.stringify(original.ingredients),
+        instructions: JSON.stringify(original.instructions),
         changedBy: currentUser.id,
-        changeNote: "Saved from shared recipe",
+        changeNote: "Saved from shared definitive recipe",
       })
       .returning();
 

@@ -57,7 +57,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 ### Sharing and permissions
 
 - Strengthen family recipe-book invitations.
-- Clarify private vs shared recipes.
+- Clarify private vs shared recipes. Initial rule shipped: public recipe shares expose the definitive recipe snapshot only; attempts, next tries, private ratings, meal plans, and owner metadata stay private.
 - Add tests around auth, recipe access, and invitation boundaries.
 
 ## Medium term
@@ -66,7 +66,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 - Clarify the cooking model in product language and UI: an attempt is one cooked session/log, a version is a reusable recipe snapshot, and the definitive version is the one shown/cooked by default.
 - Add a structured Cook with Me change editor: edit existing ingredient quantity/unit/name, step content, heat, and timing during the session; save those as the attempt snapshot; then choose whether next-time changes become a candidate version.
-- Replace free-text-only next-time notes with ingredient/step edits where possible, while still allowing a short reflection field for sensory notes and family context.
+- Replace free-text-only next-time notes with ingredient/step edits where possible, while still allowing a short reflection field for sensory notes and family context. Foundation shipped: private next tries can be saved from attempts, then promoted to a version and optionally set definitive.
 - Introduce explicit Edit/Save mode on recipe core sections after initial creation so users do not accidentally change accurate recipes while reading or cooking.
 - Simplify the recipe page so the main path stays focused on title, photos, ingredients, steps, timing, and cookability.
 - Move Heritage & Family into progressive prompts instead of a dense form: who taught it, when it is cooked, original dialect terms, sensory cues, and family story can be captured gradually.

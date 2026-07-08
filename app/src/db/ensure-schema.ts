@@ -15,6 +15,7 @@ let planningOwnershipEnsured = false;
 let mealPlanCookedAtEnsured = false;
 let recipeAttemptsEnsured = false;
 let recipeAttemptDishRatingEnsured = false;
+let recipeNextTriesEnsured = false;
 let userOnboardingEnsured = false;
 let usageEventsEnsured = false;
 let notificationsEnsured = false;
@@ -173,6 +174,52 @@ export async function ensureRecipeAttemptDishRatingColumn(): Promise<void> {
   }
 
   recipeAttemptDishRatingEnsured = true;
+}
+
+
+export async function ensureRecipeNextTriesTable(): Promise<void> {
+  if (recipeNextTriesEnsured) return;
+
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) return;
+
+  const client = createClient({ url, authToken });
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS recipe_next_tries (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      recipe_id integer NOT NULL REFERENCES recipes(id) ON DELETE cascade,
+      source_attempt_id integer REFERENCES recipe_attempts(id) ON DELETE set null,
+      source_version_id integer REFERENCES recipe_versions(id) ON DELETE set null,
+      user_id integer REFERENCES users(id) ON DELETE cascade,
+      status text NOT NULL DEFAULT 'active',
+      notes text,
+      ingredients text,
+      instructions text,
+      promoted_version_id integer REFERENCES recipe_versions(id) ON DELETE set null,
+      created_at text NOT NULL,
+      updated_at text NOT NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS recipe_next_tries_recipe_id_idx ON recipe_next_tries(recipe_id)`,
+    `CREATE INDEX IF NOT EXISTS recipe_next_tries_user_id_idx ON recipe_next_tries(user_id)`,
+    `CREATE INDEX IF NOT EXISTS recipe_next_tries_status_idx ON recipe_next_tries(status)`,
+    `CREATE INDEX IF NOT EXISTS recipe_next_tries_source_attempt_id_idx ON recipe_next_tries(source_attempt_id)`,
+    `CREATE INDEX IF NOT EXISTS recipe_next_tries_source_version_id_idx ON recipe_next_tries(source_version_id)`,
+  ];
+
+  for (const statement of statements) {
+    try {
+      await client.execute(statement);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      const msg = message.toLowerCase();
+      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
+        console.warn("ensureRecipeNextTriesTable:", message);
+      }
+    }
+  }
+
+  recipeNextTriesEnsured = true;
 }
 
 

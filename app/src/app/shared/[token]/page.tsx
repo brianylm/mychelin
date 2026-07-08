@@ -22,9 +22,10 @@ interface SharedRecipe {
   familyMember: string | null;
   generation: string | null;
   sourceUrl: string | null;
-  ingredients: { name: string; quantity: number | null; unit: string | null; notes: string | null }[];
-  instructions: { stepNumber: number; content: string; tip: string | null }[];
-  photos: { blobUrl: string; sortOrder: number }[];
+  definitiveVersionLabel: string | null;
+  ingredients: { name: string; quantity: number | null; unit: string | null; approximate?: boolean; quantityText?: string | null; notes: string | null }[];
+  instructions: { stepNumber: number; content: string; tip: string | null; imageUrl?: string | null }[];
+  photos: { blobUrl: string; sortOrder: number | null }[];
 }
 
 interface SharedBook {
@@ -148,11 +149,16 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
 
         {/* Title */}
         <h1 className="text-2xl font-bold text-neutral-900">{r.title}</h1>
-        {r.cuisine && (
-          <span className="mt-2 inline-block rounded-full bg-[#800020]/5 px-3 py-1 text-xs font-medium text-[#800020]">
-            {r.cuisine}
+        <div className="mt-2 flex flex-wrap gap-2">
+          {r.cuisine && (
+            <span className="inline-block rounded-full bg-[#800020]/5 px-3 py-1 text-xs font-medium text-[#800020]">
+              {r.cuisine}
+            </span>
+          )}
+          <span className="inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            Definitive version{r.definitiveVersionLabel ? " " + r.definitiveVersionLabel : ""}
           </span>
-        )}
+        </div>
         {r.description && (
           <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{r.description}</p>
         )}
@@ -215,9 +221,9 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
                   <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-[#800020]/30" />
                   <div>
                     <span className="font-medium text-neutral-800">{ing.name}</span>
-                    {(ing.quantity || ing.unit) && (
-                      <span className={`ml-2 text-sm ${scale !== 1 ? "text-[#800020] font-medium" : "text-neutral-500"}`}>
-                        {ing.quantity ? formatScaledQuantity(ing.quantity, scale) : ""}{ing.unit ? ` ${ing.unit}` : ""}
+                    {(ing.quantityText || ing.quantity || ing.unit) && (
+                      <span className={`ml-2 text-sm ${scale !== 1 && !ing.quantityText ? "text-[#800020] font-medium" : "text-neutral-500"}`}>
+                        {ing.quantityText || (ing.quantity ? formatScaledQuantity(ing.quantity, scale) : "")}{!ing.quantityText && ing.unit ? ` ${ing.unit}` : ""}
                       </span>
                     )}
                     {ing.notes && <p className="mt-0.5 text-xs text-neutral-400">{ing.notes}</p>}

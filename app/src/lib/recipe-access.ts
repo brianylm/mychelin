@@ -83,3 +83,31 @@ export async function canUserAccessRecipe(
     .limit(1);
   return !!row;
 }
+
+export async function canUserEditRecipe(
+  userId: number,
+  recipeId: number
+): Promise<boolean> {
+  const editableBookIds = db
+    .select({ bookId: bookMembers.bookId })
+    .from(bookMembers)
+    .where(
+      and(
+        eq(bookMembers.userId, userId),
+        inArray(bookMembers.role, ["owner", "editor"])
+      )
+    );
+
+  const [row] = await db
+    .select({ id: recipes.id })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.id, recipeId),
+        or(eq(recipes.userId, userId), inArray(recipes.bookId, editableBookIds))
+      )
+    )
+    .limit(1);
+
+  return !!row;
+}

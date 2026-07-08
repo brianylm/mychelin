@@ -330,7 +330,7 @@ export const recipeAttempts = sqliteTable("recipe_attempts", {
   cookedAt: text("cooked_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
-  rating: real("rating"), // 0.5-5, cooking-session ease score
+  rating: real("rating"), // 0.5-5, cooking-session difficulty score
   dishRating: real("dish_rating"), // 0.5-5, food rating captured after eating
   notes: text("notes"),
   changeNotes: text("change_notes"), // JSON stringified cook-session changes
@@ -343,6 +343,39 @@ export const recipeAttempts = sqliteTable("recipe_attempts", {
     { onDelete: "set null" }
   ),
   createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Recipe Next Tries ─────────────────────────────────────
+// Private pending improvement plan for the next cook. Attempts record what
+// happened; next tries record what the user intends to test next. A next try
+// can later be promoted to a recipe version, and a version can be marked
+// definitive via recipes.activeVersionId.
+export const recipeNextTries = sqliteTable("recipe_next_tries", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  sourceAttemptId: integer("source_attempt_id").references(() => recipeAttempts.id, {
+    onDelete: "set null",
+  }),
+  sourceVersionId: integer("source_version_id").references(() => recipeVersions.id, {
+    onDelete: "set null",
+  }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("active"),
+  notes: text("notes"),
+  ingredients: text("ingredients"),
+  instructions: text("instructions"),
+  promotedVersionId: integer("promoted_version_id").references(
+    () => recipeVersions.id,
+    { onDelete: "set null" }
+  ),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
 });
@@ -478,6 +511,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   bookRecipes: many(bookRecipes),
   versions: many(recipeVersions, { relationName: "recipeVersions" }),
   attempts: many(recipeAttempts),
+  nextTries: many(recipeNextTries),
 }));
 
 export const recipeVersionsRelations = relations(recipeVersions, ({ one }) => ({
@@ -515,6 +549,29 @@ export const recipeAttemptsRelations = relations(recipeAttempts, ({ one }) => ({
   }),
   user: one(users, {
     fields: [recipeAttempts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const recipeNextTriesRelations = relations(recipeNextTries, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeNextTries.recipeId],
+    references: [recipes.id],
+  }),
+  sourceAttempt: one(recipeAttempts, {
+    fields: [recipeNextTries.sourceAttemptId],
+    references: [recipeAttempts.id],
+  }),
+  sourceVersion: one(recipeVersions, {
+    fields: [recipeNextTries.sourceVersionId],
+    references: [recipeVersions.id],
+  }),
+  promotedVersion: one(recipeVersions, {
+    fields: [recipeNextTries.promotedVersionId],
+    references: [recipeVersions.id],
+  }),
+  user: one(users, {
+    fields: [recipeNextTries.userId],
     references: [users.id],
   }),
 }));
@@ -705,6 +762,8 @@ export type RecipeVersion = typeof recipeVersions.$inferSelect;
 export type NewRecipeVersion = typeof recipeVersions.$inferInsert;
 export type RecipeAttempt = typeof recipeAttempts.$inferSelect;
 export type NewRecipeAttempt = typeof recipeAttempts.$inferInsert;
+export type RecipeNextTry = typeof recipeNextTries.$inferSelect;
+export type NewRecipeNextTry = typeof recipeNextTries.$inferInsert;
 export type BookTip = typeof bookTips.$inferSelect;
 export type NewBookTip = typeof bookTips.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

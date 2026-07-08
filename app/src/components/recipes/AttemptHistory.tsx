@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, ChevronUp, History, Pencil, Star, Trash2 } from "lucide-react";
+import { ArrowUpRight, ChevronUp, History, Pencil, Star, Target, Trash2 } from "lucide-react";
 import { Button, EmptyState, Panel } from "@/components/ui";
 import { HalfStarRating } from "./HalfStarRating";
 
@@ -20,6 +20,7 @@ interface AttemptHistoryProps {
   recipeId: number;
   refreshKey?: number;
   onPromoted?: () => void;
+  onNextTrySaved?: () => void;
 }
 
 function formatCookedAt(value: string): string {
@@ -44,10 +45,11 @@ function RatingPill({ rating, label }: { rating: number | null; label: string })
   );
 }
 
-export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHistoryProps) {
+export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySaved }: AttemptHistoryProps) {
   const [attempts, setAttempts] = useState<RecipeAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotingId, setPromotingId] = useState<number | null>(null);
+  const [nextTrySavingId, setNextTrySavingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(5);
@@ -107,6 +109,30 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
       setPromotingId(null);
     }
   }, [attempts, loadAttempts, onPromoted, recipeId]);
+
+  const saveAsNextTry = useCallback(async (attempt: RecipeAttempt) => {
+    setNextTrySavingId(attempt.id);
+    setError(null);
+    try {
+      const response = await fetch("/api/recipes/" + recipeId + "/next-try", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceAttemptId: attempt.id,
+          notes: attempt.nextTime ?? attempt.notes ?? null,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to save next try");
+      }
+      onNextTrySaved?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save next try");
+    } finally {
+      setNextTrySavingId(null);
+    }
+  }, [onNextTrySaved, recipeId]);
 
   const startEdit = useCallback((attempt: RecipeAttempt) => {
     setEditingId(attempt.id);
@@ -244,6 +270,17 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted }: AttemptHist
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {(attempt.nextTime || attempt.changeNotes.length > 0) && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        iconEnd={<Target className="h-3.5 w-3.5" />}
+                        loading={nextTrySavingId === attempt.id}
+                        onClick={() => saveAsNextTry(attempt)}
+                      >
+                        Save as next try
+                      </Button>
+                    )}
                     {attempt.promotedVersionId ? (
                       <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
                         Promoted to version

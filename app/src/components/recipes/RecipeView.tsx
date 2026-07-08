@@ -62,12 +62,24 @@ type VersionIngredient = {
   quantity?: number;
   unit?: string;
   notes?: string;
+  approximate?: boolean;
+  quantityText?: string;
+};
+
+type NextTryIngredient = {
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  notes?: string | null;
+  approximate?: boolean | null;
+  quantityText?: string | null;
 };
 
 type VersionInstruction = {
   content?: string;
   text?: string;
   step?: number;
+  stepNumber?: number;
   tip?: string;
   imageUrl?: string;
 };
@@ -87,6 +99,124 @@ type RecipeVersion = {
   instructions: VersionInstruction[];
   sourceVersionId: number | null;
 };
+
+type RecipeNextTry = {
+  id: number;
+  sourceAttemptId: number | null;
+  sourceVersionId: number | null;
+  notes: string | null;
+  ingredients: NextTryIngredient[];
+  instructions: VersionInstruction[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+function formatNextTryAmount(ingredient: NextTryIngredient): string {
+  if (ingredient.quantityText) return ingredient.quantityText;
+  const quantity = ingredient.quantity == null ? "" : String(ingredient.quantity);
+  const unit = ingredient.unit ?? "";
+  return [ingredient.approximate && quantity ? "about " + quantity : quantity, unit]
+    .filter(Boolean)
+    .join(" ") || "agak-agak";
+}
+
+function instructionText(step: VersionInstruction): string {
+  return step.content ?? step.text ?? "";
+}
+
+function NextTryPanel({
+  nextTry,
+  busy,
+  onPromote,
+  onSetDefinitive,
+  onDismiss,
+}: {
+  nextTry: RecipeNextTry;
+  busy: string | null;
+  onPromote: () => void;
+  onSetDefinitive: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700">
+            Private next try
+          </p>
+          <h2 className="mt-1 text-lg font-semibold text-[#241017]">
+            Try this before changing the definitive recipe
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-neutral-600">
+            This is not shared. Promote it to a version only after you want to preserve it.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onPromote}
+            disabled={busy !== null}
+            className="rounded-full bg-[#17131f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#800020] disabled:opacity-60"
+          >
+            {busy === "promote" ? "Promoting..." : "Promote to version"}
+          </button>
+          <button
+            type="button"
+            onClick={onSetDefinitive}
+            disabled={busy !== null}
+            className="rounded-full border border-[#800020]/20 bg-white px-3 py-2 text-xs font-semibold text-[#800020] transition hover:bg-[#800020]/5 disabled:opacity-60"
+          >
+            {busy === "definitive" ? "Setting..." : "Promote + set definitive"}
+          </button>
+          <button
+            type="button"
+            onClick={onDismiss}
+            disabled={busy !== null}
+            className="rounded-full bg-white/70 px-3 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-white disabled:opacity-60"
+          >
+            {busy === "dismiss" ? "Discarding..." : "Discard"}
+          </button>
+        </div>
+      </div>
+
+      {nextTry.notes && (
+        <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-sm leading-6 text-neutral-700">
+          {nextTry.notes}
+        </p>
+      )}
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {nextTry.ingredients.length > 0 && (
+          <div className="rounded-xl bg-white/75 p-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Ingredients to try</h3>
+            <ul className="mt-2 space-y-1.5 text-sm text-neutral-700">
+              {nextTry.ingredients.slice(0, 5).map((ingredient, index) => (
+                <li key={ingredient.name + index} className="flex gap-2">
+                  <span className="font-semibold text-[#521224]">{formatNextTryAmount(ingredient)}</span>
+                  <span>{ingredient.name}</span>
+                </li>
+              ))}
+              {nextTry.ingredients.length > 5 && <li className="text-xs text-neutral-400">+ {nextTry.ingredients.length - 5} more</li>}
+            </ul>
+          </div>
+        )}
+        {nextTry.instructions.length > 0 && (
+          <div className="rounded-xl bg-white/75 p-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Steps to try</h3>
+            <ol className="mt-2 space-y-1.5 text-sm text-neutral-700">
+              {nextTry.instructions.slice(0, 3).map((step, index) => (
+                <li key={index} className="line-clamp-2">
+                  <span className="font-semibold text-[#521224]">{step.step ?? step.stepNumber ?? index + 1}.</span> {instructionText(step)}
+                </li>
+              ))}
+              {nextTry.instructions.length > 3 && <li className="text-xs text-neutral-400">+ {nextTry.instructions.length - 3} more steps</li>}
+            </ol>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const {
@@ -144,6 +274,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   // random pool to recipes whose title or an ingredient matches.
   const [surpriseByOpen, setSurpriseByOpen] = useState(false);
   const [surpriseByQuery, setSurpriseByQuery] = useState("");
+  const [nextTry, setNextTry] = useState<RecipeNextTry | null>(null);
+  const [nextTryBusy, setNextTryBusy] = useState<string | null>(null);
 
   const promptVersionFeedback = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -244,6 +376,28 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       setIngredientScale(1);
     }
   }, [selectedRecipe]);
+
+  const loadNextTry = useCallback(async () => {
+    if (!selectedRecipe) {
+      setNextTry(null);
+      return;
+    }
+    try {
+      const response = await fetch("/api/recipes/" + selectedRecipe.id + "/next-try");
+      if (!response.ok) {
+        setNextTry(null);
+        return;
+      }
+      const data = await response.json();
+      setNextTry(data.nextTry ?? null);
+    } catch {
+      setNextTry(null);
+    }
+  }, [selectedRecipe]);
+
+  useEffect(() => {
+    void loadNextTry();
+  }, [loadNextTry, versionTimelineKey]);
 
   // Clear the just-created flag once we navigate away from the freshly
   // created recipe, so selecting it again later doesn't re-trigger the
@@ -494,6 +648,50 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       onClose={() => setShowShareModal(null)}
     />
   ) : null;
+
+  const promoteNextTry = useCallback(async (setDefinitive: boolean) => {
+    if (!selectedRecipe || !nextTry) return;
+    setNextTryBusy(setDefinitive ? "definitive" : "promote");
+    try {
+      const response = await fetch("/api/recipes/" + selectedRecipe.id + "/next-try/promote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ setActive: setDefinitive }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to promote next try");
+      }
+      setNextTry(null);
+      setVersionTimelineKey((key) => key + 1);
+      qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      addToast(setDefinitive ? "Next try promoted and set as definitive" : "Next try promoted to version", "success");
+      promptVersionFeedback();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to promote next try", "error");
+    } finally {
+      setNextTryBusy(null);
+    }
+  }, [addToast, nextTry, promptVersionFeedback, qc, selectedRecipe]);
+
+  const dismissNextTry = useCallback(async () => {
+    if (!selectedRecipe || !nextTry) return;
+    setNextTryBusy("dismiss");
+    try {
+      const response = await fetch("/api/recipes/" + selectedRecipe.id + "/next-try", { method: "DELETE" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to discard next try");
+      }
+      setNextTry(null);
+      addToast("Next try discarded", "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to discard next try", "error");
+    } finally {
+      setNextTryBusy(null);
+    }
+  }, [addToast, nextTry, selectedRecipe]);
 
   const createBookModalEl = showCreateBookModal ? (
     <CreateBookModal
@@ -985,6 +1183,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     addToast("Changes saved", "success");
   };
 
+
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-5 py-4 md:gap-8 md:py-6">
@@ -1008,6 +1207,16 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             !!selectedRecipe && selectedRecipe.id === justCreatedRecipeId
           }
         />
+
+        {nextTry && (
+          <NextTryPanel
+            nextTry={nextTry}
+            busy={nextTryBusy}
+            onPromote={() => promoteNextTry(false)}
+            onSetDefinitive={() => promoteNextTry(true)}
+            onDismiss={dismissNextTry}
+          />
+        )}
 
         {/* Empty-state CTAs — fast ways to populate a fresh recipe.
             Compact pill-buttons on mobile so they don't eat half
@@ -1273,6 +1482,10 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           <AttemptHistory
             recipeId={selectedRecipe.id}
             refreshKey={versionTimelineKey}
+            onNextTrySaved={() => {
+              void loadNextTry();
+              addToast("Next try saved", "success");
+            }}
             onPromoted={() => {
               setVersionTimelineKey((k) => k + 1);
               qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
