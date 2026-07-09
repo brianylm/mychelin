@@ -61,6 +61,8 @@ const editNameFieldBase =
   "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:h-10 sm:text-sm";
 const editAmountFieldBase =
   "h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
+const editDetailFieldBase =
+  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
 
 type IngredientDraft = {
   name: string;
@@ -585,6 +587,44 @@ export function IngredientList({
                     </div>
                   </div>
                 )}
+                <div className={`mt-2 grid gap-2 ${!ing.approximate && ing.quantityText ? "sm:grid-cols-2" : ""}`}>
+                  {!ing.approximate && ing.quantityText && (
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                        Amount text
+                      </span>
+                      <input
+                        defaultValue={ing.quantityText ?? ""}
+                        onBlur={(e) =>
+                          handleFieldBlur(
+                            ing,
+                            "quantityText",
+                            e.target.value.trim() || null
+                          )
+                        }
+                        className={editDetailFieldBase}
+                        placeholder="~100g, a handful, to taste"
+                      />
+                    </label>
+                  )}
+                  <label className="block">
+                    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                      Prep note
+                    </span>
+                    <input
+                      defaultValue={ing.notes ?? ""}
+                      onBlur={(e) =>
+                        handleFieldBlur(
+                          ing,
+                          "notes",
+                          e.target.value.trim() || null
+                        )
+                      }
+                      className={editDetailFieldBase}
+                      placeholder="cut into quarters, minced, optional"
+                    />
+                  </label>
+                </div>
               </li>
             );
           })}

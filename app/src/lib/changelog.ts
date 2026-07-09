@@ -7,6 +7,14 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-09",
+    title: "Ingredient prep-note editing",
+    items: [
+      "Ingredient edit mode now exposes prep notes such as cut into quarters, minced, or optional so parsed details can be corrected or removed.",
+      "Hidden parsed amount text can now be edited when it exists on a precise ingredient.",
+    ],
+  },
+  {
+    date: "2026-07-09",
     title: "Recipe detail cleanup",
     items: [
       "Versions and refinement now use a less cramped header with Cook with me and Log cook side by side on mobile.",

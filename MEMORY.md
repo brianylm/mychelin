@@ -2403,3 +2403,11 @@ Checks:
 - Updated the in-app changelog.
 - Validation: targeted npx eslint passed with existing <img> warnings; npm run build passed; git diff --check passed.
 - Deploy note: not deployed automatically because the worktree still contains unrelated dirty files outside this recipe-detail cleanup.
+
+## 2026-07-09 - Ingredient prep-note editing
+
+- Confirmed ingredient parse/import details can live in quantityText or notes; the API already accepts updates for both fields.
+- Added editable Prep note fields to ingredient edit mode so parsed details such as cut into quarters, cut into thick batons, minced, or optional can be corrected/removed.
+- Added an Amount text edit field when a precise ingredient still has parsed quantityText, so hidden imported amount text can be cleared.
+- Updated the in-app changelog.
+- Validation: targeted npx eslint passed; npm run build passed; git diff --check passed.
