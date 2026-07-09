@@ -21,7 +21,7 @@ function ResetPasswordShell({ children }: { children: React.ReactNode }) {
       <div className="relative w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
           <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-white/70 shadow-[0_18px_55px_rgba(40,26,19,0.10)] ring-1 ring-white/70 backdrop-blur-xl">
-            <img src="/images/mychelin-icon.png" alt="Mychelin" className="h-11 w-11 object-contain" />
+            <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
           </div>
           <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
             <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>

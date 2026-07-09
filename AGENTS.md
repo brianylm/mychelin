@@ -1,184 +1,146 @@
 # Mychelin Agent Guide
 
-This file is the durable project context for agents working in this repository. Keep it concise and update it when product direction, deployment rules, or recurring mistakes change.
+Durable repo-local context for Codex/OpenClaw workers. Keep this short, current, and practical; put detailed session history in `MEMORY.md` instead.
 
-## Product Direction
+## Project Purpose
 
-Mychelin helps people who have moved out of their family home learn to cook the food they grew up with consistently and confidently. The product should reduce the mental load of homecooking: know what to cook, know what to buy, cook with guidance, and improve the recipe over time.
+Mychelin is a Singapore-first, mobile-first PWA for preserving and cooking family food: oral recipes, dialect instructions, kitchen stories, voices, structured recipes, meal plans, shopping lists, and cook-with-me guidance.
 
-Primary user: a moved-out homecook starting a new nest who wants the same quality, nutritious family meals they used to have at home.
+Current product direction: help moved-out homecooks reliably cook the food they grew up with. The app should reduce homecooking mental load: know what to cook, know what to buy, cook with guidance, and improve the recipe over repeated attempts.
 
-Secondary user: an older family cook who wants to store recipes and share them with loved ones. Important, but secondary.
+Primary user: moved-out homecook starting a new nest. Secondary user: older family cook storing/sharing recipes. Do not drift back to the stale “restaurant guide app” framing.
 
-Core success state: the user no longer worries about homecooking because they know they can cook consistently and well. The ideal outcome is that they homecook much more than they would have without Mychelin.
+Core loop:
 
-Near-term feature priority:
+1. Capture/create a family recipe from conversation, voice, URL, paste, notes, or manual entry.
+2. Plan when to cook it.
+3. Generate what to buy.
+4. Cook with large, kitchen-friendly guided steps/timers.
+5. Capture substitutions, timing tweaks, sensory cues, mistakes, and whether the result was closer to home.
+6. Promote useful notes into recipe versions so the dish gets more reliable over time.
 
-1. Meal planning
-2. Shopping list
-3. Cook-with-me cooking session
-4. Fridge/inventory
+Near-term feature spine: meal planning → shopping list → cook-with-me → fridge/inventory.
 
-Ingredient management, recommendations, pantry suggestions, friction scoring, leftover trails, and flavor-profile ideas are useful backlog areas, but do not let them displace the core planning, shopping, guided-cooking, and recipe-improvement loop.
+## Current Priorities
 
-## Functional Model
+From the global kanban and recent repo context:
 
-Mychelin is not a generic recipe app and not a restaurant guide. It is a family homecooking workflow:
+- Mobile landing hero/scrim readability.
+- Onboarding goal flow and first-run habit loop.
+- Whisper/OpenAI transcription fallback reliability in conversation capture.
+- Feature screenshots/demo assets later; do not let screenshot work displace core product fixes.
 
-- Capture messy family recipe knowledge from notes, URLs, voice, conversation, or manual entry.
-- Turn it into usable recipes with ingredients, steps, timing, servings, story, cultural context, photos, and voice.
-- Help the user plan meals and generate shopping lists.
-- Sit with the user during cooking through a cook-with-me experience: large next-step text, clear controls, timers, and simple forward/back navigation.
-- During cook-with-me, offer a CTA for "I changed something" so substitutions, timing tweaks, quantity changes, technique notes, and sensory observations are captured in the moment.
-- At the end of a cooking session, ask whether this attempt was better, closer to home, and what should change next time.
-- Feed those session notes into recipe versions so the dish improves incrementally every time it is cooked.
+For broader prioritization, read `/home/cluser/.openclaw/workspace/memory/task-kanban.md` plus this repo’s `MEMORY.md`.
 
-Versioning/forking is a core retention loop. A recipe should not be treated as static; it should become more reliable as the user cooks it repeatedly.
+## Canonical Context
 
-## Source Of Truth
+Read these before product, deployment, or schema work:
 
-Read these first when product or operational context matters:
+- `README.md` — public overview and setup.
+- `ROADMAP.md` — current product roadmap.
+- `MYCHELIN.md` — operator context, live site, DB/auth/runtime gotchas.
+- `DEPLOYMENT.md` — deploy and production smoke-test map.
+- `MEMORY.md` — repo-local decisions, risks, and session log.
+- `app/DESIGN-AUDIT.md` — UX/product audit and activation gaps.
 
-- `README.md` - public product overview and setup
-- `ROADMAP.md` - clean current roadmap
-- `MYCHELIN.md` - operator context, live site, DB/auth/env/runtime gotchas
-- `DEPLOYMENT.md` - deploy and production smoke-test map
-- `MEMORY.md` - consolidated project memory, active priorities, discrepancies, and session log
-- `app/DESIGN-AUDIT.md` - UX/product audit and activation gaps
-
-External memory notes may contain useful backlog context, but repo docs win when there is conflict. Treat older references to `mychelin-1/`, "restaurant guide app", or a root production app as stale unless re-verified.
-
-When the user asks "what's next" or asks for next priorities without naming a task, read `AGENTS.md` and `MEMORY.md` first, then answer from the missing work, risks, and follow-ups recorded there.
-
-## Project Memory Updates
-
-Keep `MEMORY.md` as the single repo-local memory file. After meaningful product, code, schema, deployment, or roadmap work, append a dated entry to the session log with:
-
-- what changed or was decided
-- files touched
-- checks run and results
-- follow-ups or risks
-
-Do not put a noisy changelog in this `AGENTS.md`; keep this file focused on instructions future agents must follow.
+External memory files can help, but repo docs win when they conflict. Known stale external framing includes `mychelin-1/`, root `src/`, “restaurant guide app”, and old migration notes.
 
 ## Repository Layout
 
-- Production app code lives in `app/`.
-- The repository root is a Vercel deploy wrapper and project documentation area.
-- Vercel production builds from `app/` because the Vercel Root Directory is configured as `app`.
-- Archived/root prototype code lives under `archive/`; do not edit it for production work.
-- Active schema and migrations are under `app/src/db/schema.ts` and `app/drizzle/`.
-- Root-level `drizzle/`, root `package.json`, and stale migration notes may be historical. Verify before relying on them.
+- `app/` — production Next.js app; Vercel Root Directory is configured to this folder.
+- `app/src/app/` — Next App Router pages and API routes.
+- `app/src/components/LandingPage.tsx` and `app/src/app/globals.css` — public landing page and mobile hero/scrim styling.
+- `app/src/components/auth/`, `app/src/app/login/`, `app/src/app/reset-password/`, `app/src/app/api/auth/` — auth surfaces.
+- `app/src/components/onboarding/OnboardingFlow.tsx`, `app/src/app/api/user/`, `app/src/components/profile/` — onboarding goals, rhythm, and profile habit loop.
+- `app/src/components/RecipeWorkspace.tsx` — main authenticated app shell.
+- `app/src/components/recipes/`, `app/src/store/RecipeStore.tsx` — recipe UI/state, including cook-with-me and attempts.
+- `app/src/components/capture/`, `app/src/app/api/capture/` — AI capture, conversation assist, realtime/chunked transcription, Whisper/OpenAI/Gemini fallback paths.
+- `app/src/components/heritage/VoiceRecording.tsx`, `app/src/app/api/recipes/*/voice/` — voice recording features.
+- `app/src/components/planner/`, `app/src/components/shopping/`, `app/src/components/fridge/` and matching `app/src/app/api/*` routes — planning, shopping list, inventory.
+- `app/src/components/books/`, `app/src/components/sharing/`, `app/src/app/api/books/`, `app/src/app/api/share/`, `app/src/app/shared/` — family recipe books and sharing.
+- `app/src/db/schema.ts` — schema source of truth.
+- `app/drizzle/` — active migrations.
+- `archive/` and root-level old app/migration paths — historical unless freshly verified.
 
-## Commands
+## Common Commands
 
-Run app commands from `app/`:
+Install and app checks run from `app/`:
 
 ```bash
 cd /home/cluser/projects/mychelin/app
+npm install
+npm run dev
 npm run lint
 npm run build
-npm run dev
+npm run db:generate
+npm run db:migrate
+npm run db:push
+npm run smoke:privacy
+npm run smoke:pilot
 ```
 
-This workspace usually runs on a VPS, not the user's local machine. A local dev URL such as `http://localhost:3000` is useful for agent-side smoke tests but is not directly visible to the user. When the user needs to test UI changes, provide a public Vercel Preview deployment or another externally reachable URL.
+Documentation-only validation can be lightweight:
 
-For user-facing changes, deploy a production-parallel Vercel Preview from the repository root after checks pass, then include the preview URL in the final response so the user can test it. Use this for acceptance testing without replacing the live production alias. If deployment is skipped or blocked, say why in the final response.
+```bash
+cd /home/cluser/projects/mychelin
+git diff --check
+```
 
-Deploy from the repository root only:
+Deploy from the repository root only, never from `app/`:
 
 ```bash
 cd /home/cluser/projects/mychelin
 vercel --prod
 ```
 
-Do not deploy from `app/`; that can target the wrong Vercel project/site.
+For user-facing fixes, prefer a Vercel Preview deployment from the repo root after lint/build so B can test without replacing production. If deployment is skipped or blocked, say why.
 
-Use `git diff --check` for documentation-only changes. There are currently no first-party automated tests; use lint/build plus focused API/UI smoke tests for code changes.
+## Runtime, Auth, AI, and DB Rules
 
-## Deployment Facts
-
-- Live site: `https://mychelin-sg.vercel.app`
-- Correct Vercel project: `mychelin`
-- Correct Vercel project ID: `prj_keoeCPZKShPgjPWLR5gpWxWIlfCt`
-- Vercel team/org: `team_GhgWJD2sBWKzkZ5m06FWTUQv`
-- Vercel Root Directory: `app`
-- Preferred Vercel/Turso region: `hnd1` / Tokyo-adjacent
-- User test deployments should be Vercel Preview deployments from the repo root, not production promotions. They are persistent deployment snapshots, but they do not follow later production deploys unless redeployed.
-
-Before production deployment, check `git status --short`, build from `app/`, deploy from root, then smoke-test auth and recipe create/fetch/delete paths as described in `DEPLOYMENT.md`.
-
-## Runtime And API Rules
-
-The Node.js serverless runtime is known to hang on POST requests for this Vercel project. New API routes should use:
+- Live site: `https://mychelin-sg.vercel.app`.
+- Correct Vercel project: `mychelin` (`prj_keoeCPZKShPgjPWLR5gpWxWIlfCt`), team `team_GhgWJD2sBWKzkZ5m06FWTUQv`, root directory `app`.
+- New API routes should usually use Edge runtime:
 
 ```ts
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 ```
 
-For DB access in routes, import from `@/db`. That uses `@libsql/client/web` and lazy initialization for Edge compatibility. Do not switch new Edge route DB code to `@libsql/client` or `app/src/db/http.ts` without a specific reason.
+- Node.js serverless POST routes are known to hang on this Vercel project. Do not spend time re-debugging that unless explicitly assigned.
+- DB access in routes should import from `@/db`, which uses `@libsql/client/web` and lazy initialization for Edge compatibility.
+- Auth uses JWT cookie `mychelin_token`, `jose`, bcrypt password hashing, and 30-day expiry. Auth helpers live in `app/src/lib/auth.ts`.
+- Recipe access should flow through `app/src/lib/recipe-access.ts` when possible. Multi-user isolation is high risk.
+- AI capture currently uses OpenAI/Whisper or Realtime speech-to-text paths, browser live captions where available, Gemini as optional audio fallback, and DeepSeek for lower-cost text reasoning/extraction where configured. Treat transcripts, recordings, and prompts as sensitive.
+- Migrations are not guaranteed to auto-run on deploy. For schema changes, add a Drizzle migration under `app/drizzle/`, explain data impact, and verify with app-level checks/scripts. Do not rely on stale Turso migration docs that point to `mychelin-1/`.
 
-Auth uses a JWT cookie named `mychelin_token`, `jose`, bcrypt password hashing, and a 30-day expiry. Auth helpers live in `app/src/lib/auth.ts`.
-
-Recipe access is server-side and should flow through `app/src/lib/recipe-access.ts` where possible. A user can access a recipe if they own it or it belongs to a book they are a member of.
-
-Be especially careful around multi-user isolation. Known areas needing scrutiny include sharing permissions and non-recipe APIs such as meal plans, shopping list, inventory, and ingredient catalog.
-
-## Data And Migrations
-
-Schema source: `app/src/db/schema.ts`.
-
-Active migrations: `app/drizzle/`.
-
-Drizzle config: `app/drizzle.config.ts`.
-
-Migrations are not guaranteed to auto-run on deploy. Some route-level schema fixups exist, but do not assume that is the preferred long-term pattern. For schema changes, include a Drizzle migration and explain data impact.
-
-Never ask the user to inspect Turso manually. If DB inspection, cleanup, seeding, or migration verification is needed, handle it with scripts, API routes, or CLI commands and report UI-level outcomes.
-
-## UI And Product Conventions
-
-The app is a mobile-first PWA. Preserve mobile ergonomics, kitchen use, large touch targets, and one-handed flows.
-
-Main authenticated surface: `app/src/components/RecipeWorkspace.tsx`.
-
-Important supporting areas:
-
-- Recipes: `app/src/components/recipes/`
-- Recipe store: `app/src/store/RecipeStore.tsx`
-- Capture/import: `app/src/components/capture/` and `app/src/app/api/capture/`
-- Books/sharing: `app/src/components/books/`, `app/src/components/sharing/`, `app/src/app/api/books/`, `app/src/app/api/share/`
-- Planning/shopping/fridge: `app/src/components/planner/`, `app/src/components/shopping/`, `app/src/components/fridge/`
-
-Use the existing visual language: warm editorial canvas, burgundy accent, restrained utility UI, serif branding for major titles, Tailwind/Radix/lucide patterns already present. Avoid turning internal app screens into marketing pages.
-
-For cook-with-me work, prioritize legibility while cooking: large step text, obvious next/back controls, timers, minimal clutter, and reliable state saving.
-
-## Privacy And Safety
+## Safety and Privacy
 
 Mychelin may handle private family recipes, stories, photos, voice recordings, transcripts, account data, and sharing permissions.
 
-- Do not commit secrets, `.env`, database dumps, real family data, voice files, or private screenshots.
-- Use synthetic test data.
-- Treat AI extraction/transcription inputs as sensitive.
-- Treat auth, sharing, invitations, uploaded assets, and public share pages as high-risk surfaces.
-
-## Known Stale Context
-
-Do not carry these forward as current truth without verification:
-
-- `mychelin-1/` as the active production app path
-- root `src/` as production source
-- "restaurant guide app" as the product description
-- migration scripts or docs that still point to `mychelin-1/`
-- any claim that deployment should happen from inside `app/`
+- Do not commit secrets, `.env*`, DB dumps, real family data, voice files, or private screenshots.
+- Use synthetic data for tests, screenshots, and demos.
+- Treat auth, sharing, invitations, uploaded assets, public share pages, voice/transcript storage, and non-recipe user-scoped APIs as high-risk surfaces.
+- Never ask B to inspect Turso manually. If DB inspection, cleanup, seeding, or migration verification is needed, handle it with scripts/API/CLI and report UI-level outcomes.
 
 ## Working Expectations
 
-- Prefer small, focused changes.
-- Match existing architecture and helpers before adding abstractions.
-- Keep unrelated refactors out of feature work.
-- Run relevant checks before handing back code.
-- If changing behavior around auth, sharing, privacy, DB schema, or uploads, call out risks and verification clearly.
-- If user-facing UI changes are made, verify responsive behavior where feasible.
+- Edit only files needed for the task. Do not touch unrelated changes already in the worktree.
+- Prefer small, boring changes that match existing helpers and UI patterns.
+- No speculative abstractions, dependency additions, broad rewrites, or “while I’m here” refactors.
+- Preserve mobile ergonomics: large touch targets, one-handed use, kitchen legibility, senior-friendly flows.
+- Use existing visual language: warm editorial canvas, burgundy accent, restrained utility UI, serif branding for major titles, Tailwind/Radix/lucide patterns.
+- Run the smallest meaningful validation before handoff: `git diff --check` for docs, lint/build/smoke checks for code, plus focused API/UI checks for behavior changes.
+- If you change user-facing code, restart/redeploy or provide a preview URL where applicable.
+- If touching auth, sharing, privacy, DB schema, uploads, or AI transcript/voice handling, call out risks and verification clearly.
+
+## Known Traps
+
+- Active production app is `app/`; root is the deploy wrapper. Do not deploy from `app/`.
+- Root `drizzle/`, root `package.json`, archived/root prototype code, and `app/DATABASE_MIGRATION_NOTE.md` may be historical. Verify before using.
+- Old paths mentioning `/home/cluser/projects/mychelin/mychelin-1` are stale.
+- There are few/no first-party automated tests; do not claim full coverage from lint/build alone.
+- Service worker changes can stale-cache UI; bump cache version in `app/public/sw.js` when needed.
+
+## Memory Updates
+
+After meaningful product, code, schema, deployment, or roadmap work, append a concise dated entry to `MEMORY.md` with what changed, files touched, checks run, and follow-ups/risks. Keep this `AGENTS.md` focused on durable instructions only.

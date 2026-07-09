@@ -598,20 +598,44 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   );
 
   const handlePhotoUpload = useCallback(
-    async (file: File) => {
+    async (file: File, onProgress?: (progress: number | null) => void) => {
       if (!selectedRecipe) return;
       const recipeId = selectedRecipe.id;
       const formData = new FormData();
       formData.append("file", file);
       try {
-        const response = await fetch(`/api/recipes/${recipeId}/photos`, {
-          method: "POST",
-          body: formData,
+        onProgress?.(0);
+        const body = await new Promise<NonNullable<import("@/store/RecipeStore").RecipeWithRelations["photos"]>[number]>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `/api/recipes/${recipeId}/photos`);
+          xhr.upload.onprogress = (event) => {
+            if (!event.lengthComputable || event.total === 0) {
+              onProgress?.(null);
+              return;
+            }
+            onProgress?.(Math.min(95, Math.max(1, (event.loaded / event.total) * 95)));
+          };
+          xhr.onerror = () => reject(new Error("Photo upload failed. Please try again."));
+          xhr.onabort = () => reject(new Error("Photo upload was cancelled."));
+          xhr.onload = () => {
+            const responseBody = (() => {
+              try {
+                return xhr.responseText ? JSON.parse(xhr.responseText) : {};
+              } catch {
+                return {};
+              }
+            })();
+
+            if (xhr.status < 200 || xhr.status >= 300) {
+              reject(new Error(responseBody.error || "Failed to upload photo"));
+              return;
+            }
+
+            onProgress?.(100);
+            resolve(responseBody);
+          };
+          xhr.send(formData);
         });
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(body.error || "Failed to upload photo");
-        }
         qc.setQueryData<import("@/store/RecipeStore").RecipeWithRelations | null>(
           ["recipe", recipeId],
           (current) => {
@@ -631,6 +655,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         addToast("Photo uploaded", "success");
       } catch (err) {
         addToast(err instanceof Error ? err.message : "Failed to upload photo", "error");
+        throw err;
       }
     },
     [selectedRecipe, addToast, qc]
@@ -1527,21 +1552,26 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
 
         {/* Version History */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              Versions & Refinement
-            </h2>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="rounded-2xl border border-neutral-200 bg-white/85 p-3 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                Refinement
+              </p>
+              <h2 className="text-base font-semibold text-neutral-900">
+                Attempts & versions
+              </h2>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0 sm:items-center sm:justify-end">
               <button
                 onClick={() => setShowCookWithMe(true)}
-                className="flex items-center gap-1 rounded-xl bg-[#17131f] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#800020]"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#17131f] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#800020]"
               >
                 <ChefHat className="h-3.5 w-3.5" />
                 Cook with me
               </button>
               <button
                 onClick={() => setShowCookAlong(true)}
-                className="flex items-center gap-1 rounded-xl bg-[#800020]/10 px-3 py-1.5 text-xs font-medium text-[#800020] transition-colors hover:bg-[#800020]/15"
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#800020]/15 bg-[#800020]/10 px-3 text-xs font-semibold text-[#800020] transition-colors hover:bg-[#800020]/15"
               >
                 <PencilLine className="h-3.5 w-3.5" />
                 Log cook

@@ -57,6 +57,10 @@ interface IngredientListProps {
 
 const fieldBase =
   "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
+const editNameFieldBase =
+  "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:h-10 sm:text-sm";
+const editAmountFieldBase =
+  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
 
 type IngredientDraft = {
   name: string;
@@ -248,6 +252,32 @@ function displayUnit(unit?: string, quantity?: number): string | undefined {
   return unit;
 }
 
+function formatReadOnlyIngredientAmount(ingredient: Ingredient, scale: number): string {
+  const quantity = ingredient.quantity && scale !== 1
+    ? formatScaledQuantity(ingredient.quantity, scale)
+    : ingredient.quantity;
+  const hasQuantity = quantity !== null && quantity !== undefined && String(quantity) !== "";
+  const unit = ingredient.unit
+    ? displayUnit(ingredient.unit, ingredient.quantity ?? undefined)
+    : hasQuantity ? "units" : undefined;
+
+  if (ingredient.approximate) {
+    const quantityText = ingredient.quantityText?.trim();
+    if (quantityText) return quantityText;
+    return ["agak-agak", hasQuantity ? quantity : null, unit]
+      .filter((part) => part !== null && part !== undefined && part !== "")
+      .join(" ");
+  }
+
+  if (hasQuantity) {
+    return [quantity, unit]
+      .filter((part) => part !== null && part !== undefined && part !== "")
+      .join(" ");
+  }
+
+  return unit ?? "";
+}
+
 function formatIngredientDraftPreview(item: IngredientDraft): string {
   if (item.approximate) {
     return [item.quantityText, item.name].filter(Boolean).join(" ");
@@ -390,12 +420,7 @@ export function IngredientList({
         ) : (
           <ul className="space-y-2">
             {ingredients.map((ing) => {
-              const amount = ing.approximate
-                ? ing.quantityText
-                : [
-                    ing.quantity && scale !== 1 ? formatScaledQuantity(ing.quantity, scale) : ing.quantity,
-                    displayUnit(ing.unit ?? undefined, ing.quantity ?? undefined),
-                  ].filter(Boolean).join(" ");
+              const amount = formatReadOnlyIngredientAmount(ing, scale);
               return (
                 <li key={ing.id} className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-2.5">
                   <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#800020]/45" />
@@ -441,87 +466,11 @@ export function IngredientList({
 
       {ingredients.length > 0 && (
         <ul className="mb-3 space-y-2">
-          {ingredients.map((ing) => (
-            <li
-              key={ing.id}
-              className="group flex items-center gap-2 rounded-xl border border-neutral-100 bg-neutral-50/50 px-3 py-2.5"
-            >
-              <div
-                className={`grid min-w-0 flex-1 items-center gap-2 ${
-                  ing.approximate
-                    ? "grid-cols-[minmax(0,1fr)_minmax(84px,0.7fr)]"
-                    : "grid-cols-[minmax(0,1fr)_56px_74px] sm:grid-cols-[minmax(0,1fr)_64px_86px]"
-                }`}
-              >
-                {/* Name first */}
-                <input
-                  defaultValue={ing.name}
-                  onBlur={(e) =>
-                    handleFieldBlur(ing, "name", capitalize(e.target.value.trim()))
-                  }
-                  className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
-                  placeholder="ingredient"
-                />
-
-                {ing.approximate ? (
-                  /* Approximate: single free-text field */
-                  <input
-                    key={`qt-${ing.id}-${ing.quantityText ?? ""}`}
-                    defaultValue={ing.quantityText ?? ""}
-                    onBlur={(e) =>
-                      handleFieldBlur(
-                        ing,
-                        "quantityText",
-                        e.target.value || null
-                      )
-                    }
-                    className="min-w-0 rounded border border-transparent bg-transparent px-1 text-sm italic text-neutral-700 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
-                    placeholder="a handful, agak-agak, to taste"
-                  />
-                ) : (
-                  <>
-                    {/* Qty */}
-                    {scale !== 1 && ing.quantity ? (
-                      <span className="w-full rounded bg-white px-1.5 py-1.5 text-center text-sm font-medium tabular-nums text-[#800020]">
-                        {formatScaledQuantity(ing.quantity, scale)}
-                      </span>
-                    ) : (
-                      <input
-                        defaultValue={ing.quantity ?? ""}
-                        onBlur={(e) =>
-                          handleFieldBlur(
-                            ing,
-                            "quantity",
-                            e.target.value ? parseFloat(e.target.value) : null
-                          )
-                        }
-                        className="w-full rounded border border-transparent bg-transparent px-1 text-center text-sm tabular-nums outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
-                        placeholder="qty"
-                      />
-                    )}
-                    {/* Unit dropdown */}
-                    <select
-                      defaultValue={ing.unit ?? ""}
-                      onChange={(e) =>
-                        handleFieldBlur(ing, "unit", e.target.value || null)
-                      }
-                      className="w-full rounded border border-transparent bg-transparent px-1 text-xs text-neutral-600 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
-                    >
-                      <option value="">unit</option>
-                      {UNIT_OPTIONS.filter(Boolean).map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
-                  </>
-                )}
-              </div>
-
-              <div className="flex shrink-0 items-center justify-end gap-1.5">
+          {ingredients.map((ing) => {
+            const actionControls = (
+              <>
                 <SaveIndicator isSaving={savingId === ing.id} />
 
-                {/* Toggle: precise ↔ approximate */}
                 <button
                   type="button"
                   className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold transition ${
@@ -553,9 +502,92 @@ export function IngredientList({
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
-              </div>
-            </li>
-          ))}
+              </>
+            );
+
+            const nameInput = (
+              <input
+                defaultValue={ing.name}
+                onBlur={(e) =>
+                  handleFieldBlur(ing, "name", capitalize(e.target.value.trim()))
+                }
+                className={editNameFieldBase}
+                placeholder="ingredient"
+              />
+            );
+
+            return (
+              <li
+                key={ing.id}
+                className="group rounded-xl border border-neutral-100 bg-neutral-50/50 p-3"
+              >
+                {ing.approximate ? (
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.8fr)_auto] sm:items-center">
+                    {nameInput}
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:contents">
+                      <input
+                        key={`qt-${ing.id}-${ing.quantityText ?? ""}`}
+                        defaultValue={ing.quantityText ?? ""}
+                        onBlur={(e) =>
+                          handleFieldBlur(
+                            ing,
+                            "quantityText",
+                            e.target.value || null
+                          )
+                        }
+                        className={`${editAmountFieldBase} italic text-neutral-700`}
+                        placeholder="a handful, agak-agak, to taste"
+                      />
+                      <div className="flex shrink-0 items-center justify-end gap-1.5">
+                        {actionControls}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_92px_auto] sm:items-center">
+                    {nameInput}
+                    <div className="grid grid-cols-[64px_minmax(82px,1fr)_auto] items-center gap-2 sm:contents">
+                      {scale !== 1 && ing.quantity ? (
+                        <span className="flex h-10 w-full items-center justify-center rounded-lg border border-[#800020]/10 bg-white px-2 text-center text-sm font-medium tabular-nums text-[#800020]">
+                          {formatScaledQuantity(ing.quantity, scale)}
+                        </span>
+                      ) : (
+                        <input
+                          defaultValue={ing.quantity ?? ""}
+                          onBlur={(e) =>
+                            handleFieldBlur(
+                              ing,
+                              "quantity",
+                              e.target.value ? parseFloat(e.target.value) : null
+                            )
+                          }
+                          className={`${editAmountFieldBase} text-center tabular-nums`}
+                          placeholder="qty"
+                        />
+                      )}
+                      <select
+                        defaultValue={ing.unit ?? ""}
+                        onChange={(e) =>
+                          handleFieldBlur(ing, "unit", e.target.value || null)
+                        }
+                        className={`${editAmountFieldBase} text-neutral-700`}
+                      >
+                        <option value="">unit</option>
+                        {UNIT_OPTIONS.filter(Boolean).map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex shrink-0 items-center justify-end gap-1.5">
+                        {actionControls}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

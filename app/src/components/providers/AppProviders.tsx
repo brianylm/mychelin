@@ -2,11 +2,13 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Theme } from "@radix-ui/themes";
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
 
 export function AppProviders({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -18,6 +20,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
         },
       })
   );
+
+  if (pathname === "/") {
+    return children;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

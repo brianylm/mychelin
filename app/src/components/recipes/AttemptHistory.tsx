@@ -259,21 +259,22 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                 key={attempt.id}
                 className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--ui-text)]">
-                      {formatCookedAt(attempt.cookedAt)}
-                    </p>
-                    <div className="mt-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-[var(--ui-text)]">
+                        {formatCookedAt(attempt.cookedAt)}
+                      </p>
                       <RatingPill rating={attempt.rating} label="Difficulty" />
-                      {attempt.dishRating && <div className="mt-1"><RatingPill rating={attempt.dishRating} label="Dish" /></div>}
+                      {attempt.dishRating && <RatingPill rating={attempt.dishRating} label="Dish" />}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                     {(attempt.nextTime || attempt.changeNotes.length > 0) && (
                       <Button
                         size="sm"
                         variant="secondary"
+                        className="border-[#800020]/20 bg-white text-[#800020] shadow-sm hover:bg-[#800020]/5"
                         iconEnd={<Target className="h-3.5 w-3.5" />}
                         loading={nextTrySavingId === attempt.id}
                         onClick={() => saveAsNextTry(attempt)}
@@ -289,6 +290,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                       <Button
                         size="sm"
                         variant="secondary"
+                        className="border-neutral-200 bg-white shadow-sm"
                         iconEnd={<ArrowUpRight className="h-3.5 w-3.5" />}
                         loading={promotingId === attempt.id}
                         onClick={() => promoteAttempt(attempt.id)}

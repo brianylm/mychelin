@@ -152,7 +152,7 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-3xl flex-col rounded-[2rem] border border-[#ebe5dc] bg-[#fffdfb] shadow-[0_24px_80px_rgba(60,43,25,0.08)]">
         <div className="flex items-center justify-between gap-4 border-b border-[#ebe5dc] px-5 py-4 sm:px-7">
           <div className="flex items-center gap-3">
-            <img src="/images/mychelin-icon.png" alt="" className="h-9 w-9 object-contain" />
+            <img src="/images/mychelin-icon-96.webp" alt="" className="h-9 w-9 object-contain" />
             <div>
               <p className="logo-serif text-lg font-bold leading-none">
                 <span className="text-[#800020]">my</span><span>chelin</span>

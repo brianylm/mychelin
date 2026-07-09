@@ -7,6 +7,32 @@ export interface ChangelogEntry {
 export const changelogEntries: ChangelogEntry[] = [
   {
     date: "2026-07-09",
+    title: "Recipe detail cleanup",
+    items: [
+      "Versions and refinement now use a less cramped header with Cook with me and Log cook side by side on mobile.",
+      "Attempt cards now keep the date and ratings on one line where possible, with clearer action buttons.",
+      "Read-only ingredients now show units when no unit is specified, and approximate ingredients fall back to agak-agak.",
+      "Recipe cover photos now open the gallery directly, with a scrollable thumbnail strip inside the photo viewer.",
+    ],
+  },
+  {
+    date: "2026-07-09",
+    title: "Ingredient editor readability",
+    items: [
+      "Ingredient edit rows now give the ingredient name a full-width primary field on mobile, with quantity, unit, approximate, and delete controls grouped below it.",
+      "Desktop edit rows remain compact while using clearer input borders and stronger text contrast for scanning long ingredient lists.",
+    ],
+  },
+  {
+    date: "2026-07-09",
+    title: "Photo upload progress",
+    items: [
+      "Recipe photo uploads now show a visible progress bar with the file name while the image is being sent.",
+      "Camera, gallery, cover-photo, and add-photo uploads now share the same uploading state so users know the app is working.",
+    ],
+  },
+  {
+    date: "2026-07-09",
     title: "Ingredient amount matching fix",
     items: [
       "Step amount chips now avoid matching generic words inside longer ingredients, so a step that says oil no longer also selects sesame oil.",

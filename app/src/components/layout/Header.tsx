@@ -55,7 +55,7 @@ export function Header({
             className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25"
           >
             <img
-              src="/images/mychelin-icon.png"
+              src="/images/mychelin-icon-96.webp"
               alt="Mychelin"
               className="h-7 w-7 object-contain"
             />

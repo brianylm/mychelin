@@ -2368,3 +2368,38 @@ Checks:
 - Preserved explicit longer matches: sesame oil shows when the step says sesame oil, and both oil and sesame oil show when both are separately mentioned.
 - Files touched: app/src/lib/step-ingredient-amounts.ts, app/src/lib/changelog.ts, MEMORY.md.
 - Validation: direct npx tsx matcher checks passed for oil/sesame oil/red onion cases; targeted npx eslint passed; npm run build passed.
+
+## 2026-07-09 - Mela competitor discovery note
+
+- Captured B's Mela analysis as product-discovery input: Mela wedge is not generic recipe storage, but polished capture from anywhere plus a clean Apple-native cooking workflow.
+- Roadmap implication: Mychelin should borrow the ingestion/cooking-flow lesson without copying Apple-native/RSS features wholesale for MVP.
+- Mychelin differentiation remains Singapore family/dialect conversation capture, provenance, agak-agak uncertainty, attempts/next-try/version/definitive workflow, meal planning, shopping, and Cook with Me.
+- RSS/blog inboxes, Paprika-style imports, and native ecosystem parity are parked behind pilot evidence; near-term focus stays on conversation capture, URL import, OCR/photo scan, manual scratchpad, PWA calendar/notification/shopping equivalents, and cooking-mode reliability.
+- Checks: git diff --check passed for this docs-only update.
+
+## 2026-07-09 - Recipe photo upload progress
+
+- Added visible recipe photo upload progress for cover/photo uploads, including file name, percent when available, and an indeterminate fallback while the request is processing.
+- Switched the recipe photo upload client request from fetch to XMLHttpRequest so the browser can report upload progress without changing the existing Edge API route or access checks.
+- Updated the in-app changelog.
+- Validation: targeted npx eslint passed with existing <img> warnings; npm run build passed; git diff --check passed.
+- Deploy note: not deployed automatically because the worktree still contains unrelated dirty files outside this upload-progress change.
+
+## 2026-07-09 - Ingredient editor readability
+
+- Improved recipe ingredient edit-mode readability: ingredient names now get a full-width primary field on mobile, while quantity/unit/agak/delete controls sit together on the next row.
+- Desktop edit rows remain compact but use clearer white input surfaces, stronger text contrast, and stable action controls.
+- Updated the in-app changelog.
+- Validation: targeted npx eslint passed; npm run build passed; git diff --check passed.
+- Deploy note: not deployed automatically because the worktree still contains unrelated dirty files outside this ingredient-readability change.
+
+## 2026-07-09 - Recipe detail cleanup
+
+- Reduced Versions/Refinement header clutter and kept Cook with me / Log cook CTAs side by side on mobile.
+- Flattened attempt card date/rating layout and made Save as next try / Promote actions read more clearly as buttons.
+- Updated read-only ingredient amount display so missing units show as units and approximate ingredients without quantity text show agak-agak.
+- Removed the redundant Recipe name label from the cover-title header.
+- Made the cover image open the photo gallery and added a scrollable thumbnail strip inside the cover photo viewer.
+- Updated the in-app changelog.
+- Validation: targeted npx eslint passed with existing <img> warnings; npm run build passed; git diff --check passed.
+- Deploy note: not deployed automatically because the worktree still contains unrelated dirty files outside this recipe-detail cleanup.

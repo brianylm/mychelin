@@ -94,6 +94,10 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 ### Import workflows
 
+- Product-discovery lesson from Mela-style personal cookbook apps: the category can still win when ingestion and in-use cooking flow are dramatically cleaner than generic recipe storage.
+- Do not copy Mela's Apple-native/RSS wedge wholesale for MVP. Borrow the principle instead: capture from conversation, URL, paste, OCR/photo scan, manual scratchpad, and share-style entry points must feel low-friction and trustworthy.
+- Keep Mychelin differentiation explicit: Singapore family/dialect capture, provenance, agak-agak uncertainty, attempts/next-try/version/definitive workflow, meal planning, shopping, and Cook with Me.
+- Park RSS/blog recipe inboxes, Paprika-style imports, and native Apple ecosystem parity until pilot users show strong online-recipe-backlog demand. Near-term equivalents are PWA notifications, calendar backlinks/prep events, shopping-list exports, and better import/cooking reliability.
 - Add a dedicated Scan recipe photo/OCR capture path under Create recipe, separate from Import URL and Paste recipe text.
 - OCR MVP flow: upload or take a photo, extract text, show editable OCR text for correction, then send the confirmed text through the existing paste parser to produce recipe fields.
 - Import handwritten recipe cards, cookbook pages, WhatsApp screenshots, and old family photos.

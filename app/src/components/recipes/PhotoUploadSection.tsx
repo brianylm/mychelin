@@ -23,7 +23,7 @@ interface PhotoUploadSectionProps {
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   coverUrl?: string | null;
-  onUpload: (file: File) => Promise<void>;
+  onUpload: (file: File, onProgress?: (progress: number | null) => void) => Promise<void>;
   onRemove: (photoId: string) => Promise<void>;
   onSetCover?: (photoUrl: string) => Promise<void>;
   isUploading?: boolean;
@@ -32,6 +32,43 @@ interface PhotoUploadSectionProps {
 }
 
 const MAX_PHOTOS = 10;
+
+type UploadStatus = {
+  id: string;
+  fileName: string;
+  index: number;
+  total: number;
+  progress: number | null;
+};
+
+function PhotoUploadProgress({ status }: { status: UploadStatus }) {
+  const progress = status.progress;
+  const visibleProgress = progress ?? 38;
+  const label = status.total > 1
+    ? `Uploading photo ${status.index} of ${status.total}`
+    : "Uploading photo";
+
+  return (
+    <div className="rounded-xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2" role="status" aria-live="polite">
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] font-semibold text-[#4a1824]">
+        <span className="min-w-0 truncate">{label}</span>
+        <span className="shrink-0 tabular-nums">{progress === null ? "Working" : `${progress}%`}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/90">
+        <div
+          className={`h-full rounded-full bg-[#800020] transition-[width] duration-200 ${progress === null ? "animate-pulse" : ""}`}
+          style={{ width: `${visibleProgress}%` }}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress ?? undefined}
+          aria-label={label}
+        />
+      </div>
+      <p className="mt-1.5 truncate text-[11px] text-neutral-500">{status.fileName}</p>
+    </div>
+  );
+}
 
 export function PhotoUploadSection({
   photos,
@@ -49,11 +86,16 @@ export function PhotoUploadSection({
 }: PhotoUploadSectionProps) {
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const canAddMore = !readOnly && photos.length < MAX_PHOTOS;
+  const uploadInProgress = isUploading || uploadStatus !== null;
+  const displayedUploadStatus = uploadStatus ?? (isUploading
+    ? { id: "external", fileName: "Photo upload", index: 1, total: 1, progress: null }
+    : null);
 
   const openGallery = useCallback((index: number) => {
     setGalleryIndex(index);
@@ -94,11 +136,43 @@ export function PhotoUploadSection({
 
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (!files || files.length === 0) return;
-      for (let i = 0; i < files.length; i++) {
-        await onUpload(files[i]);
+      const selectedFiles = Array.from(e.target.files ?? []);
+      if (selectedFiles.length === 0) return;
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const uploadId = `${Date.now()}-${i}-${file.name}`;
+        setUploadStatus({
+          id: uploadId,
+          fileName: file.name,
+          index: i + 1,
+          total: selectedFiles.length,
+          progress: 0,
+        });
+
+        try {
+          await onUpload(file, (progress) => {
+            setUploadStatus((current) =>
+              current?.id === uploadId
+                ? {
+                    ...current,
+                    progress: progress === null
+                      ? null
+                      : Math.max(0, Math.min(100, Math.round(progress))),
+                  }
+                : current
+            );
+          });
+          setUploadStatus((current) =>
+            current?.id === uploadId ? { ...current, progress: 100 } : current
+          );
+          await new Promise((resolve) => window.setTimeout(resolve, 250));
+        } catch {
+          break;
+        }
       }
+
+      setUploadStatus(null);
       e.target.value = "";
     },
     [onUpload]
@@ -108,6 +182,10 @@ export function PhotoUploadSection({
   const coverPhoto = coverUrl
     ? photos.find((p) => p.url === coverUrl)
     : null;
+  const coverIndex = coverUrl
+    ? photos.findIndex((photo) => photo.url === coverUrl)
+    : -1;
+  const galleryStartIndex = coverIndex >= 0 ? coverIndex : 0;
 
   if (variant === "cover") {
     return (
@@ -115,7 +193,16 @@ export function PhotoUploadSection({
         <section className="relative -mx-5 -mt-4 overflow-hidden bg-neutral-100 md:mx-0 md:mt-0 md:rounded-[1.75rem]">
           <div className="relative h-[245px] sm:h-[310px]">
             {coverUrl ? (
-              <img src={coverUrl} alt="Recipe cover" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (photos.length > 0) openGallery(galleryStartIndex);
+                }}
+                className="block h-full w-full cursor-zoom-in"
+                aria-label="Open recipe photo gallery"
+              >
+                <img src={coverUrl} alt="Recipe cover" className="h-full w-full object-cover" />
+              </button>
             ) : (
               <div className="flex h-full flex-col items-center justify-center bg-[#f4eee7] text-neutral-400">
                 <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -126,14 +213,14 @@ export function PhotoUploadSection({
               </div>
             )}
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
 
             <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-wrap gap-2">
                 {photos.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => openGallery(Math.max(0, photos.findIndex((photo) => photo.url === coverUrl)))}
+                    onClick={() => openGallery(galleryStartIndex)}
                     className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white/85 transition hover:bg-black/50"
                   >
                     {photos.length} photo{photos.length === 1 ? "" : "s"}
@@ -152,8 +239,9 @@ export function PhotoUploadSection({
           </div>
 
           {!readOnly && (
-            <div className="flex items-center justify-between gap-3 bg-white px-4 py-3 md:px-5">
-              <div className="flex min-w-0 gap-2 overflow-x-auto">
+            <div className="bg-white px-4 py-3 md:px-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 gap-2 overflow-x-auto">
                 {photos.map((photo, index) => (
                   <button
                     key={photo.id}
@@ -164,12 +252,18 @@ export function PhotoUploadSection({
                     <img src={photo.url} alt={`Recipe photo ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
                   </button>
                 ))}
+                </div>
+                {canAddMore && (
+                  <label className={`flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#800020]/20 bg-[#800020]/5 px-3 text-xs font-semibold text-[#800020] transition hover:bg-[#800020]/10 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                    {uploadInProgress ? "Uploading" : "Add photos"}
+                    <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={uploadInProgress} />
+                  </label>
+                )}
               </div>
-              {canAddMore && (
-                <label className="flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#800020]/20 bg-[#800020]/5 px-3 text-xs font-semibold text-[#800020] transition hover:bg-[#800020]/10">
-                  Add photos
-                  <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={isUploading} />
-                </label>
+              {displayedUploadStatus && (
+                <div className="mt-3">
+                  <PhotoUploadProgress status={displayedUploadStatus} />
+                </div>
               )}
             </div>
           )}
@@ -233,7 +327,27 @@ export function PhotoUploadSection({
                 {galleryIndex + 1} / {photos.length}
               </div>
             )}
-            <img src={photos[galleryIndex].url} alt={`Recipe photo ${galleryIndex + 1}`} className="relative z-10 max-h-full max-w-full object-contain transition-transform duration-200" style={{ transform: `rotate(${rotation}deg)` }} />
+            <img src={photos[galleryIndex].url} alt={`Recipe photo ${galleryIndex + 1}`} className="relative z-10 max-h-[calc(100vh-7rem)] max-w-full object-contain transition-transform duration-200" style={{ transform: `rotate(${rotation}deg)` }} />
+            {photos.length > 1 && (
+              <div className="absolute bottom-4 left-4 right-4 z-20 overflow-x-auto pb-1">
+                <div className="mx-auto flex w-max max-w-full gap-2 rounded-2xl bg-black/45 p-2 backdrop-blur-sm">
+                  {photos.map((photo, index) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => {
+                        setGalleryIndex(index);
+                        setRotation(0);
+                      }}
+                      className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition ${index === galleryIndex ? "border-white" : "border-white/20 opacity-70 hover:opacity-100"}`}
+                      aria-label={`Open photo ${index + 1}`}
+                    >
+                      <img src={photo.url} alt={`Recipe thumbnail ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </>
@@ -258,7 +372,7 @@ export function PhotoUploadSection({
               </span>
               <div className="flex gap-1.5">
                 {canAddMore && (
-                  <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60">
+                  <label className={`flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                     Change
                     <input
                       ref={coverInputRef}
@@ -266,6 +380,7 @@ export function PhotoUploadSection({
                       accept="image/*"
                       className="hidden"
                       onChange={handleFileSelect}
+                      disabled={uploadInProgress}
                     />
                   </label>
                 )}
@@ -296,7 +411,7 @@ export function PhotoUploadSection({
             <span className="text-xs font-medium text-neutral-400">No cover photo</span>
           </div>
         ) : (
-          <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-[#800020]/5">
+          <label className={`flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-[#800020]/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
               <circle cx="9" cy="9" r="2"/>
@@ -310,6 +425,7 @@ export function PhotoUploadSection({
               accept="image/*"
               className="hidden"
               onChange={handleFileSelect}
+              disabled={uploadInProgress}
             />
           </label>
         )}
@@ -350,8 +466,8 @@ export function PhotoUploadSection({
 
               {/* Camera (mobile) */}
               {canAddMore && (
-                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 md:hidden">
-                  {isUploading ? (
+                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 md:hidden ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                  {uploadInProgress ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#800020]/45 border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
@@ -369,15 +485,15 @@ export function PhotoUploadSection({
                     capture="environment"
                     className="hidden"
                     onChange={handleFileSelect}
-                    disabled={isUploading}
+                    disabled={uploadInProgress}
                   />
                 </label>
               )}
 
               {/* Gallery */}
               {canAddMore && (
-                <label className="flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5">
-                  {isUploading ? (
+                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                  {uploadInProgress ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#800020]/45 border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
@@ -392,12 +508,18 @@ export function PhotoUploadSection({
                     multiple
                     className="hidden"
                     onChange={handleFileSelect}
-                    disabled={isUploading}
+                    disabled={uploadInProgress}
                   />
                 </label>
               )}
             </div>
           </div>
+
+          {displayedUploadStatus && (
+            <div className="mt-3">
+              <PhotoUploadProgress status={displayedUploadStatus} />
+            </div>
+          )}
 
           {uploadError && (
             <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">

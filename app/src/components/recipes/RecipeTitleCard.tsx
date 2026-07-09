@@ -48,10 +48,7 @@ export function RecipeTitleCard({
   if (variant === "cover") {
     return (
       <section className="min-w-0 text-white">
-        <div className="mb-1 flex items-center justify-between gap-3">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/65">
-            Recipe name
-          </span>
+        <div className="mb-1 flex justify-end">
           <SaveIndicator isSaving={isSaving} />
         </div>
         {readOnly ? (
