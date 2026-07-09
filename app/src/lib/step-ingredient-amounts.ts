@@ -32,12 +32,23 @@ const STOP_WORDS = new Set([
   "slices",
 ]);
 
+const GENERIC_SINGLE_TOKEN_MATCHES = new Set([
+  "oil",
+  "sauce",
+  "stock",
+  "water",
+]);
+
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizedTokens(value: string): string[] {
+  return normalizeText(value).split(" ").filter(Boolean);
 }
 
 function significantTokens(value: string): string[] {
@@ -67,6 +78,77 @@ function tokenAppears(stepTokens: Set<string>, token: string): boolean {
   return tokenVariants(token).some((variant) => stepTokens.has(variant));
 }
 
+type TokenRange = {
+  start: number;
+  end: number;
+};
+
+type IngredientCandidate = {
+  ingredient: IngredientLike;
+  name: string;
+  ingredientIndex: number;
+  significantTokens: string[];
+  phraseRanges: TokenRange[];
+  fuzzyMatched: boolean;
+};
+
+function tokensEquivalent(ingredientToken: string, stepToken: string): boolean {
+  return tokenVariants(ingredientToken).includes(singularize(stepToken));
+}
+
+function findPhraseRanges(stepTokens: string[], phraseTokens: string[]): TokenRange[] {
+  if (phraseTokens.length === 0 || phraseTokens.length > stepTokens.length) return [];
+
+  const ranges: TokenRange[] = [];
+  for (let start = 0; start <= stepTokens.length - phraseTokens.length; start++) {
+    const matches = phraseTokens.every((token, offset) =>
+      tokensEquivalent(token, stepTokens[start + offset])
+    );
+    if (matches) ranges.push({ start, end: start + phraseTokens.length });
+  }
+  return ranges;
+}
+
+function rangeContains(outer: TokenRange, inner: TokenRange): boolean {
+  return outer.start <= inner.start && outer.end >= inner.end;
+}
+
+function allRangesCoveredByLongerPhrase(
+  candidate: IngredientCandidate,
+  candidates: IngredientCandidate[]
+): boolean {
+  if (candidate.phraseRanges.length === 0) return false;
+
+  const longerPhraseCandidates = candidates.filter(
+    (other) =>
+      other !== candidate &&
+      other.phraseRanges.length > 0 &&
+      normalizedTokens(other.name).length > normalizedTokens(candidate.name).length
+  );
+
+  if (longerPhraseCandidates.length === 0) return false;
+
+  return candidate.phraseRanges.every((range) =>
+    longerPhraseCandidates.some((other) =>
+      other.phraseRanges.some((otherRange) => rangeContains(otherRange, range))
+    )
+  );
+}
+
+function hasShorterExactTokenMatch(
+  candidate: IngredientCandidate,
+  exactCandidates: IngredientCandidate[]
+): boolean {
+  if (!candidate.fuzzyMatched || candidate.phraseRanges.length > 0) return false;
+  const candidateTokenSet = new Set(candidate.significantTokens.map(singularize));
+
+  return exactCandidates.some((exact) => {
+    if (exact.ingredientIndex === candidate.ingredientIndex) return false;
+    if (exact.significantTokens.length > candidate.significantTokens.length) return false;
+    return exact.significantTokens.some((token) => candidateTokenSet.has(singularize(token)));
+  });
+}
+
 export function formatIngredientAmount(ingredient: IngredientLike): string {
   const quantityText = ingredient.quantityText?.trim();
   if (quantityText) return quantityText;
@@ -90,29 +172,54 @@ export function matchIngredientsForStep(
   const step = normalizeText(stepContent);
   if (!step) return [];
 
-  const paddedStep = " " + step + " ";
-  const stepTokens = new Set(step.split(" ").filter(Boolean));
-  const matches: StepIngredientAmount[] = [];
+  const stepTokenList = step.split(" ").filter(Boolean);
+  const stepTokens = new Set(stepTokenList);
+  const candidates: IngredientCandidate[] = [];
 
-  for (const ingredient of ingredients) {
+  ingredients.forEach((ingredient, ingredientIndex) => {
     const name = ingredient.name?.trim();
-    if (!name) continue;
+    if (!name) return;
 
-    const normalizedName = normalizeText(name);
-    const phraseMatches = normalizedName && paddedStep.includes(" " + normalizedName + " ");
-    const tokenMatches =
+    const phraseTokens = normalizedTokens(name);
+    const phraseRanges = findPhraseRanges(stepTokenList, phraseTokens);
+    const phraseMatches = phraseRanges.length > 0;
+    const tokens = significantTokens(name);
+    const fuzzyTokens = tokens.length > 1
+      ? tokens.filter((token) => !GENERIC_SINGLE_TOKEN_MATCHES.has(singularize(token)))
+      : tokens;
+    const fuzzyMatched =
       !phraseMatches &&
-      significantTokens(name).some((token) => tokenAppears(stepTokens, token));
+      fuzzyTokens.length > 0 &&
+      fuzzyTokens.some((token) => tokenAppears(stepTokens, token));
 
-    if (phraseMatches || tokenMatches) {
-      matches.push({
+    if (phraseMatches || fuzzyMatched) {
+      candidates.push({
+        ingredient,
         name,
-        amount: formatIngredientAmount(ingredient),
+        ingredientIndex,
+        significantTokens: tokens,
+        phraseRanges,
+        fuzzyMatched,
       });
     }
+  });
 
-    if (matches.length >= limit) break;
-  }
+  const exactCandidates = candidates.filter(
+    (candidate) =>
+      candidate.phraseRanges.length > 0 &&
+      !allRangesCoveredByLongerPhrase(candidate, candidates)
+  );
+  const fuzzyCandidates = candidates.filter(
+    (candidate) =>
+      candidate.phraseRanges.length === 0 &&
+      !hasShorterExactTokenMatch(candidate, exactCandidates)
+  );
 
-  return matches;
+  return [...exactCandidates, ...fuzzyCandidates]
+    .sort((left, right) => left.ingredientIndex - right.ingredientIndex)
+    .slice(0, limit)
+    .map((candidate) => ({
+      name: candidate.name,
+      amount: formatIngredientAmount(candidate.ingredient),
+    }));
 }

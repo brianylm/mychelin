@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-07-09",
+    title: "Ingredient amount matching fix",
+    items: [
+      "Step amount chips now avoid matching generic words inside longer ingredients, so a step that says oil no longer also selects sesame oil.",
+      "Steps that explicitly mention sesame oil still show sesame oil, and steps that mention both oil and sesame oil show both.",
+    ],
+  },
+  {
     date: "2026-07-08",
     title: "Privacy and sharing permission hardening",
     items: [

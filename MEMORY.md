@@ -2361,3 +2361,10 @@ Checks:
 - Added signup-rate-limit resilience to the smoke script: when production signup throttles synthetic users, the script seeds them directly in Turso and still verifies login through the app.
 - Files touched: app/src/app/api/recipes/route.ts, recipe mutation routes under app/src/app/api/recipes/[id]/, app/scripts/privacy-smoke.mjs, app/src/lib/changelog.ts, MEMORY.md.
 - Validation: node --check privacy-smoke passed; targeted npx eslint passed; npm run build passed; git diff --check passed; production deploy aliased to mychelin-sg.vercel.app; production privacy smoke passed 85 assertions and deleted synthetic privacy-smoke users.
+
+## 2026-07-09 - Step ingredient amount matching fix
+
+- Fixed the shared step ingredient matcher so generic single-token mentions such as oil do not also match longer ingredients such as sesame oil.
+- Preserved explicit longer matches: sesame oil shows when the step says sesame oil, and both oil and sesame oil show when both are separately mentioned.
+- Files touched: app/src/lib/step-ingredient-amounts.ts, app/src/lib/changelog.ts, MEMORY.md.
+- Validation: direct npx tsx matcher checks passed for oil/sesame oil/red onion cases; targeted npx eslint passed; npm run build passed.
