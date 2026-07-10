@@ -121,12 +121,9 @@ export function LandingPage() {
       {/* ==================== HERO ==================== */}
       <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
         {/* Background image */}
-        <Image
-          src="/images/hero-family-table-1600.avif"
+        <img
+          src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
-          fill
-          priority
-          sizes="100vw"
           className="landing-hero-image absolute inset-0 h-full w-full object-cover"
         />
         {/* Mobile readability scrim. Keeps faces visible and reserves
