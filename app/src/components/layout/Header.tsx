@@ -1,11 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { Menu, Search } from "lucide-react";
+import { IconButton } from "@radix-ui/themes";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
-  title?: string;
   onMenuClick?: () => void;
   onProfileClick?: () => void;
   onLogoClick?: () => void;
@@ -14,7 +12,6 @@ interface HeaderProps {
 }
 
 export function Header({
-  title,
   onMenuClick,
   onProfileClick,
   onLogoClick,
@@ -24,75 +21,87 @@ export function Header({
   const { user } = useAuth();
 
   return (
-    <header className="sticky inset-x-0 top-0 z-20 h-16 border-b border-[var(--ui-border)] bg-[var(--ui-surface)]">
-      <div className="flex h-full w-full items-center gap-2 px-3 sm:px-4">
-        {onMenuClick && (
-          <button
-            type="button"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-text)] transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)] md:hidden"
-            onClick={onMenuClick}
-            aria-label="Open navigation"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onLogoClick}
-          className="flex h-11 shrink-0 items-center gap-2 rounded-lg px-2 transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]"
-          aria-label="Open recipe library"
-        >
-          <Image
-            src="/images/mychelin-icon-96.webp"
-            alt=""
-            aria-hidden="true"
-            width={28}
-            height={28}
-            className="h-7 w-7 object-contain"
-          />
-          <span className="logo-serif text-lg font-bold leading-none">
-            <span className="text-[var(--ui-accent)]">my</span>
-            <span className="text-[var(--ui-text)]">chelin</span>
-          </span>
-        </button>
-
-        <div className="hidden min-w-0 flex-1 items-center gap-3 md:flex">
-          <span className="h-5 w-px bg-[var(--ui-border-strong)]" aria-hidden="true" />
-          {title && (
-            <span className="truncate text-sm font-semibold text-[var(--ui-muted-strong)]">
-              {title}
-            </span>
+    <header className="sticky left-0 right-0 top-0 z-20 flex h-[68px] items-center bg-transparent px-3 py-2">
+      <div className="relative mx-auto flex h-full w-full items-center justify-between gap-3 rounded-full bg-white/75 px-3 shadow-[0_14px_38px_rgba(40,26,19,0.12)] ring-1 ring-white/70 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/60 sm:px-4">
+        <div className="relative z-10 flex items-center gap-2">
+          {onMenuClick && (
+            <IconButton
+              variant="ghost"
+              size="2"
+              className="md:hidden"
+              onClick={onMenuClick}
+              aria-label="Open recipes menu"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </IconButton>
           )}
-          {children}
+
+          <button
+            onClick={onLogoClick}
+            className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25"
+          >
+            <img
+              src="/images/mychelin-icon-96.webp"
+              alt="Mychelin"
+              className="h-7 w-7 object-contain"
+            />
+            <span className="logo-serif text-lg font-bold leading-none tracking-[-0.015em]">
+              <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>
+            </span>
+          </button>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="relative z-10">{children}</div>
+
+        <div className="relative z-10 flex items-center gap-1">
           {onSearchClick && (
-            <button
-              type="button"
+            <IconButton
+              variant="ghost"
+              size="2"
               onClick={onSearchClick}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted-strong)] transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-accent)]"
               aria-label="Search recipes"
               title="Search by recipe or ingredient"
             >
-              <Search className="h-[18px] w-[18px]" aria-hidden="true" />
-            </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </IconButton>
           )}
 
           {user && (
             <button
-              type="button"
               onClick={onProfileClick}
-              className="flex h-11 items-center gap-2 rounded-lg px-1.5 transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]"
-              aria-label={`Open profile for ${user.name}`}
+              className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ui-accent-muted)] text-xs font-semibold text-[var(--ui-accent)]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
                 {user.name.charAt(0).toUpperCase()}
-              </span>
-              <span className="hidden max-w-32 truncate text-sm font-medium text-[var(--ui-muted-strong)] lg:inline">
-                {user.name}
-              </span>
+              </div>
+              <span className="hidden text-sm font-medium text-stone-700 sm:inline">{user.name}</span>
             </button>
           )}
         </div>

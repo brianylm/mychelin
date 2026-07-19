@@ -8,16 +8,16 @@ interface ChatBubbleProps {
   isRight?: boolean;
 }
 
-export function ChatBubble({ 
-  speaker, 
-  text, 
-  language, 
-  timestamp, 
-  isRight = false 
+export function ChatBubble({
+  speaker,
+  text,
+  language,
+  timestamp,
+  isRight = false
 }: ChatBubbleProps) {
-  const time = new Date(timestamp).toLocaleTimeString([], { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const time = new Date(timestamp).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
   });
 
   return (
@@ -26,10 +26,10 @@ export function ChatBubble({
       isRight ? "justify-end" : "justify-start"
     )}>
       <div className={cn(
-        "max-w-[88%] rounded-lg border px-4 py-3 sm:max-w-[78%]",
-        isRight 
-          ? "border-ui-accent/15 bg-ui-accent-muted text-ui-text"
-          : "border-ui-border bg-ui-surface-raised text-ui-text"
+        "max-w-[80%] rounded-2xl px-4 py-3 shadow-sm",
+        isRight
+          ? "bg-[#800020]/10 text-[#241017]"
+          : "bg-neutral-100 text-neutral-900"
       )}>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium text-current opacity-80">
@@ -37,8 +37,8 @@ export function ChatBubble({
           </span>
           <span className={cn(
             "text-[10px] px-1.5 py-0.5 rounded-full font-mono uppercase",
-            isRight 
-              ? "bg-[#800020]/15 text-[#800020]" 
+            isRight
+              ? "bg-[#800020]/15 text-[#800020]"
               : "bg-neutral-200 text-neutral-600"
           )}>
             {language}

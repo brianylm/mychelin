@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, type ComponentType } from "react";
+import { useState, useEffect } from "react";
 import {
+  Cross2Icon,
   StarIcon,
   StarFilledIcon,
   PlusIcon,
   MinusIcon,
   ReloadIcon,
 } from "@radix-ui/react-icons";
-import { ArrowLeftRight, X } from "lucide-react";
 
 interface IngredientDiff {
   name: string;
@@ -18,18 +18,12 @@ interface IngredientDiff {
   percentChange?: number;
 }
 
-interface VersionInstruction {
-  step?: number;
-  content?: string;
-  text?: string;
-}
-
 interface CompareData {
   base: { id: number; versionNumber: number; versionLabel: string | null; captureMethod: string; closenessRating: number | null; createdAt: string };
   compare: { id: number; versionNumber: number; versionLabel: string | null; captureMethod: string; closenessRating: number | null; createdAt: string };
   ingredientDiffs: IngredientDiff[];
-  baseInstructions: VersionInstruction[];
-  compareInstructions: VersionInstruction[];
+  baseInstructions: any[];
+  compareInstructions: any[];
   baseNotes: string | null;
   compareNotes: string | null;
 }
@@ -44,7 +38,7 @@ interface VersionCompareProps {
   onClose: () => void;
 }
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string; Icon: ComponentType<{ className?: string }> | null }> = {
+const STATUS_CONFIG: Record<string, { bg: string; text: string; Icon: any }> = {
   added: { bg: "bg-emerald-50", text: "text-emerald-700", Icon: PlusIcon },
   removed: { bg: "bg-red-50", text: "text-red-700", Icon: MinusIcon },
   changed: { bg: "bg-[#800020]/5", text: "text-[#800020]", Icon: ReloadIcon },
@@ -81,16 +75,16 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
   }, [recipeId, baseVersionId, compareVersionId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 p-0 sm:items-center sm:p-4" onClick={onClose}>
-      <div className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] shadow-xl sm:rounded-lg" role="dialog" aria-modal="true" aria-labelledby="version-compare-title" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+      <div className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 z-10 flex min-h-16 items-center justify-between border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <ArrowLeftRight className="h-5 w-5 text-[var(--ui-accent)]" aria-hidden="true" />
-            <h3 id="version-compare-title" className="text-sm font-semibold text-[var(--ui-text)]">Compare versions</h3>
+            <span className="text-[#800020]">⇄</span>
+            <h3 className="text-sm font-semibold text-neutral-800">Compare Versions</h3>
           </div>
-          <button onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]" aria-label="Close version comparison">
-            <X className="h-5 w-5" aria-hidden="true" />
+          <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100">
+            <Cross2Icon className="h-4 w-4" />
           </button>
         </div>
 
@@ -118,7 +112,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
             <div className="flex border-b border-neutral-100">
               {(["ingredients", "instructions", "notes"] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`min-h-11 flex-1 py-2 text-xs font-medium capitalize transition-colors ${
+                  className={`flex-1 py-2.5 text-xs font-medium capitalize transition-colors ${
                     tab === t ? "border-b-2 border-amber-500 text-[#800020]" : "text-neutral-500 hover:text-neutral-700"
                   }`}>{t}</button>
               ))}
@@ -133,7 +127,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
                     const cfg = STATUS_CONFIG[diff.status];
                     const Icon = cfg.Icon;
                     return (
-                      <div key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 ${cfg.bg}`}>
+                      <div key={i} className={`flex items-center gap-2 rounded-xl px-3 py-2 ${cfg.bg}`}>
                         {Icon && <Icon className={`h-3 w-3 ${cfg.text}`} />}
                         <div className="min-w-0 flex-1">
                           <span className={`text-sm font-medium ${cfg.text}`}>{diff.name}</span>
@@ -171,7 +165,7 @@ export function VersionCompare({ recipeId, baseVersionId, compareVersionId, onCl
                         <p className="text-xs text-neutral-400 italic">No instructions</p>
                       ) : (
                         <ol className="space-y-2">
-                          {col.items.map((inst, i) => (
+                          {col.items.map((inst: any, i: number) => (
                             <li key={i} className="text-xs leading-relaxed text-neutral-700">
                               <span className="mr-1 font-semibold text-[#800020]">{inst.step ?? i + 1}.</span>
                               {inst.content ?? inst.text}

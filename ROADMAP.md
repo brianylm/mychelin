@@ -93,7 +93,6 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 ### Mobile PWA polish
 
-- Initial workbench uplift now provides consistent app navigation, divider-led operational lists, loading skeletons, 44px kitchen controls, visible focus, reduced-motion support, responsive auth, and verified landing layouts from 320px through desktop.
 - Improve install prompts, offline states, and kitchen-mode interactions.
 - Tune touch targets, loading states, and accessibility for seniors and one-handed cooking use.
 

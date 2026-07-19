@@ -12,7 +12,7 @@
 //
 // On activate, old versioned caches are pruned.
 
-const CACHE_VERSION = "mychelin-v12";
+const CACHE_VERSION = "mychelin-v11";
 const APP_SHELL_CACHE = CACHE_VERSION + "-shell";
 const DYNAMIC_CACHE = CACHE_VERSION + "-dynamic";
 

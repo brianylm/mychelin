@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, ArrowRight, Check, ClipboardCheck, ListChecks, MessageSquareText, Save, Scale, X } from "lucide-react";
+import {
+  Cross2Icon,
+  ArrowRightIcon,
+  ArrowLeftIcon,
+  CheckIcon,
+} from "@radix-ui/react-icons";
 import { HalfStarRating } from "@/components/recipes/HalfStarRating";
 
 interface Ingredient {
@@ -41,10 +46,10 @@ interface CookAlongCaptureProps {
 }
 
 const STEPS = [
-  { label: "Choose version", icon: ListChecks },
-  { label: "Adjust amounts", icon: Scale },
-  { label: "Rate & notes", icon: MessageSquareText },
-  { label: "Save", icon: Save },
+  { label: "Choose version", icon: "📋" },
+  { label: "Adjust amounts", icon: "🍳" },
+  { label: "Rate & notes", icon: "⭐" },
+  { label: "Save", icon: "✅" },
 ];
 
 function formatAmount(quantity?: number, unit?: string) {
@@ -185,39 +190,33 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
       <div
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] shadow-xl animate-in slide-in-from-bottom sm:rounded-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="log-cook-title"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex min-h-16 items-center justify-between border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5 text-[var(--ui-accent)]" aria-hidden="true" />
-            <h3 id="log-cook-title" className="text-sm font-semibold text-[var(--ui-text)]">Log cook</h3>
+            <span>👨‍🍳</span>
+            <h3 className="text-sm font-semibold text-neutral-800">Log cook</h3>
           </div>
-          <button onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]" aria-label="Close log cook">
-            <X className="h-5 w-5" aria-hidden="true" />
+          <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100">
+            <Cross2Icon className="h-4 w-4" />
           </button>
         </div>
 
         {/* Progress */}
         <div className="flex border-b border-neutral-100 px-4">
-          {STEPS.map((s, i) => {
-            const Icon = s.icon;
-            return (
+          {STEPS.map((s, i) => (
             <div key={i} className={`flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium ${
               i === step ? "text-[#800020]" : i < step ? "text-emerald-600" : "text-neutral-400"
             }`}>
-              <Icon className="h-4 w-4" aria-hidden="true" />
+              <span className="text-sm">{s.icon}</span>
               <span className="hidden sm:block">{s.label}</span>
               <div className={`h-1 w-full rounded-full ${i <= step ? "bg-amber-400" : "bg-neutral-200"}`} />
             </div>
-            );
-          })}
+          ))}
         </div>
 
         {/* Content */}
@@ -240,7 +239,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                         <button
                           key={v.id}
                           onClick={() => setSelectedVersion(v)}
-                          className={`flex min-h-16 w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors ${
+                          className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
                             selectedVersion?.id === v.id ? "border-[#800020]/45 bg-[#800020]/5" : "border-neutral-200 hover:border-[#800020]/15"
                           }`}
                         >
@@ -251,7 +250,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                             <div className="text-sm font-medium text-neutral-800">Version {labelOf(v)}</div>
                             <div className="text-[11px] text-neutral-400">{v.ingredients.length} ingredients</div>
                           </div>
-                          {selectedVersion?.id === v.id && <Check className="ml-auto h-4 w-4 text-[var(--ui-accent)]" aria-hidden="true" />}
+                          {selectedVersion?.id === v.id && <CheckIcon className="ml-auto h-4 w-4 text-[#800020]" />}
                         </button>
                       ))}
                     </div>
@@ -270,28 +269,28 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                         <div className="flex items-center gap-3">
                           <div className="flex-1 min-w-0">
                             <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-neutral-400">Recipe says</label>
-                            <div className="flex min-h-11 items-center rounded-lg bg-[var(--ui-surface-subtle)] px-2.5 text-xs text-[var(--ui-muted)]">
+                            <div className="rounded-lg bg-neutral-100 px-2.5 py-1.5 text-xs text-neutral-600">
                               {ing.quantity ?? "—"} {ing.unit ?? ""}
                             </div>
                           </div>
-                          <ArrowRight className="mt-7 h-4 w-4 shrink-0 text-neutral-300" aria-hidden="true" />
+                          <ArrowRightIcon className="mt-5 h-3 w-3 shrink-0 text-neutral-300" />
                           <div className="flex-1 min-w-0">
                             <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#800020]">I used</label>
-                            <div className="grid grid-cols-2 gap-1">
+                            <div className="flex gap-1">
                               <input
                                 type="number"
                                 step="any"
                                 value={ing.actualQuantity ?? ""}
                                 onChange={(e) => updateIngredient(i, "actualQuantity", e.target.value ? parseFloat(e.target.value) : undefined)}
                                 placeholder="qty"
-                                className="h-11 min-w-0 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-2 text-xs text-[var(--ui-text)] outline-none focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)] placeholder:text-[var(--ui-muted)]"
+                                className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs text-neutral-900 shadow-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-300"
                               />
                               <input
                                 type="text"
                                 value={ing.actualUnit ?? ""}
                                 onChange={(e) => updateIngredient(i, "actualUnit", e.target.value)}
                                 placeholder="unit"
-                                className="h-11 min-w-0 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-2 text-xs text-[var(--ui-text)] outline-none focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)] placeholder:text-[var(--ui-muted)]"
+                                className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs text-neutral-900 shadow-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-300"
                               />
                             </div>
                           </div>
@@ -319,7 +318,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                     <label className="mb-1 block text-sm font-medium text-neutral-700">What was different?</label>
                     <textarea value={closenessNotes} onChange={(e) => setClosenessNotes(e.target.value)}
                       placeholder="e.g., too salty, needed more garlic, texture was off..."
-                      rows={3} className="w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 py-2 text-sm focus:border-[var(--ui-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]" />
+                      rows={3} className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:border-[#800020]/45 focus:outline-none" />
                   </div>
                 </div>
               )}
@@ -327,7 +326,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
               {/* Step 3: Summary & Save */}
               {step === 3 && (
                 <div className="space-y-4">
-                  <div className="border-l-2 border-[var(--ui-accent)] bg-[var(--ui-accent-muted)] px-4 py-3">
+                  <div className="rounded-xl bg-[#800020]/5 p-4">
                     <h4 className="mb-2 text-sm font-semibold text-[#521224]">Cook log summary</h4>
                     <div className="space-y-1 text-xs text-[#800020]">
                       <p>Cooked from: v{selectedVersion ? labelOf(selectedVersion) : ""}</p>
@@ -348,7 +347,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                       <button
                         type="button"
                         onClick={() => setSaveMode("attempt_and_version")}
-                        className={"min-h-24 rounded-lg border px-3 py-3 text-left transition-colors " + (saveMode === "attempt_and_version" ? "border-[#800020]/40 bg-[#800020]/5" : "border-neutral-200 bg-white hover:border-[#800020]/20")}
+                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_and_version" ? "border-[#800020]/40 bg-[#800020]/5" : "border-neutral-200 bg-white hover:border-[#800020]/20")}
                       >
                         <span className="text-sm font-semibold text-neutral-900">Attempt + version</span>
                         <span className="mt-1 block text-xs leading-5 text-neutral-500">Use this when the cook changed the recipe enough to preserve a new version.</span>
@@ -356,7 +355,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
                       <button
                         type="button"
                         onClick={() => setSaveMode("attempt_only")}
-                        className={"min-h-24 rounded-lg border px-3 py-3 text-left transition-colors " + (saveMode === "attempt_only" ? "border-[#800020]/40 bg-[#800020]/5" : "border-neutral-200 bg-white hover:border-[#800020]/20")}
+                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_only" ? "border-[#800020]/40 bg-[#800020]/5" : "border-neutral-200 bg-white hover:border-[#800020]/20")}
                       >
                         <span className="text-sm font-semibold text-neutral-900">Attempt only</span>
                         <span className="mt-1 block text-xs leading-5 text-neutral-500">Use this when you cooked it but are not ready to change the recipe.</span>
@@ -373,29 +372,29 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
         </div>
 
         {error && (
-          <p className="mx-4 mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          <p className="mx-4 mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </p>
         )}
 
         {/* Navigation */}
-        <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-3">
+        <div className="sticky bottom-0 flex items-center justify-between border-t border-neutral-100 bg-white px-4 py-3">
           <button onClick={() => (step === 0 ? onClose() : setStep(step - 1))}
-            className="flex h-11 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)]">
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            className="flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100">
+            <ArrowLeftIcon className="h-3 w-3" />
             {step === 0 ? "Cancel" : "Back"}
           </button>
           {step < 3 ? (
             <button onClick={() => setStep(step + 1)} disabled={step === 0 && !selectedVersion}
-              className="flex h-11 items-center gap-2 rounded-lg bg-[var(--ui-action)] px-4 text-xs font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:opacity-50">
-              Next <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              className="flex items-center gap-1 rounded-xl bg-[#800020]/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#17131f] disabled:opacity-50">
+              Next <ArrowRightIcon className="h-3 w-3" />
             </button>
           ) : (
             <button onClick={handleSave} disabled={saving}
-              className="flex h-11 items-center gap-2 rounded-lg bg-[var(--ui-action)] px-4 text-xs font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:opacity-50">
+              className="flex items-center gap-1 rounded-xl bg-[#800020]/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#17131f] disabled:opacity-50">
               {saving
                 ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                : <Check className="h-4 w-4" aria-hidden="true" />}
+                : <CheckIcon className="h-3 w-3" />}
               {saveMode === "attempt_only" ? "Save attempt" : "Save attempt + version"}
             </button>
           )}

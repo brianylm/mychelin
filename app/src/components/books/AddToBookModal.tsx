@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { BookOpen, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 
 interface Book {
@@ -19,18 +19,24 @@ interface AddToBookModalProps {
 }
 
 export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModalProps) {
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBooks, setSelectedBooks] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchUserBooks = useCallback(async () => {
+  useEffect(() => {
+    fetchUserBooks();
+  }, []);
+
+  const fetchUserBooks = async () => {
     try {
       const response = await fetch("/api/books");
       if (!response.ok) throw new Error("Failed to fetch books");
 
       const allBooks = await response.json();
+      // Filter books where user has editor or owner permissions
       const editableBooks = allBooks.filter(
         (book: Book) => book.userRole === "owner" || book.userRole === "editor"
       );
@@ -41,11 +47,7 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
-
-  useEffect(() => {
-    void fetchUserBooks();
-  }, [fetchUserBooks]);
+  };
 
   const handleBookToggle = (bookId: number) => {
     setSelectedBooks(prev => {
@@ -84,18 +86,18 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
           } else {
             results.push({ bookId, success: false, reason: "error" });
           }
-        } catch {
+        } catch (error) {
           results.push({ bookId, success: false, reason: "network_error" });
         }
       }
 
       const successCount = results.filter(r => r.success).length;
       const duplicateCount = results.filter(r => !r.success && r.reason === "already_exists").length;
-      
+
       if (successCount > 0) {
         addToast(`Recipe added to ${successCount} book${successCount > 1 ? 's' : ''}!`, "success");
       }
-      
+
       if (duplicateCount > 0) {
         addToast(`Recipe was already in ${duplicateCount} book${duplicateCount > 1 ? 's' : ''}`, "info");
       }
@@ -122,19 +124,18 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/45 p-4">
-      <div className="w-full max-w-md rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-5 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="add-to-book-title">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 id="add-to-book-title" className="text-xl font-semibold text-[var(--ui-text)]">Add to book</h2>
-            <p className="text-sm text-neutral-600">Add &quot;{recipeName}&quot; to your books</p>
+            <h2 className="text-xl font-semibold text-neutral-900">Add to Book</h2>
+            <p className="text-sm text-neutral-600">Add "{recipeName}" to your books</p>
           </div>
           <button
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
-            aria-label="Close add to book dialog"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
           >
-            <X className="h-5 w-5" aria-hidden="true" />
+            ×
           </button>
         </div>
 
@@ -144,23 +145,23 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
           </div>
         ) : books.length === 0 ? (
           <div className="py-8 text-center">
-            <BookOpen className="mx-auto mb-3 h-8 w-8 text-[var(--ui-accent)]" aria-hidden="true" />
+            <div className="mb-2 text-4xl">📚</div>
             <p className="text-neutral-600">No books where you can add recipes</p>
             <p className="text-sm text-neutral-500">You need owner or editor permissions to add recipes</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="max-h-64 divide-y divide-[var(--ui-border)] overflow-y-auto border-y border-[var(--ui-border)]">
+            <div className="max-h-64 space-y-3 overflow-y-auto">
               {books.map((book) => (
                 <label
                   key={book.id}
-                  className="flex min-h-16 cursor-pointer items-center gap-3 px-1 py-3 transition-colors hover:bg-[var(--ui-surface-subtle)]"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-transparent p-3 transition-all hover:bg-neutral-50"
                 >
                   <input
                     type="checkbox"
                     checked={selectedBooks.has(book.id)}
                     onChange={() => handleBookToggle(book.id)}
-                    className="h-5 w-5 rounded border-[var(--ui-border-strong)] text-[var(--ui-accent)] focus:ring-[var(--ui-focus)]"
+                    className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-amber-500"
                   />
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${getColorClass(book.coverColor)}`}
@@ -179,20 +180,20 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
               <button
                 type="button"
                 onClick={onClose}
-                className="h-11 flex-1 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-4 text-sm font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-surface-subtle)]"
+                className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={selectedBooks.size === 0 || submitting}
-                className="h-11 flex-1 rounded-lg bg-[var(--ui-action)] px-3 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[#17131f] px-4 py-3 font-medium text-white transition-colors hover:bg-[#800020] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting 
-                  ? "Adding..." 
-                  : selectedBooks.size === 0 
-                  ? "Select books"
-                  : `Add to ${selectedBooks.size} book${selectedBooks.size > 1 ? 's' : ''}`
+                {submitting
+                  ? "Adding..."
+                  : selectedBooks.size === 0
+                  ? "Select Books"
+                  : `Add to ${selectedBooks.size} Book${selectedBooks.size > 1 ? 's' : ''}`
                 }
               </button>
             </div>

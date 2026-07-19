@@ -2,8 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
-import { Check, RefreshCw } from "lucide-react";
-import { EmptyState, PageHeader, Skeleton } from "@/components/ui";
 
 interface ShoppingItem {
   key: string;
@@ -117,75 +115,79 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
   const checkedCount = checkedItems.size;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-ui-bg pb-20 md:pb-8">
-      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <PageHeader
-          eyebrow="Meal plan"
-          title="Shopping list"
-          description="Ingredients are combined across planned dishes, then reduced by matching fridge and pantry stock."
-        />
+    <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        {/* Header */}
+        <div className="mb-4">
+          <h2 className="text-base font-semibold">Shopping List</h2>
+          <p className="text-xs text-neutral-500">
+            Based on your meal plan, grouped by ingredient and adjusted for matching inventory.
+          </p>
+        </div>
 
-        <section className="mt-5 grid gap-3 border-y border-ui-border py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-          <div className="grid min-w-0 grid-cols-2 gap-3">
-            <label className="grid min-w-0 gap-1 text-xs font-semibold text-ui-muted">
-              From
+        {/* Date range picker */}
+        <div className="mb-4 grid gap-3 rounded-2xl border border-neutral-200 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+            <label className="min-w-0 text-xs font-medium text-neutral-500">
+              <span className="mb-1 block">From</span>
               <input
                 type="date"
                 value={dateRange.start}
-                onChange={(event) =>
-                  setDateRange((range) => ({ ...range, start: event.target.value }))
+                onChange={(e) =>
+                  setDateRange((r) => ({ ...r, start: e.target.value }))
                 }
-                className="h-11 w-full min-w-0 max-w-full appearance-none rounded-lg border border-ui-border-strong bg-ui-surface-raised px-2 text-[12px] text-ui-text outline-none focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft sm:px-3 sm:text-sm"
+                className="w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-[13px] outline-none focus:border-neutral-400"
               />
             </label>
-            <label className="grid min-w-0 gap-1 text-xs font-semibold text-ui-muted">
-              To
+            <label className="min-w-0 text-xs font-medium text-neutral-500">
+              <span className="mb-1 block">To</span>
               <input
                 type="date"
                 value={dateRange.end}
-                onChange={(event) =>
-                  setDateRange((range) => ({ ...range, end: event.target.value }))
+                onChange={(e) =>
+                  setDateRange((r) => ({ ...r, end: e.target.value }))
                 }
-                className="h-11 w-full min-w-0 max-w-full appearance-none rounded-lg border border-ui-border-strong bg-ui-surface-raised px-2 text-[12px] text-ui-text outline-none focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft sm:px-3 sm:text-sm"
+                className="w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-[13px] outline-none focus:border-neutral-400"
               />
             </label>
           </div>
-          <Button className="h-11" size="2" variant="soft" onClick={fetchList}>
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          <Button size="1" variant="soft" onClick={fetchList}>
             Refresh
           </Button>
-        </section>
+        </div>
 
+        {/* Summary */}
         {summary && (
-          <dl className="mt-5 grid grid-cols-3 divide-x divide-ui-border border-y border-ui-border">
-            {[
-              ["Meals", summary.mealCount],
-              ["Recipes", summary.recipeCount],
-              ["To buy", summary.itemCount],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="min-w-0 px-3 py-3 text-center sm:text-left">
-                <dt className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
-                  {label}
-                </dt>
-                <dd className="mt-1 text-lg font-semibold tabular-nums text-ui-text">
-                  {value}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mb-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Meals</p>
+              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.mealCount}</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Recipes</p>
+              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.recipeCount}</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">To buy</p>
+              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.itemCount}</p>
+            </div>
+          </div>
         )}
 
+        {/* Progress */}
         {totalItems > 0 && (
-          <div className="mt-5 border-b border-ui-border pb-4">
-            <div className="mb-2 flex items-center justify-between text-xs font-medium text-ui-muted">
-              <span>Shopping progress</span>
-              <span className="tabular-nums">
+          <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-medium text-neutral-500">
+                Progress
+              </span>
+              <span className="text-xs tabular-nums text-neutral-500">
                 {checkedCount}/{totalItems}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-ui-surface-subtle">
+            <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
               <div
-                className="h-full rounded-full bg-ui-accent transition-[width] duration-300"
+                className="h-full rounded-full bg-[#800020]/50 transition-all duration-300"
                 style={{
                   width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%`,
                 }}
@@ -194,87 +196,109 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
           </div>
         )}
 
+        {/* Content */}
         {loading ? (
-          <div className="mt-6 space-y-5">
-            {[0, 1, 2].map((item) => (
-              <div key={item}>
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="mt-3 h-14 w-full" />
-                <Skeleton className="mt-1 h-14 w-full" />
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <p className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <p className="py-12 text-center text-sm text-neutral-500">
+            Generating shopping list...
           </p>
+        ) : error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
         ) : totalItems === 0 ? (
-          <EmptyState
-            className="mt-6 border-t border-ui-border"
-            title="Nothing to buy"
-            description="Add recipes to your meal plan. Ingredients will appear here automatically, minus matching items already in your fridge or pantry."
-          />
+          <div className="py-12 text-center">
+            <p className="text-3xl">🛒</p>
+            <p className="mt-2 text-sm font-medium text-neutral-700">
+              Nothing to buy!
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">
+              Add recipes to your meal plan and items will appear here
+              automatically — minus what you already have in the fridge.
+            </p>
+          </div>
         ) : (
-          <div className="mt-7 space-y-7">
-            {Object.entries(grouped).map(([category, categoryItems]) => (
-              <section key={category}>
-                <h2 className="flex min-h-11 items-center border-b border-ui-border text-xs font-semibold uppercase tracking-[0.14em] text-ui-muted">
+          <div className="space-y-4">
+            {Object.entries(grouped).map(([category, catItems]) => (
+              <div key={category}>
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                   {category}
-                </h2>
-                <div className="divide-y divide-ui-border">
-                  {categoryItems.map((item) => {
+                </h3>
+                <div className="space-y-1">
+                  {catItems.map((item) => {
                     const checked = checkedItems.has(item.key);
                     return (
                       <button
                         key={item.key}
-                        type="button"
                         onClick={() => toggleCheck(item.key)}
-                        className={`grid min-h-14 w-full grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-3 px-1 py-3 text-left transition-colors duration-200 hover:bg-ui-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ui-focus ${
-                          checked ? "bg-ui-success-soft" : ""
+                        className={`flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition-all ${
+                          checked
+                            ? "border-green-200 bg-green-50/50"
+                            : "border-neutral-200 hover:border-neutral-300"
                         }`}
-                        aria-pressed={checked}
                       >
-                        <span
-                          className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
+                        {/* Checkbox */}
+                        <div
+                          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                             checked
-                              ? "border-ui-success bg-ui-success text-white"
-                              : "border-ui-border-strong"
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {checked && <Check className="h-3.5 w-3.5" />}
-                        </span>
-                        <span
-                          className={`min-w-0 break-words text-sm ${
-                            checked ? "text-ui-muted line-through" : "text-ui-text"
+                              ? "border-green-500 bg-green-500"
+                              : "border-neutral-300"
                           }`}
                         >
-                          {item.name}
-                        </span>
-                        <span className="max-w-[9rem] text-right">
-                          <span
-                            className={`block break-words text-sm font-semibold tabular-nums ${
-                              checked ? "text-ui-muted" : "text-ui-text"
+                          {checked && (
+                            <svg
+                              className="h-3 w-3 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Item info */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-sm ${
+                              checked
+                                ? "text-neutral-400 line-through"
+                                : "text-neutral-800"
+                            }`}
+                          >
+                            {item.name}
+                          </p>
+                        </div>
+
+                        {/* Quantity */}
+                        <div className="text-right">
+                          <p
+                            className={`text-sm font-medium tabular-nums ${
+                              checked ? "text-neutral-400" : "text-neutral-800"
                             }`}
                           >
                             {item.quantityLabel}
-                          </span>
+                          </p>
                           {item.quantityOnHand > 0 && item.quantityToBuy != null && (
-                            <span className="block text-[10px] leading-4 text-ui-muted">
+                            <p className="text-[10px] text-neutral-400">
                               {item.quantityOnHand} {item.unit} on hand
-                            </span>
+                            </p>
                           )}
                           {item.approximate && (
-                            <span className="block text-[10px] leading-4 text-ui-muted">
-                              Check amount
-                            </span>
+                            <p className="text-[10px] text-neutral-400">
+                              Check amount while shopping
+                            </p>
                           )}
-                        </span>
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-              </section>
+              </div>
             ))}
           </div>
         )}

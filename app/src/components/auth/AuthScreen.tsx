@@ -1,14 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@radix-ui/themes";
 import { useAuth } from "@/context/AuthContext";
 
 type Mode = "login" | "signup" | "forgot";
 
 const fieldClass =
-  "h-11 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]";
+  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:bg-white focus:ring-4 focus:ring-[#800020]/10";
 
 export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   const { login, signup } = useAuth();
@@ -112,12 +111,15 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--ui-canvas)] px-4 py-10">
-      <div className="w-full max-w-md animate-fade-in">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_12%,rgba(128,0,32,0.10),transparent_24rem),linear-gradient(180deg,rgba(250,250,248,0.96),rgba(246,242,235,0.92))]" />
+      <div className="relative w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <Image src="/images/mychelin-icon-96.webp" alt="" width={56} height={56} className="mx-auto mb-3 h-14 w-14 object-contain" />
-          <h1 className="logo-serif text-2xl font-bold">
+          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-white/70 shadow-[0_18px_55px_rgba(40,26,19,0.10)] ring-1 ring-white/70 backdrop-blur-xl">
+            <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
+          </div>
+          <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
             <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>
           </h1>
           <p className="mt-2 text-sm text-stone-500">
@@ -128,9 +130,9 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
         {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-6"
+          className="rounded-[2rem] border border-white/70 bg-white/70 p-6 shadow-[0_24px_80px_rgba(60,43,25,0.10)] backdrop-blur-2xl"
         >
-          <h2 className="app-editorial-title mb-2 text-2xl leading-tight text-[var(--ui-text)]">
+          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">
             {mode === "login"
               ? "Welcome back"
               : mode === "signup"
@@ -147,13 +149,15 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
 
           {mode === "forgot" && forgotSent ? (
             <div className="space-y-4">
-              <p className="rounded-lg border border-[var(--ui-accent)]/20 bg-[var(--ui-accent-muted)] px-4 py-3 text-sm leading-6 text-[#521224]">
+              <p className="rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs leading-5 text-[#521224]">
                 If an account exists for <strong>{email}</strong>, we&apos;ve sent a
                 password reset link. Check your inbox (and spam folder).
               </p>
               <Button
                 type="button"
-                className="w-full"
+                variant="solid"
+                size="3"
+                style={{ width: "100%" }}
                 onClick={() => switchMode("login")}
               >
                 Back to sign in
@@ -189,11 +193,10 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
               <div className="space-y-3">
                 {mode === "signup" && (
                   <div>
-                    <label htmlFor="auth-name" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                       Name
                     </label>
                     <input
-                      id="auth-name"
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -206,11 +209,10 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                 )}
 
                 <div>
-                  <label htmlFor="auth-email" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                     Email
                   </label>
                   <input
-                    id="auth-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -224,21 +226,20 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                 {mode !== "forgot" && (
                   <div>
                     <div className="mb-1 flex items-center justify-between">
-                      <label htmlFor="auth-password" className="block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+                      <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                         Password
                       </label>
                       {mode === "login" && (
                         <button
                           type="button"
                           onClick={() => switchMode("forgot")}
-                          className="flex min-h-11 items-center text-xs font-medium text-[#800020] hover:underline"
+                          className="text-xs font-medium text-[#800020] hover:underline"
                         >
                           Forgot?
                         </button>
                       )}
                     </div>
                     <input
-                      id="auth-password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -254,15 +255,18 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
               </div>
 
               {error && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
                   {error}
                 </p>
               )}
 
               <Button
                 type="submit"
-                className="mt-8 w-full"
-                loading={loading}
+                variant="solid"
+                size="3"
+                className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
+                style={{ width: "100%", marginTop: "32px" }}
+                disabled={loading}
               >
                 {loading
                   ? "Please wait..."
@@ -312,6 +316,6 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
           )}
         </form>
       </div>
-    </main>
+    </div>
   );
 }

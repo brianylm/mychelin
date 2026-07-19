@@ -56,13 +56,13 @@ interface IngredientListProps {
 }
 
 const fieldBase =
-  "h-11 rounded-lg border border-neutral-300 bg-neutral-50 px-2 text-sm outline-none transition-colors focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
+  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
 const editNameFieldBase =
-  "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 sm:text-sm";
+  "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:h-10 sm:text-sm";
 const editAmountFieldBase =
-  "h-11 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10";
+  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
 const editDetailFieldBase =
-  "h-11 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 outline-none transition-colors placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10";
+  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
 
 type IngredientDraft = {
   name: string;
@@ -413,40 +413,34 @@ export function IngredientList({
 
   if (readOnly) {
     return (
-      <section className="min-w-0">
-        <div className="flex min-h-11 items-center justify-between border-b border-ui-border pb-2">
-          <h2 className="text-lg font-semibold text-ui-text">Ingredients</h2>
-          <span className="text-xs font-medium tabular-nums text-ui-muted">
-            {ingredients.length}
-          </span>
+      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+              {ingredients.length}
+            </span>
+          </div>
         </div>
 
         {ingredients.length === 0 ? (
-          <p className="py-4 text-sm text-ui-muted">No ingredients yet</p>
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-neutral-400">
+            No ingredients yet
+          </p>
         ) : (
-          <ul className="divide-y divide-ui-border">
-            {ingredients.map((ingredient) => {
-              const amount = formatReadOnlyIngredientAmount(ingredient, scale);
+          <ul className="space-y-2">
+            {ingredients.map((ing) => {
+              const amount = formatReadOnlyIngredientAmount(ing, scale);
               return (
-                <li
-                  key={ingredient.id}
-                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-3 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="break-words text-sm font-medium leading-5 text-ui-text">
-                      {ingredient.name}
-                    </p>
-                    {ingredient.notes && (
-                      <p className="mt-1 break-words text-xs leading-5 text-ui-muted">
-                        {ingredient.notes}
-                      </p>
-                    )}
+                <li key={ing.id} className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-2.5">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#800020]/45" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="font-medium text-neutral-800">{ing.name}</span>
+                      {amount && <span className="text-sm text-[#521224]">{amount}</span>}
+                    </div>
+                    {ing.notes && <p className="mt-0.5 text-xs text-neutral-500">{ing.notes}</p>}
                   </div>
-                  {amount && (
-                    <span className="max-w-[8rem] text-right text-sm font-semibold text-ui-accent">
-                      {amount}
-                    </span>
-                  )}
                 </li>
               );
             })}
@@ -457,7 +451,7 @@ export function IngredientList({
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-4 sm:p-5">
+    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
@@ -472,7 +466,7 @@ export function IngredientList({
               setIsAdding(false);
               setIsBulkAdding(true);
             }}
-            className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-xs font-semibold text-neutral-600 transition-colors hover:border-[#800020]/30 hover:text-[#800020]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 transition hover:border-[#800020]/30 hover:text-[#800020]"
           >
             <ClipboardList className="h-3.5 w-3.5" />
             Paste list
@@ -489,7 +483,7 @@ export function IngredientList({
 
                 <button
                   type="button"
-                  className={`flex h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border text-base font-semibold transition-colors ${
+                  className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold transition ${
                     ing.approximate
                       ? "border-[#800020]/25 bg-[#800020]/10 text-[#800020]"
                       : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/20 hover:text-[#800020]"
@@ -511,7 +505,7 @@ export function IngredientList({
 
                 <button
                   type="button"
-                  className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition-colors hover:border-red-200 hover:bg-red-50"
+                  className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
                   onClick={() => onDelete(recipeId, ing.id)}
                   aria-label="Remove ingredient"
                   title="Remove ingredient"
@@ -535,7 +529,7 @@ export function IngredientList({
             return (
               <li
                 key={ing.id}
-                className="group rounded-lg border border-neutral-100 bg-neutral-50/50 p-3"
+                className="group rounded-xl border border-neutral-100 bg-neutral-50/50 p-3"
               >
                 {ing.approximate ? (
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.8fr)_auto] sm:items-center">
@@ -564,7 +558,7 @@ export function IngredientList({
                     {nameInput}
                     <div className="grid grid-cols-[64px_minmax(82px,1fr)_auto] items-center gap-2 sm:contents">
                       {scale !== 1 && ing.quantity ? (
-                        <span className="flex h-11 w-full items-center justify-center rounded-lg border border-[#800020]/10 bg-white px-2 text-center text-sm font-medium tabular-nums text-[#800020]">
+                        <span className="flex h-10 w-full items-center justify-center rounded-lg border border-[#800020]/10 bg-white px-2 text-center text-sm font-medium tabular-nums text-[#800020]">
                           {formatScaledQuantity(ing.quantity, scale)}
                         </span>
                       ) : (
@@ -659,9 +653,8 @@ a handful coriander`}
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Button
-              size="2"
+              size="1"
               variant="solid"
-              className="!h-11 !rounded-lg"
               onClick={handleBulkAdd}
               disabled={parsedBulkIngredients.length === 0 || bulkSaving}
             >
@@ -671,9 +664,8 @@ a handful coriander`}
                 : `Add ${parsedBulkIngredients.length || ""} ingredient${parsedBulkIngredients.length === 1 ? "" : "s"}`.trim()}
             </Button>
             <Button
-              size="2"
+              size="1"
               variant="soft"
-              className="!h-11 !rounded-lg"
               color="gray"
               onClick={() => {
                 setBulkText("");
@@ -772,7 +764,7 @@ a handful coriander`}
             onClick={() =>
               setDraft((d) => ({ ...d, approximate: !d.approximate }))
             }
-            className={`mb-3 inline-flex h-11 items-center gap-1 rounded-lg border px-3 text-xs font-medium transition-colors ${
+            className={`mb-3 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${
               draft.approximate
                 ? "border-[#800020]/30 bg-[#800020]/5 text-[#800020]"
                 : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300 hover:text-neutral-500"
@@ -783,13 +775,12 @@ a handful coriander`}
           </button>
 
           <div className="flex gap-2">
-            <Button size="2" variant="solid" className="!h-11 !rounded-lg" onClick={handleAdd}>
+            <Button size="1" variant="solid" onClick={handleAdd}>
               Add
             </Button>
             <Button
-              size="2"
+              size="1"
               variant="soft"
-              className="!h-11 !rounded-lg"
               color="gray"
               onClick={async () => {
                 if (draft.name.trim()) {
@@ -806,7 +797,7 @@ a handful coriander`}
         <Button
           size="2"
           variant="soft"
-          className="!h-11 !w-full !rounded-lg"
+          className="w-full"
           onClick={() => {
             setIsBulkAdding(false);
             setIsAdding(true);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 
 interface CollapsibleSectionProps {
@@ -22,54 +22,38 @@ export function CollapsibleSection({
   className,
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const contentId = useId();
 
   return (
     <section
-      className={cn(
-        "border-y border-[var(--ui-border)] bg-transparent",
-        className
-      )}
+      className={cn("rounded-2xl border border-neutral-200 bg-white", className)}
     >
       <button
         type="button"
-        onClick={() => setIsOpen((value) => !value)}
-        className="flex min-h-14 w-full items-center justify-between gap-4 px-1 py-3 text-left transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]"
-        aria-expanded={isOpen}
-        aria-controls={contentId}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between p-4 text-left transition hover:bg-neutral-50"
       >
-        <span className="flex min-w-0 items-center gap-3">
-          <ChevronRight
+        <div className="flex items-center gap-3">
+          <ChevronRightIcon
             className={cn(
-              "h-4 w-4 shrink-0 text-[var(--ui-muted)] transition-transform duration-200",
-              isOpen && "rotate-90"
+              "h-4 w-4 transition-transform",
+              isOpen ? "rotate-90" : "rotate-0"
             )}
-            aria-hidden="true"
           />
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold text-[var(--ui-text)]">
-              {title}
-            </span>
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
             {subtitle && (
-              <span className="mt-0.5 block text-xs leading-5 text-[var(--ui-muted)]">
-                {subtitle}
-              </span>
+              <p className="text-xs text-neutral-500">{subtitle}</p>
             )}
-          </span>
-        </span>
+          </div>
+        </div>
         {badge !== undefined && (
-          <span className="flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-md bg-[var(--ui-accent-muted)] px-1.5 text-xs font-semibold text-[var(--ui-accent)]">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
             {badge}
           </span>
         )}
       </button>
       {isOpen && (
-        <div
-          id={contentId}
-          className="border-t border-[var(--ui-border)] px-1 py-4"
-        >
-          {children}
-        </div>
+        <div className="border-t border-neutral-200 p-4">{children}</div>
       )}
     </section>
   );

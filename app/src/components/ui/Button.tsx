@@ -22,12 +22,12 @@ const variants: Record<ButtonVariant, string> = {
   danger:
     "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
   quiet:
-    "border border-transparent bg-transparent text-[var(--ui-muted)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]",
+    "border border-transparent bg-transparent text-[var(--ui-muted)] hover:bg-neutral-100 hover:text-[var(--ui-text)]",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-11 gap-1.5 rounded-lg px-3 text-xs",
-  md: "h-11 gap-2 rounded-lg px-4 text-sm",
+  sm: "h-8 gap-1.5 rounded-md px-3 text-xs",
+  md: "h-10 gap-2 rounded-lg px-4 text-sm",
   lg: "h-12 gap-2.5 rounded-lg px-5 text-base",
 };
 
@@ -47,9 +47,8 @@ export function Button({
     <button
       type={type}
       disabled={disabled || loading}
-      aria-busy={loading || undefined}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center whitespace-nowrap font-semibold transition-[background-color,border-color,color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55 active:translate-y-px",
+        "inline-flex shrink-0 items-center justify-center font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55",
         sizes[size],
         variants[variant],
         className
@@ -57,10 +56,7 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <span
-          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
-          aria-hidden="true"
-        />
+        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
       ) : (
         iconStart
       )}

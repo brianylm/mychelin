@@ -1,24 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  BookOpen,
-  CalendarDays,
-  ChevronDown,
-  ChevronRight,
-  ClipboardList,
-  Plus,
-  Refrigerator,
-  ShoppingBasket,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
-import type { AppView } from "./BottomNav";
 import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
 import { ShareModal } from "@/components/sharing/ShareModal";
+import { ChevronDown, Plus } from "lucide-react";
 
 interface Book {
   id: number;
@@ -35,9 +24,6 @@ interface BookRecipe {
 interface RecipeSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentView?: AppView;
-  onViewChange?: (view: AppView) => void;
-  onSelectRecipe?: (recipeId: number) => void;
   onWriteOrPaste?: () => void;
   onImportUrl?: () => void;
   onCookRecipe?: (recipeId: number) => void;
@@ -47,24 +33,9 @@ interface RecipeSidebarProps {
   mobileOnly?: boolean;
 }
 
-const primaryNav: Array<{
-  id: AppView;
-  label: string;
-  icon: LucideIcon;
-}> = [
-  { id: "recipes", label: "Recipe library", icon: BookOpen },
-  { id: "plan", label: "Meal plan", icon: CalendarDays },
-  { id: "shopping", label: "Shopping", icon: ShoppingBasket },
-  { id: "fridge", label: "Fridge", icon: Refrigerator },
-  { id: "activity", label: "Activity", icon: ClipboardList },
-];
-
 export function RecipeSidebar({
   isOpen,
   onClose,
-  currentView = "recipes",
-  onViewChange,
-  onSelectRecipe,
   onWriteOrPaste,
   onImportUrl,
   onCookRecipe,
@@ -86,26 +57,16 @@ export function RecipeSidebar({
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isRecipesOpen, setIsRecipesOpen] = useState(true);
   const [isBooksOpen, setIsBooksOpen] = useState(true);
-  const [shareTarget, setShareTarget] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
+  const [shareTarget, setShareTarget] = useState<{ id: number; name: string } | null>(null);
+
+  // Books state
   const [books, setBooks] = useState<Book[]>([]);
   const [expandedBooks, setExpandedBooks] = useState<Set<number>>(new Set());
-  const [bookRecipes, setBookRecipes] = useState<
-    Record<number, BookRecipe[]>
-  >({});
-  const [searchResults, setSearchResults] = useState<
-    Array<{
-      recipe: (typeof recipes)[number];
-      matchedIngredient: string | null;
-    }>
-  >([]);
-  const [searching, setSearching] = useState(false);
+  const [bookRecipes, setBookRecipes] = useState<Record<number, BookRecipe[]>>({});
 
   useEffect(() => {
     fetch("/api/books")
-      .then((response) => (response.ok ? response.json() : []))
+      .then((res) => (res.ok ? res.json() : []))
       .then((data) => setBooks(data))
       .catch(() => {});
   }, []);
@@ -115,54 +76,45 @@ export function RecipeSidebar({
     onClose();
   }, [onClose, onManualRecipe]);
 
+  // Listen for create-recipe event from mobile "New" button
   useEffect(() => {
-    const handler = () => handleManualRecipe();
+    const handler = () => {
+      handleManualRecipe();
+    };
     window.addEventListener("mychelin:create-recipe", handler);
     return () => window.removeEventListener("mychelin:create-recipe", handler);
   }, [handleManualRecipe]);
 
-  const handleViewSelect = useCallback(
-    (view: AppView) => {
-      onViewChange?.(view);
-      onClose();
-    },
-    [onClose, onViewChange]
-  );
-
-  const handleRecipeSelect = useCallback(
-    (recipeId: number) => {
-      if (onSelectRecipe) onSelectRecipe(recipeId);
-      else selectRecipe(recipeId);
-      onClose();
-    },
-    [onClose, onSelectRecipe, selectRecipe]
-  );
-
-  const toggleBook = useCallback(
-    async (bookId: number) => {
-      setExpandedBooks((current) => {
-        const next = new Set(current);
-        if (next.has(bookId)) {
-          next.delete(bookId);
-        } else {
-          next.add(bookId);
-          if (!bookRecipes[bookId]) {
-            fetch(`/api/books/${bookId}/recipes`)
-              .then((response) => (response.ok ? response.json() : []))
-              .then((data) => {
-                setBookRecipes((existing) => ({
-                  ...existing,
-                  [bookId]: data,
-                }));
-              })
-              .catch(() => {});
-          }
+  const toggleBook = useCallback(async (bookId: number) => {
+    setExpandedBooks((prev) => {
+      const next = new Set(prev);
+      if (next.has(bookId)) {
+        next.delete(bookId);
+      } else {
+        next.add(bookId);
+        // Fetch recipes for this book if not already loaded
+        if (!bookRecipes[bookId]) {
+          fetch(`/api/books/${bookId}/recipes`)
+            .then((res) => (res.ok ? res.json() : []))
+            .then((data) => {
+              setBookRecipes((prev) => ({ ...prev, [bookId]: data }));
+            })
+            .catch(() => {});
         }
-        return next;
-      });
-    },
-    [bookRecipes]
-  );
+      }
+      return next;
+    });
+  }, [bookRecipes]);
+
+  // When the user types in the search box we hit /api/recipes/search,
+  // which matches against both recipe titles AND ingredient names —
+  // so "chilli" returns Arrabiata (because it has chilli in the
+  // ingredient list) as well as anything called "Chilli Crab".
+  // When the query is empty we fall back to the full recipe list.
+  const [searchResults, setSearchResults] = useState<
+    Array<{ recipe: typeof recipes[number]; matchedIngredient: string | null }>
+  >([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -171,17 +123,16 @@ export function RecipeSidebar({
       setSearching(false);
       return;
     }
-
     setSearching(true);
-    const timer = window.setTimeout(async () => {
+    const t = setTimeout(async () => {
       try {
-        const response = await fetch(
+        const res = await fetch(
           `/api/recipes/search?q=${encodeURIComponent(trimmed)}`
         );
-        if (!response.ok) throw new Error("Search failed");
-        const data = (await response.json()) as {
+        if (!res.ok) throw new Error("Search failed");
+        const data = (await res.json()) as {
           results: Array<{
-            recipe: (typeof recipes)[number];
+            recipe: typeof recipes[number];
             matchedIngredient: string | null;
           }>;
         };
@@ -191,10 +142,9 @@ export function RecipeSidebar({
       } finally {
         setSearching(false);
       }
-    }, 250);
-
-    return () => window.clearTimeout(timer);
-  }, [query, recipes]);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [query]);
 
   const hasQuery = query.trim().length > 0;
 
@@ -203,43 +153,45 @@ export function RecipeSidebar({
   }, [hasQuery]);
 
   const filteredRecipes = hasQuery
-    ? searchResults.map((result) => result.recipe)
+    ? searchResults.map((r) => r.recipe)
     : recipes;
   const matchedIngredientById = new Map<number, string>();
-  for (const result of searchResults) {
-    if (result.matchedIngredient) {
-      matchedIngredientById.set(result.recipe.id, result.matchedIngredient);
-    }
+  for (const r of searchResults) {
+    if (r.matchedIngredient)
+      matchedIngredientById.set(r.recipe.id, r.matchedIngredient);
   }
 
+  // Split drafts from active recipes. Drafts get their own collapsible
+  // section above "All Recipes" so in-progress captures don't pollute
+  // the main list. When the user is searching, skip the split — search
+  // results appear as a flat list regardless of status.
   const draftRecipes = hasQuery
     ? []
-    : filteredRecipes.filter((recipe) => recipe.status === "draft");
+    : filteredRecipes.filter((r) => r.status === "draft");
   const activeRecipes = hasQuery
     ? filteredRecipes
-    : filteredRecipes.filter((recipe) => recipe.status !== "draft");
+    : filteredRecipes.filter((r) => r.status !== "draft");
 
   return (
     <>
+      {/* Mobile backdrop */}
       {isOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-30 bg-neutral-950/35 md:hidden"
+          className="fixed inset-0 z-30 bg-neutral-950/40 backdrop-blur-sm md:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[min(88vw,20rem)] max-w-full flex-col border-r border-[var(--ui-border-strong)] bg-[var(--ui-surface)] shadow-[0_20px_50px_rgba(40,26,19,0.14)] transition-transform duration-200",
-          mobileOnly
-            ? "md:hidden"
-            : "md:static md:z-auto md:h-full md:w-72 md:translate-x-0 md:shadow-none",
+          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[#800020]/10 bg-[#fffdfb]/95 shadow-[0_24px_80px_rgba(60,43,25,0.16)] backdrop-blur-xl transition-transform",
+          mobileOnly ? "md:hidden" : "md:static md:z-auto md:h-full md:w-80 md:translate-x-0 md:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
-        aria-label="Mychelin navigation"
       >
-        <div className="border-b border-[var(--ui-border)] px-4 py-3">
+        {/* Header + search + toolbar */}
+        <div className="space-y-3 border-b border-[#800020]/10 bg-white/45 px-5 py-3">
           <RecipeSearchHeader
             query={query}
             onQueryChange={setQuery}
@@ -247,36 +199,13 @@ export function RecipeSidebar({
             onExpandToggle={setIsSearchExpanded}
             onClose={onClose}
           />
-        </div>
 
-        <nav
-          className="grid gap-0.5 border-b border-[var(--ui-border)] px-3 py-3"
-          aria-label="Primary"
-        >
-          {primaryNav.map((item) => {
-            const Icon = item.icon;
-            const active = currentView === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleViewSelect(item.id)}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-colors duration-200",
-                  active
-                    ? "bg-[var(--ui-action)] text-[var(--ui-action-text)]"
-                    : "text-[var(--ui-muted-strong)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+          {(loading || error) && (
+            <div className="rounded-xl border border-[#800020]/10 bg-[#800020]/5 px-3 py-2 text-xs text-[#521224]">
+              {loading ? "Loading recipes…" : error}
+            </div>
+          )}
 
-        <div className="border-b border-[var(--ui-border)] px-4 py-3">
           <SidebarToolbar
             onCreateOpen={handleManualRecipe}
             onWriteOrPaste={onWriteOrPaste}
@@ -284,41 +213,29 @@ export function RecipeSidebar({
             onCaptureConversation={onCaptureConversation}
             onAiDraft={onAiDraft}
           />
-          {(loading || error) && (
-            <p
-              className={cn(
-                "mt-3 border-l-2 px-3 py-2 text-xs leading-5",
-                error
-                  ? "border-[var(--ui-danger)] bg-[var(--ui-danger-soft)] text-[var(--ui-danger)]"
-                  : "border-[var(--ui-accent)] bg-[var(--ui-accent-muted)] text-[var(--ui-muted-strong)]"
-              )}
-              role={error ? "alert" : "status"}
-            >
-              {loading ? "Loading recipes..." : error}
-            </p>
-          )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3">
-          <section>
+        {/* Recipe list + Books: peer sections under Create recipe. */}
+        <div className="flex-1 overflow-y-auto px-2 py-3">
+          <section className="mb-4">
             <button
               type="button"
-              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-2 text-left transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]"
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-[#800020]/5"
               aria-expanded={isRecipesOpen}
               onClick={() => setIsRecipesOpen((value) => !value)}
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted-strong)]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
                 {hasQuery ? "Search results" : "Recipe library"}
               </span>
               <span className="flex items-center gap-2">
                 {!hasQuery && filteredRecipes.length > 0 && (
-                  <span className="rounded-md bg-[var(--ui-accent-muted)] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--ui-accent)]">
+                  <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
                     {filteredRecipes.length}
                   </span>
                 )}
                 <ChevronDown
                   className={cn(
-                    "h-4 w-4 text-[var(--ui-muted)] transition-transform duration-200",
+                    "h-4 w-4 text-[#800020] transition-transform",
                     isRecipesOpen && "rotate-180"
                   )}
                   aria-hidden="true"
@@ -328,24 +245,25 @@ export function RecipeSidebar({
 
             {isRecipesOpen && draftRecipes.length > 0 && (
               <div className="mb-3">
-                <div className="flex min-h-9 items-center justify-between px-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--ui-muted)]">
+                <div className="flex items-center justify-between px-3 pb-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
                     Drafts
                   </span>
-                  <span className="text-[11px] font-semibold tabular-nums text-[var(--ui-accent)]">
+                  <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
                     {draftRecipes.length}
                   </span>
                 </div>
-                <ul>
+                <ul className="space-y-0.5">
                   {draftRecipes.map((recipe) => (
                     <RecipeListItem
                       key={recipe.id}
                       recipe={recipe}
                       isSelected={selectedRecipeId === recipe.id}
-                      onSelect={handleRecipeSelect}
-                      onShare={(target) =>
-                        setShareTarget({ id: target.id, name: target.title })
-                      }
+                      onSelect={(id) => {
+                        selectRecipe(id);
+                        onClose();
+                      }}
+                      onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
                       onDelete={deleteRecipe}
                       onCook={onCookRecipe}
                       matchedIngredient={matchedIngredientById.get(recipe.id)}
@@ -355,54 +273,54 @@ export function RecipeSidebar({
               </div>
             )}
 
-            {isRecipesOpen &&
-              (activeRecipes.length === 0 && !loading && !searching ? (
-                <p className="px-2 py-6 text-sm leading-6 text-[var(--ui-muted)]">
-                  {query
-                    ? "No recipes match this search."
-                    : draftRecipes.length > 0
-                      ? "All recipes are still drafts. Add ingredients or steps to make one ready to cook."
-                      : "No recipes yet. Open Create recipe above to begin."}
-                </p>
-              ) : (
-                <ul>
-                  {activeRecipes.map((recipe) => (
-                    <RecipeListItem
-                      key={recipe.id}
-                      recipe={recipe}
-                      isSelected={selectedRecipeId === recipe.id}
-                      onSelect={handleRecipeSelect}
-                      onShare={(target) =>
-                        setShareTarget({ id: target.id, name: target.title })
-                      }
-                      onDelete={deleteRecipe}
-                      onCook={onCookRecipe}
-                      matchedIngredient={matchedIngredientById.get(recipe.id)}
-                    />
-                  ))}
-                </ul>
-              ))}
+            {isRecipesOpen && (activeRecipes.length === 0 && !loading && !searching ? (
+              <p className="px-3 py-6 text-center text-sm text-neutral-500">
+                {query
+                  ? "No recipes match your search."
+                  : draftRecipes.length > 0
+                    ? "All your recipes are drafts. Add ingredients or steps to save them as complete recipes."
+                    : "No recipes yet. Use Create recipe above to start one."}
+              </p>
+            ) : (
+              <ul className="space-y-0.5">
+                {activeRecipes.map((recipe) => (
+                  <RecipeListItem
+                    key={recipe.id}
+                    recipe={recipe}
+                    isSelected={selectedRecipeId === recipe.id}
+                    onSelect={(id) => {
+                      selectRecipe(id);
+                      onClose();
+                    }}
+                    onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
+                    onDelete={deleteRecipe}
+                    onCook={onCookRecipe}
+                    matchedIngredient={matchedIngredientById.get(recipe.id)}
+                  />
+                ))}
+              </ul>
+            ))}
           </section>
 
-          <section className="mt-3 border-t border-[var(--ui-border)] pt-3">
-            <div className="flex items-center gap-1">
+          <section className="border-t border-[#800020]/10 pt-3">
+            <div className="flex items-center justify-between gap-2 px-3 pb-1.5">
               <button
                 type="button"
-                className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg px-2 text-left transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 text-left transition hover:text-[#800020]"
                 aria-expanded={isBooksOpen}
                 onClick={() => setIsBooksOpen((value) => !value)}
               >
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted-strong)]">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]/60">
                   Books
                 </span>
                 {books.length > 0 && (
-                  <span className="rounded-md bg-[var(--ui-accent-muted)] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--ui-accent)]">
+                  <span className="rounded-full bg-[#800020]/10 px-1.5 text-[10px] font-medium text-[#800020]">
                     {books.length}
                   </span>
                 )}
                 <ChevronDown
                   className={cn(
-                    "ml-auto h-4 w-4 shrink-0 text-[var(--ui-muted)] transition-transform duration-200",
+                    "ml-auto h-4 w-4 shrink-0 text-[#800020] transition-transform",
                     isBooksOpen && "rotate-180"
                   )}
                   aria-hidden="true"
@@ -411,92 +329,91 @@ export function RecipeSidebar({
               <button
                 type="button"
                 onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent("mychelin:create-book")
-                  );
+                  window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-accent)] transition-colors duration-200 hover:bg-[var(--ui-accent-muted)]"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#800020]/10 text-[#800020] transition hover:border-[#800020]/25 hover:bg-[#800020]/10"
                 aria-label="Create book"
                 title="Create book"
               >
-                <Plus className="h-4 w-4" aria-hidden="true" />
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
-
-            {isBooksOpen &&
-              (books.length > 0 ? (
-                <ul>
-                  {books.map((book) => {
-                    const expanded = expandedBooks.has(book.id);
-                    return (
-                      <li key={book.id}>
-                        <button
-                          type="button"
-                          onClick={() => toggleBook(book.id)}
-                          aria-expanded={expanded}
-                          className={cn(
-                            "flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]",
-                            expanded &&
-                              "bg-[var(--ui-accent-muted)] text-[#521224]"
-                          )}
-                        >
-                          <ChevronRight
-                            className={cn(
-                              "h-4 w-4 shrink-0 text-[var(--ui-muted)] transition-transform duration-200",
-                              expanded && "rotate-90"
-                            )}
-                            aria-hidden="true"
-                          />
-                          <span aria-hidden="true">{book.coverEmoji}</span>
-                          <span className="truncate font-medium">
-                            {book.title}
-                          </span>
-                          <span className="ml-auto shrink-0 text-[11px] tabular-nums text-[var(--ui-muted)]">
-                            {book.recipeCount}
-                          </span>
-                        </button>
-
-                        {expanded && (
-                          <ul className="ml-4 border-l border-[var(--ui-border)] py-1 pl-3">
-                            {!bookRecipes[book.id] ? (
-                              <li className="px-2 py-2 text-xs text-[var(--ui-muted)]">
-                                Loading...
-                              </li>
-                            ) : bookRecipes[book.id].length === 0 ? (
-                              <li className="px-2 py-2 text-xs text-[var(--ui-muted)]">
-                                No recipes in this book
-                              </li>
-                            ) : (
-                              bookRecipes[book.id].map((recipe) => (
-                                <li key={recipe.id}>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleRecipeSelect(recipe.id)
-                                    }
-                                    className={cn(
-                                      "min-h-10 w-full rounded-md px-2 text-left text-sm transition-colors duration-200 hover:bg-[var(--ui-surface-subtle)]",
-                                      selectedRecipeId === recipe.id
-                                        ? "bg-[var(--ui-accent-muted)] font-semibold text-[#521224]"
-                                        : "text-[var(--ui-muted-strong)]"
-                                    )}
-                                  >
-                                    {recipe.title}
-                                  </button>
-                                </li>
-                              ))
-                            )}
-                          </ul>
+            {isBooksOpen && (books.length > 0 ? (
+              <ul className="space-y-0.5">
+                {books.map((book) => (
+                  <li key={book.id}>
+                    <button
+                      onClick={() => toggleBook(book.id)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-[#800020]/5",
+                        expandedBooks.has(book.id) && "bg-[#800020]/10 text-[#521224]"
+                      )}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={cn(
+                          "shrink-0 text-neutral-400 transition-transform",
+                          expandedBooks.has(book.id) && "rotate-90"
                         )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="px-2 py-3 text-xs leading-5 text-[var(--ui-muted)]">
-                  No books yet. Create one when you want to group recipes for a household or occasion.
-                </p>
-              ))}
+                      >
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                      <span>{book.coverEmoji}</span>
+                      <span className="truncate font-medium text-neutral-700">
+                        {book.title}
+                      </span>
+                      <span className="ml-auto shrink-0 text-[10px] text-neutral-400">
+                        {book.recipeCount}
+                      </span>
+                    </button>
+                    {expandedBooks.has(book.id) && (
+                      <ul className="ml-5 space-y-0.5 border-l border-neutral-200 py-1 pl-3">
+                        {!bookRecipes[book.id] ? (
+                          <li className="px-2 py-1.5 text-xs text-neutral-400">
+                            Loading...
+                          </li>
+                        ) : bookRecipes[book.id].length === 0 ? (
+                          <li className="px-2 py-1.5 text-xs text-neutral-400">
+                            No recipes in this book
+                          </li>
+                        ) : (
+                          bookRecipes[book.id].map((r) => (
+                            <li key={r.id}>
+                              <button
+                                onClick={() => {
+                                  selectRecipe(r.id);
+                                  onClose();
+                                }}
+                                className={cn(
+                                  "w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-[#800020]/5",
+                                  selectedRecipeId === r.id
+                                    ? "bg-[#800020]/10 font-medium text-[#521224]"
+                                    : "text-neutral-600"
+                                )}
+                              >
+                                {r.title}
+                              </button>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-3 py-2 text-xs text-neutral-400">
+                No books yet. Use books later to organize recipes into collections.
+              </p>
+            ))}
           </section>
         </div>
       </aside>

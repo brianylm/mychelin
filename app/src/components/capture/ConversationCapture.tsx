@@ -177,12 +177,12 @@ function ConversationAssistPanel({
 
   return (
     <div
-      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-ui-border bg-ui-surface px-4 py-3"
+      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[#eadfd0] bg-[#fffaf4]/95 px-4 py-3 shadow-[0_12px_32px_rgba(60,43,25,0.08)] backdrop-blur"
       aria-live="polite"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
             <Languages className="h-4 w-4" aria-hidden="true" />
           </span>
           <div className="min-w-0">
@@ -227,7 +227,7 @@ function ConversationAssistPanel({
       )}
 
       {assist?.translatedGist && (
-        <div className="mt-3 border-l-2 border-ui-accent bg-ui-surface-raised px-3 py-2.5">
+        <div className="mt-3 rounded-2xl border border-[#eadfd0] bg-white px-3 py-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
             Gist
           </p>
@@ -249,7 +249,7 @@ function ConversationAssistPanel({
                 key={question}
                 type="button"
                 onClick={() => onCopyQuestion(question)}
-                className="min-h-11 min-w-[12rem] max-w-[18rem] shrink-0 rounded-lg border border-ui-accent/20 bg-ui-accent-muted px-3 py-2 text-left text-xs leading-5 text-ui-text transition-[background-color,border-color] duration-200 hover:border-ui-accent/40 hover:bg-ui-accent-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus"
+                className="min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2 text-left text-xs leading-5 text-[#241017] transition hover:border-[#800020]/30 hover:bg-[#800020]/10"
               >
                 {question}
               </button>
@@ -1123,13 +1123,13 @@ export function ConversationCapture({
       onClick={handleClose}
     >
       <div
-        className="flex h-full w-full flex-col bg-ui-surface sm:h-[90vh] sm:max-h-[820px] sm:max-w-2xl sm:rounded-lg sm:border sm:border-ui-border-strong sm:shadow-xl"
+        className="flex h-full w-full flex-col bg-white sm:h-[90vh] sm:max-h-[720px] sm:max-w-lg sm:rounded-2xl sm:shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
               <Mic2 className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
@@ -1148,8 +1148,7 @@ export function ConversationCapture({
           </div>
           <button
             onClick={handleClose}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-ui-muted transition-colors duration-200 hover:bg-ui-surface-subtle hover:text-ui-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus"
-            aria-label="Close conversation capture"
+            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
           >
             <Cross2Icon className="h-4 w-4" />
           </button>
@@ -1158,7 +1157,7 @@ export function ConversationCapture({
         {step === "recording" && (
           <>
             {/* Chat log */}
-            <div className="flex-1 space-y-2 overflow-y-auto bg-ui-bg px-4 py-4">
+            <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4 space-y-2">
               <ConversationAssistPanel
                 assist={conversationAssist}
                 isLoading={isAssisting}
@@ -1197,7 +1196,7 @@ export function ConversationCapture({
               )}
 
               {isRecording && (
-                <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                <div className="mb-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
                   <div className="mb-1 flex items-center justify-between gap-3">
                     <span className="font-semibold">Recording now</span>
                     <span>{inputLevel > 0.08 ? "Hearing audio" : "Waiting for speech"}</span>
@@ -1281,7 +1280,7 @@ export function ConversationCapture({
                 {isRecording ? (
                   <button
                     onClick={stopRecording}
-                    className="flex h-11 items-center gap-2 rounded-lg bg-red-600 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                    className="flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
                   >
                     <StopIcon className="h-4 w-4" />
                     Stop
@@ -1290,7 +1289,7 @@ export function ConversationCapture({
                   <button
                     onClick={startRecording}
                     disabled={connecting}
-                    className="flex h-11 items-center gap-2 rounded-lg bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors duration-200 hover:bg-ui-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#800020] active:scale-95 disabled:opacity-60"
                   >
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
@@ -1306,7 +1305,7 @@ export function ConversationCapture({
                 {messages.length > 0 && !isRecording && (
                   <Button
                     onClick={goToNaming}
-                    className="h-11 bg-ui-action text-ui-action-text hover:bg-ui-action-hover"
+                    className="bg-[#17131f] hover:bg-[#800020] text-white"
                   >
                     <MagicWandIcon />
                     Done
@@ -1341,7 +1340,7 @@ export function ConversationCapture({
                   return (
                     <div
                       key={label}
-                      className="rounded-lg border border-ui-border bg-ui-surface-raised p-3"
+                      className="rounded-xl border border-neutral-200 bg-white p-3"
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
@@ -1363,7 +1362,7 @@ export function ConversationCapture({
                           }))
                         }
                         placeholder="e.g. Ah Ma, Me, Grandpa"
-                        className="h-11 w-full rounded-lg border border-ui-border-strong bg-ui-surface-raised px-3 text-sm outline-none transition-[background-color,border-color,box-shadow] duration-200 focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
+                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white"
                       />
                       {preview && (
                         <p className="mt-2 line-clamp-2 text-xs text-neutral-500 italic">
@@ -1404,16 +1403,16 @@ export function ConversationCapture({
             onBack={() => setStep("naming")}
             onSave={saveReviewedConversation}
           >
-            <section className="border-y border-ui-border py-4">
+            <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-stone-900">Transcript used</p>
                 <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500">
                   {reviewTranscript.length} turns
                 </span>
               </div>
-              <div className="divide-y divide-ui-border">
+              <div className="space-y-2">
                 {reviewTranscript.slice(-8).map((turn, index) => (
-                  <div key={index} className="py-2 text-xs leading-5 text-ui-muted">
+                  <div key={index} className="rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-600">
                     <span className="font-semibold text-stone-900">{turn.speaker}: </span>
                     {turn.text}
                   </div>

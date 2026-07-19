@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@radix-ui/themes";
 
 type Status =
   | { kind: "checking" }
@@ -13,15 +12,18 @@ type Status =
   | { kind: "success" };
 
 const fieldClass =
-  "h-11 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm outline-none transition-[border-color,box-shadow] placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]";
+  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:bg-white focus:ring-4 focus:ring-[#800020]/10";
 
 function ResetPasswordShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--ui-canvas)] px-4 py-10">
-      <div className="w-full max-w-sm animate-fade-in">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface px-4 py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_12%,rgba(128,0,32,0.10),transparent_24rem),linear-gradient(180deg,rgba(250,250,248,0.96),rgba(246,242,235,0.92))]" />
+      <div className="relative w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <Image src="/images/mychelin-icon-96.webp" alt="" width={56} height={56} className="mx-auto mb-3 h-14 w-14 object-contain" />
-          <h1 className="logo-serif text-2xl font-bold">
+          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-white/70 shadow-[0_18px_55px_rgba(40,26,19,0.10)] ring-1 ring-white/70 backdrop-blur-xl">
+            <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
+          </div>
+          <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
             <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>
           </h1>
           <p className="mt-2 text-sm text-stone-500">
@@ -29,9 +31,9 @@ function ResetPasswordShell({ children }: { children: React.ReactNode }) {
           </p>
         </div>
 
-        <div className="rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-6">{children}</div>
+        <div className="rounded-[2rem] border border-white/70 bg-white/70 p-6 shadow-[0_24px_80px_rgba(60,43,25,0.10)] backdrop-blur-2xl">{children}</div>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -40,7 +42,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <ResetPasswordShell>
-          <h2 className="app-editorial-title mb-2 text-2xl leading-tight text-[#1A1A1A]">Checking your link…</h2>
+          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">Checking your link…</h2>
           <p className="text-sm leading-6 text-stone-500">One moment.</p>
         </ResetPasswordShell>
       }
@@ -146,7 +148,10 @@ function ResetPasswordInner() {
               <p className="mb-4 text-sm leading-6 text-stone-500">{status.message}</p>
               <Button
                 type="button"
-                className="w-full"
+                variant="solid"
+                size="3"
+                style={{ width: "100%" }}
+                className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
                 onClick={() => router.replace("/login")}
               >
                 Back to sign in
@@ -160,11 +165,10 @@ function ResetPasswordInner() {
 
               <div className="space-y-3">
                 <div>
-                  <label htmlFor="reset-password" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                     New password
                   </label>
                   <input
-                    id="reset-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -176,11 +180,10 @@ function ResetPasswordInner() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reset-password-confirm" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                     Confirm password
                   </label>
                   <input
-                    id="reset-password-confirm"
                     type="password"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
@@ -193,15 +196,18 @@ function ResetPasswordInner() {
               </div>
 
               {error && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
                   {error}
                 </p>
               )}
 
               <Button
                 type="submit"
-                className="mt-8 w-full"
-                loading={status.kind === "submitting"}
+                variant="solid"
+                size="3"
+                style={{ width: "100%", marginTop: "32px" }}
+                className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
+                disabled={status.kind === "submitting"}
               >
                 {status.kind === "submitting" ? "Updating…" : "Reset password"}
               </Button>
@@ -216,7 +222,10 @@ function ResetPasswordInner() {
           </p>
           <Button
             type="button"
-            className="w-full"
+            variant="solid"
+            size="3"
+            style={{ width: "100%" }}
+            className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
             onClick={() => router.replace("/login")}
           >
             Sign in

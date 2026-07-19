@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Button } from "@radix-ui/themes";
 import { starterRecipes } from "@/lib/starter-recipes";
-import { Button } from "@/components/ui/Button";
 
 type Goal = "learn" | "regular" | "family" | "plan" | "waste";
 type Frequency = "daily" | "most_weekdays" | "weekly" | "occasional";
@@ -149,11 +147,11 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--ui-canvas)] text-[var(--ui-text)]">
-      <div className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
-        <div className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between gap-4 px-5 sm:px-7">
+    <main className="min-h-screen bg-[#fafaf8] px-4 py-5 text-[#1A1A1A] sm:px-6 sm:py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-3xl flex-col rounded-[2rem] border border-[#ebe5dc] bg-[#fffdfb] shadow-[0_24px_80px_rgba(60,43,25,0.08)]">
+        <div className="flex items-center justify-between gap-4 border-b border-[#ebe5dc] px-5 py-4 sm:px-7">
           <div className="flex items-center gap-3">
-            <Image src="/images/mychelin-icon-96.webp" alt="" width={36} height={36} className="h-9 w-9 object-contain" />
+            <img src="/images/mychelin-icon-96.webp" alt="" className="h-9 w-9 object-contain" />
             <div>
               <p className="logo-serif text-lg font-bold leading-none">
                 <span className="text-[#800020]">my</span><span>chelin</span>
@@ -165,14 +163,13 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
             type="button"
             onClick={() => void save(true)}
             disabled={saving}
-            className="flex h-11 items-center rounded-lg px-3 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)] disabled:opacity-60"
+            className="rounded-full px-3 py-2 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:opacity-60"
           >
             Skip
           </button>
         </div>
-      </div>
 
-      <section className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col px-5 py-7 sm:px-7 sm:py-10">
+        <section className="flex flex-1 flex-col px-5 py-6 sm:px-7 sm:py-8">
           <div className="mb-7">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#800020]">
               Welcome{userName ? ", " + userName.split(" ")[0] : ""}
@@ -203,15 +200,15 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   type="button"
                   onClick={() => toggleGoal(item.value)}
                   className={
-                    "min-h-24 rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 " +
+                    "rounded-2xl border px-4 py-3 text-left transition " +
                     (selectedGoals.includes(item.value)
-                      ? "border-[var(--ui-accent)] bg-[var(--ui-accent-muted)]"
-                      : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:border-[var(--ui-accent)]/35")
+                      ? "border-[#800020]/40 bg-[#800020]/5 shadow-sm"
+                      : "border-[#ebe5dc] bg-white hover:border-[#800020]/20")
                   }
                 >
                   <span className="flex items-start justify-between gap-3">
                     <span className="block text-sm font-semibold text-stone-900">{item.title}</span>
-                    <span className={"mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border " + (selectedGoals.includes(item.value) ? "border-[var(--ui-accent)] bg-[var(--ui-accent)] text-white" : "border-[var(--ui-border-strong)] text-transparent")}><Check className="h-3.5 w-3.5" aria-hidden="true" /></span>
+                    <span className={"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] " + (selectedGoals.includes(item.value) ? "border-[#800020] bg-[#800020] text-white" : "border-[#d8d8d2] text-transparent")}>✓</span>
                   </span>
                   <span className="mt-1 block text-xs leading-5 text-stone-500">{item.body}</span>
                 </button>
@@ -227,10 +224,10 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   type="button"
                   onClick={() => setFrequency(item.value)}
                   className={
-                    "min-h-24 rounded-lg border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 " +
+                    "rounded-2xl border px-4 py-4 text-left transition " +
                     (frequency === item.value
-                      ? "border-[var(--ui-action)] bg-[var(--ui-action)] text-white"
-                      : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-stone-700 hover:border-[var(--ui-accent)]/35")
+                      ? "border-[#17131f] bg-[#17131f] text-white shadow-sm"
+                      : "border-[#ebe5dc] bg-white text-stone-700 hover:border-[#800020]/25")
                   }
                 >
                   <span className="block text-sm font-semibold">{item.label}</span>
@@ -248,10 +245,10 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   type="button"
                   onClick={() => setFirstCaptureMode(item.value)}
                   className={
-                    "min-h-24 rounded-lg border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 " +
+                    "rounded-2xl border px-4 py-4 text-left transition " +
                     (firstCaptureMode === item.value
-                      ? "border-[var(--ui-accent)] bg-[var(--ui-accent-muted)]"
-                      : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:border-[var(--ui-accent)]/35")
+                      ? "border-[#800020]/40 bg-[#800020]/5 shadow-sm"
+                      : "border-[#ebe5dc] bg-white hover:border-[#800020]/20")
                   }
                 >
                   <span className="block text-sm font-semibold text-stone-900">{item.title}</span>
@@ -270,10 +267,10 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                         type="button"
                         onClick={() => setSelectedStarterSlug(recipe.slug)}
                         className={
-                          "min-h-24 rounded-lg border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 " +
+                          "rounded-2xl border px-4 py-4 text-left transition " +
                           (selectedStarterSlug === recipe.slug
-                            ? "border-[var(--ui-action)] bg-[var(--ui-action)] text-white"
-                            : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-stone-700 hover:border-[var(--ui-accent)]/35")
+                            ? "border-[#17131f] bg-[#17131f] text-white shadow-sm"
+                            : "border-[#ebe5dc] bg-white text-stone-700 hover:border-[#800020]/25")
                         }
                       >
                         <span className="block text-sm font-semibold">{recipe.title}</span>
@@ -288,7 +285,7 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
             </div>
           )}
 
-          <div className="mt-7 border-y border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-4">
+          <div className="mt-7 rounded-2xl border border-[#f0e5d8] bg-[#f8f3ec] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Your first loop</p>
             <p className="mt-3 text-sm leading-6 text-stone-700">
               {selectedGoalSummary}: capture one recipe, cook one attempt, then improve it from what actually happened.
@@ -296,7 +293,7 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
           </div>
 
           {error && (
-            <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>
+            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</p>
           )}
 
           <div className="mt-auto flex items-center justify-between gap-3 pt-7">
@@ -304,21 +301,22 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
               type="button"
               onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
               disabled={stepIndex === 0 || saving}
-              className="flex h-11 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)] disabled:invisible"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:opacity-0"
             >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back
+              Back
             </button>
             <Button
               type="button"
-              size="md"
+              size="3"
               onClick={continueFlow}
-              loading={saving}
-              iconEnd={!saving ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : undefined}
+              disabled={saving}
+              className="!rounded-full !bg-[#17131f] !px-5 !font-semibold !text-white hover:!bg-[#800020]"
             >
               {saving ? "Saving..." : isLastStep ? "Start Mychelin" : "Continue"}
             </Button>
           </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }

@@ -295,22 +295,6 @@ Acceptance:
 - Shopping/fridge support dense repeated use on mobile.
 - Sharing flows have clear loading/success/error states.
 
-## Implementation Status - 2026-07-19
-
-The broad workbench uplift is implemented across the active product paths:
-
-- Shared foundations: semantic UI tokens, global focus/reduced-motion behavior, Button, PageHeader, SectionHeader, Skeleton, CollapsibleSection, FilterBar, EmptyState, and RecipeResultRow patterns.
-- Navigation: solid top bar, persistent desktop sidebar across app views, consistent mobile drawer, five-part bottom navigation, and a calmer one-tap Create recipe menu.
-- Core loop: Library/Books, recipe reading/editing, capture/import/conversation, Cook with me and concurrent timers, Activity, Planner, Shopping, and Fridge now use divider-led information hierarchy instead of nested cards.
-- Supporting flows: onboarding, Profile, pilot checklist/feedback, Admin Analytics, auth/reset, sharing, calendar export, book creation, Add to book, and version dialogs now share control sizing, modal surfaces, iconography, and focus treatment.
-- Responsive verification: landing and auth were visually checked at 320, 375, 414, 768, and 1440px. The short-phone hero and tablet image focal point were corrected from those captures.
-
-Deliberate follow-ups:
-
-- A centralized focus-trapped Dialog/WorkflowDialog primitive remains worthwhile, but replacing every modal shell at once would add behavioral risk before the pilot.
-- Scope the global Radix Themes stylesheet away from public pages after bundle measurement, not as a cosmetic refactor.
-- Continue replacing residual raw color classes opportunistically when their owning feature changes; the active screens now have a coherent semantic baseline.
-
 ## Review Checklist for Mychelin UI Changes
 
 Use this before merging/deploying meaningful UI work:
@@ -327,4 +311,4 @@ Use this before merging/deploying meaningful UI work:
 
 ## Immediate Next Move
 
-Run the uplift with pilot users on production and log concrete workflow defects by surface. Prioritize blocked tasks, unreadable kitchen states, and navigation confusion over further visual polishing.
+Start with Phase 1 primitive definitions, then use Phase 2 planner search as the first implementation pilot. Do not refactor every screen at once. After the planner pilot proves the primitives, apply them to recipe search and then capture/conversation capture.

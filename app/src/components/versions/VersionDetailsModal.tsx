@@ -1,7 +1,6 @@
 "use client";
 
-import { StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
-import { GitBranch, Lightbulb, WandSparkles, X } from "lucide-react";
+import { Cross2Icon, StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
 
 interface Ingredient {
   name: string;
@@ -39,11 +38,11 @@ interface VersionDetailsModalProps {
   onRefine?: () => void;
 }
 
-const METHOD_LABELS: Record<string, { label: string }> = {
-  ai_capture: { label: "AI capture" },
-  cook_along: { label: "Logged cook" },
-  manual: { label: "Manual edit" },
-  refinement: { label: "Refinement" },
+const METHOD_LABELS: Record<string, { icon: string; label: string }> = {
+  ai_capture: { icon: "🎙️", label: "AI Capture" },
+  cook_along: { icon: "👨‍🍳", label: "Logged Cook" },
+  manual: { icon: "✏️", label: "Manual Edit" },
+  refinement: { icon: "🔄", label: "Refinement" },
 };
 
 export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetailsModalProps) {
@@ -56,22 +55,19 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] shadow-xl sm:rounded-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="version-details-title"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex min-h-16 items-center justify-between border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5 text-[var(--ui-accent)]" aria-hidden="true" />
+            <span>{method.icon}</span>
             <div>
-              <h3 id="version-details-title" className="text-sm font-semibold text-[var(--ui-text)]">Version {label}</h3>
+              <h3 className="text-sm font-semibold text-neutral-800">Version v{label}</h3>
               <p className="text-[11px] text-neutral-400">
                 {method.label} ·{" "}
                 {new Date(version.createdAt).toLocaleDateString("en-SG", {
@@ -84,17 +80,16 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           </div>
           <button
             onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
-            aria-label="Close version details"
+            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100"
           >
-            <X className="h-5 w-5" aria-hidden="true" />
+            <Cross2Icon className="h-4 w-4" />
           </button>
         </div>
 
         <div className="space-y-5 px-4 py-4">
           {/* Meta */}
           {(version.changeNote || version.closenessRating !== null) && (
-            <div className="border-l-2 border-[var(--ui-accent)] bg-[var(--ui-accent-muted)] px-3 py-2 text-xs text-[#521224]">
+            <div className="rounded-xl bg-[#800020]/5 p-3 text-xs text-[#521224]">
               {version.changeNote && (
                 <p className="font-medium">{version.changeNote}</p>
               )}
@@ -167,8 +162,8 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
                     </span>
                     {inst.content ?? inst.text}
                     {inst.tip && (
-                      <div className="mt-2 flex items-start gap-2 border-l-2 border-[var(--ui-accent)] bg-[var(--ui-accent-muted)] px-2 py-1.5 text-xs text-[var(--ui-accent)]">
-                        <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {inst.tip}
+                      <div className="mt-1 rounded-lg bg-[#800020]/5 px-2 py-1 text-xs text-[#800020]">
+                        💡 {inst.tip}
                       </div>
                     )}
                   </li>
@@ -191,9 +186,9 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           {canRefine && onRefine && (
             <button
               onClick={onRefine}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--ui-action)] px-4 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#17131f] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#800020]"
             >
-              <WandSparkles className="h-4 w-4" aria-hidden="true" /> Refine suggestions
+              ✨ Refine with AI
             </button>
           )}
         </div>

@@ -105,12 +105,12 @@ export function LandingPage() {
               className="h-7 w-7 shrink-0 object-contain"
             />
             <span
-              className="logo-serif text-lg font-bold"
+              className="logo-serif text-lg font-bold tracking-tight"
               style={{
                 fontFamily:
                   "var(--font-logo-serif), 'Libre Baskerville', Georgia, serif",
                 fontWeight: 700,
-                letterSpacing: "0",
+                letterSpacing: "-0.015em",
                 textTransform: "lowercase",
                 WebkitFontSmoothing: "antialiased",
                 MozOsxFontSmoothing: "grayscale",
@@ -174,17 +174,17 @@ export function LandingPage() {
           }}
         />
 
-        <div className="landing-hero-content relative z-10 w-full max-w-5xl px-6 pb-12 pt-[52svh] sm:py-24 sm:pl-[8%] lg:pl-[12%]">
+        <div className="relative z-10 w-full max-w-5xl px-6 pb-12 pt-[52svh] sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
-            <h1 className="landing-hero-title landing-serif min-w-0 [overflow-wrap:anywhere] text-[2.75rem] leading-[1.02] text-[#1A1A1A] sm:text-6xl md:text-7xl">
+            <h1 className="landing-serif min-w-0 [overflow-wrap:anywhere] text-[2.75rem] leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl">
               Cook like home, even in your new home.
             </h1>
-            <p className="landing-hero-copy mt-6 max-w-[62ch] text-lg leading-relaxed text-[#4a4a4a]">
+            <p className="mt-6 max-w-[62ch] text-lg leading-relaxed text-[#4a4a4a]">
               Mychelin helps you capture family recipes as they are spoken,
               translate the gist while you listen, and turn them into meals you
               can plan, shop for, and cook again.
             </p>
-            <div className="landing-hero-cta mt-8 flex flex-wrap gap-6">
+            <div className="mt-8 flex flex-wrap gap-6">
               <Link
                 href="/login?mode=signup"
                 className="whitespace-nowrap text-sm font-semibold text-stone-900 transition-colors hover:text-[#800020]"
@@ -205,7 +205,7 @@ export function LandingPage() {
             How it works
           </p>
           <div>
-            <h2 className="landing-serif max-w-3xl text-4xl leading-[1.05] text-[#1A1A1A] sm:text-5xl lg:text-6xl">
+            <h2 className="landing-serif max-w-3xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl">
               Three steps to cook like home again.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#5f574f]">
@@ -225,7 +225,7 @@ export function LandingPage() {
               <p className="text-sm font-semibold tabular-nums text-[#800020]">
                 {item.step}
               </p>
-              <h3 className="landing-serif text-2xl leading-[1.08] text-[#1A1A1A]">
+              <h3 className="landing-serif text-2xl leading-[1.08] tracking-[-0.035em] text-[#1A1A1A]">
                 {item.title}
               </h3>
               <p className="max-w-[62ch] text-sm leading-6 text-[#5f574f]">
@@ -245,7 +245,7 @@ export function LandingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5f574f]">
               Features
             </p>
-            <h2 className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] text-[#1A1A1A] sm:text-5xl lg:text-6xl">
+            <h2 className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl">
               Everything around the recipe, handled.
             </h2>
           </div>
@@ -280,7 +280,7 @@ export function LandingPage() {
                   {activeFeature + 1} / {featurePages.length}
                 </p>
               </div>
-              <h3 className="landing-serif mt-5 text-3xl leading-[1.05] text-[#1A1A1A] sm:text-4xl">
+              <h3 className="landing-serif mt-5 text-3xl leading-[1.05] tracking-[-0.04em] text-[#1A1A1A] sm:text-4xl">
                 {activeFeaturePage.title}
               </h3>
               <p className="mt-4 max-w-xl text-sm leading-6 text-[#5f574f]">
@@ -355,7 +355,7 @@ export function LandingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f7c86a]">
               Start your recipe book
             </p>
-            <h2 className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] text-[#fffaf4] sm:text-5xl lg:text-6xl">
+            <h2 className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#fffaf4] sm:text-5xl lg:text-6xl">
               Bring the taste of home with you.
             </h2>
           </div>

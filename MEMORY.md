@@ -2466,3 +2466,12 @@ Checks:
 - Production deployment `dpl_AdDre3cvWJ5jCyZbumsJafvGZhFc` reached Ready and was aliased to `https://mychelin-sg.vercel.app`; the deployed product commit is `ce06587`. The live root returned HTTP 200.
 - Production `smoke:privacy` passed every isolation assertion across private/shared recipes, books, photos, attempts, versions, meal plans, shopping, inventory, user preferences, notifications, activity, pilot data, and admin gating. Production `smoke:pilot` passed all 42 core-loop assertions from capture through planning, shopping, cooking, version promotion, and feedback. Synthetic `privacy-smoke-*`, `pilot-smoke-*`, and UI-audit users were removed and verified at 0 remaining.
 - Follow-ups: pilot-test the refreshed workflows with real users, consider a centralized focus-trapped Dialog/WorkflowDialog only after pilot feedback, and measure Radix Themes public-page bundle cost before changing runtime dependencies.
+
+## 2026-07-19 - Production UI uplift rollback
+
+- B reported that the broad workbench uplift looked worse and made the app feel slower and less stable. The release changed 54 files in one pass and visually verified only landing, auth, Library, and recipe detail; API smoke tests did not cover the other changed UI workflows.
+- Identified a concrete performance regression: the global recipe store switched from `/api/recipes` to `/api/recipes?planner=1`, adding ingredient and last-cooked aggregation work to initial app loading. The persistent sidebar also reduced usable width and introduced another Books request across every app view.
+- Rolled the `mychelin-sg.vercel.app` production alias back from deployment `dpl_AdDre3cvWJ5jCyZbumsJafvGZhFc` to the prior Ready deployment `dpl_AwWumTMyaKuMJDB9WUBSNijx7ku3` from 2026-07-10. Vercel inspection confirmed the alias and the live root returned HTTP 200.
+- Reverted product commit `ce06587` in Git while retaining this audit trail. No schema or user-data rollback was involved.
+- Production privacy smoke completed against the restored deployment. The subsequent pilot smoke was blocked by the expected signup rate limiter after the privacy run; do not bypass that safeguard.
+- Next UI work must be delivered in small preview-tested slices with per-surface interaction and request-timing gates. Conversation-capture implementation remains paused until the restored UI is confirmed.

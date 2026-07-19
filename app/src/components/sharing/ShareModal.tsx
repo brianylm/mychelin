@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, Copy, Eye, Link2Off, PencilLine, X } from "lucide-react";
+import { Cross2Icon, CopyIcon, LinkBreak2Icon, CheckIcon } from "@radix-ui/react-icons";
 
 interface ShareLink {
   id: number;
@@ -82,23 +82,22 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/45"
+      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/55 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-5 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-[#fffdfb] p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
           {/* Header */}
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 id="share-modal-title" className="text-lg font-semibold text-[var(--ui-text)]">Share</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">Share</h2>
               <p className="text-xs text-neutral-500 truncate">{resourceName}</p>
             </div>
             <button
               onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
-              aria-label="Close share dialog"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
             >
-              <X className="h-5 w-5" aria-hidden="true" />
+              <Cross2Icon className="h-4 w-4" />
             </button>
           </div>
 
@@ -107,90 +106,90 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
             </div>
           ) : (
-            <div className="divide-y divide-[var(--ui-border)] border-y border-[var(--ui-border)]">
+            <div className="space-y-4">
               {/* View-only link */}
-              <section className="py-4">
+              <div className="rounded-2xl border border-[#800020]/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
-                    <span className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]"><Eye className="h-4 w-4 text-[var(--ui-accent)]" aria-hidden="true" /> View only</span>
+                    <span className="text-sm font-semibold text-neutral-800">👁 View only</span>
                     <p className="text-xs text-neutral-500">Can view but not edit</p>
                   </div>
                 </div>
                 {viewLink ? (
                   <div className="flex items-center gap-2">
-                    <div className="flex min-h-11 min-w-0 flex-1 items-center truncate rounded-lg bg-[var(--ui-surface-subtle)] px-3 text-xs text-[var(--ui-muted)] font-mono">
+                    <div className="flex-1 truncate rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 font-mono">
                       {window.location.origin}/shared/{viewLink.token}
                     </div>
                     <button
                       onClick={() => copyLink(viewLink.token)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)] transition-colors hover:bg-[var(--ui-accent)]/15"
-                      aria-label="Copy link"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-colors hover:bg-[#800020]/15"
+                      title="Copy link"
                     >
                       {copiedToken === viewLink.token ? (
-                        <Check className="h-4 w-4" aria-hidden="true" />
+                        <CheckIcon className="h-4 w-4" />
                       ) : (
-                        <Copy className="h-4 w-4" aria-hidden="true" />
+                        <CopyIcon className="h-4 w-4" />
                       )}
                     </button>
                     <button
                       onClick={() => deleteLink(viewLink.id)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-red-50 hover:text-red-600"
-                      aria-label="Remove link"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      title="Remove link"
                     >
-                      <Link2Off className="h-4 w-4" aria-hidden="true" />
+                      <LinkBreak2Icon className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => createLink("view")}
-                    className="h-11 w-full rounded-lg border border-dashed border-[var(--ui-border-strong)] px-4 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:border-[var(--ui-accent)]/45 hover:bg-[var(--ui-accent-muted)] hover:text-[var(--ui-accent)]"
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 hover:text-[#800020]"
                   >
                     Create view-only link
                   </button>
                 )}
-              </section>
+              </div>
 
               {/* Collaborator link */}
-              <section className="py-4">
+              <div className="rounded-2xl border border-[#800020]/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
-                    <span className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]"><PencilLine className="h-4 w-4 text-[var(--ui-accent)]" aria-hidden="true" /> Collaborator</span>
+                    <span className="text-sm font-semibold text-neutral-800">✏️ Collaborator</span>
                     <p className="text-xs text-neutral-500">Can view and edit</p>
                   </div>
                 </div>
                 {editLink ? (
                   <div className="flex items-center gap-2">
-                    <div className="flex min-h-11 min-w-0 flex-1 items-center truncate rounded-lg bg-[var(--ui-surface-subtle)] px-3 text-xs text-[var(--ui-muted)] font-mono">
+                    <div className="flex-1 truncate rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 font-mono">
                       {window.location.origin}/shared/{editLink.token}
                     </div>
                     <button
                       onClick={() => copyLink(editLink.token)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)] transition-colors hover:bg-[var(--ui-accent)]/15"
-                      aria-label="Copy link"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-colors hover:bg-[#800020]/15"
+                      title="Copy link"
                     >
                       {copiedToken === editLink.token ? (
-                        <Check className="h-4 w-4" aria-hidden="true" />
+                        <CheckIcon className="h-4 w-4" />
                       ) : (
-                        <Copy className="h-4 w-4" aria-hidden="true" />
+                        <CopyIcon className="h-4 w-4" />
                       )}
                     </button>
                     <button
                       onClick={() => deleteLink(editLink.id)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-red-50 hover:text-red-600"
-                      aria-label="Remove link"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      title="Remove link"
                     >
-                      <Link2Off className="h-4 w-4" aria-hidden="true" />
+                      <LinkBreak2Icon className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => createLink("edit")}
-                    className="h-11 w-full rounded-lg border border-dashed border-[var(--ui-border-strong)] px-4 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:border-[var(--ui-accent)]/45 hover:bg-[var(--ui-accent-muted)] hover:text-[var(--ui-accent)]"
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 hover:text-[#800020]"
                   >
                     Create collaborator link
                   </button>
                 )}
-              </section>
+              </div>
             </div>
           )}
         </div>
