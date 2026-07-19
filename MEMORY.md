@@ -2500,3 +2500,16 @@ Checks:
 - Responsive comparisons at 320x568, 375x812, 414x896, 768x1024, and 1440x900 showed no structural composition change. Focused ESLint, TypeScript, production build, `git diff --check`, and deployed password login/session smoke passed.
 - Signup smoke later met the intended signup rate limit after repeated probes; a directly seeded synthetic user then verified login and `/api/auth/me` at 200/200. All synthetic test users were deleted and verified at zero.
 - Follow-up: do not scope out global Radix CSS or trim shared JavaScript until the owning authenticated surfaces are in phase and can be regression-tested together.
+
+## 2026-07-19 - UI uplift Phase 2 authenticated shell and navigation
+
+- Refined only the authenticated shell: preserved the approved rounded Mychelin header, fonts, warm paper/white/burgundy palette, and dark active-tab pills while replacing translucent blur with faster solid surfaces and restrained shadows.
+- Renamed the primary Recipes destination to Library, standardized header and desktop-nav controls at 44px, kept the five-part mobile bottom nav at 64px, and collapsed the tablet wordmark to the tree mark so labeled navigation fits without wrapping or a stray hamburger.
+- Made the mobile Library drawer keyboard-safe: focus moves to its close control, Escape closes it, focus returns to the opener, body scroll is locked while open, and hidden drawer controls are not interactive.
+- Stopped mounting the mobile-only RecipeSidebar on unrelated closed views. Production-mode QA measured zero hidden `/api/books` requests after navigating to Activity; explicitly opening Library from Activity correctly triggered one Books request.
+- Scoped focus-visible and reduced-motion behavior to `.mychelin-app-shell`; removed shell/FAB backdrop blur and replaced the hand-drawn FAB icon with Lucide while preserving the existing create-recipe routes.
+- Commit `ae0f192` deployed Ready to Preview `dpl_CvwiBgYXAzy9HeZGgBhdJV1BCcQd` at `https://mychelin-ui-uplift.vercel.app`. Production was not changed and remains Ready on July 10 deployment `dpl_AwWumTMyaKuMJDB9WUBSNijx7ku3`.
+- Preview QA passed password login and `/api/auth/me` at 200/200. Browser checks at 320x568, 375x812, 414x896, 768x1024, and 1440x900 found zero horizontal overflow, no page/console errors, correct mobile/desktop breakpoints, 44px-or-larger shell targets, visible 2px keyboard focus, and working drawer focus/Escape return.
+- Focused ESLint, `npx tsc --noEmit`, `npm run build`, and `git diff --check` passed. Vercel also completed its production-mode Preview build successfully.
+- Synthetic QA cleanup removed one test user and three recipes; users, recipes, and related usage events were verified at zero remaining.
+- Phase 3 first follow-up: fix the pre-existing cramped/clipped New action in the narrow-mobile Library header, then audit Library list/card hierarchy without broadening the accepted shell phase.
