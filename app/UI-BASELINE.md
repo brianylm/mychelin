@@ -20,6 +20,7 @@ The full lock is recorded in the root `DESIGN.md`.
 - Branch: `ui-uplift`
 - Stable preview: `https://mychelin-ui-uplift.vercel.app`
 - Initial deployment: `dpl_HckhkTdL5BBdxLfEre5WXsEWHZbd`
+- Current Phase 1 deployment: `dpl_22MoWzajmg2zWNRdbJ16fAq6J1yK`
 - Preview uses a separate branch-scoped `JWT_SECRET`; production credentials were not copied.
 - Password signup, auth-cookie creation, and `/api/auth/me` returned 201/200/200 on both the deployment URL and stable alias.
 - Synthetic staging accounts were deleted and verified at zero remaining.
@@ -98,3 +99,26 @@ Phase 1 is deliberately non-structural:
 - Re-run the same mobile and desktop Lighthouse audits and screenshot widths.
 
 Acceptance target: materially reduce the 9.6s mobile LCP with no visible composition regression and no production deployment before staging approval.
+
+## Phase 1 Results
+
+Phase 1 changed only landing-page delivery and measured accessibility defects. It replaced the raw hero image with responsive `next/image` delivery while preserving its crop and layout, restored browser zoom, increased carousel control targets, removed inactive carousel content from the accessibility tree, and corrected measured contrast failures.
+
+| Metric | Baseline mobile | Phase 1 mobile | Baseline desktop | Phase 1 desktop |
+| --- | ---: | ---: | ---: | ---: |
+| Performance | 59 | 74 | 94 | 99 |
+| Accessibility | 89 | 100 | 85 | 100 |
+| Best practices | 100 | 100 | 100 | 100 |
+| SEO | 100 | 100 | 100 | 100 |
+| First Contentful Paint | 1.6s | 1.6s | 0.4s | 0.4s |
+| Largest Contentful Paint | 9.6s | 4.0s | 1.6s | 0.8s |
+| Total Blocking Time | 610ms | 480ms | 0ms | 40ms |
+| Time to Interactive | 10.5s | 4.0s | 1.7s | 0.8s |
+| Cumulative Layout Shift | 0 | 0 | 0 | 0 |
+| Total transfer | 2,825 KiB | 462 KiB | 2,823 KiB | 518 KiB |
+
+The same five screenshot widths remained compositionally stable. Mean absolute pixel deltas ranged from 1.16 to 2.97, mainly from responsive JPEG encoding; pixels differing by more than 32 levels stayed at or below 0.15%.
+
+Validation passed: focused ESLint, `npx tsc --noEmit`, production build, `git diff --check`, responsive screenshot comparison, and a deployed password-login/session smoke. Synthetic accounts were removed and verified at zero. Google login remains outside this staging gate. Production remains pinned to the known-good July 10 deployment.
+
+Remaining measured landing cost is mostly the global Radix stylesheet and main-thread JavaScript. Those are intentionally deferred because changing shared runtime styling or loading behavior would exceed this slice and could destabilize authenticated workflows.

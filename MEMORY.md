@@ -2491,3 +2491,12 @@ Checks:
 - Production Lighthouse baseline: mobile performance 59, accessibility 89, LCP 9.6s, TBT 610ms, transfer 2,825 KiB; desktop performance 94, accessibility 85, LCP 1.6s. Mobile LCP is dominated by the raw hero image.
 - Authenticated production API warm medians were roughly 291-468ms, while several independent routes showed 3.8-5.6s cold samples. Future phases must avoid hidden-view eager requests.
 - Added `app/UI-BASELINE.md` and marked the original broad sequence in `app/UI-SYSTEM-AUDIT.md` as superseded. No runtime UI code changed.
+
+## 2026-07-19 - UI uplift Phase 1 landing performance and accessibility
+
+- Kept the approved landing composition intact while replacing the raw hero image with responsive `next/image` delivery, restoring browser zoom, making carousel targets 44px, hiding inactive carousel content from assistive technology, and correcting measured footer/carousel contrast failures.
+- Deployed the isolated `ui-uplift` branch to `https://mychelin-ui-uplift.vercel.app` on deployment `dpl_22MoWzajmg2zWNRdbJ16fAq6J1yK`. Production was not changed and remains pinned to July 10 deployment `dpl_AwWumTMyaKuMJDB9WUBSNijx7ku3`.
+- Lighthouse mobile improved from performance 59 / accessibility 89 / LCP 9.6s / transfer 2,825 KiB to 74 / 100 / 4.0s / 462 KiB. Desktop improved from performance 94 / accessibility 85 / LCP 1.6s to 99 / 100 / 0.8s.
+- Responsive comparisons at 320x568, 375x812, 414x896, 768x1024, and 1440x900 showed no structural composition change. Focused ESLint, TypeScript, production build, `git diff --check`, and deployed password login/session smoke passed.
+- Signup smoke later met the intended signup rate limit after repeated probes; a directly seeded synthetic user then verified login and `/api/auth/me` at 200/200. All synthetic test users were deleted and verified at zero.
+- Follow-up: do not scope out global Radix CSS or trim shared JavaScript until the owning authenticated surfaces are in phase and can be regression-tested together.
