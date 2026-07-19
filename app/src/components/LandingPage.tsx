@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 import { Libre_Baskerville, Newsreader } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const brandSerif = Newsreader({
   subsets: ["latin"],
@@ -25,21 +24,13 @@ const featurePages = [
     title: "Live recipe conversation",
     body: "Mychelin sits with you while a parent or grandparent narrates the dish: live transcript, translated gist, and questions to ask before the important details disappear.",
     screenTitle: "Live helper",
-    screenLines: [
-      "Ah Ma: fry until fragrant",
-      "Gist: aromatics first, low heat",
-      "Ask: what smell tells me it is ready?",
-    ],
+    screenLines: ["Ah Ma: fry until fragrant", "Gist: aromatics first, low heat", "Ask: what smell tells me it is ready?"],
   },
   {
     title: "Meal planning",
     body: "Plan and prepare your meals easily. Streamline the homecook process by randomising your meals, cooking and prepping meals in advance, so you can enjoy the process rather than worry about it.",
     screenTitle: "This week",
-    screenLines: [
-      "Mon · Tau yu bak",
-      "Wed · Chicken curry",
-      "Prep ahead: chop aromatics",
-    ],
+    screenLines: ["Mon · Tau yu bak", "Wed · Chicken curry", "Prep ahead: chop aromatics"],
   },
   {
     title: "Shopping lists",
@@ -49,28 +40,9 @@ const featurePages = [
   },
 ];
 
-const howItWorks = [
-  {
-    step: "01",
-    title: "Sit in the conversation",
-    body: "Record while the recipe is being narrated. Mychelin listens for mixed language, translates the gist, and suggests respectful follow-up questions.",
-  },
-  {
-    step: "02",
-    title: "Review what was said",
-    body: "Keep the original phrasing beside translated instructions, confirm uncertain family terms, and only then extract the recipe structure.",
-  },
-  {
-    step: "03",
-    title: "Plan, shop, and cook it",
-    body: "Add recipes to a weekly plan, generate a shopping list, and cook from a clean step-by-step view when dinner time arrives.",
-  },
-];
-
 export function LandingPage() {
   const [activeFeature, setActiveFeature] = useState(0);
   const swipeStartX = useRef<number | null>(null);
-  const activeFeaturePage = featurePages[activeFeature];
 
   const showFeature = useCallback((index: number) => {
     setActiveFeature((index + featurePages.length) % featurePages.length);
@@ -81,21 +53,19 @@ export function LandingPage() {
   }, []);
 
   const showPreviousFeature = useCallback(() => {
-    setActiveFeature(
-      (current) => (current - 1 + featurePages.length) % featurePages.length
-    );
+    setActiveFeature((current) => (current - 1 + featurePages.length) % featurePages.length);
   }, []);
+
 
   return (
     <div
-      className={`landing-content min-h-screen bg-[#fafaf8] text-[#1A1A1A] ${brandSerif.variable} ${logoSerif.variable}`}
+      className={`landing-content min-h-screen bg-white text-[#1A1A1A] ${brandSerif.variable} ${logoSerif.variable}`}
+      style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
     >
-      <header className="fixed left-1/2 top-4 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">
-        <nav className="relative flex items-center justify-between gap-3 rounded-full bg-[#fffdfb] px-3 py-2 shadow-[0_1px_2px_rgba(40,26,19,0.08)] ring-1 ring-[#e4ddd4] sm:px-5 sm:py-3">
-          <a
-            href="#"
-            className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-[#f6f2eb]"
-          >
+      {/* ==================== NAV ==================== */}
+      <header className="fixed top-4 left-1/2 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">
+        <nav className="relative flex items-center justify-between gap-3 rounded-full bg-white/75 px-3 py-2 shadow-[0_14px_38px_rgba(40,26,19,0.12)] ring-1 ring-white/70 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/60 sm:px-5 sm:py-3">
+          <a href="#" className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-white/25">
             <Image
               src="/images/mychelin-icon-96.webp"
               alt=""
@@ -107,8 +77,7 @@ export function LandingPage() {
             <span
               className="logo-serif text-lg font-bold tracking-tight"
               style={{
-                fontFamily:
-                  "var(--font-logo-serif), 'Libre Baskerville', Georgia, serif",
+                fontFamily: "var(--font-logo-serif), 'Libre Baskerville', Georgia, serif",
                 fontWeight: 700,
                 letterSpacing: "-0.015em",
                 textTransform: "lowercase",
@@ -116,32 +85,32 @@ export function LandingPage() {
                 MozOsxFontSmoothing: "grayscale",
               }}
             >
-              <span className="text-[#800020]">my</span>
-              <span className="text-[#1A1A1A]">chelin</span>
+              <span style={{ color: "#800020" }}>my</span>
+              <span style={{ color: "#1A1A1A" }}>chelin</span>
             </span>
           </a>
           <div className="flex flex-1 items-center justify-end gap-1">
             <a
               href="#how-it-works"
-              className="hidden whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-[#f6f2eb] hover:text-stone-950 md:block"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
             >
               How it works
             </a>
             <a
               href="#features"
-              className="hidden whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-[#f6f2eb] hover:text-stone-950 md:block"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
             >
               Features
             </a>
             <Link
               href="/login"
-              className="hidden whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-[#f6f2eb] hover:text-stone-950 sm:block"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 sm:block"
             >
               Log in
             </Link>
             <Link
               href="/login?mode=signup"
-              className="relative ml-1 shrink-0 whitespace-nowrap rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-[#fffaf4] shadow-[0_1px_2px_rgba(23,19,31,0.18)] transition-[transform,background-color] duration-200 hover:-translate-y-px hover:bg-[#800020] active:translate-y-0 sm:px-5"
+              className="relative ml-1 shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
             >
               Get started
             </Link>
@@ -149,16 +118,18 @@ export function LandingPage() {
         </nav>
       </header>
 
-      <section className="relative flex min-h-[88svh] items-end overflow-hidden bg-[#fafaf8] sm:items-center lg:min-h-[96svh]">
-        <Image
+      {/* ==================== HERO ==================== */}
+      <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
+        {/* Background image */}
+        <img
           src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
-          fill
-          priority
-          sizes="100vw"
           className="landing-hero-image absolute inset-0 h-full w-full object-cover"
         />
+        {/* Mobile readability scrim. Keeps faces visible and reserves
+            the strongest wash for the copy area rather than the whole image. */}
         <div className="landing-hero-readable-scrim absolute inset-0 sm:hidden" />
+        {/* Desktop overlays were already working; keep them unchanged. */}
         <div
           className="absolute inset-0 hidden sm:block"
           style={{
@@ -174,12 +145,16 @@ export function LandingPage() {
           }}
         />
 
-        <div className="relative z-10 w-full max-w-5xl px-6 pb-12 pt-[52svh] sm:py-24 sm:pl-[8%] lg:pl-[12%]">
+        {/* Text content */}
+        <div className="relative z-10 w-full max-w-5xl px-6 pb-12 pt-[52vh] sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
-            <h1 className="landing-serif min-w-0 [overflow-wrap:anywhere] text-[2.75rem] leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl">
+            <h1
+              className="landing-serif text-[2.75rem] leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl"
+              style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif", fontWeight: 400 }}
+            >
               Cook like home, even in your new home.
             </h1>
-            <p className="mt-6 max-w-[62ch] text-lg leading-relaxed text-[#4a4a4a]">
+            <p className="mt-6 text-lg leading-relaxed text-[#4a4a4a]">
               Mychelin helps you capture family recipes as they are spoken,
               translate the gist while you listen, and turn them into meals you
               can plan, shop for, and cook again.
@@ -187,7 +162,7 @@ export function LandingPage() {
             <div className="mt-8 flex flex-wrap gap-6">
               <Link
                 href="/login?mode=signup"
-                className="whitespace-nowrap text-sm font-semibold text-stone-900 transition-colors hover:text-[#800020]"
+                className="text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors"
               >
                 Try it now →
               </Link>
@@ -196,62 +171,90 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ==================== PROBLEM / STORY ==================== */}
+      {/* Archived — see MYCHELIN.md */}
+
+      {/* ==================== HOW IT WORKS ==================== */}
       <section
         id="how-it-works"
         className="mx-auto mt-16 max-w-6xl scroll-mt-28 px-6 sm:mt-24"
       >
-        <div className="grid gap-5 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5f574f]">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6b6b6b]">
             How it works
           </p>
-          <div>
-            <h2 className="landing-serif max-w-3xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl">
-              Three steps to cook like home again.
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[#5f574f]">
-              Mychelin helps you stay inside the family conversation first,
-              then turns what was said into something you can save, plan around,
-              and cook on a weeknight.
-            </p>
-          </div>
+          <h2
+            className="landing-serif mt-4 text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+            style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
+          >
+            Three steps to cook like home again.
+          </h2>
+          <p className="mt-5 text-base leading-7 text-[#5f6368]">
+            Mychelin helps you stay inside the family conversation first,
+            then turns what was said into something you can save, plan around,
+            and cook on a weeknight.
+          </p>
         </div>
 
-        <div className="mt-12 border-y border-[#d8d0c6]">
-          {howItWorks.map((item) => (
-            <article
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              step: "01",
+              title: "Sit in the conversation",
+              body: "Record while the recipe is being narrated. Mychelin listens for mixed language, translates the gist, and suggests respectful follow-up questions.",
+            },
+            {
+              step: "02",
+              title: "Review what was said",
+              body: "Keep the original phrasing beside translated instructions, confirm uncertain family terms, and only then extract the recipe structure.",
+            },
+            {
+              step: "03",
+              title: "Plan, shop, and cook it",
+              body: "Add recipes to a weekly plan, generate a shopping list, and cook from a clean step-by-step view when dinner time arrives.",
+            },
+          ].map((item) => (
+            <div
               key={item.step}
-              className="grid gap-3 border-b border-[#e5ded5] py-7 last:border-b-0 sm:grid-cols-[4rem_minmax(0,0.9fr)_minmax(0,1.2fr)] sm:gap-6"
+              className="rounded-[2rem] border border-[#ece8df] bg-white p-6 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
             >
-              <p className="text-sm font-semibold tabular-nums text-[#800020]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-sm font-semibold text-[#800020]">
                 {item.step}
-              </p>
-              <h3 className="landing-serif text-2xl leading-[1.08] tracking-[-0.035em] text-[#1A1A1A]">
+              </div>
+              <h3
+                className="landing-serif mt-6 text-2xl leading-[1.08] tracking-[-0.04em] text-[#1A1A1A]"
+                style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
+              >
                 {item.title}
               </h3>
-              <p className="max-w-[62ch] text-sm leading-6 text-[#5f574f]">
+              <p className="mt-3 text-sm leading-relaxed text-[#5f6368]">
                 {item.body}
               </p>
-            </article>
+            </div>
           ))}
         </div>
       </section>
 
+      {/* ==================== FEATURES ==================== */}
       <section
         id="features"
         className="mx-auto mt-20 max-w-6xl scroll-mt-28 px-6 sm:mt-28"
       >
-        <div className="grid gap-12 border-t border-[#d8d0c6] pt-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+        <div className="grid gap-12 border-t border-[#d8d8d2] pt-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5f574f]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#6b6b6b]">
               Features
             </p>
-            <h2 className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl">
+            <h2
+              className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
+            >
               Everything around the recipe, handled.
             </h2>
           </div>
 
           <div
-            className="touch-pan-y border-t border-[#d8d0c6] pt-8 lg:border-t-0 lg:pt-0"
+            className="relative min-h-[34rem] touch-pan-y overflow-hidden border-t border-[#d8d8d2] pt-8 lg:border-t-0 lg:pt-0"
             onPointerDown={(event) => {
               swipeStartX.current = event.clientX;
             }}
@@ -267,101 +270,130 @@ export function LandingPage() {
               swipeStartX.current = null;
             }}
           >
-            <article
-              className="border-y border-[#d8d0c6] py-8"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <div className="flex items-center justify-between gap-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">
-                  0{activeFeature + 1}
-                </p>
-                <p className="text-xs tabular-nums text-[#5f574f]">
-                  {activeFeature + 1} / {featurePages.length}
-                </p>
-              </div>
-              <h3 className="landing-serif mt-5 text-3xl leading-[1.05] tracking-[-0.04em] text-[#1A1A1A] sm:text-4xl">
-                {activeFeaturePage.title}
-              </h3>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-[#5f574f]">
-                {activeFeaturePage.body}
-              </p>
+            <div className="relative h-[25rem] sm:h-[28rem]">
+              {featurePages.map((feature, index) => {
+                const offset = index - activeFeature;
+                const isActive = index === activeFeature;
+                return (
+                  <button
+                    key={feature.title}
+                    type="button"
+                    onClick={() => showFeature(index)}
+                    className="absolute left-1/2 top-0 w-[min(100%,25rem)] origin-bottom rounded-[2rem] border border-[#d8d8d2] bg-white p-5 text-left shadow-[0_22px_70px_rgba(26,26,26,0.10)] transition-all duration-500 ease-out"
+                    style={{
+                      transform: `translateX(calc(-50% + ${offset * 2.2}rem)) translateY(${Math.abs(offset) * 1.15}rem) rotate(${offset * 4}deg) scale(${isActive ? 1 : 0.92})`,
+                      zIndex: 10 - Math.abs(offset),
+                      opacity: isActive ? 1 : 0.48,
+                    }}
+                    aria-pressed={isActive}
+                  >
+                    <div className="flex items-start justify-between gap-6">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
+                          0{index + 1}
+                        </p>
+                        <h3
+                          className="landing-serif mt-4 text-3xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A]"
+                          style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
+                        >
+                          {feature.title}
+                        </h3>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span className="rounded-full border border-[#d8d8d2] px-3 py-1 text-xs text-[#6b6b6b]">
+                          {index + 1} / {featurePages.length}
+                        </span>
+                        <div className="flex gap-1.5" aria-hidden="true">
+                          {featurePages.map((dotFeature, dotIndex) => (
+                            <span
+                              key={dotFeature.title}
+                              className={`h-1.5 rounded-full transition-all ${dotIndex === index ? "w-5 bg-[#800020]" : "w-1.5 bg-[#d8d8d2]"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="mt-8 border-l-2 border-[#800020] pl-4 sm:pl-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#800020]">
-                  {activeFeaturePage.screenTitle}
-                </p>
-                <ol className="mt-3 divide-y divide-[#e5ded5] border-y border-[#e5ded5]">
-                  {activeFeaturePage.screenLines.map((line, index) => (
-                    <li
-                      key={line}
-                      className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 py-3 text-sm leading-6 text-[#3f3934]"
-                    >
-                      <span className="tabular-nums text-[#800020]" aria-hidden="true">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span>{line}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </article>
+                    <p className="mt-4 max-w-xl text-sm leading-6 text-[#5f6368]">
+                      {feature.body}
+                    </p>
 
-            <div className="mt-5 flex items-center justify-between gap-4">
+                    <div className="mt-6 flex justify-center">
+                      <div className="flex h-56 w-40 justify-center rounded-[1.8rem] border border-stone-900/10 bg-[#1A1A1A] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.16)]">
+                        <div className="relative h-full w-full overflow-hidden rounded-[1.35rem] bg-white px-4 py-5">
+                          <div className="absolute left-1/2 top-2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-stone-900/15" />
+                          <div className="mt-5 rounded-2xl bg-[#800020]/10 px-3 py-2 text-xs font-semibold text-[#800020]">
+                            {feature.screenTitle}
+                          </div>
+                          <div className="mt-4 space-y-2.5">
+                            {feature.screenLines.map((line) => (
+                              <div key={line} className="rounded-xl bg-[#fafafa] px-3 py-2 text-[0.7rem] leading-relaxed text-[#4a4a4a] shadow-sm">
+                                {line}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="absolute inset-x-8 bottom-4 h-1 rounded-full bg-stone-900/15" />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={showPreviousFeature}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d8d0c6] bg-[#fffdfb] text-[#1A1A1A] transition-colors hover:border-[#800020] hover:text-[#800020]"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
                 aria-label="Show previous feature"
               >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                ←
               </button>
-              <div className="flex items-center justify-center gap-1" role="group" aria-label="Choose feature">
+              <div className="flex gap-2">
                 {featurePages.map((feature, index) => (
                   <button
                     key={feature.title}
                     type="button"
                     onClick={() => showFeature(index)}
-                    className="flex h-11 w-8 items-center justify-center"
+                    className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
                     aria-label={`Show ${feature.title}`}
-                    aria-current={index === activeFeature ? "true" : undefined}
-                  >
-                    <span
-                      className={`h-2 w-2 rounded-full border transition-colors ${index === activeFeature ? "border-[#800020] bg-[#800020]" : "border-[#9c9187] bg-transparent"}`}
-                      aria-hidden="true"
-                    />
-                  </button>
+                  />
                 ))}
               </div>
               <button
                 type="button"
                 onClick={showNextFeature}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d8d0c6] bg-[#fffdfb] text-[#1A1A1A] transition-colors hover:border-[#800020] hover:text-[#800020]"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
                 aria-label="Show next feature"
               >
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                →
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      <section
-        id="final"
-        className="mt-20 bg-[#17131f] px-6 py-16 text-[#fffaf4] sm:mt-28 sm:py-20"
-      >
+      {/* ==================== TRUST ==================== */}
+      {/* Archived — see MYCHELIN.md */}
+
+      {/* ==================== FINAL CTA ==================== */}
+      <section id="final" className="mt-20 bg-[#17131f] px-6 py-16 text-white sm:mt-28 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f7c86a]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#f7c86a]">
               Start your recipe book
             </p>
-            <h2 className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#fffaf4] sm:text-5xl lg:text-6xl">
+            <h2
+              className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl"
+              style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
+            >
               Bring the taste of home with you.
             </h2>
           </div>
 
           <div className="flex flex-col justify-end border-t border-white/15 pt-8 lg:border-t-0 lg:pt-0">
-            <p className="max-w-2xl text-base leading-7 text-white/75">
+            <p className="max-w-2xl text-base leading-7 text-white/70">
               Start with the next recipe conversation. Mychelin helps you ask
               better questions in the moment, then turns the answers into a dish
               you can cook again.
@@ -369,11 +401,11 @@ export function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-5">
               <Link
                 href="/login?mode=signup"
-                className="whitespace-nowrap rounded-full bg-[#f7c86a] px-5 py-3 text-sm font-semibold text-[#17131f] transition-colors hover:bg-[#ffd98a]"
+                className="rounded-full bg-[#f7c86a] px-5 py-3 text-sm font-semibold text-[#17131f] transition hover:bg-[#ffd98a]"
               >
                 Start cooking like home
               </Link>
-              <p className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/75">
+              <p className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
                 Free.
               </p>
             </div>
@@ -381,11 +413,14 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ==================== FOOTER ==================== */}
       <footer className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs text-[#6b625c]">
+        <p className="text-xs text-[#9b9b9b]">
           Cook like home, even in your new home.
         </p>
       </footer>
     </div>
   );
 }
+// deploy trigger: 15:42:56
+// auto-deploy test #3: 16:18

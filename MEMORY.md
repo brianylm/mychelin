@@ -2475,3 +2475,10 @@ Checks:
 - Reverted product commit `ce06587` in Git while retaining this audit trail. No schema or user-data rollback was involved.
 - Production privacy smoke completed against the restored deployment. The subsequent pilot smoke was blocked by the expected signup rate limiter after the privacy run; do not bypass that safeguard.
 - Next UI work must be delivered in small preview-tested slices with per-surface interaction and request-timing gates. Conversation-capture implementation remains paused until the restored UI is confirmed.
+
+### Repository alignment after rollback
+
+- Restored app/src/app/globals.css and app/src/components/LandingPage.tsx exactly to commit 34471a0, removing the earlier July 19 Hallmark runtime styling that had never shipped before the broad uplift.
+- Returned the Create recipe sidebar and empty-recipe entry points to the earlier compact card treatment while preserving the newer Write or paste recipe, Import from link, Live conversation, and Ask Mychelin behavior. Recipe flags and the 30-second autosave / Save and lock flow remain intact.
+- Validation: focused ESLint passed with zero errors and four existing raw-img warnings; npx tsc --noEmit passed; npm run build passed; git diff --check passed. Full-repository ESLint still reports 35 pre-existing errors in untouched legacy files and is not a clean baseline gate.
+- Production alias inspection still resolves mychelin-sg.vercel.app to Ready deployment dpl_AwWumTMyaKuMJDB9WUBSNijx7ku3; live root returned HTTP 200. Synthetic privacy-smoke-*, pilot-smoke-*, and ui-audit-* account count was verified at 0.

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import { BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
+import { BookOpen, ChefHat, Check, Clock3, Flag, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
@@ -1474,100 +1474,76 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           />
         )}
 
-        {/* Keep every capture route one tap away, but present them as a single
-            task list rather than competing feature cards. */}
+        {/* Empty-state CTAs keep the three creation routes one tap away. */}
         {(selectedRecipe.ingredients?.length ?? 0) === 0 &&
           (selectedRecipe.instructions?.length ?? 0) === 0 && (
-            <section className="border-y border-ui-border">
-              <div className="py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-accent">
-                  Start this recipe
-                </p>
-                <p className="mt-1 text-sm text-ui-muted">
-                  Choose the source you already have.
-                </p>
-              </div>
-
-              <div className="border-t border-ui-border">
-                <button
-                  type="button"
-                  onClick={() => setShowScratchpadModal(true)}
-                  className="group flex min-h-[4.5rem] w-full items-center gap-3 border-b border-ui-border px-1 py-3 text-left transition-colors hover:bg-ui-surface-subtle focus-visible:bg-ui-surface-subtle"
-                >
-                  <PencilLine className="h-5 w-5 shrink-0 text-ui-accent" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="text-sm font-semibold text-ui-text">
-                        Write or paste recipe
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
-                        Local parser
-                      </span>
-                    </span>
-                    <span className="mt-1 hidden text-xs leading-5 text-ui-muted sm:block">
-                      Type naturally, paste OCR text, WhatsApp notes, or a rough memory dump.
+            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setShowScratchpadModal(true)}
+                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] sm:h-10 sm:w-10 sm:rounded-xl">
+                  <PencilLine className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2 sm:block">
+                    <span className="text-sm font-semibold text-[#241017]">Write or paste recipe</span>
+                    <span className="rounded-full bg-[#800020]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224] sm:ml-0 sm:mt-2 sm:inline-flex">
+                      Local
                     </span>
                   </span>
-                  <ChevronRight
-                    className="h-4 w-4 shrink-0 text-ui-muted transition-transform duration-200 group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </button>
+                  <span className="mt-0.5 hidden text-xs leading-relaxed text-neutral-600 sm:block">
+                    Type naturally, paste OCR text, or drop in rough notes.
+                  </span>
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPasteMode("url");
-                    setShowPasteModal(true);
-                  }}
-                  className="group flex min-h-[4.5rem] w-full items-center gap-3 border-b border-ui-border px-1 py-3 text-left transition-colors hover:bg-ui-surface-subtle focus-visible:bg-ui-surface-subtle"
-                >
-                  <Link2 className="h-5 w-5 shrink-0 text-ui-accent" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="text-sm font-semibold text-ui-text">
-                        Import from link
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
-                        AI
-                      </span>
-                    </span>
-                    <span className="mt-1 hidden text-xs leading-5 text-ui-muted sm:block">
-                      Paste a recipe page, blog post, or video URL. Switch to Text inside if extraction is blocked.
+              <button
+                type="button"
+                onClick={() => {
+                  setPasteMode("url");
+                  setShowPasteModal(true);
+                }}
+                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] sm:h-10 sm:w-10 sm:rounded-xl">
+                  <Link2 className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2 sm:block">
+                    <span className="text-sm font-semibold text-[#241017]">Import from link</span>
+                    <span className="rounded-full bg-[#800020]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224] sm:ml-0 sm:mt-2 sm:inline-flex">
+                      AI
                     </span>
                   </span>
-                  <ChevronRight
-                    className="h-4 w-4 shrink-0 text-ui-muted transition-transform duration-200 group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </button>
+                  <span className="mt-0.5 hidden text-xs leading-relaxed text-neutral-600 sm:block">
+                    Paste a recipe page, blog post, or video URL.
+                  </span>
+                </span>
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setShowCaptureModal(true)}
-                  className="group flex min-h-[4.5rem] w-full items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-ui-surface-subtle focus-visible:bg-ui-surface-subtle"
-                >
-                  <Mic2 className="h-5 w-5 shrink-0 text-ui-accent" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="text-sm font-semibold text-ui-text">
-                        Live conversation capture
-                      </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
-                        AI
-                      </span>
-                    </span>
-                    <span className="mt-1 hidden text-xs leading-5 text-ui-muted sm:block">
-                      Talk with a parent or grandparent while Mychelin translates the gist and suggests follow-up questions.
+              <button
+                type="button"
+                onClick={() => setShowCaptureModal(true)}
+                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] sm:h-10 sm:w-10 sm:rounded-xl">
+                  <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2 sm:block">
+                    <span className="text-sm font-semibold text-[#241017]">Live conversation</span>
+                    <span className="rounded-full bg-[#800020]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224] sm:ml-0 sm:mt-2 sm:inline-flex">
+                      AI
                     </span>
                   </span>
-                  <ChevronRight
-                    className="h-4 w-4 shrink-0 text-ui-muted transition-transform duration-200 group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-            </section>
+                  <span className="mt-0.5 hidden text-xs leading-relaxed text-neutral-600 sm:block">
+                    Record a family recipe while Mychelin helps you ask follow-up questions.
+                  </span>
+                </span>
+              </button>
+            </div>
           )}
 
         {/* Forked from badge */}
