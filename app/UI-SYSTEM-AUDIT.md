@@ -2,6 +2,8 @@
 
 _Created: 2026-06-04_
 
+> **July 2026 status:** the original implementation sequence below is retained as historical analysis, but it is superseded by `UI-BASELINE.md`. A broad implementation of the old sequence caused visual and performance regressions and was rolled back. Future work is performance-first, one reversible product surface per phase, with staging acceptance before production.
+
 This audit applies the central Agrippa UI doctrine from `~/.openclaw/workspace/AGRIPPA_UI.md` to Mychelin specifically. It does not replace Mychelin's warm family-cooking brand; it turns the doctrine into product-specific rules, debt areas, and implementation slices.
 
 Related context:

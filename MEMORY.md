@@ -2482,3 +2482,12 @@ Checks:
 - Returned the Create recipe sidebar and empty-recipe entry points to the earlier compact card treatment while preserving the newer Write or paste recipe, Import from link, Live conversation, and Ask Mychelin behavior. Recipe flags and the 30-second autosave / Save and lock flow remain intact.
 - Validation: focused ESLint passed with zero errors and four existing raw-img warnings; npx tsc --noEmit passed; npm run build passed; git diff --check passed. Full-repository ESLint still reports 35 pre-existing errors in untouched legacy files and is not a clean baseline gate.
 - Production alias inspection still resolves mychelin-sg.vercel.app to Ready deployment dpl_AwWumTMyaKuMJDB9WUBSNijx7ku3; live root returned HTTP 200. Synthetic privacy-smoke-*, pilot-smoke-*, and ui-audit-* account count was verified at 0.
+
+## 2026-07-19 - UI uplift design lock and Phase 0 baseline
+
+- B approved preserving the current font roles, rounded navigation, dark active-tab pills, restrained corner system, warm paper/white/burgundy surfaces, object-level cards, current landing composition, and minimal motion.
+- Created and pushed the isolated `ui-uplift` branch. Configured a separate branch-scoped Preview JWT secret; production auth credentials were not reused.
+- Established authenticated staging at `https://mychelin-ui-uplift.vercel.app` on deployment `dpl_HckhkTdL5BBdxLfEre5WXsEWHZbd`. Password signup/session checks passed and synthetic users were removed.
+- Production Lighthouse baseline: mobile performance 59, accessibility 89, LCP 9.6s, TBT 610ms, transfer 2,825 KiB; desktop performance 94, accessibility 85, LCP 1.6s. Mobile LCP is dominated by the raw hero image.
+- Authenticated production API warm medians were roughly 291-468ms, while several independent routes showed 3.8-5.6s cold samples. Future phases must avoid hidden-view eager requests.
+- Added `app/UI-BASELINE.md` and marked the original broad sequence in `app/UI-SYSTEM-AUDIT.md` as superseded. No runtime UI code changed.

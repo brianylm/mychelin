@@ -4,6 +4,21 @@ Mychelin helps moved-out homecooks preserve, plan, and reliably cook the food th
 
 This document applies the central Agrippa doctrine in `/home/cluser/.openclaw/workspace/AGRIPPA_UI.md` to Mychelin. It borrows SGDS v2's token discipline, accessible component contracts, templates, and documentation structure without government branding, Bootstrap assumptions, its exact palette, or civic-service tone. Hallmark supplies the anti-pattern audit lens. Epicure is a content and food-discovery reference, not a general component system. Zenas is not a Mychelin reference.
 
+## July 2026 UI Uplift Lock
+
+The next uplift must preserve the parts of the current product that already feel like Mychelin:
+
+- Keep DM Sans for application UI, Newsreader for editorial and recipe titles, and Libre Baskerville for the logo.
+- Keep the rounded top navigation and dark active-tab pills. Use pills selectively for active tabs, filters, flags, and statuses.
+- Reserve the most rounded shape for branded navigation. Use restrained 8-12px corners for ordinary controls and work surfaces.
+- Keep the warm paper canvas, white work surfaces, burgundy accents, subtle borders, and restrained shadows.
+- Make desktop layouts properly desktop-aware. The recipe sidebar belongs to Library; Planner, Shopping, Fridge, Activity, and Profile should retain their usable width.
+- Keep cards for real objects such as recipes, books, attempts, and dialogs. Use spacing and dividers for page sections.
+- Preserve the current landing hero image, rounded navigation, typography, and composition. Improve performance, accessibility, spacing, and readability without replacing the visual concept.
+- Keep motion minimal and quick: short transitions for tabs, drawers, dialogs, saving, and loading states only.
+
+The uplift is delivered one reversible surface at a time. Shared primitives may support a surface, but are not a reason to restyle unrelated screens.
+
 ## Experience Model
 
 - **Public site:** warm editorial storytelling with real food and family imagery, asymmetric layouts, strong type, and restrained calls to action.
