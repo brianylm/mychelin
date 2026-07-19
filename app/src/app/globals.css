@@ -254,6 +254,33 @@ button {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Hallmark - macrostructure: Workbench - genre: editorial - theme: Mychelin locked
+ * Phase 2 is scoped to the authenticated app shell and navigation.
+ */
+.mychelin-app-shell {
+  min-height: 100dvh;
+  overflow-x: clip;
+  background-color: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+.mychelin-app-shell
+  :where(button, a, input, textarea, select, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mychelin-app-shell *,
+  .mychelin-app-shell *::before,
+  .mychelin-app-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Radix theme overrides for Mychelin burgundy accent */
 .radix-themes {
   --cursor-button: pointer;

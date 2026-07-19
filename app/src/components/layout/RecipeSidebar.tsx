@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
@@ -57,12 +57,42 @@ export function RecipeSidebar({
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isRecipesOpen, setIsRecipesOpen] = useState(true);
   const [isBooksOpen, setIsBooksOpen] = useState(true);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const [shareTarget, setShareTarget] = useState<{ id: number; name: string } | null>(null);
 
   // Books state
   const [books, setBooks] = useState<Book[]>([]);
   const [expandedBooks, setExpandedBooks] = useState<Set<number>>(new Set());
   const [bookRecipes, setBookRecipes] = useState<Record<number, BookRecipe[]>>({});
+
+  useEffect(() => {
+    if (!isOpen || !window.matchMedia("(max-width: 767px)").matches) return;
+
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => {
+      const closeButton = sidebarRef.current?.querySelector<HTMLButtonElement>(
+        'button[aria-label="Close library panel"]'
+      );
+      (closeButton ?? sidebarRef.current)?.focus();
+    }, 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseRef.current();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus();
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     fetch("/api/books")
@@ -176,22 +206,28 @@ export function RecipeSidebar({
     <>
       {/* Mobile backdrop */}
       {isOpen && (
-        <div
-          role="presentation"
-          className="fixed inset-0 z-30 bg-neutral-950/40 backdrop-blur-sm md:hidden"
+        <button
+          type="button"
+          aria-label="Close library panel"
+          className="fixed inset-0 z-30 bg-neutral-950/35 md:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
+        ref={sidebarRef}
+        tabIndex={-1}
+        aria-label="Recipe library"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[#800020]/10 bg-[#fffdfb]/95 shadow-[0_24px_80px_rgba(60,43,25,0.16)] backdrop-blur-xl transition-transform",
-          mobileOnly ? "md:hidden" : "md:static md:z-auto md:h-full md:w-80 md:translate-x-0 md:shadow-none",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_24px_64px_rgba(60,43,25,0.16)] transition-[transform,visibility] duration-200 ease-out focus:outline-none",
+          mobileOnly ? "md:hidden" : "md:static md:z-auto md:h-full md:w-72 md:translate-x-0 md:shadow-none lg:w-80",
+          isOpen
+            ? "visible translate-x-0"
+            : "invisible pointer-events-none -translate-x-full md:visible md:pointer-events-auto"
         )}
       >
         {/* Header + search + toolbar */}
-        <div className="space-y-3 border-b border-[#800020]/10 bg-white/45 px-5 py-3">
+        <div className="space-y-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-3">
           <RecipeSearchHeader
             query={query}
             onQueryChange={setQuery}
