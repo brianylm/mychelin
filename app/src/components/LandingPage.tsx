@@ -125,7 +125,8 @@ export function LandingPage() {
           src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
           fill
-          priority
+          preload
+          fetchPriority="high"
           sizes="100vw"
           className="landing-hero-image absolute inset-0 h-full w-full object-cover"
         />
@@ -305,7 +306,9 @@ export function LandingPage() {
                         </h3>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        <span className="rounded-full border border-[#d8d8d2] px-3 py-1 text-xs text-[#6b6b6b]">
+                        <span
+                          className={`rounded-full border border-[#d8d8d2] px-3 py-1 text-xs text-[#6b6b6b] ${isActive ? "" : "invisible"}`}
+                        >
                           {index + 1} / {featurePages.length}
                         </span>
                         <div className="flex gap-1.5" aria-hidden="true">
