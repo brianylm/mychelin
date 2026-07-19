@@ -1,12 +1,7 @@
 "use client";
 
-import { DropdownMenu, IconButton } from "@radix-ui/themes";
-import {
-  DotsVerticalIcon,
-  Share1Icon,
-  TrashIcon,
-} from "@radix-ui/react-icons";
-import { ChefHat, PencilLine } from "lucide-react";
+import { DropdownMenu } from "@radix-ui/themes";
+import { ChefHat, MoreVertical, PencilLine, Share2, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import type { Recipe } from "@/db/schema";
@@ -18,8 +13,6 @@ interface RecipeListItemProps {
   onShare?: (recipe: Recipe) => void;
   onDelete?: (id: number) => void;
   onCook?: (id: number) => void;
-  // Optional "ingredient: X" hint shown under the title when this item
-  // is a search hit matched on an ingredient name.
   matchedIngredient?: string | null;
 }
 
@@ -35,11 +28,10 @@ export function RecipeListItem({
   const qc = useQueryClient();
 
   const handlePointerEnter = () => {
-    // Prefetch full recipe on hover so it's instant on click
     qc.prefetchQuery({
       queryKey: ["recipe", recipe.id],
       queryFn: () =>
-        fetch(`/api/recipes/${recipe.id}`).then((r) => r.json()),
+        fetch(`/api/recipes/${recipe.id}`).then((response) => response.json()),
       staleTime: 30_000,
     });
   };
@@ -49,109 +41,90 @@ export function RecipeListItem({
   return (
     <li
       className={cn(
-        "group flex cursor-pointer items-center gap-2 rounded-xl px-2 py-2 transition-colors",
-        isSelected ? "bg-[#800020]/10 text-[#521224] ring-1 ring-[#800020]/10" : "hover:bg-[#800020]/5",
-        isDraft && !isSelected && "opacity-70"
+        "group flex min-w-0 items-center rounded-lg transition-colors duration-150",
+        isSelected
+          ? "bg-[var(--ui-accent-muted)] text-[#521224]"
+          : "hover:bg-[var(--ui-surface-subtle)]",
+        isDraft && !isSelected && "text-[var(--ui-muted)]"
       )}
-      onClick={() => onSelect(recipe.id)}
       onPointerEnter={handlePointerEnter}
     >
-      {/* Thumbnail placeholder */}
-      <div
-        className={cn(
-          "relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#800020]/10 to-[#f6f2eb] ring-1 ring-[#800020]/10",
-          isDraft && "border border-dashed border-[#800020]/30 bg-[#800020]/5"
-        )}
+      <button
+        type="button"
+        onClick={() => onSelect(recipe.id)}
+        className="flex min-h-14 min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
+        aria-current={isSelected ? "page" : undefined}
       >
-        {recipe.imageUrl ? (
-          <img
-            src={recipe.imageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : isDraft ? (
-          <PencilLine className="h-4 w-4 text-[#800020]/55" />
-        ) : (
-          <ChefHat className="h-4 w-4 text-[#800020]/55" />
-        )}
-      </div>
-
-      {/* Name + cuisine (or matched ingredient context during search) */}
-      <div className="flex min-w-0 flex-1 flex-col">
         <span
           className={cn(
-            "truncate text-sm",
-            isSelected && "font-medium",
-            isDraft && !isSelected && "italic text-neutral-600"
+            "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]",
+            isDraft && "border-dashed border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)]"
           )}
         >
-          {recipe.title}
+          {recipe.imageUrl ? (
+            <img src={recipe.imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : isDraft ? (
+            <PencilLine className="h-4 w-4 text-[var(--ui-accent)]/60" aria-hidden="true" />
+          ) : (
+            <ChefHat className="h-4 w-4 text-[var(--ui-accent)]/60" aria-hidden="true" />
+          )}
         </span>
-        {matchedIngredient ? (
-          <span className="truncate text-[11px] text-[#800020]">
-            ingredient:{" "}
-            <span className="font-medium">{matchedIngredient}</span>
-          </span>
-        ) : isDraft ? (
-          <span className="truncate text-[11px] text-neutral-400">Draft</span>
-        ) : (
-          recipe.cuisine && (
-            <span className="truncate text-xs text-neutral-500">
-              {recipe.cuisine}
-            </span>
-          )
-        )}
-      </div>
 
-      {/* Actions */}
-      <div className="flex flex-shrink-0 items-center gap-1">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span
+            className={cn(
+              "truncate text-sm text-[var(--ui-text)]",
+              isSelected && "font-semibold",
+              isDraft && !isSelected && "italic"
+            )}
+          >
+            {recipe.title}
+          </span>
+          {matchedIngredient ? (
+            <span className="truncate text-[11px] text-[var(--ui-accent)]">
+              Ingredient: <span className="font-semibold">{matchedIngredient}</span>
+            </span>
+          ) : isDraft ? (
+            <span className="truncate text-[11px] text-[var(--ui-muted)]">Draft</span>
+          ) : recipe.cuisine ? (
+            <span className="truncate text-xs text-[var(--ui-muted)]">{recipe.cuisine}</span>
+          ) : null}
+        </span>
+      </button>
+
+      <div className="flex shrink-0 items-center">
         {onCook && !isDraft && (
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onCook(recipe.id);
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[#17131f] text-white opacity-100 transition hover:bg-[#800020] md:opacity-0 md:group-hover:opacity-100"
+            onClick={() => onCook(recipe.id)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-[background-color,color,opacity] duration-150 hover:bg-[var(--ui-action)] hover:text-[var(--ui-action-text)] lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
             aria-label={`Cook ${recipe.title}`}
             title="Cook with me"
           >
-            <ChefHat className="h-3.5 w-3.5" />
+            <ChefHat className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
-            <IconButton
-              variant="ghost"
-              size="1"
-              className="opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
-              aria-label="Recipe options"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+              aria-label={`Recipe options for ${recipe.title}`}
+              title="Recipe options"
             >
-              <DotsVerticalIcon />
-            </IconButton>
+              <MoreVertical className="h-4 w-4" aria-hidden="true" />
+            </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
             {onShare && !isDraft && (
-              <DropdownMenu.Item
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare(recipe);
-                }}
-              >
-                <Share1Icon />
+              <DropdownMenu.Item onClick={() => onShare(recipe)}>
+                <Share2 className="h-4 w-4" />
                 Share
               </DropdownMenu.Item>
             )}
             {onDelete && (
-              <DropdownMenu.Item
-                color="red"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(recipe.id);
-                }}
-              >
-                <TrashIcon />
+              <DropdownMenu.Item color="red" onClick={() => onDelete(recipe.id)}>
+                <Trash2 className="h-4 w-4" />
                 Delete
               </DropdownMenu.Item>
             )}

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import { BookOpen, ChefHat, Check, Clock3, Flag, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Plus, Share2, Shuffle, Target, Utensils } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
@@ -20,7 +20,6 @@ import { PhotoUploadSection } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
 import { VoiceRecording } from "@/components/heritage/VoiceRecording";
 
-import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { ServingScaler } from "./ServingScaler";
 import { CookWithMeSession } from "./CookWithMeSession";
 import { AttemptHistory } from "./AttemptHistory";
@@ -42,22 +41,14 @@ import { CookingPrinciples } from "@/components/books/CookingPrinciples";
 import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import type { Recipe } from "@/db/schema";
 import { RECIPE_FLAG_OPTIONS, recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
-
-interface BookSummary {
-  id: number;
-  title: string;
-  coverEmoji: string;
-  coverColor: string;
-  recipeCount: number;
-  description: string | null;
-}
+import { booksQueryKey, fetchBooks } from "@/lib/books-client";
 
 interface RecipeViewProps {
   onOpenSidebar: () => void;
   onCookRecipe?: (recipeId: number) => void;
 }
 
-type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime"> & {
+type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime" | "status"> & {
   recipeFlags?: RecipeFlag[];
 };
 
@@ -134,6 +125,93 @@ function RecipeFlagBadges({ flags }: { flags?: RecipeFlag[] }) {
         </span>
       ))}
     </div>
+  );
+}
+
+function RecipeLibraryCard({
+  recipe,
+  onSelect,
+  onCook,
+}: {
+  recipe: RecipeCard;
+  onSelect: () => void;
+  onCook?: () => void;
+}) {
+  const isDraft = recipe.status === "draft";
+
+  return (
+    <article className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-[0_8px_24px_rgba(60,43,25,0.06)] transition-[border-color,box-shadow] duration-150 hover:border-[var(--ui-border-strong)] hover:shadow-[0_10px_28px_rgba(60,43,25,0.09)]">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 flex-col text-left"
+        aria-label={`Open ${recipe.title}`}
+      >
+        <div className="flex h-28 w-full shrink-0 items-center justify-center overflow-hidden bg-[var(--ui-surface-subtle)] sm:h-32">
+          {recipe.imageUrl ? (
+            <img
+              src={recipe.imageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <ChefHat className="h-8 w-8 text-[var(--ui-accent)]/45" aria-hidden="true" />
+          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col p-3.5">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <h3 className="line-clamp-2 min-w-0 text-sm font-semibold leading-5 text-[var(--ui-text)] transition-colors duration-150 group-hover:text-[var(--ui-accent)]">
+              {recipe.title}
+            </h3>
+            {isDraft && (
+              <span className="shrink-0 rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-muted)]">
+                Draft
+              </span>
+            )}
+          </div>
+          {recipe.cuisine && (
+            <p className="mt-1 truncate text-xs font-medium text-[var(--ui-accent)]">
+              {recipe.cuisine}
+            </p>
+          )}
+          <RecipeFlagBadges flags={recipe.recipeFlags} />
+          {recipe.description && (
+            <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--ui-muted)]">
+              {recipe.description}
+            </p>
+          )}
+          {(recipe.prepTime || recipe.cookTime) && (
+            <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-3 text-[11px] font-medium text-[var(--ui-muted)]">
+              {recipe.prepTime && (
+                <span className="inline-flex items-center gap-1">
+                  <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                  {recipe.prepTime}m prep
+                </span>
+              )}
+              {recipe.cookTime && (
+                <span className="inline-flex items-center gap-1">
+                  <Utensils className="h-3.5 w-3.5" aria-hidden="true" />
+                  {recipe.cookTime}m cook
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </button>
+      {onCook && !isDraft && (
+        <div className="border-t border-[var(--ui-border)] p-2.5">
+          <button
+            type="button"
+            onClick={onCook}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--ui-action)] px-3 text-sm font-semibold text-[var(--ui-action-text)] transition-colors duration-150 hover:bg-[var(--ui-action-hover)]"
+            aria-label={`Cook ${recipe.title}`}
+          >
+            <ChefHat className="h-4 w-4" aria-hidden="true" />
+            Cook with me
+          </button>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -315,7 +393,6 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [savingYield, setSavingYield] = useState(false);
   const [ingredientScale, setIngredientScale] = useState(1);
   const [showAddToBookModal, setShowAddToBookModal] = useState(false);
-  const [books, setBooks] = useState<BookSummary[]>([]);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
   const [activeBookRecipes, setActiveBookRecipes] = useState<RecipeCard[]>([]);
   const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
@@ -342,6 +419,12 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [recipeEditMode, setRecipeEditMode] = useState(false);
   const [savingRecipeFlag, setSavingRecipeFlag] = useState<RecipeFlag | null>(null);
   const selectedRecipeRef = useRef(selectedRecipe);
+  const { data: books = [] } = useQuery({
+    queryKey: booksQueryKey(user?.id ?? 0),
+    queryFn: fetchBooks,
+    enabled: Boolean(user?.id),
+    staleTime: 60_000,
+  });
 
   const promptVersionFeedback = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -351,31 +434,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     window.setTimeout(() => setShowVersionFeedback(true), 500);
   }, []);
 
-  // Cache for prefetched book recipes
+  // Cache recipes after a book is opened.
   const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, RecipeCard[]>>({});
-
-  // Fetch books for card grid, then prefetch their recipes
-  const fetchBooks = useCallback(() => {
-    fetch("/api/books")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: BookSummary[]) => {
-        setBooks(data);
-        // Prefetch recipes for all books in parallel
-        data.forEach((book) => {
-          fetch(`/api/books/${book.id}/recipes`)
-            .then((res) => (res.ok ? res.json() : []))
-            .then((recipes) => {
-              setBookRecipesCache((prev) => ({ ...prev, [book.id]: recipes }));
-            })
-            .catch(() => {});
-        });
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetchBooks();
-  }, [fetchBooks]);
 
   // Listen for create-book events from sidebar/card grid
   useEffect(() => {
@@ -398,9 +458,9 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       });
       if (!res.ok) throw new Error("Failed to create book");
       setShowCreateBookModal(false);
-      fetchBooks();
+      await qc.invalidateQueries({ queryKey: booksQueryKey(user?.id ?? 0) });
     } catch {}
-  }, [fetchBooks]);
+  }, [qc, user?.id]);
 
   const handleOpenBook = useCallback(async (bookId: number) => {
     setActiveBookId(bookId);
@@ -971,200 +1031,228 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     </div>
   ) : null;
 
-  // Loading state
+  // Keep the Library geometry stable while recipes load.
   if (loading && recipes.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-surface">
-        <LoadingAnimation />
+      <div className="flex-1 overflow-hidden bg-[var(--ui-bg)]">
+        <div
+          className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-6"
+          role="status"
+          aria-label="Loading recipe library"
+        >
+          <div className="border-b border-[var(--ui-border)] pb-5">
+            <div className="h-9 w-44 animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+            <div className="mt-2 h-4 w-32 animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]"
+              >
+                <div className="h-28 animate-pulse bg-[var(--ui-surface-subtle)] sm:h-32" />
+                <div className="space-y-2 p-3.5">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+                  <div className="h-3 w-1/3 animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+                  <div className="h-3 w-full animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <span className="sr-only">Loading recipes</span>
+        </div>
         {createBookModalEl}
-      {shareModalEl}
+        {shareModalEl}
       </div>
     );
   }
 
-  // No recipe selected — show card grid on desktop, welcome on mobile
   if (!selectedRecipe) {
-    // Mobile: simple welcome
     if (recipes.length === 0) {
       return (
-        <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8 text-neutral-500">
+        <div className="flex flex-1 items-center justify-center bg-[var(--ui-bg)] px-5 py-10 pb-24 text-[var(--ui-muted)] md:pb-10">
           <div className="mx-auto max-w-md text-center">
-            <img src="/icons/icon-welcome.png" alt="Mychelin" className="mb-6 h-24 w-24 mx-auto" />
-            <h2 className="app-editorial-title text-4xl leading-none text-[#1A1A1A]">
-              Welcome to Mychelin
+            <img
+              src="/icons/icon-welcome.png"
+              alt=""
+              className="mx-auto mb-5 h-20 w-20"
+            />
+            <h2 className="app-editorial-title text-3xl leading-none text-[var(--ui-text)] sm:text-4xl">
+              Start your recipe library
             </h2>
-            <p className="mt-3 text-sm leading-relaxed">
-              Build a family cookbook you can actually cook from. Create a recipe to
-              capture the dishes, stories, and traditions that matter.
+            <p className="mt-3 text-sm leading-6">
+              Add a family recipe, a dish you want to try, or notes you already cook from.
             </p>
-            <div className="pt-6">
-              <Button onClick={onOpenSidebar} variant="solid" size="3">
-                Get started
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onOpenSidebar();
+                window.dispatchEvent(new CustomEvent("mychelin:create-recipe"));
+              }}
+              className="mx-auto mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--ui-action)] px-4 text-sm font-semibold text-[var(--ui-action-text)] transition-colors duration-150 hover:bg-[var(--ui-action-hover)]"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Add your first recipe
+            </button>
           </div>
           {createBookModalEl}
-      {shareModalEl}
+          {shareModalEl}
         </div>
       );
     }
 
     return (
-      <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
-        <div className="mx-auto max-w-5xl px-5 py-6">
+      <div className="flex-1 overflow-y-auto bg-[var(--ui-bg)] pb-20 md:pb-8">
+        <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-6">
           {activeBookId ? (() => {
-            const activeBook = books.find(b => b.id === activeBookId);
+            const activeBook = books.find((book) => book.id === activeBookId);
             return (
               <>
-                {/* Book header */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-3">
+                <header className="mb-7 border-b border-[var(--ui-border)] pb-5">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <button
+                      type="button"
                       onClick={handleCloseBook}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+                      aria-label="Back to recipe library"
+                      title="Back to Library"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="15 18 9 12 15 6" />
-                      </svg>
+                      <ArrowLeft className="h-5 w-5" aria-hidden="true" />
                     </button>
-                    <span className="text-2xl shrink-0">{activeBook?.coverEmoji ?? "📚"}</span>
-                    <h2 className="app-editorial-title truncate text-4xl leading-none text-[#1A1A1A]">
+                    <span className="shrink-0 text-2xl" aria-hidden="true">
+                      {activeBook?.coverEmoji ?? "📚"}
+                    </span>
+                    <h2 className="app-editorial-title min-w-0 truncate text-3xl leading-none text-[var(--ui-text)] sm:text-4xl">
                       {activeBook?.title ?? "Book"}
                     </h2>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-neutral-500">
-                      {activeBookRecipes.length} recipe{activeBookRecipes.length !== 1 ? "s" : ""}
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-[var(--ui-muted)]">
+                      {activeBookRecipes.length} recipe{activeBookRecipes.length === 1 ? "" : "s"}
                     </p>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="solid"
-                        size="2"
-                        onClick={async () => {
-                          try {
-                            const res = await fetch("/api/recipes", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ title: "Untitled Recipe", bookId: activeBookId }),
-                            });
-                            if (res.ok) {
-                              const newRecipe = await res.json();
-                              qc.invalidateQueries({ queryKey: ["recipes"] });
-                              selectRecipe(newRecipe.id);
-                            }
-                          } catch {}
-                        }}
-                      >
-                        + New
-                      </Button>
                       {activeBook && (
                         <button
-                          onClick={() => setShowShareModal({ type: "book", id: activeBook.id, name: activeBook.title })}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-[#800020]"
+                          type="button"
+                          onClick={() =>
+                            setShowShareModal({
+                              type: "book",
+                              id: activeBook.id,
+                              name: activeBook.title,
+                            })
+                          }
+                          className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-accent)]"
+                          aria-label={`Share ${activeBook.title}`}
                           title="Share book"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="18" cy="5" r="3" />
-                            <circle cx="6" cy="12" r="3" />
-                            <circle cx="18" cy="19" r="3" />
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                          </svg>
+                          <Share2 className="h-4 w-4" aria-hidden="true" />
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch("/api/recipes", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                title: "Untitled Recipe",
+                                bookId: activeBookId,
+                              }),
+                            });
+                            if (!response.ok) return;
+                            const newRecipe = await response.json();
+                            qc.invalidateQueries({ queryKey: ["recipes"] });
+                            selectRecipe(newRecipe.id);
+                          } catch {}
+                        }}
+                        className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--ui-action)] px-4 text-sm font-semibold text-[var(--ui-action-text)] transition-colors duration-150 hover:bg-[var(--ui-action-hover)]"
+                      >
+                        <Plus className="h-4 w-4" aria-hidden="true" />
+                        Add recipe
+                      </button>
                     </div>
                   </div>
-                </div>
+                </header>
 
-                {/* Book's recipes as cards */}
                 {loadingBookRecipes ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading recipes">
+                    {[0, 1, 2].map((item) => (
+                      <div
+                        key={item}
+                        className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]"
+                      >
+                        <div className="h-28 animate-pulse bg-[var(--ui-surface-subtle)] sm:h-32" />
+                        <div className="space-y-2 p-3.5">
+                          <div className="h-4 w-2/3 animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+                          <div className="h-3 w-1/3 animate-pulse rounded bg-[var(--ui-surface-subtle)]" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : activeBookRecipes.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-neutral-400">
-                    <span className="mb-3 text-4xl">📖</span>
-                    <p className="text-sm">No recipes in this book yet</p>
-                    <p className="mt-1 text-xs">Assign recipes to this book from the recipe view</p>
+                  <div className="border-y border-[var(--ui-border)] py-12 text-center">
+                    <BookOpen className="mx-auto h-7 w-7 text-[var(--ui-accent)]/55" aria-hidden="true" />
+                    <p className="mt-3 text-sm font-semibold text-[var(--ui-text)]">
+                      No recipes in this book yet
+                    </p>
+                    <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[var(--ui-muted)]">
+                      Add a recipe here or assign an existing recipe from its Library information.
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {activeBookRecipes.map((recipe) => (
-                      <article
+                      <RecipeLibraryCard
                         key={recipe.id}
-                        className="group flex flex-col rounded-2xl border border-[#800020]/10 bg-white/80 p-0 text-left shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#800020]/25 hover:shadow-[0_22px_55px_rgba(60,43,25,0.14)]"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => selectRecipe(recipe.id)}
-                          className="flex flex-1 flex-col text-left"
-                        >
-                          <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
-                            {recipe.imageUrl ? (
-                              <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
-                            ) : (
-                              <ChefHat className="h-10 w-10 text-[#800020]/45" />
-                            )}
-                          </div>
-                          <div className="flex flex-1 flex-col p-4 pb-3">
-                            <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
-                            {recipe.cuisine && (
-                              <span className="mt-1 w-fit rounded-full bg-[#800020]/5 px-2 py-0.5 text-xs font-medium text-[#800020]">{recipe.cuisine}</span>
-                            )}
-                          </div>
-                        </button>
-                        {onCookRecipe && (
-                          <div className="px-4 pb-4">
-                            <button
-                              type="button"
-                              onClick={() => onCookRecipe(recipe.id)}
-                              className="flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]"
-                            >
-                              <ChefHat className="h-4 w-4" />
-                              Cook with me
-                            </button>
-                          </div>
-                        )}
-                      </article>
+                        recipe={recipe}
+                        onSelect={() => selectRecipe(recipe.id)}
+                        onCook={onCookRecipe ? () => onCookRecipe(recipe.id) : undefined}
+                      />
                     ))}
                   </div>
                 )}
 
-                {/* Cooking principles — tips and guiding rules for this
-                    book. The server scopes to book membership, so any
-                    user who can see this book can read the tips; only
-                    members with edit rights can add them. */}
-                {activeBookId != null && (
-                  <div className="mt-10 rounded-2xl border border-[#800020]/10 bg-white/80 p-5 shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70">
-                    <CookingPrinciples
-                      bookId={activeBookId}
-                      canEdit={true}
-                      isOwner={true}
-                    />
+                <section className="mt-10 border-t border-[var(--ui-border)] pt-7">
+                  <div className="mb-4">
+                    <h3 className="text-base font-semibold text-[var(--ui-text)]">
+                      Cooking principles
+                    </h3>
+                    <p className="mt-1 text-sm text-[var(--ui-muted)]">
+                      Shared cues and habits that apply across this book.
+                    </p>
                   </div>
-                )}
+                  <CookingPrinciples
+                    bookId={activeBookId}
+                    canEdit={true}
+                    isOwner={true}
+                  />
+                </section>
               </>
             );
           })() : (
             <>
-              {/* Header */}
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="app-editorial-title text-4xl leading-none text-[#1A1A1A]">
-                    Your Recipes
-                  </h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} in your collection
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {recipes.length > 0 && (
+              <header className="mb-7 border-b border-[var(--ui-border)] pb-5">
+                <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                  <div className="min-w-0">
+                    <h2 className="app-editorial-title text-3xl leading-none text-[var(--ui-text)] sm:text-4xl">
+                      Your Recipes
+                    </h2>
+                    <p className="mt-1.5 text-sm text-[var(--ui-muted)]">
+                      {recipes.length} recipe{recipes.length === 1 ? "" : "s"} in your collection
+                    </p>
+                  </div>
+                  <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
                     <DropdownMenu.Root>
                       <DropdownMenu.Trigger>
-                        <Button variant="soft"  size="2">
-                          <Shuffle className="h-4 w-4" />
-                          Surprise me
-                        </Button>
+                        <button
+                          type="button"
+                          className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm font-semibold text-[var(--ui-text)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)]"
+                        >
+                          <Shuffle className="h-4 w-4 shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
+                          <span className="sm:hidden">Surprise</span>
+                          <span className="hidden sm:inline">Surprise me</span>
+                        </button>
                       </DropdownMenu.Trigger>
                       <DropdownMenu.Content>
                         <DropdownMenu.Item
@@ -1187,143 +1275,94 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                         </DropdownMenu.Item>
                       </DropdownMenu.Content>
                     </DropdownMenu.Root>
-                  )}
-                  <Button
-                    variant="solid"
-                    size="2"
-                    onClick={() => {
-                      onOpenSidebar();
-                      window.dispatchEvent(new CustomEvent("mychelin:create-recipe"));
-                    }}
-                    className="md:hidden"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New
-                  </Button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenSidebar();
+                        window.dispatchEvent(new CustomEvent("mychelin:create-recipe"));
+                      }}
+                      className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg bg-[var(--ui-action)] px-3 text-sm font-semibold text-[var(--ui-action-text)] transition-colors duration-150 hover:bg-[var(--ui-action-hover)] md:hidden"
+                    >
+                      <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span className="truncate">Add recipe</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </header>
 
-              {/* Book folders */}
               {books.length > 0 && (
-                <div className="mb-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-[0.18em] text-[#6b6b6b]">
-                      <BookOpen className="h-4 w-4 text-[#800020]" />
+                <section className="mb-8">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-2">
+                    <h3 className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted)]">
+                      <BookOpen className="h-4 w-4 shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
                       Books
                     </h3>
                     <button
+                      type="button"
                       onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
-                      className="text-xs font-medium text-[#800020] hover:text-[#800020]"
+                      className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-[var(--ui-accent)] transition-colors duration-150 hover:bg-[var(--ui-accent-muted)]"
                     >
-                      + Create Book
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                      Create book
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                    {books.map((book) => {
-                      const bgMap: Record<string, string> = {
-                        amber: "from-[#800020]/5 to-[#800020]/10",
-                        rose: "from-[#800020]/10 to-[#f6f2eb]",
-                        emerald: "from-[#800020]/10 to-[#f6f2eb]",
-                        sky: "from-[#800020]/10 to-[#f6f2eb]",
-                        violet: "from-[#800020]/10 to-[#f6f2eb]",
-                        slate: "from-[#800020]/10 to-[#f6f2eb]",
-                      };
-                      const bgClass = bgMap[book.coverColor] || "from-[#800020]/5 to-[#800020]/10";
-                      return (
-                        <div
-                          key={book.id}
-                          className="group relative flex flex-col items-center gap-2 rounded-2xl border border-[#800020]/10 bg-gradient-to-br p-4 shadow-[0_12px_32px_rgba(60,43,25,0.07)] ring-1 ring-white/70 text-center transition-all hover:border-[#800020]/30 hover:shadow-md cursor-pointer"
-                          style={{ backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
-                          onClick={() => handleOpenBook(book.id)}
-                        >
-
-                          <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${bgClass} text-2xl`}>
-                            {book.coverEmoji}
-                          </div>
-                          <span className="text-sm font-semibold text-neutral-800 group-hover:text-[#521224] truncate w-full">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {books.map((book) => (
+                      <button
+                        key={book.id}
+                        type="button"
+                        onClick={() => handleOpenBook(book.id)}
+                        className="group flex min-w-0 items-center gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3 text-left transition-[border-color,background-color] duration-150 hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-subtle)]"
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-surface-subtle)] text-xl" aria-hidden="true">
+                          {book.coverEmoji}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-[var(--ui-text)] group-hover:text-[var(--ui-accent)]">
                             {book.title}
                           </span>
-                          <span className="text-[10px] text-neutral-400">
-                            {book.recipeCount} recipe{book.recipeCount !== 1 ? "s" : ""}
+                          <span className="mt-0.5 block text-xs text-[var(--ui-muted)]">
+                            {book.recipeCount} recipe{book.recipeCount === 1 ? "" : "s"}
                           </span>
-                        </div>
-                      );
-                    })}
-                    {/* Create book card */}
-                    <button
-                      onClick={() => window.dispatchEvent(new CustomEvent("mychelin:create-book"))}
-                      className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#800020]/15 bg-white/50 p-4 text-center transition-all hover:border-[#800020]/30 hover:bg-[#800020]/5"
-                    >
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#800020]/5 text-2xl text-[#800020]/45">
-                        +
-                      </div>
-                      <span className="text-sm font-medium text-neutral-400">New Book</span>
-                    </button>
+                        </span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ui-muted)]" aria-hidden="true" />
+                      </button>
+                    ))}
                   </div>
-                </div>
+                </section>
               )}
 
-              {/* All recipes card grid */}
-              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-[0.18em] text-[#6b6b6b]">
-                <ChefHat className="h-4 w-4 text-[#800020]" />
-                All Recipes
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {recipes.map((recipe) => (
-                  <article
-                    key={recipe.id}
-                    className="group flex flex-col rounded-2xl border border-[#800020]/10 bg-white/80 p-0 text-left shadow-[0_14px_42px_rgba(60,43,25,0.08)] ring-1 ring-white/70 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-[#800020]/25 hover:shadow-[0_22px_55px_rgba(60,43,25,0.14)]"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => selectRecipe(recipe.id)}
-                      className="flex flex-1 flex-col text-left"
-                    >
-                      <div className="flex h-36 items-center justify-center rounded-t-2xl bg-gradient-to-br from-[#800020]/10 via-[#f6f2eb] to-white">
-                        {recipe.imageUrl ? (
-                          <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full rounded-t-2xl object-cover" />
-                        ) : (
-                          <ChefHat className="h-10 w-10 text-[#800020]/45" />
-                        )}
-                      </div>
-                      <div className="flex flex-1 flex-col p-4 pb-3">
-                        <h3 className="font-semibold text-neutral-800 group-hover:text-[#521224]">{recipe.title}</h3>
-                        {recipe.cuisine && (
-                          <span className="mt-1 w-fit rounded-full bg-[#800020]/5 px-2 py-0.5 text-xs font-medium text-[#800020]">{recipe.cuisine}</span>
-                        )}
-                        <RecipeFlagBadges flags={recipe.recipeFlags} />
-                        {recipe.description && (
-                          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-500">{recipe.description}</p>
-                        )}
-                        {(recipe.prepTime || recipe.cookTime) && (
-                          <div className="mt-auto flex gap-3 pt-3 text-[11px] text-neutral-400">
-                            {recipe.prepTime && <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" />{recipe.prepTime}m prep</span>}
-                            {recipe.cookTime && <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{recipe.cookTime}m cook</span>}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                    {onCookRecipe && recipe.status !== "draft" && (
-                      <div className="px-4 pb-4">
-                        <button
-                          type="button"
-                          onClick={() => onCookRecipe(recipe.id)}
-                          className="flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]"
-                        >
-                          <ChefHat className="h-4 w-4" />
-                          Cook with me
-                        </button>
-                      </div>
-                    )}
-                  </article>
-                ))}
-              </div>
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-2">
+                  <h3 className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted)]">
+                    <ChefHat className="h-4 w-4 shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
+                    All recipes
+                  </h3>
+                  <span className="shrink-0 text-xs font-medium text-[var(--ui-muted)]">
+                    {recipes.length} total
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {recipes.map((recipe) => (
+                    <RecipeLibraryCard
+                      key={recipe.id}
+                      recipe={recipe}
+                      onSelect={() => selectRecipe(recipe.id)}
+                      onCook={
+                        onCookRecipe && recipe.status !== "draft"
+                          ? () => onCookRecipe(recipe.id)
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
             </>
           )}
         </div>
         {createBookModalEl}
-      {shareModalEl}
-      {surpriseByModal}
+        {shareModalEl}
+        {surpriseByModal}
       </div>
     );
   }

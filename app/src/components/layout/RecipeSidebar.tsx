@@ -7,14 +7,10 @@ import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
 import { ShareModal } from "@/components/sharing/ShareModal";
-import { ChevronDown, Plus } from "lucide-react";
-
-interface Book {
-  id: number;
-  title: string;
-  coverEmoji: string;
-  recipeCount: number;
-}
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
+import { booksQueryKey, fetchBooks } from "@/lib/books-client";
 
 interface BookRecipe {
   id: number;
@@ -44,6 +40,7 @@ export function RecipeSidebar({
   onManualRecipe,
   mobileOnly = false,
 }: RecipeSidebarProps) {
+  const { user } = useAuth();
   const {
     recipes,
     loading,
@@ -63,8 +60,13 @@ export function RecipeSidebar({
   onCloseRef.current = onClose;
   const [shareTarget, setShareTarget] = useState<{ id: number; name: string } | null>(null);
 
-  // Books state
-  const [books, setBooks] = useState<Book[]>([]);
+  // User-scoped query key prevents cached books crossing account sessions.
+  const { data: books = [] } = useQuery({
+    queryKey: booksQueryKey(user?.id ?? 0),
+    queryFn: fetchBooks,
+    enabled: Boolean(user?.id),
+    staleTime: 60_000,
+  });
   const [expandedBooks, setExpandedBooks] = useState<Set<number>>(new Set());
   const [bookRecipes, setBookRecipes] = useState<Record<number, BookRecipe[]>>({});
 
@@ -80,7 +82,7 @@ export function RecipeSidebar({
         'button[aria-label="Close library panel"]'
       );
       (closeButton ?? sidebarRef.current)?.focus();
-    }, 0);
+    }, 50);
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCloseRef.current();
     };
@@ -93,13 +95,6 @@ export function RecipeSidebar({
       returnFocusRef.current?.focus();
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    fetch("/api/books")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setBooks(data))
-      .catch(() => {});
-  }, []);
 
   const handleManualRecipe = useCallback(() => {
     onManualRecipe?.();
@@ -256,7 +251,7 @@ export function RecipeSidebar({
           <section className="mb-4">
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-[#800020]/5"
+              className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-left transition-colors hover:bg-[#800020]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/30 focus-visible:ring-offset-1"
               aria-expanded={isRecipesOpen}
               onClick={() => setIsRecipesOpen((value) => !value)}
             >
@@ -342,7 +337,7 @@ export function RecipeSidebar({
             <div className="flex items-center justify-between gap-2 px-3 pb-1.5">
               <button
                 type="button"
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 text-left transition hover:text-[#800020]"
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg text-left transition-colors hover:text-[#800020] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/30 focus-visible:ring-offset-1"
                 aria-expanded={isBooksOpen}
                 onClick={() => setIsBooksOpen((value) => !value)}
               >
@@ -367,7 +362,7 @@ export function RecipeSidebar({
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#800020]/10 text-[#800020] transition hover:border-[#800020]/25 hover:bg-[#800020]/10"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#800020]/10 text-[#800020] transition-colors hover:border-[#800020]/25 hover:bg-[#800020]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/30 focus-visible:ring-offset-1"
                 aria-label="Create book"
                 title="Create book"
               >
@@ -379,29 +374,21 @@ export function RecipeSidebar({
                 {books.map((book) => (
                   <li key={book.id}>
                     <button
+                      type="button"
                       onClick={() => toggleBook(book.id)}
+                      aria-expanded={expandedBooks.has(book.id)}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-[#800020]/5",
+                        "flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm transition-colors hover:bg-[#800020]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/30 focus-visible:ring-offset-1",
                         expandedBooks.has(book.id) && "bg-[#800020]/10 text-[#521224]"
                       )}
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <ChevronRight
                         className={cn(
-                          "shrink-0 text-neutral-400 transition-transform",
+                          "h-3.5 w-3.5 shrink-0 text-neutral-400 transition-transform",
                           expandedBooks.has(book.id) && "rotate-90"
                         )}
-                      >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
+                        aria-hidden="true"
+                      />
                       <span>{book.coverEmoji}</span>
                       <span className="truncate font-medium text-neutral-700">
                         {book.title}
@@ -424,12 +411,13 @@ export function RecipeSidebar({
                           bookRecipes[book.id].map((r) => (
                             <li key={r.id}>
                               <button
+                                type="button"
                                 onClick={() => {
                                   selectRecipe(r.id);
                                   onClose();
                                 }}
                                 className={cn(
-                                  "w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-[#800020]/5",
+                                  "min-h-11 w-full truncate rounded-md px-2 text-left text-sm transition-colors hover:bg-[#800020]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/30 focus-visible:ring-offset-1",
                                   selectedRecipeId === r.id
                                     ? "bg-[#800020]/10 font-medium text-[#521224]"
                                     : "text-neutral-600"
