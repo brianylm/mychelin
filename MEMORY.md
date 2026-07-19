@@ -2513,3 +2513,16 @@ Checks:
 - Focused ESLint, `npx tsc --noEmit`, `npm run build`, and `git diff --check` passed. Vercel also completed its production-mode Preview build successfully.
 - Synthetic QA cleanup removed one test user and three recipes; users, recipes, and related usage events were verified at zero remaining.
 - Phase 3 first follow-up: fix the pre-existing cramped/clipped New action in the narrow-mobile Library header, then audit Library list/card hierarchy without broadening the accepted shell phase.
+
+## 2026-07-19 - UI uplift Phase 3 Library staging candidate
+
+- Refined only the Library surface: made `Add recipe` explicit and fully visible at 320px, kept Surprise as the secondary action, tightened recipe cards into stable solid records, and retained the existing fonts, flags, warm palette, and object-level card model.
+- Reframed Books as a secondary compact section, removed the duplicate oversized New Book tile, and kept Create book as the single secondary action. Book detail now uses the same recipe record treatment and 44px back/share/add controls.
+- Reworked sidebar recipe rows as semantic controls with persistent mobile Cook/options actions, long-title truncation, ingredient-match evidence, 44px section/book controls, and reliable drawer focus handoff.
+- Reworked global recipe search as a focus-trapped solid dialog with body-scroll lock, Escape/focus return, abortable debounced requests, skeleton loading, explicit error state, and a layer above the mobile create FAB.
+- Deduplicated `/api/books` through a user-scoped React Query key shared by Library and sidebar. Removed eager fetching of every book's recipes; a book recipe request now occurs only when that book is opened.
+- Commit `15a9f0c` deployed Ready to Preview `dpl_5V5knsGYBTKG8JnYK4XWvDySw6Uu` at `https://mychelin-ui-uplift.vercel.app`. Production was not changed and remains on July 10 deployment `dpl_AwWumTMyaKuMJDB9WUBSNijx7ku3`.
+- Local and deployed authenticated browser checks passed at 320x568, 375x812, 414x896, 768x1024, and 1440x900: zero horizontal overflow or console errors; 44px mobile controls; correct drawer/search focus return; ingredient evidence; one initial Books request; zero eager book-recipe requests; and one book-recipe request after explicit open.
+- Focused ESLint passed with zero errors and three raw-`img` optimization warnings; `npx tsc --noEmit`, `npm run build`, and `git diff --check` passed. A corrupt ignored `.next/dev` declaration created during concurrent dev/type checking was isolated under `/tmp` before standalone TypeScript was rerun.
+- Synthetic staging QA cleanup was verified at zero remaining users, recipes, books, ingredients, flags, memberships, and usage events.
+- Next phase after B accepts this staging candidate: recipe reading/editing hierarchy, kept separate from Library so it remains independently reversible.
