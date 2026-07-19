@@ -135,11 +135,19 @@ function parseQuantityUnitToken(token: string): {
   return quantity !== null ? { quantity } : null;
 }
 
-function parseIngredientLine(rawLine: string): IngredientDraft | null {
-  let line = rawLine
-    .replace(/^\s*(?:[-*]|\d+[.)])\s+/, "")
+function stripIngredientListPrefix(rawLine: string): string {
+  return rawLine
+    .trimStart()
+    .replace(/^(?:[-*•‣◦▪▫‒–—])\s*/, "")
+    .replace(/^(?:\(?\d{1,3}\)?[.)])\s*/, "")
+    .replace(/^\d{1,3}\s*[-:]\s+/, "")
+    .replace(/^[A-Za-z][.)]\s+/, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function parseIngredientLine(rawLine: string): IngredientDraft | null {
+  let line = stripIngredientListPrefix(rawLine);
   if (!line) return null;
 
   let notes: string | undefined;

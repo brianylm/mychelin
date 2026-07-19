@@ -78,7 +78,11 @@ const TIME_RE = /\b\d+(?:\.\d+)?\s*(?:-|to)?\s*\d*\s*(?:seconds?|secs?|sec|minut
 
 function stripLinePrefix(line: string): string {
   return line
-    .replace(/^\s*(?:[-*]|\d+[.)])\s+/, "")
+    .trimStart()
+    .replace(/^(?:[-*•‣◦▪▫‒–—])\s*/, "")
+    .replace(/^(?:\(?\d{1,3}\)?[.)])\s*/, "")
+    .replace(/^\d{1,3}\s*[-:]\s+/, "")
+    .replace(/^[A-Za-z][.)]\s+/, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -243,6 +247,20 @@ function headingMode(line: string): ParseMode | null {
   return null;
 }
 
+function isLikelySectionHeading(line: string): boolean {
+  const clean = line.trim();
+  if (!clean || clean.length > 64) return false;
+  if (STEP_VERBS.test(clean) || TIME_RE.test(clean)) return false;
+  if (/[.!?]$/.test(clean)) return false;
+  if (/[:：]$/.test(clean)) return true;
+  if (/^(for|to make|marinade|sauce|filling|garnish|base|paste|broth|stock|seasoning)\b/i.test(clean)) return true;
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length > 5) return false;
+  if (words.length === 1 && normalizeUnit(words[0])) return false;
+  if (/\d/.test(clean) && parseManualIngredientLine(clean)) return false;
+  return /^[A-Z0-9]/.test(clean);
+}
+
 export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResult {
   const ingredients: ManualParsedIngredient[] = [];
   const instructions: ManualParsedInstruction[] = [];
@@ -256,6 +274,9 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
     const nextMode = headingMode(line);
     if (nextMode) {
       mode = nextMode;
+      continue;
+    }
+    if (isLikelySectionHeading(line)) {
       continue;
     }
     if (mode === "notes") {

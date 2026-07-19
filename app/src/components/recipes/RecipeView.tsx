@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import { BookOpen, ChefHat, Check, ClipboardPaste, Clock3, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
+import { BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Shuffle, Target, Utensils } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
@@ -37,9 +37,11 @@ import { ForkedFromBadge } from "./ForkedFromBadge";
 import { RecipeSaveStatus } from "./RecipeSaveStatus";
 import { ConversationCapture } from "@/components/capture/ConversationCapture";
 import { PasteRecipeModal } from "@/components/capture/PasteRecipeModal";
+import { ManualRecipeScratchpadModal, type ManualRecipeDraft } from "@/components/capture/ManualRecipeScratchpadModal";
 import { CookingPrinciples } from "@/components/books/CookingPrinciples";
 import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import type { Recipe } from "@/db/schema";
+import { RECIPE_FLAG_OPTIONS, recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
 
 interface BookSummary {
   id: number;
@@ -55,7 +57,9 @@ interface RecipeViewProps {
   onCookRecipe?: (recipeId: number) => void;
 }
 
-type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime">;
+type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime"> & {
+  recipeFlags?: RecipeFlag[];
+};
 
 type VersionIngredient = {
   name: string;
@@ -110,6 +114,64 @@ type RecipeNextTry = {
   createdAt: string;
   updatedAt: string;
 };
+
+const recipeFlagClass: Record<RecipeFlag, string> = {
+  newly_added: "border-[#d7c7ad] bg-[#fff8ea] text-[#6f4a12]",
+  try_soon: "border-[#800020]/20 bg-[#800020]/10 text-[#800020]",
+};
+
+function RecipeFlagBadges({ flags }: { flags?: RecipeFlag[] }) {
+  if (!flags || flags.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {flags.map((flag) => (
+        <span
+          key={flag}
+          className={"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold " + recipeFlagClass[flag]}
+        >
+          <Flag className="h-3 w-3" />
+          {recipeFlagShortLabel(flag)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function RecipeFlagControls({
+  flags,
+  savingFlag,
+  onToggle,
+}: {
+  flags: RecipeFlag[];
+  savingFlag: RecipeFlag | null;
+  onToggle: (flag: RecipeFlag) => void;
+}) {
+  return (
+    <div className="flex flex-wrap justify-end gap-1.5">
+      {RECIPE_FLAG_OPTIONS.map((option) => {
+        const active = flags.includes(option.value);
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onToggle(option.value)}
+            disabled={savingFlag !== null}
+            className={
+              "inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-[11px] font-semibold transition disabled:opacity-60 " +
+              (active
+                ? recipeFlagClass[option.value]
+                : "border-white/35 bg-black/25 text-white/80 hover:bg-black/35")
+            }
+            title={option.description}
+          >
+            <Flag className="h-3 w-3" />
+            {savingFlag === option.value ? "Saving" : option.shortLabel}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function formatNextTryAmount(ingredient: NextTryIngredient): string {
   if (ingredient.quantityText) return ingredient.quantityText;
@@ -268,6 +330,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [showVersionFeedback, setShowVersionFeedback] = useState(false);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
+  const [showScratchpadModal, setShowScratchpadModal] = useState(false);
   const [pasteMode, setPasteMode] = useState<"paste" | "url">("paste");
   // "Surprise me by..." state for the inline book view. When the user
   // opens the filter popover we show an input; typing narrows the
@@ -277,6 +340,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [nextTry, setNextTry] = useState<RecipeNextTry | null>(null);
   const [nextTryBusy, setNextTryBusy] = useState<string | null>(null);
   const [recipeEditMode, setRecipeEditMode] = useState(false);
+  const [savingRecipeFlag, setSavingRecipeFlag] = useState<RecipeFlag | null>(null);
   const selectedRecipeRef = useRef(selectedRecipe);
 
   const promptVersionFeedback = useCallback(() => {
@@ -565,6 +629,56 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     [selectedRecipe, updateRecipe]
   );
 
+  const handleToggleRecipeFlag = useCallback(async (flag: RecipeFlag) => {
+    if (!selectedRecipe || savingRecipeFlag) return;
+    const currentFlags = selectedRecipe.recipeFlags ?? [];
+    const nextFlags = currentFlags.includes(flag)
+      ? currentFlags.filter((item) => item !== flag)
+      : [...currentFlags, flag];
+
+    setSavingRecipeFlag(flag);
+    try {
+      const response = await fetch(`/api/recipes/${selectedRecipe.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeFlags: nextFlags }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(body?.error || "Failed to update recipe flag");
+      }
+      qc.setQueryData(["recipe", selectedRecipe.id], body);
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to update recipe flag", "error");
+    } finally {
+      setSavingRecipeFlag(null);
+    }
+  }, [addToast, qc, savingRecipeFlag, selectedRecipe]);
+
+  const handleScratchpadRecipeUpdate = useCallback(async (draft: ManualRecipeDraft) => {
+    if (!selectedRecipe) return;
+
+    const response = await fetch(`/api/recipes/${selectedRecipe.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...draft, status: "active" }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Failed to save recipe notes");
+    }
+
+    qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    setRecipeEditMode(false);
+    setShowScratchpadModal(false);
+    addToast("Recipe structured from notes", "success");
+  }, [addToast, qc, selectedRecipe]);
+
+
   const handleVoiceSave = useCallback(
     async (blob: Blob, duration: number) => {
       if (!selectedRecipe) return;
@@ -686,6 +800,42 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     },
     [selectedRecipe, updateRecipe]
   );
+
+  const flushEditableFields = useCallback(async ({
+    blurActive = false,
+    notify = false,
+  }: { blurActive?: boolean; notify?: boolean } = {}) => {
+    // Blur whatever is currently focused when the user explicitly locks the
+    // recipe. Timed autosave should stay quiet and avoid stealing focus.
+    if (blurActive) {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && typeof active.blur === "function") active.blur();
+    }
+
+    await Promise.all([
+      handleBlur("title"),
+      handleBlur("description"),
+      handleBlur("cuisine"),
+      handleBlur("prepTime"),
+      handleBlur("cookTime"),
+      handleBlur("yield"),
+    ]);
+    if (notify) addToast("Changes saved", "success");
+  }, [addToast, handleBlur]);
+
+  useEffect(() => {
+    if (!recipeEditMode) return;
+    const interval = window.setInterval(() => {
+      void flushEditableFields();
+    }, 30_000);
+    return () => window.clearInterval(interval);
+  }, [flushEditableFields, recipeEditMode]);
+
+  const handleSaveAndLock = async () => {
+    await flushEditableFields({ blurActive: true, notify: true });
+    setRecipeEditMode(false);
+  };
+
 
   // Modals — rendered outside early returns so they're always available
   const shareModalEl = showShareModal ? (
@@ -1141,6 +1291,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                         {recipe.cuisine && (
                           <span className="mt-1 w-fit rounded-full bg-[#800020]/5 px-2 py-0.5 text-xs font-medium text-[#800020]">{recipe.cuisine}</span>
                         )}
+                        <RecipeFlagBadges flags={recipe.recipeFlags} />
                         {recipe.description && (
                           <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-500">{recipe.description}</p>
                         )}
@@ -1213,30 +1364,6 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     selectedRecipe.nostalgiaRating,
   ].filter((v) => v !== null && v !== undefined && v !== "").length;
 
-  const handleSaveNow = async () => {
-    // Blur whatever is currently focused, then explicitly flush every
-    // editable detail field. This catches controls such as comboboxes where
-    // selection does not behave like a plain input blur.
-    const active = document.activeElement as HTMLElement | null;
-    if (active && typeof active.blur === "function") active.blur();
-
-    await Promise.all([
-      handleBlur("title"),
-      handleBlur("description"),
-      handleBlur("cuisine"),
-      handleBlur("prepTime"),
-      handleBlur("cookTime"),
-      handleBlur("yield"),
-    ]);
-    addToast("Changes saved", "success");
-  };
-
-  const handleSaveAndLock = async () => {
-    await handleSaveNow();
-    setRecipeEditMode(false);
-  };
-
-
   return (
     <div className="relative flex-1 overflow-y-auto bg-surface">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-5 py-4 md:gap-7 md:py-6">
@@ -1273,11 +1400,15 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           }
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <RecipeFlagControls
+                flags={selectedRecipe.recipeFlags ?? []}
+                savingFlag={savingRecipeFlag}
+                onToggle={handleToggleRecipeFlag}
+              />
               {recipeEditMode && (
                 <RecipeSaveStatus
                   isSaving={anyFieldSaving}
                   updatedAt={selectedRecipe.updatedAt}
-                  onSaveNow={handleSaveNow}
                   compact
                 />
               )}
@@ -1343,82 +1474,100 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           />
         )}
 
-        {/* Empty-state CTAs — fast ways to populate a fresh recipe.
-            Compact pill-buttons on mobile so they don't eat half
-            the viewport when the keyboard is up. Hidden once the
-            recipe has ingredients or instructions. */}
+        {/* Keep every capture route one tap away, but present them as a single
+            task list rather than competing feature cards. */}
         {(selectedRecipe.ingredients?.length ?? 0) === 0 &&
           (selectedRecipe.instructions?.length ?? 0) === 0 && (
-            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
-              {/* Capture from conversation */}
-              <button
-                onClick={() => setShowCaptureModal(true)}
-                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
-              >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
-                  <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
-                  <h3 className="text-sm font-semibold text-[#241017]">
-                    Live conversation capture
-                  </h3>
-                  <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
-                    AI
-                  </span>
-                  <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
-                    Talk with a parent or grandparent while Mychelin translates the gist and suggests follow-up questions.
-                  </p>
-                </div>
-              </button>
+            <section className="border-y border-ui-border">
+              <div className="py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-accent">
+                  Start this recipe
+                </p>
+                <p className="mt-1 text-sm text-ui-muted">
+                  Choose the source you already have.
+                </p>
+              </div>
 
-              {/* Import from URL */}
-              <button
-                onClick={() => {
-                  setPasteMode("url");
-                  setShowPasteModal(true);
-                }}
-                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
-              >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
-                  <Link2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
-                  <h3 className="text-sm font-semibold text-[#241017]">
-                    Import from URL
-                  </h3>
-                  <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
-                    AI
+              <div className="border-t border-ui-border">
+                <button
+                  type="button"
+                  onClick={() => setShowScratchpadModal(true)}
+                  className="group flex min-h-[4.5rem] w-full items-center gap-3 border-b border-ui-border px-1 py-3 text-left transition-colors hover:bg-ui-surface-subtle focus-visible:bg-ui-surface-subtle"
+                >
+                  <PencilLine className="h-5 w-5 shrink-0 text-ui-accent" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-sm font-semibold text-ui-text">
+                        Write or paste recipe
+                      </span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
+                        Local parser
+                      </span>
+                    </span>
+                    <span className="mt-1 hidden text-xs leading-5 text-ui-muted sm:block">
+                      Type naturally, paste OCR text, WhatsApp notes, or a rough memory dump.
+                    </span>
                   </span>
-                  <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
-                    Paste a recipe page link and we&apos;ll pull out the ingredients and steps.
-                  </p>
-                </div>
-              </button>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0 text-ui-muted transition-transform duration-200 group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </button>
 
-              {/* Paste from anywhere */}
-              <button
-                onClick={() => {
-                  setPasteMode("paste");
-                  setShowPasteModal(true);
-                }}
-                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-3 py-2.5 text-left shadow-sm transition-all hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
-              >
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-transform group-hover:scale-110 sm:h-10 sm:w-10 sm:rounded-xl">
-                  <ClipboardPaste className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <div className="flex flex-1 items-center gap-2 min-w-0 sm:flex-col sm:items-start sm:gap-0">
-                  <h3 className="text-sm font-semibold text-[#241017]">
-                    Paste text
-                  </h3>
-                  <span className="rounded-full bg-[#800020]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224]">
-                    AI
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasteMode("url");
+                    setShowPasteModal(true);
+                  }}
+                  className="group flex min-h-[4.5rem] w-full items-center gap-3 border-b border-ui-border px-1 py-3 text-left transition-colors hover:bg-ui-surface-subtle focus-visible:bg-ui-surface-subtle"
+                >
+                  <Link2 className="h-5 w-5 shrink-0 text-ui-accent" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-sm font-semibold text-ui-text">
+                        Import from link
+                      </span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
+                        AI
+                      </span>
+                    </span>
+                    <span className="mt-1 hidden text-xs leading-5 text-ui-muted sm:block">
+                      Paste a recipe page, blog post, or video URL. Switch to Text inside if extraction is blocked.
+                    </span>
                   </span>
-                  <p className="mt-0.5 hidden text-xs text-neutral-600 leading-relaxed sm:block">
-                    Use notes from a message, cookbook OCR, or a family call.
-                  </p>
-                </div>
-              </button>
-            </div>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0 text-ui-muted transition-transform duration-200 group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCaptureModal(true)}
+                  className="group flex min-h-[4.5rem] w-full items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-ui-surface-subtle focus-visible:bg-ui-surface-subtle"
+                >
+                  <Mic2 className="h-5 w-5 shrink-0 text-ui-accent" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-sm font-semibold text-ui-text">
+                        Live conversation capture
+                      </span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-muted">
+                        AI
+                      </span>
+                    </span>
+                    <span className="mt-1 hidden text-xs leading-5 text-ui-muted sm:block">
+                      Talk with a parent or grandparent while Mychelin translates the gist and suggests follow-up questions.
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0 text-ui-muted transition-transform duration-200 group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </section>
           )}
 
         {/* Forked from badge */}
@@ -1728,8 +1877,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         />
       )}
 
-      {/* Paste-recipe modal — paste text from anywhere, AI extracts
-          and PATCHes the current recipe. */}
+      {/* Link/text import modal — fetches a URL or extracts copied text, then PATCHes the current recipe. */}
       {showPasteModal && selectedRecipe && (
         <PasteRecipeModal
           recipeId={selectedRecipe.id}
@@ -1738,8 +1886,17 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           onRecipeUpdated={() => {
             qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
             qc.invalidateQueries({ queryKey: ["recipes"] });
-            addToast(pasteMode === "url" ? "Recipe imported from URL!" : "Recipe extracted from pasted text!", "success");
+            addToast(pasteMode === "url" ? "Recipe imported from link!" : "Recipe extracted from pasted text!", "success");
           }}
+        />
+      )}
+
+      {showScratchpadModal && selectedRecipe && (
+        <ManualRecipeScratchpadModal
+          initialTitle={selectedRecipe.title === "Untitled recipe" ? "" : selectedRecipe.title}
+          saveLabel="Save to recipe"
+          onClose={() => setShowScratchpadModal(false)}
+          onCreateRecipe={handleScratchpadRecipeUpdate}
         />
       )}
 

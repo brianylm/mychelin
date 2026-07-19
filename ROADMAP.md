@@ -84,6 +84,10 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 
 ### Planning and calendar workflows
 
+- Add timeframe-aware meal-plan randomisation: users can randomise open meal slots by selected scope — meal, day, week, or month — instead of only rerolling one meal at a time.
+- Before randomising a day/week/month, let users block out known-unavailable meal slots, e.g. skipped breakfasts, planned eating out, travel, or already-decided meals.
+- Model meal-plan slot states explicitly: `open`, `blocked/skipped`, `eating out`, and `locked/chosen`; randomisation should only fill `open` slots and preserve locked/blocked context.
+- Keep blocked slots reversible and visible so the plan explains itself instead of silently deleting meals.
 - Extend Send to Calendar so planned dishes can generate prep events before cook day, e.g. marinade or soak reminders on D-2 plus the actual cook event on D-day.
 - Let recipes store prep lead-time requirements separately from active cooking steps so calendar exports can schedule the right reminders without cluttering cook-with-me.
 

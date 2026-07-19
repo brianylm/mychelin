@@ -6,7 +6,7 @@ import { starterRecipes } from "@/lib/starter-recipes";
 
 type Goal = "learn" | "regular" | "family" | "plan" | "waste";
 type Frequency = "daily" | "most_weekdays" | "weekly" | "occasional";
-type CaptureMode = "starter" | "voice" | "paste" | "url" | "scratch";
+type CaptureMode = "starter" | "voice" | "url" | "scratch";
 type OnboardingStep = "goals" | "rhythm" | "capture";
 
 interface OnboardingFlowProps {
@@ -32,9 +32,8 @@ const frequencies: Array<{ value: Frequency; label: string; body: string }> = [
 const captureModes: Array<{ value: CaptureMode; title: string; body: string }> = [
   { value: "starter", title: "Start from a sample dish", body: "Copy a simple local recipe into your library and edit it as you cook." },
   { value: "voice", title: "Live recipe conversation", body: "Sit with a family cook while Mychelin captures the gist and suggests what to ask." },
-  { value: "paste", title: "Paste notes", body: "Use WhatsApp messages, rough lists, or old docs." },
-  { value: "url", title: "Import a URL", body: "Adapt an online recipe into your own style." },
-  { value: "scratch", title: "Manual recipe", body: "Fill in the blanks when you already know the shape." },
+  { value: "url", title: "Import from link", body: "Paste a recipe page, blog post, or video URL, with a Text fallback inside." },
+  { value: "scratch", title: "Write or paste recipe", body: "Type naturally, paste OCR text, WhatsApp notes, or a rough memory dump." },
 ];
 
 const steps: OnboardingStep[] = ["goals", "rhythm", "capture"];

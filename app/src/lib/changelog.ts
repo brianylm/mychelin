@@ -6,6 +6,25 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-07-10",
+    title: "Recipe parsing, save flow, and planning flags",
+    items: [
+      "Write or paste recipe now strips common list markers such as hyphens, bullets, and numbered prefixes from ingredient names.",
+      "Step parsing now skips section headers between groups of steps without dropping the steps that follow.",
+      "Recipe edit mode now relies on autosave plus Save and lock, removing the extra Save now button.",
+      "Recipes can now be privately flagged as New or Try soon, and flagged recipes are prioritized in meal planning.",
+    ],
+  },
+  {
+    date: "2026-07-09",
+    title: "Create recipe entry-point cleanup",
+    items: [
+      "Create recipe now has one raw-text path called Write or paste recipe, replacing the separate Paste text and Manual scratchpad choices in create menus.",
+      "Import from link remains its own route and the import modal now labels its fallback tabs as Link and Text.",
+      "Empty draft recipes can use the same Write or paste recipe scratchpad and save the structured result back into that draft.",
+    ],
+  },
+  {
     date: "2026-07-09",
     title: "Ingredient prep-note editing",
     items: [

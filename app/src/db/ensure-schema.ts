@@ -21,6 +21,7 @@ let usageEventsEnsured = false;
 let notificationsEnsured = false;
 let userOAuthEnsured = false;
 let pilotFeedbackEnsured = false;
+let recipeFlagsEnsured = false;
 
 export async function ensureVersionLabelColumn(): Promise<void> {
   if (versionLabelEnsured) return;
@@ -431,4 +432,41 @@ export async function ensurePilotFeedbackTable(): Promise<void> {
   }
 
   pilotFeedbackEnsured = true;
+}
+
+
+export async function ensureRecipeFlagsTable(): Promise<void> {
+  if (recipeFlagsEnsured) return;
+
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) return;
+
+  const client = createClient({ url, authToken });
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS recipe_flags (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      recipe_id integer NOT NULL REFERENCES recipes(id) ON DELETE cascade,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+      flag text NOT NULL,
+      created_at text NOT NULL
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS recipe_flags_unique_idx ON recipe_flags(recipe_id, user_id, flag)`,
+    `CREATE INDEX IF NOT EXISTS recipe_flags_user_id_idx ON recipe_flags(user_id)`,
+    `CREATE INDEX IF NOT EXISTS recipe_flags_recipe_id_idx ON recipe_flags(recipe_id)`,
+  ];
+
+  for (const statement of statements) {
+    try {
+      await client.execute(statement);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      const msg = message.toLowerCase();
+      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
+        console.warn("ensureRecipeFlagsTable:", message);
+      }
+    }
+  }
+
+  recipeFlagsEnsured = true;
 }

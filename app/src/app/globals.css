@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@radix-ui/themes/styles.css";
 
+/* Hallmark · genre: editorial · macrostructure: workbench · design-system: DESIGN.md · enrichment: real food and family photography */
+
 :root {
   color-scheme: light;
 
@@ -43,6 +45,34 @@
   --ui-danger-soft: #fef2f2;
   --ui-info: #1d4ed8;
   --ui-info-soft: #eff6ff;
+
+  /* Shared system contracts */
+  --ui-accent-ink: #fffaf4;
+  --ui-muted-strong: #514a45;
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --radius-control: 0.5rem;
+  --radius-panel: 0.75rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 }
 
 @theme inline {
@@ -58,18 +88,23 @@
   --color-ui-surface-subtle: var(--ui-surface-subtle);
   --color-ui-text: var(--ui-text);
   --color-ui-muted: var(--ui-muted);
+  --color-ui-muted-strong: var(--ui-muted-strong);
   --color-ui-border: var(--ui-border);
+  --color-ui-border-strong: var(--ui-border-strong);
   --color-ui-accent: var(--ui-accent);
+  --color-ui-accent-muted: var(--ui-accent-muted);
+  --color-ui-accent-ink: var(--ui-accent-ink);
+  --color-ui-action: var(--ui-action);
+  --color-ui-action-text: var(--ui-action-text);
 
   --font-sans: var(--font-dm-sans, "DM Sans"), system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Animations */
-  --animate-fade-in: fade-in 400ms ease-out forwards;
-  --animate-fade-out: fade-out 500ms ease-out forwards;
-  --animate-slide-up: slide-up 300ms ease-out forwards;
-  --animate-slide-down: slide-down 300ms ease-out;
-  --animate-shimmer: shimmer 3s ease-in-out infinite;
+  --animate-fade-in: fade-in var(--dur-long) var(--ease-out) forwards;
+  --animate-fade-out: fade-out var(--dur-long) var(--ease-in) forwards;
+  --animate-slide-up: slide-up var(--dur-short) var(--ease-in) forwards;
+  --animate-shimmer: shimmer 3s var(--ease-in-out) infinite;
 
   @keyframes fade-in {
     0% {
@@ -102,17 +137,6 @@
     }
   }
 
-  @keyframes slide-down {
-    from {
-      max-height: 0;
-      opacity: 0;
-    }
-    to {
-      max-height: 800px;
-      opacity: 1;
-    }
-  }
-
   @keyframes shimmer {
     0% {
       background-position: -1000px 0;
@@ -131,15 +155,18 @@
   border-color: rgba(var(--foreground), 0.08);
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 16% 4%, rgba(128, 0, 32, 0.08), transparent 26rem),
-    linear-gradient(180deg, #fafaf8 0%, #f6f2eb 100%);
+  min-height: 100dvh;
+  background: var(--ui-bg);
   color: rgb(var(--foreground));
   font-feature-settings:
     "rlig" 1,
@@ -195,7 +222,7 @@ h6,
 .landing-content a,
 .landing-content button,
 .landing-content span {
-  font-family: "Satoshi", var(--font-dm-sans), system-ui, sans-serif;
+  font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
 }
 
 .landing-content .landing-serif {
@@ -248,6 +275,31 @@ textarea,
 select,
 button {
   font: inherit;
+}
+
+:where(a, button, input, textarea, select, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+
+:where(button, [role="button"]):disabled,
+:where(button, [role="button"])[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .safe-bottom {

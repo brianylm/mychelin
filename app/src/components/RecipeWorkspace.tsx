@@ -13,7 +13,7 @@ import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
-import { ClipboardPaste, Link, Mic2, PencilLine, Sparkles } from "lucide-react";
+import { Link, Mic2, PencilLine, Sparkles } from "lucide-react";
 
 const LazyPanelFallback = () => (
   <div className="flex flex-1 items-center justify-center bg-surface">
@@ -387,9 +387,6 @@ function RecipeWorkspaceContent({
     }
   }, [qc, selectRecipe]);
 
-  const handleQuickCapture = useCallback(() => {
-    createDraftForCapture("paste");
-  }, [createDraftForCapture]);
 
   const handleImportUrl = useCallback(() => {
     createDraftForCapture("url");
@@ -563,7 +560,7 @@ function RecipeWorkspaceContent({
             mobileOnly
             isOpen={isSidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            onPasteText={handleQuickCapture}
+            onWriteOrPaste={handleFromScratch}
             onImportUrl={handleImportUrl}
             onCookRecipe={handleCookRecipe}
             onCaptureConversation={createDraftForConversation}
@@ -576,7 +573,7 @@ function RecipeWorkspaceContent({
             <RecipeSidebar
               isOpen={isSidebarOpen}
               onClose={() => setSidebarOpen(false)}
-              onPasteText={handleQuickCapture}
+              onWriteOrPaste={handleFromScratch}
               onImportUrl={handleImportUrl}
               onCookRecipe={handleCookRecipe}
               onCaptureConversation={createDraftForConversation}
@@ -609,8 +606,8 @@ function RecipeWorkspaceContent({
       </div>
 
       {/* ── Mobile FAB speed-dial ─────────────────────────────
-          Entry routes: import URL, paste text, conversation, Ask Mychelin,
-          or manual scratchpad. Only on the Recipes tab, only on mobile, hidden when
+          Entry routes: import from link, write or paste, conversation, or Ask Mychelin.
+          Only on the Recipes tab, only on mobile, hidden when
           the sidebar drawer is open. */}
       {showFab && (
         <>
@@ -633,7 +630,7 @@ function RecipeWorkspaceContent({
                   className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
-                    Import URL
+                    Import from link
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
                     <Link className="h-[18px] w-[18px]" />
@@ -642,14 +639,14 @@ function RecipeWorkspaceContent({
 
                 <button
                   type="button"
-                  onClick={handleQuickCapture}
+                  onClick={handleFromScratch}
                   className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
-                    Paste text
+                    Write or paste recipe
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
-                    <ClipboardPaste className="h-[18px] w-[18px]" />
+                    <PencilLine className="h-[18px] w-[18px]" />
                   </span>
                 </button>
 
@@ -679,19 +676,6 @@ function RecipeWorkspaceContent({
                   </span>
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
                     <Sparkles className="h-[18px] w-[18px]" />
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleFromScratch}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
-                >
-                  <span className="flex-1 text-sm font-medium text-neutral-800">
-                    Manual scratchpad
-                  </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
-                    <PencilLine className="h-[18px] w-[18px]" />
                   </span>
                 </button>
               </div>
@@ -771,7 +755,7 @@ function RecipeWorkspaceContent({
         />
       )}
 
-      {/* Paste-extract modal for Quick Capture flow */}
+      {/* Link/text import modal for the Import from link route. */}
       {pasteRecipeId != null && (
         <PasteRecipeModal
           recipeId={pasteRecipeId}

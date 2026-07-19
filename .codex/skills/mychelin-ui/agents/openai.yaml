@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mychelin UI"
+  short_description: "Build and review consistent Mychelin interfaces"
+  default_prompt: "Use $mychelin-ui to review and improve this Mychelin interface."

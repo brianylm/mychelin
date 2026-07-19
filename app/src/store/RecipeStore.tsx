@@ -17,9 +17,14 @@ import type {
   VoiceRecording,
   RecipePhoto,
 } from "@/db/schema";
+import type { RecipeFlag } from "@/lib/recipe-flags";
+
+export interface RecipeWithFlags extends Recipe {
+  recipeFlags?: RecipeFlag[];
+}
 
 // Extended recipe type with relations
-export interface RecipeWithRelations extends Recipe {
+export interface RecipeWithRelations extends RecipeWithFlags {
   ingredients: Ingredient[];
   instructions: Instruction[];
   voiceRecordings?: VoiceRecording[];
@@ -27,7 +32,7 @@ export interface RecipeWithRelations extends Recipe {
 }
 
 interface RecipeStoreValue {
-  recipes: Recipe[];
+  recipes: RecipeWithFlags[];
   loading: boolean;
   error: string | null;
   selectedRecipeId: number | null;
@@ -41,7 +46,7 @@ interface RecipeStoreValue {
   createRecipe: (title?: string) => Promise<void>;
   updateRecipe: (
     id: number,
-    data: Partial<Recipe>
+    data: Partial<Recipe> & { recipeFlags?: RecipeFlag[] }
   ) => Promise<void>;
   deleteRecipe: (id: number) => Promise<void>;
   addIngredient: (
@@ -103,7 +108,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
     data: recipes = [],
     isLoading,
     error: recipesError,
-  } = useQuery<Recipe[]>({
+  } = useQuery<RecipeWithFlags[]>({
     queryKey: ["recipes"],
     queryFn: () => fetchJson("/api/recipes"),
   });
@@ -144,7 +149,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   // Mutations
   const createMutation = useMutation({
     mutationFn: (title: string) =>
-      fetchJson<Recipe>("/api/recipes", {
+      fetchJson<RecipeWithFlags>("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // New recipes start as drafts (F1). They get auto-promoted to
@@ -154,7 +159,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
         // main recipe list.
         body: JSON.stringify({ title, status: "draft" }),
       }),
-    onSuccess: (data: Recipe) => {
+    onSuccess: (data: RecipeWithFlags) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
       // Auto-select the newly created recipe and flag it as just-created
       // so the recipe view can auto-focus the title input.
@@ -164,7 +169,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Recipe> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<Recipe> & { recipeFlags?: RecipeFlag[] } }) =>
       fetchJson(`/api/recipes/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -361,7 +366,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateRecipe = useCallback(
-    async (id: number, data: Partial<Recipe>) => {
+    async (id: number, data: Partial<Recipe> & { recipeFlags?: RecipeFlag[] }) => {
       await updateMutation.mutateAsync({ id, data });
     },
     [updateMutation]

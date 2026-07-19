@@ -2411,3 +2411,41 @@ Checks:
 - Added an Amount text edit field when a precise ingredient still has parsed quantityText, so hidden imported amount text can be cleared.
 - Updated the in-app changelog.
 - Validation: targeted npx eslint passed; npm run build passed; git diff --check passed.
+
+## 2026-07-09 - Create Recipe Entry-Point IA Cleanup
+- Collapsed duplicate raw-text creation paths into "Write or paste recipe" across sidebar, mobile FAB, onboarding, and empty-draft recipe CTAs.
+- Kept "Import from link" as the URL/video route, with Link/Text tabs inside the import modal for fallback when extraction is blocked.
+- Added empty-draft support for the scratchpad parser so it can PATCH the current draft instead of creating a second recipe.
+- Updated in-app changelog copy. Validation: targeted npx eslint passed with existing img warnings; npm run build passed; git diff --check passed.
+
+## 2026-07-09 - Production Deploy: Create Recipe Entry-Point Cleanup
+- Deployed current create-recipe entry-point IA cleanup to production with `npx vercel --prod` from repo root.
+- Vercel deployment: `dpl_8zy8JyPZqoKaURbgKYb6rk5knRYe`, generated URL `https://mychelin-ggmw5ic7z-brianylms-projects.vercel.app`.
+- Alias confirmed on `https://mychelin-sg.vercel.app`; production inspect shows status Ready.
+- Smoke checks: `curl -I https://mychelin-sg.vercel.app` returned HTTP 200; `curl -I https://mychelin-sg.vercel.app/app` returned HTTP 200.
+- Note: Vercel CLI exited with `Error: Not authorized` after deploy output, but `vercel inspect` confirmed the deployment is Ready and aliased to production.
+
+## 2026-07-10 - Recipe Parser Bullets, Save Flow, and Private Planning Flags
+- Parser: expanded list-prefix cleanup for hyphens, Unicode bullets/dashes, and numbered prefixes in manual scratchpad and ingredient paste-list parsing.
+- Parser: likely section headers inside pasted recipes are skipped without switching out of the active ingredient/step mode, so steps after mid-method headers continue parsing.
+- Recipe edit flow: removed the separate Save now button from RecipeSaveStatus; edit mode now has quiet 30s autosave plus Save and lock as the main explicit CTA.
+- Planning flags: added per-user recipe_flags table, runtime ensure helper, migration 0027_recipe_flags.sql, API/store wiring, recipe header/card flag UI, and meal-planner flag-first prioritization. New recipes default to the New flag; Try soon is manual.
+- Validation: parser smoke test passed; targeted npx eslint passed with existing img warnings; npx tsc --noEmit passed; npm run build passed; git diff --check passed.
+
+## 2026-07-10 - Recipe Flag Label Tweak
+- Changed the visible newly_added recipe flag label to New while keeping the stored key stable as newly_added.
+- Note: recipe flag options are currently centralized in `app/src/lib/recipe-flags.ts`; there is no user-facing flag customization screen yet.
+
+
+## 2026-07-19 - Hallmark UI system and first uplift
+
+- Installed the official Nutlope Hallmark skill at `/home/cluser/.codex/skills/hallmark` and added `DESIGN.md`, Hallmark preflight/log metadata, and a validated repo-local `.codex/skills/mychelin-ui` playbook.
+- Kept Tailwind and native CSS variables as the implementation layer. Borrowed SGDS token/accessibility/documentation structure without adding `@govtechsg/sgds`, Bootstrap/Sass assumptions, government branding, or a second runtime design system.
+- Added shared spacing, motion, z-index, accent-ink, and stronger-muted tokens; solidified the warm paper canvas; added global focus-visible and reduced-motion behavior; clipped accidental horizontal overflow; and removed the undeclared Satoshi fallback.
+- Reworked the landing process section from three equal cards into a divider-led sequence, replaced the fake phone/card-stack carousel with unframed product evidence and explicit controls, optimized the hero through `next/image`, improved low-contrast footer/label text, and removed decorative landing chrome.
+- Flattened nested Create recipe cards in the sidebar and changed the fresh-recipe entry choices into a one-tap task list, with Write or paste recipe first as the common route.
+- Deliberately did not install SGDS runtime, Zenas, or Epicure as UI dependencies. Impeccable CLI and Chrome DevTools MCP were not executed because their third-party npm launchers require explicit approval to access local environment/browser data; Hallmark already covers the immediate anti-slop audit need.
+- Remaining UI/performance follow-ups: scope the global Radix Themes stylesheet away from public pages, and audit the older recipe-library card/gradient/transition patterns as a separate low-risk slice.
+- Files touched for this uplift: `DESIGN.md`, `.hallmark/`, `.codex/skills/mychelin-ui/`, `app/src/app/globals.css`, `app/src/components/LandingPage.tsx`, `app/src/components/layout/sidebar/SidebarToolbar.tsx`, `app/src/components/recipes/RecipeView.tsx`, and `MEMORY.md`.
+- Validation: repo skill validator passed; targeted ESLint passed with zero errors and three pre-existing raw-`img` warnings in RecipeView; `npx tsc --noEmit` passed; production build completed; `git diff --check` passed; headless Chrome visual checks passed at 320, 375, 390, 414, 768, and 1440px with no horizontal overflow.
+- Deploy note: not deployed; local dev verification only.

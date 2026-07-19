@@ -19,6 +19,7 @@ import {
   type FilterOption,
 } from "@/components/ui";
 import { getMealDateTime, getDefaultMealEndTime, CalendarEvent } from "@/lib/calendar";
+import { recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
 
 interface MealPlan {
   id: number;
@@ -38,6 +39,7 @@ interface Recipe {
   cuisine?: string | null;
   ingredients?: string[];
   lastCookedAt?: string | null;
+  recipeFlags?: RecipeFlag[];
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -142,6 +144,17 @@ function getLastCookedLabel(lastCookedAt?: string | null): string {
     day: "numeric",
     month: "short",
   })}`;
+}
+
+function getRecipeFlagPriority(recipe: Recipe): number {
+  const flags = recipe.recipeFlags ?? [];
+  if (flags.includes("try_soon")) return 2;
+  if (flags.includes("newly_added")) return 1;
+  return 0;
+}
+
+function getRecipeFlagBadges(recipe: Recipe): string[] {
+  return (recipe.recipeFlags ?? []).map(recipeFlagShortLabel);
 }
 
 function getLastCookedSortValue(recipe: Recipe): number {
@@ -314,7 +327,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
           .toLowerCase();
         return searchable.includes(query);
       })
-      .sort((a, b) => getLastCookedSortValue(a) - getLastCookedSortValue(b));
+      .sort((a, b) =>
+        getRecipeFlagPriority(b) - getRecipeFlagPriority(a) ||
+        getLastCookedSortValue(a) - getLastCookedSortValue(b)
+      );
   }, [cuisineFilter, recipeQuery, recipes]);
 
   const selectedRecipe = selectedRecipeId
@@ -862,7 +878,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                       {selectedRecipe.title}
                     </p>
                     <p className="mt-0.5 text-[11px] text-[#6b3b45]">
-                      {getLastCookedLabel(selectedRecipe.lastCookedAt)}
+                      {[...getRecipeFlagBadges(selectedRecipe), getLastCookedLabel(selectedRecipe.lastCookedAt)].join(" · ")}
                     </p>
                   </div>
                 )}
@@ -893,7 +909,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                       >
                         <span>Surprise me from these results</span>
                         <span className="text-[11px] text-[var(--ui-muted)]">
-                          Least recent first
+                          Flags first, then least recent
                         </span>
                       </button>
 
@@ -904,6 +920,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                           cuisine={recipe.cuisine}
                           ingredients={recipe.ingredients}
                           lastCookedLabel={getLastCookedLabel(recipe.lastCookedAt)}
+                          badges={getRecipeFlagBadges(recipe)}
                           selected={selectedRecipeId === recipe.id}
                           matchEvidence={getRecipeMatchEvidence(recipe, recipeQuery)}
                           onSelect={() => setSelectedRecipeId(recipe.id)}

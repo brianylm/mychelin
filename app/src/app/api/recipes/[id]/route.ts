@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
+import { getRecipeFlagsForRecipe, replaceRecipeFlagsForUser } from "@/lib/recipe-flags-db";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -46,7 +47,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    return NextResponse.json(recipe);
+    const recipeFlags = await getRecipeFlagsForRecipe(currentUser.id, recipeId);
+
+    return NextResponse.json({ ...recipe, recipeFlags });
   } catch (error) {
     console.error("GET /api/recipes/[id] error:", error);
     return NextResponse.json(
@@ -75,14 +78,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (!(await canUserEditRecipe(currentUser.id, recipeId))) {
+    const body = await request.json();
+    const isRecipeFlagsOnlyUpdate =
+      Object.keys(body).length === 1 && body.recipeFlags !== undefined;
+
+    if (!isRecipeFlagsOnlyUpdate && !(await canUserEditRecipe(currentUser.id, recipeId))) {
       return NextResponse.json(
         { error: "You do not have permission to edit this recipe" },
         { status: 403 }
       );
     }
-
-    const body = await request.json();
 
     // Check recipe exists
     const existing = await db.query.recipes.findFirst({
@@ -99,6 +104,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const {
       ingredients: ingredientsList,
       instructions: instructionsList,
+      recipeFlags: recipeFlagsInput,
       ...recipeFields
     } = body;
 
@@ -123,6 +129,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
           updatedAt: new Date().toISOString(),
         })
         .where(eq(recipes.id, recipeId));
+    }
+
+    if (recipeFlagsInput !== undefined) {
+      await replaceRecipeFlagsForUser(currentUser.id, recipeId, recipeFlagsInput);
     }
 
     // Replace ingredients if provided (delete + re-insert)
@@ -193,7 +203,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       },
     });
 
-    return NextResponse.json(updatedRecipe);
+    const updatedRecipeFlags = await getRecipeFlagsForRecipe(currentUser.id, recipeId);
+
+    return NextResponse.json(updatedRecipe ? { ...updatedRecipe, recipeFlags: updatedRecipeFlags } : updatedRecipe);
   } catch (error) {
     console.error("PATCH /api/recipes/[id] error:", error);
     return NextResponse.json(
@@ -255,6 +267,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       sourceUrl,
       ingredients: ingredientsList,
       instructions: instructionsList,
+      recipeFlags: recipeFlagsInput,
     } = body;
 
     if (!title) {
@@ -281,6 +294,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(recipes.id, recipeId));
+
+    if (recipeFlagsInput !== undefined) {
+      await replaceRecipeFlagsForUser(currentUser.id, recipeId, recipeFlagsInput);
+    }
 
     // Replace ingredients
     await db.delete(ingredients).where(eq(ingredients.recipeId, recipeId));
@@ -339,7 +356,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       },
     });
 
-    return NextResponse.json(updatedRecipe);
+    const updatedRecipeFlags = await getRecipeFlagsForRecipe(currentUser.id, recipeId);
+
+    return NextResponse.json(updatedRecipe ? { ...updatedRecipe, recipeFlags: updatedRecipeFlags } : updatedRecipe);
   } catch (error) {
     console.error("PUT /api/recipes/[id] error:", error);
     return NextResponse.json(

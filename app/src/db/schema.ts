@@ -185,6 +185,21 @@ export const recipes = sqliteTable("recipes", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Private Recipe Flags ──────────────────────────────────
+export const recipeFlags = sqliteTable("recipe_flags", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  recipeId: integer("recipe_id")
+    .notNull()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  flag: text("flag").notNull(),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Voice Recordings ──────────────────────────────────────
 export const voiceRecordings = sqliteTable("voice_recordings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -736,6 +751,8 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Recipe = typeof recipes.$inferSelect;
 export type NewRecipe = typeof recipes.$inferInsert;
+export type RecipeFlagRow = typeof recipeFlags.$inferSelect;
+export type NewRecipeFlagRow = typeof recipeFlags.$inferInsert;
 export type IngredientCatalog = typeof ingredientCatalog.$inferSelect;
 export type NewIngredientCatalog = typeof ingredientCatalog.$inferInsert;
 export type Ingredient = typeof ingredients.$inferSelect;

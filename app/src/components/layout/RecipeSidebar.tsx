@@ -24,7 +24,7 @@ interface BookRecipe {
 interface RecipeSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onPasteText?: () => void;
+  onWriteOrPaste?: () => void;
   onImportUrl?: () => void;
   onCookRecipe?: (recipeId: number) => void;
   onCaptureConversation?: () => void;
@@ -36,7 +36,7 @@ interface RecipeSidebarProps {
 export function RecipeSidebar({
   isOpen,
   onClose,
-  onPasteText,
+  onWriteOrPaste,
   onImportUrl,
   onCookRecipe,
   onCaptureConversation,
@@ -208,7 +208,7 @@ export function RecipeSidebar({
 
           <SidebarToolbar
             onCreateOpen={handleManualRecipe}
-            onPasteText={onPasteText}
+            onWriteOrPaste={onWriteOrPaste}
             onImportUrl={onImportUrl}
             onCaptureConversation={onCaptureConversation}
             onAiDraft={onAiDraft}

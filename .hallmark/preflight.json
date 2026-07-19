@@ -1,0 +1,12 @@
+{
+  "project": "Mychelin",
+  "genre": "editorial brand and workbench app",
+  "macrostructures": {
+    "marketing": "photographic editorial",
+    "application": "workbench",
+    "recipe": "long document"
+  },
+  "designSystem": "DESIGN.md",
+  "enrichment": "real food and family photography",
+  "motion": "cut unless it clarifies state"
+}

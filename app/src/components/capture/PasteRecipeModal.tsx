@@ -47,11 +47,11 @@ function looksLikeUrl(text: string): boolean {
 
 function inferTitle(raw: string): string {
   const firstLine = raw.split("\n").find((l) => l.trim().length > 0)?.trim();
-  if (!firstLine) return "Quick capture";
+  if (!firstLine) return "Recipe notes";
   if (firstLine.length <= 80 && !/^https?:\/\//i.test(firstLine)) {
     return firstLine;
   }
-  return "Quick capture";
+  return "Recipe notes";
 }
 
 function hostnameFrom(url: string): string {
@@ -258,17 +258,17 @@ export function PasteRecipeModal({
               </div>
               <div className="min-w-0">
                 <h2 className="app-editorial-title text-xl leading-none text-[#1A1A1A]">
-                  {isUrl ? "Import recipe" : "Quick capture"}
+                  {isUrl ? "Import from link" : "Paste recipe text"}
                 </h2>
                 <p className="truncate text-[11px] text-neutral-500">
                   {step === "paste" && !isUrl &&
-                    "Paste a message, notes, photo OCR, or any loose recipe text"}
+                    "Paste copied recipe text or OCR notes; use Write or paste recipe for free-form typing"}
                   {step === "paste" && isUrl &&
                     (hasValidUrl
                       ? `Import recipe from ${hostnameFrom(text.trim())}`
                       : text.trim()
                         ? "Paste a full URL starting with https:// or http://"
-                        : "Paste a recipe page link and we'll extract the recipe")}
+                        : "Paste a recipe page, blog post, or video link")}
                   {step === "processing" && processingLabel}
                   {step === "review" && "Review before saving"}
                   {step === "saving" && "Saving your recipe..."}
@@ -294,14 +294,14 @@ export function PasteRecipeModal({
                   onClick={() => switchCaptureMode("paste")}
                   className={`rounded-full px-3 py-2 text-sm font-medium transition ${!urlMode ? "bg-white text-[#241017] shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
                 >
-                  Paste text
+                  Text
                 </button>
                 <button
                   type="button"
                   onClick={() => switchCaptureMode("url")}
                   className={`rounded-full px-3 py-2 text-sm font-medium transition ${urlMode ? "bg-white text-[#241017] shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
                 >
-                  Import URL
+                  Link
                 </button>
               </div>
             </div>
@@ -363,7 +363,7 @@ export function PasteRecipeModal({
                   onClick={handleSaveDraft}
                   disabled={!text.trim()}
                 >
-                  Save draft
+                  Save text draft
                 </Button>
               )}
               <Button
@@ -372,7 +372,7 @@ export function PasteRecipeModal({
                 className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
               >
                 {isUrl ? <Link2Icon /> : <MagicWandIcon />}
-                {isUrl ? "Import recipe" : "Extract recipe"}
+                {isUrl ? "Import from link" : "Extract from text"}
               </Button>
               </div>
             </div>
@@ -426,7 +426,7 @@ export function PasteRecipeModal({
                       setStep("paste");
                     }}
                   >
-                    Paste text instead
+                    Switch to Text
                   </Button>
                   <Button
                     variant="soft"

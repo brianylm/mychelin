@@ -6,6 +6,7 @@ interface RecipeResultRowProps {
   ingredients?: string[];
   lastCookedLabel?: string;
   secondaryLabel?: string | null;
+  badges?: string[];
   selected?: boolean;
   matchEvidence?: string | null;
   onSelect: () => void;
@@ -17,6 +18,7 @@ export function RecipeResultRow({
   ingredients = [],
   lastCookedLabel,
   secondaryLabel,
+  badges = [],
   selected = false,
   matchEvidence,
   onSelect,
@@ -40,6 +42,14 @@ export function RecipeResultRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-[var(--ui-text)]">{title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {badges.map((badge) => (
+              <span
+                key={badge}
+                className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold text-[#800020] ring-1 ring-[#800020]/15"
+              >
+                {badge}
+              </span>
+            ))}
             {cuisine && (
               <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-[10px] font-medium text-[var(--ui-muted)] ring-1 ring-[var(--ui-border)]">
                 {cuisine}

@@ -10,7 +10,7 @@ import {
 } from "@/lib/manual-recipe-parser";
 import { HEAT_CONFIG } from "@/lib/instruction-heat";
 
-interface ManualRecipeDraft {
+export interface ManualRecipeDraft {
   title: string;
   ingredients: Array<Omit<ManualParsedIngredient, "source">>;
   instructions: Array<Pick<ManualParsedInstruction, "content" | "tip">>;
@@ -19,6 +19,8 @@ interface ManualRecipeDraft {
 interface ManualRecipeScratchpadModalProps {
   onClose: () => void;
   onCreateRecipe: (draft: ManualRecipeDraft) => Promise<void>;
+  initialTitle?: string;
+  saveLabel?: string;
 }
 
 const EXAMPLE_TEXT = "Ingredients\n3 garlic cloves\n1kg potato\n1 tbsp light soy sauce\n\nSteps\nFry garlic until fragrant on medium heat\nAdd potato and toss for 2 min\nAdd water and simmer 20 min until soft";
@@ -26,8 +28,10 @@ const EXAMPLE_TEXT = "Ingredients\n3 garlic cloves\n1kg potato\n1 tbsp light soy
 export function ManualRecipeScratchpadModal({
   onClose,
   onCreateRecipe,
+  initialTitle = "",
+  saveLabel = "Create recipe",
 }: ManualRecipeScratchpadModalProps) {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle);
   const [scratchpad, setScratchpad] = useState("");
   const [phase, setPhase] = useState<"capture" | "review">("capture");
   const [error, setError] = useState<string | null>(null);
@@ -87,14 +91,14 @@ export function ManualRecipeScratchpadModal({
         <header className="flex items-start justify-between gap-4 border-b border-[#eadfce] bg-white px-5 py-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#800020]">
-              Manual recipe
+              Write or paste recipe
             </p>
             <h2 className="mt-1 text-xl font-semibold text-[#1f1714]">
               {phase === "capture" ? "Start with what you know" : "Review the structure"}
             </h2>
             <p className="mt-1 max-w-xl text-sm leading-6 text-stone-500">
               {phase === "capture"
-                ? "Type naturally. Mychelin will split obvious ingredients, steps, heat, and timings before saving."
+                ? "Type naturally or paste OCR text, WhatsApp notes, cookbook text, or a rough memory dump. Mychelin will split obvious ingredients, steps, heat, and timings before saving."
                 : "Check the structure before this becomes a recipe. Ingredients can be filled in later if they are still rough."}
             </p>
           </div>
@@ -102,7 +106,7 @@ export function ManualRecipeScratchpadModal({
             type="button"
             onClick={onClose}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-500 transition hover:border-[#800020]/25 hover:text-[#800020]"
-            aria-label="Close manual recipe"
+            aria-label="Close write or paste recipe"
           >
             <X className="h-4 w-4" />
           </button>
@@ -126,12 +130,12 @@ export function ManualRecipeScratchpadModal({
 
               <label className="grid gap-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-500">
-                  Recipe scratchpad
+                  Recipe notes
                 </span>
                 <textarea
                   value={scratchpad}
                   onChange={(event) => setScratchpad(event.target.value)}
-                  placeholder="Type ingredients, steps, timings, heat, rough notes..."
+                  placeholder="Type or paste ingredients, steps, timings, heat, rough notes..."
                   rows={12}
                   className="min-h-[300px] resize-y rounded-2xl border border-[#d9cfc2] bg-white px-4 py-3 text-base leading-7 text-stone-900 outline-none transition placeholder:text-stone-300 focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10"
                 />
@@ -146,7 +150,7 @@ export function ManualRecipeScratchpadModal({
                   Use example
                 </button>
                 <span className="text-xs text-stone-400">
-                  Tip: headings like Ingredients and Steps make parsing more reliable.
+                  Tip: headings like Ingredients and Steps make parsing more reliable, but plain paragraphs work too.
                 </span>
               </div>
             </div>
@@ -250,7 +254,7 @@ export function ManualRecipeScratchpadModal({
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#17131f] px-5 text-sm font-semibold text-white transition hover:bg-[#800020] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <PencilLine className="h-4 w-4" />
-            {saving ? "Creating..." : phase === "capture" ? "Structure recipe" : "Create recipe"}
+            {saving ? "Saving..." : phase === "capture" ? "Structure recipe" : saveLabel}
           </button>
         </footer>
       </div>

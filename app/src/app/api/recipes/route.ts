@@ -23,6 +23,8 @@ import {
   recipesVisibleTo,
 } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
+import { getRecipeFlagsForUser, replaceRecipeFlagsForUser } from "@/lib/recipe-flags-db";
+import { normalizeRecipeFlags } from "@/lib/recipe-flags";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -66,7 +68,8 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      return NextResponse.json(recipe);
+      const recipeFlags = await getRecipeFlagsForUser(currentUser.id, [recipeId]);
+      return NextResponse.json(recipe ? { ...recipe, recipeFlags: recipeFlags.get(recipeId) ?? [] } : recipe);
     }
 
     // All recipes the current user can see (without nested relations)
@@ -79,9 +82,17 @@ export async function GET(request: NextRequest) {
     // Match the previous order (newest first) without relying on a desc
     // helper import — reverse in-memory since the result set is small.
     const orderedRecipes = allRecipes.reverse();
+    const flagsByRecipe = await getRecipeFlagsForUser(
+      currentUser.id,
+      orderedRecipes.map((recipe) => recipe.id)
+    );
+    const orderedRecipesWithFlags = orderedRecipes.map((recipe) => ({
+      ...recipe,
+      recipeFlags: flagsByRecipe.get(recipe.id) ?? [],
+    }));
 
     if (!planner || orderedRecipes.length === 0) {
-      return NextResponse.json(orderedRecipes);
+      return NextResponse.json(orderedRecipesWithFlags);
     }
 
     await ensurePlanningOwnershipColumns();
@@ -159,7 +170,7 @@ export async function GET(request: NextRequest) {
       if (row.lastCookedAt) attemptCookedByRecipe.set(row.recipeId, row.lastCookedAt);
     }
 
-    const plannerRecipes = orderedRecipes.map((recipe) => {
+    const plannerRecipes = orderedRecipesWithFlags.map((recipe) => {
       const versionCookedAt = versionCookedByRecipe.get(recipe.id) ?? null;
       const plannedCookedAt = plannedCookedByRecipe.get(recipe.id) ?? null;
       const attemptCookedAt = attemptCookedByRecipe.get(recipe.id) ?? null;
@@ -210,6 +221,7 @@ export async function POST(request: NextRequest) {
       bookId,
       ingredients: ingredientsList,
       instructions: instructionsList,
+      recipeFlags: recipeFlagsInput,
     } = body;
 
     if (!title) {
@@ -314,6 +326,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const initialRecipeFlags = normalizeRecipeFlags(
+      recipeFlagsInput === undefined ? ["newly_added"] : recipeFlagsInput
+    );
+    await replaceRecipeFlagsForUser(currentUser.id, newRecipe.id, initialRecipeFlags);
+
     // Auto-create version 1 — this is what cook-along uses
     const [v1] = await db
       .insert(recipeVersions)
@@ -360,7 +377,10 @@ export async function POST(request: NextRequest) {
       path: requestPath(request),
     });
 
-    return NextResponse.json(fullRecipe, { status: 201 });
+    return NextResponse.json(
+      fullRecipe ? { ...fullRecipe, recipeFlags: initialRecipeFlags } : fullRecipe,
+      { status: 201 }
+    );
   } catch (error) {
     console.error("POST /api/recipes error:", error);
     return NextResponse.json(
