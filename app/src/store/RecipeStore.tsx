@@ -21,6 +21,8 @@ import type { RecipeFlag } from "@/lib/recipe-flags";
 
 export interface RecipeWithFlags extends Recipe {
   recipeFlags?: RecipeFlag[];
+  ingredientNames?: string[];
+  lastCookedAt?: string | null;
 }
 
 // Extended recipe type with relations
@@ -110,7 +112,15 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
     error: recipesError,
   } = useQuery<RecipeWithFlags[]>({
     queryKey: ["recipes"],
-    queryFn: () => fetchJson("/api/recipes"),
+    queryFn: async () => {
+      const rows = await fetchJson<Array<RecipeWithFlags & { ingredients?: string[] }>>(
+        "/api/recipes?planner=1"
+      );
+      return rows.map(({ ingredients: ingredientNames, ...recipe }) => ({
+        ...recipe,
+        ingredientNames: ingredientNames ?? [],
+      }));
+    },
   });
 
   // Fetch selected recipe with relations

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { useState } from "react";
+import { Apple, CalendarDays, Download, Globe2, Info, Mail, X } from "lucide-react";
 import {
   CalendarEvent,
   generateICS,
@@ -20,13 +19,10 @@ interface CalendarExportProps {
 }
 
 export function CalendarExport({ events, onClose, title }: CalendarExportProps) {
-  const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
+  const [platform] = useState<"ios" | "android" | "desktop">(() => typeof window === "undefined" ? "desktop" : detectPlatform());
   const [exporting, setExporting] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
 
-  useEffect(() => {
-    setPlatform(detectPlatform());
-  }, []);
 
   if (events.length === 0) {
     return null;
@@ -87,45 +83,48 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/45 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden"
+        className="w-full max-w-sm overflow-hidden rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-export-title"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">📅</span>
-            <h3 className="font-semibold text-neutral-800">Send to Calendar</h3>
+            <CalendarDays className="h-5 w-5 text-[var(--ui-accent)]" aria-hidden="true" />
+            <h3 id="calendar-export-title" className="font-semibold text-[var(--ui-text)]">Send to calendar</h3>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600">
-            <Cross2Icon className="w-5 h-5" />
+          <button onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]" aria-label="Close calendar export">
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         <div className="p-4 space-y-2">
           {showHint && (
-            <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+            <div className="mb-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800" role="status">
               Calendar opened! Tap <strong>Save</strong> in each tab to confirm.
             </div>
           )}
 
           {platform === "ios" && (
-            <p className="text-xs text-neutral-500 mb-2 px-1">
-              📱 This will open your Calendar app. Tap <strong>Add</strong> to save your reminders.
+            <p className="mb-2 flex items-start gap-2 px-1 text-xs text-[var(--ui-muted)]">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> This will open your Calendar app. Tap <strong>Add</strong> to save your reminders.
             </p>
           )}
 
           <button
             onClick={handleGoogleCalendar}
             disabled={exporting !== null}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+            className={`flex min-h-16 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
               isPrimary("google")
-                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
-                : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
+                ? "border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]"
+                : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-subtle)]"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("google") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
-              <span className="text-lg">🌐</span>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isPrimary("google") ? "bg-[var(--ui-action)] text-[var(--ui-action-text)]" : "bg-[var(--ui-surface-subtle)] text-[var(--ui-muted)]"}`}>
+              <Globe2 className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Google Calendar</div>
@@ -137,14 +136,14 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
           <button
             onClick={handleOutlook}
             disabled={exporting !== null}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+            className={`flex min-h-16 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
               isPrimary("outlook")
-                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
-                : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
+                ? "border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]"
+                : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-subtle)]"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("outlook") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
-              <span className="text-lg">📧</span>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isPrimary("outlook") ? "bg-[var(--ui-action)] text-[var(--ui-action-text)]" : "bg-[var(--ui-surface-subtle)] text-[var(--ui-muted)]"}`}>
+              <Mail className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Outlook</div>
@@ -156,14 +155,14 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
           <button
             onClick={handleAppleCalendar}
             disabled={exporting !== null}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
+            className={`flex min-h-16 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
               isPrimary("apple")
-                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
-                : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
+                ? "border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]"
+                : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-subtle)]"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("apple") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
-              <span className="text-lg">📲</span>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isPrimary("apple") ? "bg-[var(--ui-action)] text-[var(--ui-action-text)]" : "bg-[var(--ui-surface-subtle)] text-[var(--ui-muted)]"}`}>
+              <Apple className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Apple Calendar</div>
@@ -175,10 +174,10 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
           <button
             onClick={handleDownloadICS}
             disabled={exporting !== null}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent transition-colors"
+            className="flex min-h-16 w-full items-center gap-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2 text-left text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-surface-subtle)]"
           >
-            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0 text-neutral-600">
-              <span className="text-lg">💾</span>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-surface-subtle)] text-[var(--ui-muted)]">
+              <Download className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Download .ics</div>
@@ -188,8 +187,8 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
           </button>
         </div>
 
-        <div className="px-5 py-3 bg-neutral-50 border-t border-neutral-100 text-xs text-neutral-500">
-          💡 Reminders are set in your calendar app — you can edit or delete them there anytime.
+        <div className="flex items-start gap-2 border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-5 py-3 text-xs leading-5 text-[var(--ui-muted)]">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> Reminders are managed in your calendar app, where you can edit or delete them anytime.
         </div>
       </div>
     </div>

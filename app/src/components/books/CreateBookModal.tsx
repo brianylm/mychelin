@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
 
 interface CreateBookModalProps {
   onClose: () => void;
@@ -53,18 +54,19 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/55 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/45"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-[#fffdfb] p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
+        <div className="w-full max-w-md rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-5 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="create-book-title">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-neutral-900">Create Recipe Book</h2>
+          <h2 id="create-book-title" className="text-xl font-semibold text-[var(--ui-text)]">Create recipe book</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+            aria-label="Close create book dialog"
           >
-            ×
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -90,30 +92,32 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+            <label htmlFor="book-title" className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500">
               Title *
             </label>
             <input
+              id="book-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="My Recipe Collection"
-              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-[#800020]/45 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/10"
+              className="h-11 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]"
               required
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+            <label htmlFor="book-description" className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500">
               Description
             </label>
             <textarea
+              id="book-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="A collection of my favorite family recipes..."
               rows={3}
-              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-[#800020]/45 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/10 resize-none"
+              className="w-full resize-none rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 py-2 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]"
             />
           </div>
 
@@ -122,13 +126,15 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
             <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
               Cover Emoji
             </label>
-            <div className="grid grid-cols-8 gap-2">
+            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
               {FOOD_EMOJIS.map((emoji) => (
                 <button
                   key={emoji}
                   type="button"
                   onClick={() => setCoverEmoji(emoji)}
-                  className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl transition-all ${
+                  aria-label={"Use " + emoji + " as cover symbol"}
+                  aria-pressed={coverEmoji === emoji}
+                  className={`flex aspect-square min-h-11 w-full items-center justify-center rounded-lg text-xl transition-colors ${
                     coverEmoji === emoji
                       ? "bg-[#800020]/10 ring-2 ring-[#800020]/35"
                       : "hover:bg-neutral-100"
@@ -151,7 +157,8 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   key={color.name}
                   type="button"
                   onClick={() => setCoverColor(color.name)}
-                  className={`flex items-center gap-2 rounded-lg border-2 p-3 transition-all ${
+                  aria-pressed={coverColor === color.name}
+                  className={`flex min-h-11 items-center gap-2 rounded-lg border-2 p-3 transition-colors ${
                     coverColor === color.name
                       ? "ring-2 ring-[#800020]/35"
                       : "border-neutral-200 hover:border-neutral-300"
@@ -170,16 +177,16 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              className="h-11 flex-1 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-4 text-sm font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-surface-subtle)]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!title.trim() || submitting}
-              className="flex-1 rounded-xl bg-[#17131f] px-4 py-3 font-medium text-white transition-colors hover:bg-[#800020] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-11 flex-1 rounded-lg bg-[var(--ui-action)] px-4 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? "Creating..." : "Create Book"}
+              {submitting ? "Creating..." : "Create book"}
             </button>
           </div>
         </form>

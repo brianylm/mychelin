@@ -9,17 +9,12 @@ import { RecipeSidebar } from "@/components/layout/RecipeSidebar";
 import { RecipeView } from "@/components/recipes/RecipeView";
 import { Header } from "@/components/layout/Header";
 import { AuthScreen } from "@/components/auth/AuthScreen";
-import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
+import { PageSkeleton } from "@/components/ui";
 import { BottomNav, type AppView } from "@/components/layout/BottomNav";
-import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
-import { Link, Mic2, PencilLine, Sparkles } from "lucide-react";
+import { Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
 
-const LazyPanelFallback = () => (
-  <div className="flex flex-1 items-center justify-center bg-surface">
-    <LoadingAnimation />
-  </div>
-);
+const LazyPanelFallback = () => <PageSkeleton className="flex-1" />;
 
 const MealPlanView = dynamic(
   () => import("@/components/planner/MealPlanView").then((mod) => mod.MealPlanView),
@@ -76,6 +71,16 @@ const PilotFeedbackPrompt = dynamic(
 
 type PilotFeedbackStage = "first_capture" | "first_cook" | "first_version" | "pilot_general";
 
+const viewTitles: Record<AppView, string> = {
+  recipes: "Recipe library",
+  activity: "Cooking activity",
+  fridge: "Fridge",
+  shopping: "Shopping list",
+  plan: "Meal plan",
+  discover: "Discover",
+  profile: "Profile",
+};
+
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -110,8 +115,8 @@ export function RecipeWorkspace() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
-        <LoadingAnimation />
+      <div className="min-h-screen bg-[var(--ui-bg)]">
+        <PageSkeleton />
       </div>
     );
   }
@@ -152,7 +157,7 @@ function RecipeWorkspaceContent({
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }) {
-  const { selectRecipe } = useRecipeStore();
+  const { selectRecipe, selectedRecipeId } = useRecipeStore();
   const qc = useQueryClient();
   const { addToast } = useToast();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -199,7 +204,8 @@ function RecipeWorkspaceContent({
     qc.invalidateQueries({ queryKey: ["recipes"] });
     selectRecipe(recipeId);
     setCurrentView("recipes");
-  }, [qc, selectRecipe, setCurrentView]);
+    setSidebarOpen(false);
+  }, [qc, selectRecipe, setCurrentView, setSidebarOpen]);
 
   const handleViewChange = useCallback((view: AppView) => {
     // When clicking "Recipes" tab, go to card grid (deselect recipe)
@@ -534,18 +540,21 @@ function RecipeWorkspaceContent({
     promptPilotFeedback("first_capture");
   }, [pasteRecipeId, promptPilotFeedback, qc]);
 
-  const showFab = currentView === "recipes" && !isSidebarOpen;
+  const showFab = currentView === "recipes" && selectedRecipeId !== null && !isSidebarOpen;
+
+  useEffect(() => {
+    if (!showFab) setFabOpen(false);
+  }, [showFab]);
 
   return (
     <>
       <Header
+        title={viewTitles[currentView]}
         onMenuClick={() => setSidebarOpen(true)}
         onProfileClick={() => handleViewChange("profile")}
         onLogoClick={() => handleViewChange("recipes")}
         onSearchClick={() => setSearchOpen(true)}
-      >
-        <DesktopNav current={currentView} onChange={handleViewChange} />
-      </Header>
+      />
 
       {searchOpen && (
         <RecipeSearchModal
@@ -554,55 +563,50 @@ function RecipeWorkspaceContent({
         />
       )}
 
-      <div className="flex h-[calc(100dvh-68px)] w-full bg-transparent text-foreground">
-        {currentView !== "recipes" && (
-          <RecipeSidebar
-            mobileOnly
-            isOpen={isSidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            onWriteOrPaste={handleFromScratch}
-            onImportUrl={handleImportUrl}
-            onCookRecipe={handleCookRecipe}
-            onCaptureConversation={createDraftForConversation}
-            onAiDraft={() => setAiDraftOpen(true)}
-            onManualRecipe={handleFromScratch}
-          />
-        )}
-        {currentView === "recipes" && (
-          <>
-            <RecipeSidebar
-              isOpen={isSidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              onWriteOrPaste={handleFromScratch}
-              onImportUrl={handleImportUrl}
-              onCookRecipe={handleCookRecipe}
-              onCaptureConversation={createDraftForConversation}
-              onAiDraft={() => setAiDraftOpen(true)}
-              onManualRecipe={handleFromScratch}
-            />
+      <div className="flex h-[calc(100dvh-4rem)] w-full bg-[var(--ui-bg)] text-foreground">
+        <RecipeSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          currentView={currentView}
+          onViewChange={handleViewChange}
+          onSelectRecipe={handleNavigateToRecipe}
+          onWriteOrPaste={handleFromScratch}
+          onImportUrl={handleImportUrl}
+          onCookRecipe={handleCookRecipe}
+          onCaptureConversation={createDraftForConversation}
+          onAiDraft={() => setAiDraftOpen(true)}
+          onManualRecipe={handleFromScratch}
+        />
+
+        <main className="flex min-w-0 flex-1 overflow-hidden pb-16 md:pb-0">
+          {currentView === "recipes" && (
             <RecipeView
               onOpenSidebar={() => setSidebarOpen(true)}
               onCookRecipe={handleCookRecipe}
             />
-          </>
-        )}
-        {currentView === "activity" && <ActivityView onNavigateToRecipe={handleNavigateToRecipe} />}
-        {currentView === "fridge" && <FridgeView />}
-        {currentView === "shopping" && (
-          <ShoppingListView initialDateRange={shoppingDateRange} />
-        )}
-        {currentView === "plan" && (
-          <MealPlanView
-            onCookMeal={handleCookMealPlan}
-            onCookMeals={handleCookMealBatch}
-            onOpenShoppingList={(range) => {
-              setShoppingDateRange(range);
-              setCurrentView("shopping");
-            }}
-          />
-        )}
-        {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
-        {currentView === "profile" && <ProfileView />}
+          )}
+          {currentView === "activity" && (
+            <ActivityView onNavigateToRecipe={handleNavigateToRecipe} />
+          )}
+          {currentView === "fridge" && <FridgeView />}
+          {currentView === "shopping" && (
+            <ShoppingListView initialDateRange={shoppingDateRange} />
+          )}
+          {currentView === "plan" && (
+            <MealPlanView
+              onCookMeal={handleCookMealPlan}
+              onCookMeals={handleCookMealBatch}
+              onOpenShoppingList={(range) => {
+                setShoppingDateRange(range);
+                setCurrentView("shopping");
+              }}
+            />
+          )}
+          {currentView === "discover" && (
+            <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />
+          )}
+          {currentView === "profile" && <ProfileView />}
+        </main>
       </div>
 
       {/* ── Mobile FAB speed-dial ─────────────────────────────
@@ -613,7 +617,7 @@ function RecipeWorkspaceContent({
         <>
           {/* Scrim behind speed-dial when open */}
           {fabOpen && (
-            <div className="fixed inset-0 z-40 bg-stone-950/20 backdrop-blur-[2px] md:hidden" />
+            <button type="button" aria-label="Close create recipe menu" onClick={() => setFabOpen(false)} className="fixed inset-0 z-40 bg-stone-950/30 md:hidden" />
           )}
 
           <div
@@ -627,12 +631,12 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={handleImportUrl}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                  className="flex min-h-12 w-56 items-center gap-2.5 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] py-1 pl-4 pr-1 shadow-lg transition-colors hover:border-[var(--ui-accent)]/35 hover:bg-[var(--ui-accent-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Import from link
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
                     <Link className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -640,12 +644,12 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={handleFromScratch}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                  className="flex min-h-12 w-56 items-center gap-2.5 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] py-1 pl-4 pr-1 shadow-lg transition-colors hover:border-[var(--ui-accent)]/35 hover:bg-[var(--ui-accent-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Write or paste recipe
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
                     <PencilLine className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -653,12 +657,12 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={createDraftForConversation}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                  className="flex min-h-12 w-56 items-center gap-2.5 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] py-1 pl-4 pr-1 shadow-lg transition-colors hover:border-[var(--ui-accent)]/35 hover:bg-[var(--ui-accent-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Live conversation
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
                     <Mic2 className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -669,12 +673,12 @@ function RecipeWorkspaceContent({
                     setFabOpen(false);
                     setAiDraftOpen(true);
                   }}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-white/90 py-2 pl-4 pr-3 shadow-[0_18px_45px_rgba(40,26,19,0.14)] ring-1 ring-white/70 backdrop-blur-xl transition-transform hover:ring-[#800020]/20 active:scale-95"
+                  className="flex min-h-12 w-56 items-center gap-2.5 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] py-1 pl-4 pr-1 shadow-lg transition-colors hover:border-[var(--ui-accent)]/35 hover:bg-[var(--ui-accent-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
                 >
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Ask Mychelin
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
                     <Sparkles className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -686,23 +690,9 @@ function RecipeWorkspaceContent({
               type="button"
               onClick={() => setFabOpen((v) => !v)}
               aria-label={fabOpen ? "Close menu" : "New recipe"}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-[#17131f] text-white shadow-[0_18px_40px_rgba(23,19,31,0.24)] ring-1 ring-white/20 transition-transform hover:bg-[#800020] active:scale-95"
+              className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--ui-action)] bg-[var(--ui-action)] text-[var(--ui-action-text)] shadow-lg transition-colors hover:bg-[var(--ui-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={`transition-transform duration-200 ${fabOpen ? "rotate-45" : ""}`}
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              <Plus className={"h-6 w-6 transition-transform duration-200 " + (fabOpen ? "rotate-45" : "")} aria-hidden="true" />
             </button>
           </div>
         </>

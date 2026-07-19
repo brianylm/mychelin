@@ -26,10 +26,10 @@ export function ChatBubble({
       isRight ? "justify-end" : "justify-start"
     )}>
       <div className={cn(
-        "max-w-[80%] rounded-2xl px-4 py-3 shadow-sm",
+        "max-w-[88%] rounded-lg border px-4 py-3 sm:max-w-[78%]",
         isRight 
-          ? "bg-[#800020]/10 text-[#241017]" 
-          : "bg-neutral-100 text-neutral-900"
+          ? "border-ui-accent/15 bg-ui-accent-muted text-ui-text"
+          : "border-ui-border bg-ui-surface-raised text-ui-text"
       )}>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium text-current opacity-80">

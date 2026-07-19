@@ -241,19 +241,19 @@ export function PasteRecipeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-stone-950/55 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-stretch justify-center bg-stone-950/55 sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#fffdfb] sm:h-[90vh] sm:max-h-[760px] sm:max-w-2xl sm:rounded-[2rem] sm:border sm:border-white/70 sm:shadow-[0_24px_80px_rgba(60,43,25,0.18)]"
+        className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-ui-surface sm:h-[90vh] sm:max-h-[760px] sm:max-w-2xl sm:rounded-lg sm:border sm:border-ui-border-strong sm:shadow-xl"
       >
         {/* Header */}
-        <div className="shrink-0 border-b border-[#800020]/10 bg-white/[0.58] px-4 py-3 backdrop-blur-xl">
+        <div className="shrink-0 border-b border-ui-border bg-ui-surface-raised px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020] ring-1 ring-[#800020]/10">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent">
                 {isUrl ? <Link2Icon className="h-4 w-4" /> : <MagicWandIcon className="h-4 w-4" />}
               </div>
               <div className="min-w-0">
@@ -278,7 +278,7 @@ export function PasteRecipeModal({
             </div>
             <button
               onClick={onClose}
-              className="shrink-0 rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors duration-200 hover:bg-ui-surface-subtle hover:text-ui-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus"
             >
               <Cross2Icon className="h-4 w-4" />
             </button>
@@ -288,18 +288,18 @@ export function PasteRecipeModal({
         {step === "paste" && (
           <>
             <div className="border-b border-[#d8d8d2] bg-white/70 px-4 py-3">
-              <div className="grid grid-cols-2 gap-2 rounded-full bg-[#f6f2eb] p-1 ring-1 ring-[#ece8df]">
+              <div className="grid grid-cols-2 gap-1 rounded-lg bg-ui-surface-subtle p-1 ring-1 ring-ui-border">
                 <button
                   type="button"
                   onClick={() => switchCaptureMode("paste")}
-                  className={`rounded-full px-3 py-2 text-sm font-medium transition ${!urlMode ? "bg-white text-[#241017] shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
+                  className={`h-11 rounded-md px-3 text-sm font-semibold transition-colors duration-200 ${!urlMode ? "bg-ui-surface-raised text-ui-text shadow-sm" : "text-ui-muted hover:text-ui-text"}`}
                 >
                   Text
                 </button>
                 <button
                   type="button"
                   onClick={() => switchCaptureMode("url")}
-                  className={`rounded-full px-3 py-2 text-sm font-medium transition ${urlMode ? "bg-white text-[#241017] shadow-sm" : "text-stone-500 hover:text-stone-900"}`}
+                  className={`h-11 rounded-md px-3 text-sm font-semibold transition-colors duration-200 ${urlMode ? "bg-ui-surface-raised text-ui-text shadow-sm" : "text-ui-muted hover:text-ui-text"}`}
                 >
                   Link
                 </button>
@@ -317,7 +317,7 @@ export function PasteRecipeModal({
                     : `Paste ingredients, steps, a WhatsApp message, photo OCR, or notes from a call.\n\nIf extraction misses, you can still save the text as a draft.`
                 }
                 rows={isUrl ? 5 : 14}
-                className={`w-full resize-y rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-3 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400 ${isUrl ? "font-mono" : ""}`}
+                className={`w-full resize-y rounded-lg border border-ui-border-strong bg-ui-surface-raised px-3 py-3 text-sm leading-relaxed text-ui-text outline-none transition-[background-color,border-color,box-shadow] duration-200 focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted ${isUrl ? "font-mono" : ""}`}
                 autoFocus
               />
               {!isUrl && (

@@ -10,9 +10,9 @@ import {
   MessageSquareText,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 interface CountItem {
   key: string;
@@ -153,9 +153,9 @@ function StatCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-lg border border-[#e4d9ca] bg-white p-4 shadow-sm">
+    <div className="px-4 py-5">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f7efe4] text-[#8a2f2b]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
           <Icon size={18} strokeWidth={1.8} />
         </div>
         <span className="text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">{label}</span>
@@ -222,7 +222,7 @@ function UserUsagePanel({ users }: { users: UserUsage[] }) {
   };
 
   return (
-    <section className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+    <section className="border-y border-[var(--ui-border)] py-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-neutral-950">Registered users</h2>
@@ -234,16 +234,16 @@ function UserUsagePanel({ users }: { users: UserUsage[] }) {
           type="button"
           onClick={() => void copyEmails()}
           disabled={!emails}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#d8c8b6] bg-[#fffdf9] px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-[#f7efe4] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-4 text-sm font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-accent-muted)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Copy size={16} />
           {copied ? "Copied" : "Copy emails"}
         </button>
       </div>
 
-      <div className="mt-5 overflow-x-auto rounded-lg border border-neutral-200">
+      <div className="mt-5 overflow-x-auto rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
         <div className="min-w-[980px]">
-          <div className="grid grid-cols-[1.45fr_1fr_1.7fr_1.1fr_0.8fr] bg-[#f7efe4] px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-neutral-600">
+          <div className="grid min-h-11 grid-cols-[1.45fr_1fr_1.7fr_1.1fr_0.8fr] items-center bg-[var(--ui-surface-subtle)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ui-muted)]">
             <span>User</span>
             <span>Status</span>
             <span>Usage in 30 days</span>
@@ -303,7 +303,7 @@ function UserUsagePanel({ users }: { users: UserUsage[] }) {
                     <div>
                       <a
                         href={"mailto:" + user.email + "?subject=Mychelin%20pilot%20feedback"}
-                        className="inline-flex items-center gap-2 rounded-lg border border-[#d8c8b6] px-3 py-2 text-sm font-semibold text-neutral-900 hover:bg-[#f7efe4]"
+                        className="inline-flex h-11 items-center gap-2 rounded-lg border border-[var(--ui-border-strong)] px-3 text-sm font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-accent-muted)]"
                       >
                         <Mail size={15} />
                         Email
@@ -322,7 +322,7 @@ function UserUsagePanel({ users }: { users: UserUsage[] }) {
 
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-[#f8f3eb] p-4 sm:p-6">
+    <div className="min-h-screen bg-[var(--ui-canvas)] p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-5">
         <div className="h-28 animate-pulse rounded-lg bg-white" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -376,8 +376,8 @@ export default function AnalyticsDashboardPage() {
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-[#f8f3eb] px-4 py-10">
-        <section className="mx-auto max-w-2xl rounded-lg border border-[#e4d9ca] bg-white p-6 shadow-sm">
+      <main className="min-h-screen bg-[var(--ui-canvas)] px-4 py-10">
+        <section className="mx-auto max-w-2xl border-y border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-6">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#f7efe4] text-[#8a2f2b]">
             <ShieldCheck size={22} strokeWidth={1.8} />
           </div>
@@ -392,7 +392,7 @@ export default function AnalyticsDashboardPage() {
           <button
             type="button"
             onClick={() => void loadDashboard()}
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#8a2f2b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#742622]"
+            className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--ui-action)] px-4 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
           >
             <RefreshCw size={16} />
             Try again
@@ -403,38 +403,27 @@ export default function AnalyticsDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f8f3eb] px-4 py-5 text-neutral-900 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[var(--ui-canvas)] px-4 py-6 text-[var(--ui-text)] sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-5">
-        <section className="rounded-lg border border-[#dfd2c1] bg-[#201a17] p-5 text-white shadow-sm sm:p-6">
-          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-[#f6eadb]">
-                <ShieldCheck size={14} />
-                Internal dashboard
-              </div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-normal sm:text-4xl">Mychelin product usage</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#e4d4c2]">
-                Track activation, cooking rhythm, recipe capture, and pilot feedback without exposing private recipe content.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-[#e4d4c2]">
-                Updated <span className="font-medium text-white">{formatDate(data.generatedAt)}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => void loadDashboard()}
-                disabled={isRefreshing}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white px-4 py-3 text-sm font-semibold text-neutral-950 hover:bg-[#f6eadb] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-                Refresh
-              </button>
-            </div>
-          </div>
-        </section>
+        <PageHeader
+          eyebrow="Internal dashboard"
+          title="Mychelin product usage"
+          description="Track activation, cooking rhythm, recipe capture, and pilot feedback without exposing private recipe content."
+          meta={<p className="text-sm text-[var(--ui-muted)]">Updated <span className="font-medium text-[var(--ui-text)]">{formatDate(data.generatedAt)}</span></p>}
+          actions={
+            <button
+              type="button"
+              onClick={() => void loadDashboard()}
+              disabled={isRefreshing}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-4 text-sm font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-accent-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          }
+        />
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid divide-y divide-[var(--ui-border)] border-y border-[var(--ui-border)] bg-[var(--ui-surface-raised)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           <StatCard icon={Users} label="Users" value={data.summary.totalUsers} detail={`${data.summary.newUsers30} new in 30 days`} />
           <StatCard icon={Activity} label="Active" value={data.summary.activeUsers7} detail={`${data.summary.activeUsers30} active in 30 days`} />
           <StatCard icon={ChefHat} label="Cooking loop" value={data.funnel.find((item) => item.id === "cook")?.users ?? 0} detail="Users with cook attempts" />
@@ -444,7 +433,7 @@ export default function AnalyticsDashboardPage() {
         <UserUsagePanel users={data.users} />
 
         <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">Activation funnel</h2>
@@ -469,7 +458,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">Last 14 days</h2>
@@ -493,14 +482,14 @@ export default function AnalyticsDashboardPage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <h2 className="text-lg font-semibold text-neutral-950">Top events</h2>
             <div className="mt-4">
               <HorizontalBars items={data.eventCounts} />
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <h2 className="text-lg font-semibold text-neutral-950">Recipe capture</h2>
             <p className="mt-1 text-sm text-neutral-600">{data.capture.total} capture or transcription events.</p>
             <div className="mt-5">
@@ -513,7 +502,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <h2 className="text-lg font-semibold text-neutral-950">Onboarding goals</h2>
             <p className="mt-1 text-sm text-neutral-600">
               {data.onboarding.completedUsers} completed - {data.onboarding.completionRate}% completion.
@@ -535,20 +524,20 @@ export default function AnalyticsDashboardPage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-950">Pilot feedback</h2>
                 <p className="mt-1 text-sm text-neutral-600">Recent responses by stage.</p>
               </div>
-              <Sparkles className="text-[#8a2f2b]" size={20} />
+              <MessageSquareText className="text-[var(--ui-accent)]" size={20} />
             </div>
             <div className="mt-5">
               <HorizontalBars items={data.feedback.byStage} emptyLabel="No pilot feedback yet" />
             </div>
             <div className="mt-5 space-y-3">
               {data.feedback.recent.slice(0, 6).map((feedback) => (
-                <article key={feedback.id} className="rounded-lg border border-neutral-200 bg-[#fffdf9] p-3">
+                <article key={feedback.id} className="border-t border-[var(--ui-border)] py-3">
                   <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
                     <span className="font-medium uppercase tracking-[0.08em]">{formatLabel(feedback.stage)}</span>
                     <span>{formatDate(feedback.createdAt)}</span>
@@ -563,7 +552,7 @@ export default function AnalyticsDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#e4d9ca] bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
             <h2 className="text-lg font-semibold text-neutral-950">Recent events</h2>
             <div className="mt-4 overflow-hidden rounded-lg border border-neutral-200">
               <div className="grid grid-cols-[1fr_0.8fr_0.8fr] bg-[#f7efe4] px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-neutral-600">

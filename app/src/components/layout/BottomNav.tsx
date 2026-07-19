@@ -1,10 +1,23 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, CalendarDays, ClipboardList, Refrigerator, ShoppingBasket } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  Refrigerator,
+  ShoppingBasket,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AppView = "recipes" | "activity" | "fridge" | "shopping" | "plan" | "discover" | "profile";
+export type AppView =
+  | "recipes"
+  | "activity"
+  | "fridge"
+  | "shopping"
+  | "plan"
+  | "discover"
+  | "profile";
 
 interface BottomNavProps {
   current: AppView;
@@ -12,31 +25,39 @@ interface BottomNavProps {
 }
 
 const tabs: { id: AppView; label: string; icon: LucideIcon }[] = [
-  { id: "recipes", label: "Recipes", icon: BookOpen },
-  { id: "activity", label: "Activity", icon: ClipboardList },
-  { id: "fridge", label: "Fridge", icon: Refrigerator },
-  { id: "shopping", label: "Shopping", icon: ShoppingBasket },
+  { id: "recipes", label: "Library", icon: BookOpen },
   { id: "plan", label: "Plan", icon: CalendarDays },
+  { id: "shopping", label: "Shop", icon: ShoppingBasket },
+  { id: "fridge", label: "Fridge", icon: Refrigerator },
+  { id: "activity", label: "Activity", icon: ClipboardList },
 ];
 
 export function BottomNav({ current, onChange }: BottomNavProps) {
   return (
-    <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-30 flex h-16 items-center justify-around border-t border-white/60 bg-white/70 shadow-[0_-18px_45px_rgba(40,26,19,0.08)] backdrop-blur-2xl md:hidden">
+    <nav
+      className="safe-bottom fixed inset-x-0 bottom-0 z-30 grid min-h-16 grid-cols-5 border-t border-[var(--ui-border-strong)] bg-[var(--ui-surface)] md:hidden"
+      aria-label="Primary"
+    >
       {tabs.map((tab) => {
         const Icon = tab.icon;
+        const active = current === tab.id;
         return (
           <button
             key={tab.id}
+            type="button"
             onClick={() => onChange(tab.id)}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2 transition-colors",
-              current === tab.id
-                ? "text-[#800020]"
-                : "text-stone-400 hover:text-stone-600"
+              "flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 px-1 text-[var(--ui-muted)] transition-colors duration-200",
+              active
+                ? "bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]"
+                : "hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
             )}
           >
-            <Icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{tab.label}</span>
+            <Icon className="h-5 w-5" aria-hidden="true" />
+            <span className="max-w-full truncate text-[11px] font-semibold">
+              {tab.label}
+            </span>
           </button>
         );
       })}

@@ -1,7 +1,6 @@
 "use client";
 
-import { IconButton, Tooltip } from "@radix-ui/themes";
-import { Cross2Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { Search, X } from "lucide-react";
 
 interface RecipeSearchHeaderProps {
   query: string;
@@ -19,76 +18,74 @@ export function RecipeSearchHeader({
   onClose,
 }: RecipeSearchHeaderProps) {
   return (
-    <div className="flex h-9 items-center gap-3">
+    <div className="flex min-h-11 items-center gap-2">
       {isExpanded ? (
-        <div className="flex flex-1 animate-fade-in items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-full border border-[#ece8df] bg-white px-3 py-1.5">
-            <MagnifyingGlassIcon className="h-4 w-4 text-neutral-400" />
+        <>
+          <div className="relative flex min-w-0 flex-1 items-center">
+            <Search
+              className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--ui-muted)]"
+              aria-hidden="true"
+            />
             <input
               type="search"
               value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Search recipes..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-neutral-400"
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="Search recipes or ingredients"
+              className="h-11 min-w-0 flex-1 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] pl-9 pr-10 text-sm text-[var(--ui-text)] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus-soft)]"
               autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  if (query) onQueryChange("");
-                  else onExpandToggle(false);
-                }
+              onKeyDown={(event) => {
+                if (event.key !== "Escape") return;
+                event.preventDefault();
+                if (query) onQueryChange("");
+                else onExpandToggle(false);
               }}
             />
             {query && (
-              <IconButton
-                size="1"
-                variant="ghost"
+              <button
+                type="button"
                 onClick={() => onQueryChange("")}
+                className="absolute right-1 flex h-9 w-9 items-center justify-center rounded-md text-[var(--ui-muted)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
                 aria-label="Clear search"
               >
-                <Cross2Icon className="h-3.5 w-3.5" />
-              </IconButton>
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
             )}
           </div>
-          <IconButton
-            variant="ghost"
-            size="2"
+          <button
+            type="button"
             onClick={() => {
               onQueryChange("");
               onExpandToggle(false);
             }}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
             aria-label="Close search"
           >
-            <Cross2Icon className="h-5 w-5" />
-          </IconButton>
-        </div>
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </>
       ) : (
         <>
-          <h1 className="app-editorial-title flex-1 shrink-0 text-2xl leading-none text-[#1A1A1A]">
-            Recipes
+          <h1 className="app-editorial-title min-w-0 flex-1 text-2xl leading-none text-[var(--ui-text)]">
+            Library
           </h1>
-          <Tooltip content="Search">
-            <IconButton
-              variant="ghost"
-              size="2"
-              color="gray"
-              onClick={() => onExpandToggle(true)}
-              aria-label="Search recipes"
-            >
-              <MagnifyingGlassIcon className="h-5 w-5" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip content="Close">
-            <IconButton
-              variant="ghost"
-              size="2"
-              className="rounded-full md:hidden"
-              onClick={onClose}
-              aria-label="Close panel"
-            >
-              <Cross2Icon className="h-5 w-5" />
-            </IconButton>
-          </Tooltip>
+          <button
+            type="button"
+            onClick={() => onExpandToggle(true)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted-strong)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-accent)]"
+            aria-label="Search recipes"
+            title="Search recipes"
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted-strong)] hover:bg-[var(--ui-surface-subtle)] md:hidden"
+            aria-label="Close navigation"
+            title="Close navigation"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
         </>
       )}
     </div>

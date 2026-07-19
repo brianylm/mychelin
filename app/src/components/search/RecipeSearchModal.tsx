@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { X } from "lucide-react";
 import { EmptyState, FilterBar, RecipeResultRow } from "@/components/ui";
 
 interface MatchedRecipe {
@@ -81,18 +81,21 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-start sm:pt-16"
+      className="fixed inset-0 z-50 flex items-stretch justify-center bg-stone-950/45 sm:items-start sm:p-6 sm:pt-16"
       onClick={onClose}
     >
       <div
-        className="flex h-full w-full flex-col bg-white sm:h-auto sm:max-h-[75vh] sm:max-w-xl sm:rounded-2xl sm:shadow-2xl"
+        className="flex h-full w-full flex-col bg-[var(--ui-surface-raised)] sm:h-auto sm:max-h-[75vh] sm:max-w-xl sm:rounded-lg sm:border sm:border-[var(--ui-border-strong)] sm:shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recipe-search-title"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
         <div className="border-b border-[var(--ui-border)] px-4 py-3">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-[var(--ui-text)]">
+              <h2 id="recipe-search-title" className="text-base font-semibold text-[var(--ui-text)]">
                 Search recipes
               </h2>
               <p className="mt-0.5 text-xs text-[var(--ui-muted)]">
@@ -101,11 +104,10 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
             </div>
             <button
               onClick={onClose}
-              className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--ui-border-strong)] px-2 text-xs font-medium text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
               aria-label="Close search"
             >
-              <Cross2Icon className="h-3.5 w-3.5" />
-              ESC
+              <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
           <FilterBar

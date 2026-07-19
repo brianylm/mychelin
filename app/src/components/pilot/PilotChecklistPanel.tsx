@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui/Button";
 import { ArrowRight, CheckCircle2, ChevronDown, Circle, MessageSquare, RefreshCw } from "lucide-react";
 import { PilotFeedbackPrompt } from "./PilotFeedbackPrompt";
 
@@ -92,8 +92,8 @@ export function PilotChecklistPanel() {
   };
 
   return (
-    <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] shadow-sm">
-      <div className="flex items-start justify-between gap-3 p-5">
+    <section className="border-y border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
+      <div className="flex items-start justify-between gap-3 px-4 py-5 sm:px-5">
         <button
           type="button"
           onClick={() => setIsOpen((open) => !open)}
@@ -102,7 +102,7 @@ export function PilotChecklistPanel() {
         >
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">Pilot loop</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-950">First Mychelin run-through</h2>
+            <h2 className="mt-2 text-xl font-semibold text-neutral-950">First Mychelin run-through</h2>
             <p className="mt-1 text-sm leading-6 text-neutral-600">
               Follow the core path once: capture, plan, shop, cook, record an attempt, then promote the useful changes.
             </p>
@@ -113,27 +113,27 @@ export function PilotChecklistPanel() {
           <button
             type="button"
             onClick={() => void loadStatus("refresh")}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-500 transition hover:border-[#800020]/30 hover:text-[#800020] disabled:opacity-50"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] text-[var(--ui-muted)] transition-colors hover:border-[var(--ui-accent)]/40 hover:text-[var(--ui-accent)] disabled:opacity-50"
             disabled={loading || refreshing}
             aria-label="Refresh pilot checklist"
           >
-            <RefreshCw className={"h-3.5 w-3.5 " + (refreshing ? "animate-spin" : "")} />
+            <RefreshCw className={"h-4 w-4 " + (refreshing ? "animate-spin" : "")} />
           </button>
-          <div className="rounded-full border border-[#eadfce] bg-white px-3 py-1 text-xs font-semibold text-neutral-700">
+          <div className="min-w-11 text-right text-sm font-semibold tabular-nums text-[var(--ui-muted)]">
             {loading ? "..." : String(status?.completedCount ?? 0) + "/" + String(status?.totalCount ?? checklist.length)}
           </div>
         </div>
       </div>
 
       {isOpen && (
-        <div className="border-t border-[#eadfce] px-5 pb-5 pt-4">
-          <div className="h-2 rounded-full bg-[#eadfce]" aria-hidden="true">
-            <div className="h-full rounded-full bg-[#800020] transition-all" style={{ width: progress + "%" }} />
+        <div className="border-t border-[var(--ui-border)] px-4 pb-5 pt-4 sm:px-5">
+          <div className="h-2 overflow-hidden rounded-full bg-[var(--ui-border)]" aria-hidden="true">
+            <div className="h-full rounded-full bg-[var(--ui-accent)] transition-[width]" style={{ width: progress + "%" }} />
           </div>
 
           {!loading && nextItem && (
-            <div className="mt-4 flex items-start gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-3">
-              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+            <div className="mt-5 flex items-start gap-3 border-l-2 border-[var(--ui-accent)] py-1 pl-4">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-[var(--ui-accent)]">
                 <ArrowRight className="h-3.5 w-3.5" />
               </span>
               <div>
@@ -144,21 +144,18 @@ export function PilotChecklistPanel() {
             </div>
           )}
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 border-t border-[var(--ui-border)]">
             {loading ? (
-              <p className="rounded-xl border border-[#eadfce] bg-white px-3 py-3 text-sm text-neutral-500">Loading pilot checklist...</p>
+              <p className="border-b border-[var(--ui-border)] py-4 text-sm text-[var(--ui-muted)]">Loading pilot checklist...</p>
             ) : checklist.length === 0 ? (
-              <p className="rounded-xl border border-[#eadfce] bg-white px-3 py-3 text-sm text-neutral-500">No pilot activity yet.</p>
+              <p className="border-b border-[var(--ui-border)] py-4 text-sm text-[var(--ui-muted)]">No pilot activity yet.</p>
             ) : (
               checklist.map((item) => {
                 const completedDate = formatDate(item.completedAt);
                 return (
                   <div
                     key={item.id}
-                    className={
-                      "flex items-start gap-3 rounded-xl border bg-white px-3 py-3 " +
-                      (item.completed ? "border-[#eadfce]" : "border-[#eadfce] opacity-85")
-                    }
+                    className={"flex items-start gap-3 border-b border-[var(--ui-border)] py-4 " + (item.completed ? "" : "opacity-80")}
                   >
                     {item.completed ? (
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#800020]" />
@@ -178,12 +175,12 @@ export function PilotChecklistPanel() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#eadfce] bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 border-t border-[var(--ui-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-2">
               <MessageSquare className="mt-0.5 h-4 w-4 text-[#800020]" />
               <p className="text-xs leading-5 text-neutral-500">{feedbackLabel}</p>
             </div>
-            <Button type="button" size="2" variant="outline" onClick={() => setShowFeedback(true)}>
+            <Button variant="secondary" onClick={() => setShowFeedback(true)}>
               Send feedback
             </Button>
           </div>
@@ -197,6 +194,6 @@ export function PilotChecklistPanel() {
           onClose={closeFeedback}
         />
       )}
-    </div>
+    </section>
   );
 }

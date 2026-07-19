@@ -69,9 +69,9 @@ export function RecipeCaptureReview({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-5">
-        <div className="rounded-2xl border border-[#eadfce] bg-white p-4 shadow-sm">
+        <div className="border-b border-ui-border pb-4">
           <div className="mb-3 flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent">
               <ListChecks className="h-4 w-4" aria-hidden="true" />
             </span>
             <div className="min-w-0">
@@ -108,8 +108,8 @@ export function RecipeCaptureReview({
 
         {children && <div className="mt-4">{children}</div>}
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
+        <div className="mt-5 grid gap-x-8 md:grid-cols-2">
+          <section className="border-t border-ui-border py-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-stone-900">
                 <Soup className="h-4 w-4 text-[#800020]" aria-hidden="true" />
@@ -124,9 +124,9 @@ export function RecipeCaptureReview({
                 No ingredients were found. You can save and fill them in later.
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="divide-y divide-ui-border">
                 {ingredients.map((ingredient, index) => (
-                  <li key={index} className="flex items-start gap-2 rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm leading-6 text-stone-700">
+                  <li key={index} className="flex items-start gap-2 py-2 text-sm leading-6 text-ui-muted">
                     <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
                     <span>
                       {formatIngredient(ingredient)}
@@ -138,7 +138,7 @@ export function RecipeCaptureReview({
             )}
           </section>
 
-          <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
+          <section className="border-t border-ui-border py-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-stone-900">
                 <Clock3 className="h-4 w-4 text-[#800020]" aria-hidden="true" />
@@ -153,9 +153,9 @@ export function RecipeCaptureReview({
                 No steps were found. Go back and add or paste the method before saving.
               </p>
             ) : (
-              <ol className="space-y-2">
+              <ol className="divide-y divide-ui-border">
                 {instructions.map((instruction, index) => (
-                  <li key={index} className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm leading-6 text-stone-800">
+                  <li key={index} className="py-2 text-sm leading-6 text-ui-text">
                     <span className="mr-1 font-semibold text-[#800020]">
                       {instruction.stepNumber ?? index + 1}.
                     </span>
@@ -173,11 +173,11 @@ export function RecipeCaptureReview({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 flex shrink-0 items-center gap-2 border-t border-[#eadfce] bg-white px-4 py-3 shadow-[0_-12px_32px_rgba(60,43,25,0.08)]">
+      <div className="sticky bottom-0 z-10 flex shrink-0 items-center gap-2 border-t border-ui-border bg-ui-surface-raised px-4 py-3">
         <button
           type="button"
           onClick={onBack}
-          className="min-h-10 rounded-full px-4 text-sm font-semibold text-stone-500 transition hover:bg-stone-50 hover:text-stone-800"
+          className="min-h-11 rounded-lg px-4 text-sm font-semibold text-ui-muted transition-colors duration-200 hover:bg-ui-surface-subtle hover:text-ui-text"
         >
           {backLabel}
         </button>
@@ -185,7 +185,7 @@ export function RecipeCaptureReview({
           type="button"
           onClick={onSave}
           disabled={saving || instructions.length === 0}
-          className="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-ui-action px-4 text-sm font-semibold text-ui-action-text transition-colors duration-200 hover:bg-ui-action-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving..." : saveLabel}
         </button>

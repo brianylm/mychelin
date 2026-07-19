@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui/Button";
 import { MessageSquare, X } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 
@@ -68,19 +68,19 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
   };
 
   const panel = (
-    <div className="w-full max-w-md rounded-2xl border border-[#e7ded1] bg-white p-5 shadow-[0_28px_90px_rgba(40,26,19,0.18)]">
+    <div className="w-full max-w-md rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-5 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
-            <MessageSquare className="h-5 w-5" />
+          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
+            <MessageSquare className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h2 className="text-base font-semibold text-neutral-900">{copy.title}</h2>
+            <h2 id="pilot-feedback-title" className="text-base font-semibold text-[var(--ui-text)]">{copy.title}</h2>
             <p className="mt-1 text-sm leading-5 text-neutral-500">{copy.body}</p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="rounded-full p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700" aria-label="Close feedback">
-          <X className="h-4 w-4" />
+        <button type="button" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]" aria-label="Close feedback">
+          <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
@@ -93,7 +93,7 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
               type="button"
               onClick={() => setRating(value)}
               className={
-                "h-10 rounded-lg border text-sm font-semibold transition " +
+                "h-11 rounded-lg border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] " +
                 (rating === value
                   ? "border-[#800020] bg-[#800020] text-white"
                   : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-[#800020]/30")
@@ -112,12 +112,12 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
         rows={3}
         maxLength={600}
         placeholder="Short, privacy-safe note. Avoid family names, full recipe text, or private details."
-        className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10"
+        className="mt-2 w-full resize-none rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]"
       />
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-700" role="alert">{error}</p>}
       <div className="mt-4 flex justify-end gap-2">
-        <Button type="button" variant="outline" size="2" onClick={onClose} disabled={saving}>Skip</Button>
-        <Button type="button" size="2" onClick={submit} disabled={saving} className="!bg-[#17131f] !text-white hover:!bg-[#800020]">
+        <Button variant="secondary" onClick={onClose} disabled={saving}>Skip</Button>
+        <Button onClick={submit} loading={saving}>
           {saving ? "Saving..." : "Send feedback"}
         </Button>
       </div>
@@ -127,7 +127,7 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
   if (compact) return panel;
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-stone-950/30 px-4 py-5 backdrop-blur-sm sm:items-center">
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-stone-950/45 px-4 py-5 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="pilot-feedback-title">
       {panel}
     </div>
   );

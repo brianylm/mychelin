@@ -18,8 +18,6 @@ interface RecipeListItemProps {
   onShare?: (recipe: Recipe) => void;
   onDelete?: (id: number) => void;
   onCook?: (id: number) => void;
-  // Optional "ingredient: X" hint shown under the title when this item
-  // is a search hit matched on an ingredient name.
   matchedIngredient?: string | null;
 }
 
@@ -33,78 +31,82 @@ export function RecipeListItem({
   matchedIngredient,
 }: RecipeListItemProps) {
   const qc = useQueryClient();
+  const isDraft = recipe.status === "draft";
 
   const handlePointerEnter = () => {
-    // Prefetch full recipe on hover so it's instant on click
     qc.prefetchQuery({
       queryKey: ["recipe", recipe.id],
       queryFn: () =>
-        fetch(`/api/recipes/${recipe.id}`).then((r) => r.json()),
+        fetch(`/api/recipes/${recipe.id}`).then((response) => response.json()),
       staleTime: 30_000,
     });
   };
 
-  const isDraft = recipe.status === "draft";
-
   return (
     <li
       className={cn(
-        "group flex cursor-pointer items-center gap-2 rounded-xl px-2 py-2 transition-colors",
-        isSelected ? "bg-[#800020]/10 text-[#521224] ring-1 ring-[#800020]/10" : "hover:bg-[#800020]/5",
-        isDraft && !isSelected && "opacity-70"
+        "group flex min-h-16 items-center gap-1 border-l-2 py-1 pl-1 transition-colors duration-200",
+        isSelected
+          ? "border-[var(--ui-accent)] bg-[var(--ui-accent-muted)] text-[#521224]"
+          : "border-transparent hover:bg-[var(--ui-surface-subtle)]",
+        isDraft && !isSelected && "opacity-75"
       )}
-      onClick={() => onSelect(recipe.id)}
-      onPointerEnter={handlePointerEnter}
     >
-      {/* Thumbnail placeholder */}
-      <div
-        className={cn(
-          "relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#800020]/10 to-[#f6f2eb] ring-1 ring-[#800020]/10",
-          isDraft && "border border-dashed border-[#800020]/30 bg-[#800020]/5"
-        )}
+      <button
+        type="button"
+        onClick={() => onSelect(recipe.id)}
+        onPointerEnter={handlePointerEnter}
+        aria-current={isSelected ? "true" : undefined}
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-1 text-left"
       >
-        {recipe.imageUrl ? (
-          <img
-            src={recipe.imageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : isDraft ? (
-          <PencilLine className="h-4 w-4 text-[#800020]/55" />
-        ) : (
-          <ChefHat className="h-4 w-4 text-[#800020]/55" />
-        )}
-      </div>
-
-      {/* Name + cuisine (or matched ingredient context during search) */}
-      <div className="flex min-w-0 flex-1 flex-col">
         <span
           className={cn(
-            "truncate text-sm",
-            isSelected && "font-medium",
-            isDraft && !isSelected && "italic text-neutral-600"
+            "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--ui-surface-subtle)] ring-1 ring-[var(--ui-border)]",
+            isDraft && "border border-dashed border-[var(--ui-accent)]/30"
           )}
         >
-          {recipe.title}
+          {recipe.imageUrl ? (
+            <img
+              src={recipe.imageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : isDraft ? (
+            <PencilLine className="h-4 w-4 text-[var(--ui-accent)]/60" aria-hidden="true" />
+          ) : (
+            <ChefHat className="h-4 w-4 text-[var(--ui-accent)]/60" aria-hidden="true" />
+          )}
         </span>
-        {matchedIngredient ? (
-          <span className="truncate text-[11px] text-[#800020]">
-            ingredient:{" "}
-            <span className="font-medium">{matchedIngredient}</span>
-          </span>
-        ) : isDraft ? (
-          <span className="truncate text-[11px] text-neutral-400">Draft</span>
-        ) : (
-          recipe.cuisine && (
-            <span className="truncate text-xs text-neutral-500">
-              {recipe.cuisine}
-            </span>
-          )
-        )}
-      </div>
 
-      {/* Actions */}
-      <div className="flex flex-shrink-0 items-center gap-1">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span
+            className={cn(
+              "truncate text-sm text-[var(--ui-text)]",
+              isSelected && "font-semibold",
+              isDraft && !isSelected && "italic"
+            )}
+          >
+            {recipe.title}
+          </span>
+          {matchedIngredient ? (
+            <span className="truncate text-[11px] text-[var(--ui-accent)]">
+              Ingredient: <span className="font-medium">{matchedIngredient}</span>
+            </span>
+          ) : isDraft ? (
+            <span className="truncate text-[11px] text-[var(--ui-muted)]">
+              Draft
+            </span>
+          ) : (
+            recipe.cuisine && (
+              <span className="truncate text-xs text-[var(--ui-muted)]">
+                {recipe.cuisine}
+              </span>
+            )
+          )}
+        </span>
+      </button>
+
+      <span className="flex shrink-0 items-center">
         {onCook && !isDraft && (
           <button
             type="button"
@@ -112,21 +114,21 @@ export function RecipeListItem({
               event.stopPropagation();
               onCook(recipe.id);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[#17131f] text-white opacity-100 transition hover:bg-[#800020] md:opacity-0 md:group-hover:opacity-100"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--ui-muted-strong)] transition-colors duration-200 hover:bg-[var(--ui-action)] hover:text-[var(--ui-action-text)]"
             aria-label={`Cook ${recipe.title}`}
             title="Cook with me"
           >
-            <ChefHat className="h-3.5 w-3.5" />
+            <ChefHat className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             <IconButton
               variant="ghost"
-              size="1"
-              className="opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
-              aria-label="Recipe options"
-              onClick={(e) => e.stopPropagation()}
+              size="2"
+              className="h-10 w-10 rounded-md"
+              aria-label={`Options for ${recipe.title}`}
+              onClick={(event) => event.stopPropagation()}
             >
               <DotsVerticalIcon />
             </IconButton>
@@ -134,8 +136,8 @@ export function RecipeListItem({
           <DropdownMenu.Content>
             {onShare && !isDraft && (
               <DropdownMenu.Item
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={(event) => {
+                  event.stopPropagation();
                   onShare(recipe);
                 }}
               >
@@ -146,8 +148,8 @@ export function RecipeListItem({
             {onDelete && (
               <DropdownMenu.Item
                 color="red"
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={(event) => {
+                  event.stopPropagation();
                   onDelete(recipe.id);
                 }}
               >
@@ -157,7 +159,7 @@ export function RecipeListItem({
             )}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
-      </div>
+      </span>
     </li>
   );
 }

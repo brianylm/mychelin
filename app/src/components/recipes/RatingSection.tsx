@@ -29,17 +29,15 @@ function StarRating({
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="min-w-[70px] text-xs font-medium text-neutral-600">
-        {label}
-      </span>
+    <div className="grid gap-2 py-3 sm:grid-cols-[7rem_minmax(0,1fr)_auto] sm:items-center">
+      <span className="text-sm font-medium text-[var(--ui-text)]">{label}</span>
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
           <Tooltip key={star} content={`${star} star${star !== 1 ? "s" : ""}`}>
             <IconButton
               variant="ghost"
               size="1"
-              className={`!h-auto !p-1 transition-colors ${
+              className={`!h-11 !w-11 !p-0 transition-colors ${
                 star <= (hovered ?? value ?? 0)
                   ? "text-[#800020]/70 hover:text-[#800020]"
                   : "text-neutral-300 hover:text-[#800020]/50"
@@ -58,10 +56,10 @@ function StarRating({
           </Tooltip>
         ))}
       </div>
-      {value && (
-        <span className="text-xs text-neutral-500">({value}/5)</span>
-      )}
-      <SaveIndicator isSaving={isSaving} />
+      <div className="flex min-h-6 items-center gap-2 text-xs text-[var(--ui-muted)]">
+        {value ? <span>{value}/5</span> : <span>Not rated</span>}
+        <SaveIndicator isSaving={isSaving} />
+      </div>
     </div>
   );
 }
@@ -90,11 +88,11 @@ export function RatingSection({
   );
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+    <section className="border-t border-[var(--ui-border)] pt-5">
       <h3 className="mb-3 text-sm font-semibold text-neutral-800">
         Ratings
       </h3>
-      <div className="space-y-2">
+      <div className="divide-y divide-[var(--ui-border)]">
         <StarRating
           label="Authenticity"
           value={authenticityRating}

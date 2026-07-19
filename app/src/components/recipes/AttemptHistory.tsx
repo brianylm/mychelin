@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ArrowUpRight, ChevronUp, History, Pencil, Star, Target, Trash2 } from "lucide-react";
-import { Button, EmptyState, Panel } from "@/components/ui";
+import { Button, EmptyState } from "@/components/ui";
 import { HalfStarRating } from "./HalfStarRating";
 
 interface RecipeAttempt {
@@ -215,22 +215,22 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
   const nextBatch = Math.min(5, remaining);
 
   return (
-    <Panel raised className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--ui-muted)]">
-            <History className="h-4 w-4" />
+    <section className="border-y border-ui-border py-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-ui-text">
+            <History className="h-4 w-4 text-ui-accent" aria-hidden="true" />
             Attempts
-            {!loading && (
-              <span className="rounded-md bg-[var(--ui-accent-muted)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ui-accent)]">
-                {attempts.length} so far
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-sm text-[var(--ui-muted)]">
-            Cook sessions stay here until one is worth preserving as a recipe version.
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-ui-muted">
+            Every cook is a journal entry. Promote an attempt only when its changes are worth preserving.
           </p>
         </div>
+        {!loading && (
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-ui-muted">
+            {attempts.length} so far
+          </span>
+        )}
       </div>
 
       {error && (
@@ -257,7 +257,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
             return (
               <div
                 key={attempt.id}
-                className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3"
+                className="border-t border-ui-border py-4"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
@@ -361,7 +361,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                   </div>
                 ) : (
                   <>
-                    <div className="mt-3 rounded-lg border border-[#f0e5d8] bg-white px-3 py-3">
+                    <div className="mt-4 border-t border-ui-border pt-3">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted)]">
                         How did the dish turn out?
                       </p>
@@ -383,7 +383,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                       </ul>
                     )}
                     {attempt.nextTime && (
-                      <div className="mt-3 rounded-lg border border-[#800020]/10 bg-[#800020]/5 p-3">
+                      <div className="mt-3 border-l-2 border-ui-accent pl-3">
                         <p className="text-sm text-[var(--ui-muted)]">
                           Next time: {attempt.nextTime}
                         </p>
@@ -391,7 +391,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                           <button
                             type="button"
                             onClick={() => promoteAttempt(attempt.id)}
-                            className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-semibold text-white transition hover:bg-[#800020]"
+                            className="mt-2 inline-flex h-11 items-center gap-1.5 rounded-lg bg-ui-action px-3 text-xs font-semibold text-ui-action-text transition-colors duration-200 hover:bg-ui-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2"
                           >
                             Promote these changes to a version
                             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -429,6 +429,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
           </div>
         </div>
       )}
-    </Panel>
+    </section>
   );
 }

@@ -6,6 +6,17 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-07-19",
+    title: "A clearer kitchen workbench",
+    items: [
+      "Mychelin now uses a quieter, divider-led layout across the recipe library, books, meal planning, shopping, fridge, activity, profile, and analytics.",
+      "Desktop navigation now stays available across app views, while mobile uses the same drawer and a consistent five-part bottom navigation.",
+      "Recipe capture, sharing, calendar, versioning, and Log cook dialogs now use clearer hierarchy, solid surfaces, and larger kitchen-friendly controls.",
+      "Cook with me keeps the active timer visible above the scrolling steps, including concurrent timers when cooking multiple dishes.",
+      "Loading skeletons, focus states, reduced-motion support, responsive auth screens, and improved short-phone and tablet hero layouts make the app easier to scan and operate.",
+    ],
+  },
+  {
     date: "2026-07-10",
     title: "Recipe parsing, save flow, and planning flags",
     items: [

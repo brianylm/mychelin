@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
-import { Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import type { Ingredient, Instruction } from "@/db/schema";
 import {
   encodeHeatInTip,
@@ -31,7 +31,7 @@ interface RecipeStepsProps {
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
+  "h-11 w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 text-sm outline-none transition-colors focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
 
 
 function capitalize(s: string): string {
@@ -69,26 +69,6 @@ function AutoTextarea({
       placeholder={placeholder}
       rows={1}
     />
-  );
-}
-
-function GripIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-    >
-      <circle cx="9" cy="5" r="1.5" />
-      <circle cx="15" cy="5" r="1.5" />
-      <circle cx="9" cy="12" r="1.5" />
-      <circle cx="15" cy="12" r="1.5" />
-      <circle cx="9" cy="19" r="1.5" />
-      <circle cx="15" cy="19" r="1.5" />
-    </svg>
   );
 }
 
@@ -226,46 +206,60 @@ export function RecipeSteps({
 
   if (readOnly) {
     return (
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+      <section className="min-w-0">
+        <div className="flex min-h-11 items-center justify-between border-b border-ui-border pb-2">
+          <h2 className="text-lg font-semibold text-ui-text">Steps</h2>
+          <span className="text-xs font-medium tabular-nums text-ui-muted">
             {sorted.length}
           </span>
         </div>
 
         {sorted.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-neutral-400">
-            No steps yet
-          </p>
+          <p className="py-4 text-sm text-ui-muted">No steps yet</p>
         ) : (
-          <ol className="space-y-3">
+          <ol className="divide-y divide-ui-border">
             {sorted.map((step) => {
               const { heat, cleanTip } = parseHeatFromTip(step.tip);
               const amountHints = matchIngredientsForStep(step.content, ingredients);
               return (
-                <li key={step.id} className="rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-3">
-                  <div className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
-                      {step.stepNumber}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm leading-6 text-neutral-800">{step.content}</p>
+                <li
+                  key={step.id}
+                  className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] gap-3 py-4"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-accent-muted text-xs font-semibold text-ui-accent">
+                    {step.stepNumber}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="break-words text-[15px] leading-6 text-ui-text">
+                      {step.content}
+                    </p>
+                    {(heat || amountHints.length > 0) && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {heat && HEAT_CONFIG[heat] && (
-                          <span className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${HEAT_CONFIG[heat].className}`}>
+                          <span
+                            className={`inline-flex rounded-lg border px-2 py-1 text-[11px] font-medium ${HEAT_CONFIG[heat].className}`}
+                          >
                             {HEAT_CONFIG[heat].label}
                           </span>
                         )}
                         {amountHints.map((hint) => (
-                          <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#800020]/10 bg-white px-2 py-1 text-[11px] text-neutral-600">
-                            <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                          <span
+                            key={hint.name}
+                            className="inline-flex max-w-full items-center gap-1 rounded-lg border border-ui-border bg-ui-surface-raised px-2 py-1 text-[11px] text-ui-muted"
+                          >
+                            <span className="font-semibold text-ui-accent">
+                              {hint.amount}
+                            </span>
                             <span className="truncate">{hint.name}</span>
                           </span>
                         ))}
                       </div>
-                      {cleanTip && <p className="mt-2 text-xs leading-5 text-neutral-500">{cleanTip}</p>}
-                    </div>
+                    )}
+                    {cleanTip && (
+                      <p className="mt-2 border-l-2 border-ui-border-strong pl-2 text-xs leading-5 text-ui-muted">
+                        {cleanTip}
+                      </p>
+                    )}
                   </div>
                 </li>
               );
@@ -277,7 +271,7 @@ export function RecipeSteps({
   }
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+    <section className="rounded-lg border border-neutral-200 bg-white p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
@@ -304,7 +298,7 @@ export function RecipeSteps({
                 ref={(el) => {
                   if (el) itemRefs.current.set(displayIdx, el);
                 }}
-                className={`group flex gap-2 rounded-xl border px-3 py-2.5 transition-all ${
+                className={`group flex gap-2 rounded-lg border px-3 py-2.5 transition-[border-color,background-color,box-shadow,transform] ${
                   isDragging
                     ? "relative z-10 scale-[1.02] select-none border-[#800020]/35 bg-[#800020]/5 shadow-md ring-2 ring-[#800020]/10"
                     : "border-neutral-100 bg-neutral-50/50"
@@ -323,7 +317,7 @@ export function RecipeSteps({
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerUp}
-                    className={`flex h-10 w-10 cursor-grab touch-none select-none items-center justify-center rounded-full border transition active:cursor-grabbing ${
+                    className={`flex h-11 w-11 cursor-grab touch-none select-none items-center justify-center rounded-lg border transition-colors active:cursor-grabbing ${
                       isDragging
                         ? "border-[#800020]/30 bg-[#800020] text-white"
                         : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/25 hover:text-[#800020]"
@@ -331,7 +325,7 @@ export function RecipeSteps({
                     title="Drag to reorder"
                     aria-label="Drag step to reorder"
                   >
-                    <GripIcon className="h-4 w-4" />
+                    <GripVertical className="h-5 w-5" aria-hidden="true" />
                   </button>
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
                     {displayIdx + 1}
@@ -370,7 +364,7 @@ export function RecipeSteps({
                   <button
                     type="button"
                     onClick={() => cycleHeat(step)}
-                    className={`mt-1 ml-2 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition ${
+                    className={`mt-2 ml-2 inline-flex h-11 items-center gap-1 rounded-lg border px-3 text-xs font-medium transition-colors ${
                       heat && HEAT_CONFIG[heat]
                         ? HEAT_CONFIG[heat].className
                         : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300"
@@ -387,7 +381,7 @@ export function RecipeSteps({
 
                 <button
                   type="button"
-                  className="mt-1 flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
+                  className="mt-1 flex h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition-colors hover:border-red-200 hover:bg-red-50"
                   onClick={() => onDelete(recipeId, step.id)}
                   aria-label="Remove step"
                   title="Remove step"
@@ -421,6 +415,7 @@ export function RecipeSteps({
         <Button
           size="2"
           variant="solid"
+          className="!h-11 !rounded-lg"
           onClick={handleAddStep}
           disabled={!newStep.trim()}
         >

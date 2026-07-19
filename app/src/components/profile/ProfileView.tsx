@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui/Button";
 import { Bell, BellOff, CalendarClock, CheckCircle2, ChevronDown, Flame, Target } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { EditableField } from "@/components/ui/EditableField";
 import { useToast } from "@/context/ToastContext";
 import { changelogEntries } from "@/lib/changelog";
 import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
+import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const GOAL_OPTIONS = [1, 2, 3, 4, 5, 6];
 
@@ -75,41 +77,25 @@ function rhythmMessage(summary: RhythmSummary | null): string {
 
 function ProfileSkeleton() {
   return (
-    <div className="flex-1 overflow-y-auto bg-surface">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 pb-28">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="h-5 w-40 animate-pulse rounded bg-neutral-200" />
-          <div className="mt-4 h-4 w-64 max-w-full animate-pulse rounded bg-neutral-100" />
+    <div className="flex-1 overflow-y-auto bg-[var(--ui-canvas)]">
+      <div className="mx-auto grid w-full max-w-4xl gap-8 px-5 py-6 pb-28 sm:px-8">
+        <div className="grid gap-3 border-b border-[var(--ui-border)] pb-5">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-8 w-52 max-w-full" />
+          <Skeleton className="h-4 w-64 max-w-full" />
         </div>
-        <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <div className="h-3 w-28 animate-pulse rounded bg-[#eadfce]" />
-              <div className="mt-3 h-5 w-56 max-w-full animate-pulse rounded bg-neutral-200" />
-              <div className="mt-3 h-4 w-full animate-pulse rounded bg-neutral-100" />
-            </div>
-            <div className="h-11 w-11 animate-pulse rounded-full bg-[#eadfce]" />
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {[0, 1, 2].map((item) => (
-              <div key={item} className="rounded-xl border border-[#eadfce] bg-white p-3">
-                <div className="h-3 w-20 animate-pulse rounded bg-neutral-100" />
-                <div className="mt-3 h-7 w-10 animate-pulse rounded bg-neutral-200" />
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 h-2 animate-pulse rounded-full bg-[#eadfce]" />
-        </div>
-        {[0, 1, 2].map((section) => (
-          <div key={section} className="rounded-2xl border border-neutral-200 bg-white p-5">
-            <div className="h-5 w-36 animate-pulse rounded bg-neutral-200" />
-            <div className="mt-5 space-y-3">
-              <div className="h-10 animate-pulse rounded-lg bg-neutral-100" />
-              <div className="h-10 animate-pulse rounded-lg bg-neutral-100" />
-              <div className="h-10 w-3/4 animate-pulse rounded-lg bg-neutral-100" />
+        {[0, 1, 2, 3].map((section) => (
+          <div key={section} className="border-b border-[var(--ui-border)] pb-7">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="mt-3 h-4 w-full max-w-xl" />
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
             </div>
           </div>
         ))}
+        <span className="sr-only">Loading profile</span>
       </div>
     </div>
   );
@@ -380,83 +366,79 @@ export function ProfileView() {
   const hiddenChangelogCount = Math.max(changelogEntries.length - 3, 0);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 pb-28">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h1 className="mb-2 text-2xl font-semibold tracking-tight text-neutral-950">Profile & Settings</h1>
-          <div className="space-y-2 text-sm text-neutral-600">
-            <p><span className="font-medium">Email:</span> {user?.email}</p>
-          </div>
-        </div>
+    <div className="flex-1 overflow-y-auto bg-[var(--ui-canvas)]">
+      <div className="mx-auto grid w-full max-w-4xl gap-8 px-5 py-6 pb-28 sm:px-8">
+        <PageHeader
+          eyebrow="Account"
+          title="Profile & settings"
+          description="Manage your cooking rhythm, pilot progress, account details, and product updates."
+          meta={<p className="text-sm text-[var(--ui-muted)]">{user?.email}</p>}
+        />
 
-        <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] shadow-sm">
-          <div className="flex items-start justify-between gap-3 p-5">
-            <button
-              type="button"
-              onClick={() => setIsRhythmOpen((open) => !open)}
-              className="group flex min-w-0 flex-1 items-start gap-3 text-left"
-              aria-expanded={isRhythmOpen}
-            >
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">Cooking rhythm</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-950">Your weekly dish goal</h2>
-                <p className="mt-1 text-sm leading-6 text-neutral-600">{rhythmMessage(rhythm)}</p>
-              </div>
-              <ChevronDown className={"mt-1 h-5 w-5 shrink-0 text-neutral-400 transition group-hover:text-[#800020] " + (isRhythmOpen ? "rotate-180" : "")} />
-            </button>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#800020] text-white">
-              <Flame className="h-5 w-5" />
+        <section className="border-y border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
+          <button
+            type="button"
+            onClick={() => setIsRhythmOpen((open) => !open)}
+            className="group flex min-h-24 w-full items-start justify-between gap-4 px-4 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ui-focus)] sm:px-5"
+            aria-expanded={isRhythmOpen}
+          >
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-accent)]">Cooking rhythm</p>
+              <h2 className="mt-2 text-xl font-semibold text-[var(--ui-text)]">Your weekly dish goal</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--ui-muted)]">{rhythmMessage(rhythm)}</p>
             </div>
-          </div>
+            <span className="flex shrink-0 items-center gap-2">
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--ui-accent)] text-white">
+                <Flame className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <ChevronDown className={"h-5 w-5 text-[var(--ui-muted)] transition-transform " + (isRhythmOpen ? "rotate-180" : "")} aria-hidden="true" />
+            </span>
+          </button>
 
           {isRhythmOpen && (
-            <div className="border-t border-[#eadfce] px-5 pb-5 pt-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-[#eadfce] bg-white p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <CheckCircle2 className="h-4 w-4 text-[#800020]" /> Dishes cooked
+            <div className="border-t border-[var(--ui-border)] px-4 py-5 sm:px-5">
+              <div className="grid divide-y divide-[var(--ui-border)] border-y border-[var(--ui-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                {[
+                  { label: "Dishes cooked", value: rhythm?.cookedThisWeek ?? 0, icon: CheckCircle2 },
+                  { label: "Meals planned", value: rhythm?.plannedThisWeek ?? 0, icon: CalendarClock },
+                  { label: "Dish goal", value: notificationPrefs.weeklyCookingGoal, icon: Target },
+                ].map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 px-3 py-4 sm:block">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ui-muted)]">
+                      <Icon className="h-4 w-4 text-[var(--ui-accent)]" aria-hidden="true" />
+                      {label}
+                    </div>
+                    <p className="text-2xl font-semibold tabular-nums text-[var(--ui-text)] sm:mt-2">{value}</p>
                   </div>
-                  <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.cookedThisWeek ?? 0}</p>
-                </div>
-                <div className="rounded-xl border border-[#eadfce] bg-white p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <CalendarClock className="h-4 w-4 text-[#800020]" /> Meals planned
-                  </div>
-                  <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.plannedThisWeek ?? 0}</p>
-                </div>
-                <div className="rounded-xl border border-[#eadfce] bg-white p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <Target className="h-4 w-4 text-[#800020]" /> Dish goal
-                  </div>
-                  <p className="mt-2 text-2xl font-semibold text-neutral-900">{notificationPrefs.weeklyCookingGoal}</p>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-xs text-neutral-500">
-                  <span>{formatWeekRange(rhythm)}</span>
-                  <span>{rhythm?.progress ?? 0}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-[#eadfce]">
-                  <div className="h-full rounded-full bg-[#800020] transition-all" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
-                </div>
+                ))}
               </div>
 
               <div className="mt-5">
-                <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Weekly dish goal</label>
-                <p className="mt-1 text-xs leading-5 text-neutral-500">This counts completed cook-with-me attempts, so one finished dish equals one point. It is not a daily streak.</p>
-                <div className="mt-2 grid grid-cols-6 gap-1.5">
+                <div className="mb-2 flex items-center justify-between text-xs text-[var(--ui-muted)]">
+                  <span>{formatWeekRange(rhythm)}</span>
+                  <span>{rhythm?.progress ?? 0}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--ui-border)]">
+                  <div className="h-full rounded-full bg-[var(--ui-accent)] transition-[width]" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ui-muted)]">Weekly dish goal</label>
+                <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">One completed dish counts as one point. This is a weekly rhythm, not a daily streak.</p>
+                <div className="mt-3 grid grid-cols-6 gap-2">
                   {GOAL_OPTIONS.map((goal) => (
                     <button
                       key={goal}
                       type="button"
                       onClick={() => setNotificationToggle("weeklyCookingGoal", goal)}
                       className={
-                        "h-10 rounded-lg border text-sm font-semibold transition " +
+                        "h-11 rounded-lg border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] " +
                         (notificationPrefs.weeklyCookingGoal === goal
-                          ? "border-[#800020] bg-[#800020] text-white"
-                          : "border-[#eadfce] bg-white text-neutral-700 hover:border-[#800020]/35")
+                          ? "border-[var(--ui-accent)] bg-[var(--ui-accent)] text-white"
+                          : "border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:border-[var(--ui-accent)]/40")
                       }
+                      aria-pressed={notificationPrefs.weeklyCookingGoal === goal}
                     >
                       {goal}
                     </button>
@@ -464,7 +446,8 @@ export function ProfileView() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-2 text-sm text-neutral-700 sm:grid-cols-2">
+              <fieldset className="mt-6 border-t border-[var(--ui-border)]">
+                <legend className="sr-only">Reminder types</legend>
                 {[
                   ["rhythmReminders", "Weekly rhythm nudges"],
                   ["mealReminders", "Planned meal reminders"],
@@ -472,39 +455,40 @@ export function ProfileView() {
                   ["reviewReminders", "Post-cook review prompts"],
                   ["familyActivity", "Family recipe activity"],
                 ].map(([key, label]) => (
-                  <label key={key} className="flex items-center gap-2 rounded-xl border border-[#eadfce] bg-white px-3 py-2">
+                  <label key={key} className="flex min-h-11 items-center justify-between gap-4 border-b border-[var(--ui-border)] py-2 text-sm text-[var(--ui-text)]">
+                    <span>{label}</span>
                     <input
                       type="checkbox"
                       checked={Boolean(notificationPrefs[key as keyof NotificationPreferences])}
                       onChange={(e) => setNotificationToggle(key as keyof NotificationPreferences, e.target.checked)}
-                      className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-[#800020]/30"
+                      className="h-5 w-5 rounded border-[var(--ui-border-strong)] text-[var(--ui-accent)] focus:ring-[var(--ui-focus)]"
                     />
-                    <span>{label}</span>
                   </label>
                 ))}
-              </div>
+              </fieldset>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div>
-                  <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Reminder time</label>
+                  <label htmlFor="profile-reminder-time" className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ui-muted)]">Reminder time</label>
                   <input
+                    id="profile-reminder-time"
                     type="time"
                     value={notificationPrefs.reminderTime}
                     onChange={(e) => setNotificationToggle("reminderTime", e.target.value)}
-                    className="mt-2 w-full rounded-lg border border-[#eadfce] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10"
+                    className="mt-2 h-11 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm outline-none focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]"
                   />
                 </div>
-                <Button type="button" size="3" onClick={saveNotificationPrefs} disabled={isSavingNotifications} className="!rounded-full !bg-[#17131f] !text-white hover:!bg-[#800020]">
+                <Button onClick={saveNotificationPrefs} loading={isSavingNotifications}>
                   {isSavingNotifications ? "Saving..." : "Save rhythm"}
                 </Button>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#eadfce] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  {pushState === "subscribed" ? <Bell className="mt-0.5 h-5 w-5 text-[#800020]" /> : <BellOff className="mt-0.5 h-5 w-5 text-neutral-400" />}
+              <div className="mt-6 flex flex-col gap-4 border-t border-[var(--ui-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  {pushState === "subscribed" ? <Bell className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ui-accent)]" /> : <BellOff className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ui-muted)]" />}
                   <div>
-                    <p className="text-sm font-semibold text-neutral-800">Browser reminders</p>
-                    <p className="mt-1 text-xs leading-5 text-neutral-500">
+                    <p className="text-sm font-semibold text-[var(--ui-text)]">Browser reminders</p>
+                    <p className="mt-1 max-w-xl text-xs leading-5 text-[var(--ui-muted)]">
                       {!pushConfigured
                         ? "Push keys are not configured yet, so reminders can be saved but not delivered."
                         : pushState === "unsupported"
@@ -518,158 +502,109 @@ export function ProfileView() {
                   </div>
                 </div>
                 {pushState === "subscribed" ? (
-                  <Button type="button" variant="outline" size="2" onClick={disablePush} disabled={isEnablingPush}>
-                    Pause
-                  </Button>
+                  <Button variant="secondary" onClick={disablePush} loading={isEnablingPush}>Pause</Button>
                 ) : (
-                  <Button type="button" size="2" onClick={enablePush} disabled={isEnablingPush || pushState === "unsupported"}>
-                    {isEnablingPush ? "Enabling..." : "Enable"}
-                  </Button>
+                  <Button onClick={enablePush} loading={isEnablingPush} disabled={pushState === "unsupported"}>Enable</Button>
                 )}
               </div>
             </div>
           )}
-        </div>
+        </section>
 
         <PilotChecklistPanel />
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h2 className="mb-4 text-lg font-semibold tracking-tight text-neutral-950">Basic information</h2>
-
-          <div className="space-y-4">
+        <section className="border-t border-[var(--ui-border)] pt-7">
+          <SectionHeader title="Basic information" description="The name shown across your Mychelin account." />
+          <div className="mt-5 max-w-xl">
             <EditableField
               label="Name"
               value={preferences.name}
-              onChange={(value) => setPreferences(prev => ({ ...prev, name: value }))}
+              onChange={(value) => setPreferences((previous) => ({ ...previous, name: value }))}
               placeholder="Your name"
             />
           </div>
-        </div>
+        </section>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Security</h2>
-            {!showPasswordForm && (
-              <button
-                type="button"
-                onClick={() => setShowPasswordForm(true)}
-                className="text-sm font-medium text-[#800020] hover:underline"
-              >
-                Change password
-              </button>
-            )}
-          </div>
+        <section className="border-y border-[var(--ui-border)] py-7">
+          <SectionHeader
+            title="Security"
+            description="Update the password used for email sign-in."
+            actions={!showPasswordForm ? (
+              <Button variant="secondary" onClick={() => setShowPasswordForm(true)}>Change password</Button>
+            ) : undefined}
+          />
 
           {showPasswordForm && (
-            <form onSubmit={handleChangePassword} className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  Current password
-                </label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Your current password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
-                  required
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  New password
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
-                  required
-                  minLength={6}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  Confirm new password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your new password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
-                  required
-                  minLength={6}
-                />
-              </div>
+            <form onSubmit={handleChangePassword} className="mt-5 grid max-w-xl gap-4">
+              {[
+                { id: "current-password", label: "Current password", value: currentPassword, setter: setCurrentPassword, placeholder: "Your current password", minLength: undefined },
+                { id: "new-password", label: "New password", value: newPassword, setter: setNewPassword, placeholder: "At least 6 characters", minLength: 6 },
+                { id: "confirm-password", label: "Confirm new password", value: confirmPassword, setter: setConfirmPassword, placeholder: "Re-enter your new password", minLength: 6 },
+              ].map((field, index) => (
+                <div key={field.id}>
+                  <label htmlFor={field.id} className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ui-muted)]">{field.label}</label>
+                  <input
+                    id={field.id}
+                    type="password"
+                    value={field.value}
+                    onChange={(event) => field.setter(event.target.value)}
+                    placeholder={field.placeholder}
+                    className="h-11 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm outline-none focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]"
+                    required
+                    minLength={field.minLength}
+                    autoFocus={index === 0}
+                  />
+                </div>
+              ))}
 
               {passwordError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700" role="alert">
                   {passwordError}
                 </p>
               )}
 
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Button type="submit" disabled={isChangingPassword} size="3" style={{ marginTop: "8px" }}>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button type="submit" loading={isChangingPassword}>
                   {isChangingPassword ? "Updating..." : "Update password"}
                 </Button>
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="3"
+                  variant="secondary"
                   onClick={() => {
                     resetPasswordForm();
                     setShowPasswordForm(false);
                   }}
                   disabled={isChangingPassword}
-                  style={{ marginTop: "8px" }}
                 >
                   Cancel
                 </Button>
               </div>
             </form>
           )}
-        </div>
+        </section>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Changelog</h2>
-              <p className="mt-1 text-xs leading-5 text-neutral-500">
-                Recent product updates in Mychelin.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-2">
+        <section>
+          <SectionHeader title="Changelog" description="The latest product changes in Mychelin." />
+          <div className="mt-4 border-t border-[var(--ui-border)]">
             {visibleChangelogEntries.map((entry) => {
               const isOpen = openChangelogId === entry.title;
               return (
-                <article key={entry.title} className="rounded-xl border border-neutral-100 bg-neutral-50/70">
+                <article key={entry.title} className="border-b border-[var(--ui-border)]">
                   <button
                     type="button"
                     onClick={() => setOpenChangelogId(isOpen ? null : entry.title)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                    className="flex min-h-16 w-full items-center justify-between gap-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ui-focus)]"
                     aria-expanded={isOpen}
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-neutral-800">{entry.title}</span>
-                      <time className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-neutral-400">
-                        {entry.date} - {entry.items.length} updates
-                      </time>
+                      <span className="block text-sm font-semibold text-[var(--ui-text)]">{entry.title}</span>
+                      <time className="mt-1 block text-xs text-[var(--ui-muted)]">{entry.date} · {entry.items.length} updates</time>
                     </span>
-                    <span className="shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
-                      {isOpen ? "Hide" : "View"}
-                    </span>
+                    <ChevronDown className={"h-5 w-5 shrink-0 text-[var(--ui-muted)] transition-transform " + (isOpen ? "rotate-180" : "")} aria-hidden="true" />
                   </button>
                   {isOpen && (
-                    <ul className="space-y-1.5 border-t border-neutral-100 px-4 py-3 text-xs leading-5 text-neutral-600">
+                    <ul className="grid gap-2 border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-4 text-sm leading-6 text-[var(--ui-muted)]">
                       {entry.items.map((item) => (
-                        <li key={item} className="flex gap-2">
-                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#800020]" />
-                          <span>{item}</span>
-                        </li>
+                        <li key={item} className="border-l-2 border-[var(--ui-accent)] pl-3">{item}</li>
                       ))}
                     </ul>
                   )}
@@ -678,32 +613,22 @@ export function ProfileView() {
             })}
           </div>
           {hiddenChangelogCount > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              className="mt-4 w-full sm:w-auto"
               onClick={() => setShowAllChangelog((current) => !current)}
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-[#800020]/30 hover:text-[#800020]"
             >
               {showAllChangelog ? "Show latest 3" : "View more updates (" + hiddenChangelogCount + ")"}
-            </button>
+            </Button>
           )}
-        </div>
+        </section>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="flex flex-col justify-between gap-3 sm:flex-row">
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              size="3"
-              className="bg-[#17131f] hover:bg-[#800020]"
-            >
-              {isSaving ? "Saving..." : "Save Changes"}
-            </Button>
-
-            <Button onClick={logout} variant="outline" size="3" color="red">
-              Logout
-            </Button>
-          </div>
-        </div>
+        <footer className="flex flex-col gap-3 border-t border-[var(--ui-border)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <Button onClick={handleSave} loading={isSaving}>
+            {isSaving ? "Saving..." : "Save changes"}
+          </Button>
+          <Button onClick={logout} variant="danger">Log out</Button>
+        </footer>
       </div>
     </div>
   );
