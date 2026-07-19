@@ -121,9 +121,12 @@ export function LandingPage() {
       {/* ==================== HERO ==================== */}
       <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
         {/* Background image */}
-        <img
+        <Image
           src="/images/hero-family-table.jpg"
           alt="A family sharing a home-cooked meal together"
+          fill
+          priority
+          sizes="100vw"
           className="landing-hero-image absolute inset-0 h-full w-full object-cover"
         />
         {/* Mobile readability scrim. Keeps faces visible and reserves
@@ -286,6 +289,8 @@ export function LandingPage() {
                       opacity: isActive ? 1 : 0.48,
                     }}
                     aria-pressed={isActive}
+                    aria-hidden={!isActive}
+                    tabIndex={isActive ? 0 : -1}
                   >
                     <div className="flex items-start justify-between gap-6">
                       <div>
@@ -341,30 +346,36 @@ export function LandingPage() {
               })}
             </div>
 
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="relative z-20 mt-6 flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={showPreviousFeature}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
                 aria-label="Show previous feature"
               >
                 ←
               </button>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-1" role="group" aria-label="Choose feature">
                 {featurePages.map((feature, index) => (
                   <button
                     key={feature.title}
                     type="button"
                     onClick={() => showFeature(index)}
-                    className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
+                    className="flex h-11 w-8 items-center justify-center"
                     aria-label={`Show ${feature.title}`}
-                  />
+                    aria-current={index === activeFeature ? "true" : undefined}
+                  >
+                    <span
+                      className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
+                      aria-hidden="true"
+                    />
+                  </button>
                 ))}
               </div>
               <button
                 type="button"
                 onClick={showNextFeature}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
                 aria-label="Show next feature"
               >
                 →
@@ -415,7 +426,7 @@ export function LandingPage() {
 
       {/* ==================== FOOTER ==================== */}
       <footer className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs text-[#9b9b9b]">
+        <p className="text-xs text-[#6b625c]">
           Cook like home, even in your new home.
         </p>
       </footer>
