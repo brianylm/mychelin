@@ -331,10 +331,10 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
 
     if (next && current !== next) {
       url.searchParams.set("recipe", next);
-      window.history.replaceState(window.history.state, "", url.toString());
+      window.history.pushState(window.history.state, "", url.toString());
     } else if (!next && current !== null) {
       url.searchParams.delete("recipe");
-      window.history.replaceState(window.history.state, "", url.toString());
+      window.history.pushState(window.history.state, "", url.toString());
     }
   }, [selectedRecipeId]);
 
