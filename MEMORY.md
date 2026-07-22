@@ -2526,3 +2526,41 @@ Checks:
 - Focused ESLint passed with zero errors and three raw-`img` optimization warnings; `npx tsc --noEmit`, `npm run build`, and `git diff --check` passed. A corrupt ignored `.next/dev` declaration created during concurrent dev/type checking was isolated under `/tmp` before standalone TypeScript was rerun.
 - Synthetic staging QA cleanup was verified at zero remaining users, recipes, books, ingredients, flags, memberships, and usage events.
 - Next phase after B accepts this staging candidate: recipe reading/editing hierarchy, kept separate from Library so it remains independently reversible.
+
+## 2026-07-21 - Meal plan randomisation packet refreshed after UI uplift staging
+
+- Reframed the meal-plan randomisation/blockout idea against the current shipped/staged baseline: production remains pinned to the restored July 10 deployment, the broad July 19 workbench uplift remains rolled back, and `ui-uplift` Phases 1-3 are staged only.
+- Added `docs/work-packets/meal-plan-randomisation.md` as the next Planner implementation packet: timeframe-aware randomisation for slot/day/week/month, explicit open/locked/blocked/eating-out slot states, pre-randomise review for multi-slot scopes, simple recipe weighting using flags/last-cooked evidence, and preservation of shopping-list/calendar/cook-from-plan behavior.
+- Next step: B product review. If accepted, implement as a small Planner-only preview slice with schema/user-isolation checks before any production deploy.
+
+## 2026-07-22 - UI uplift next-phases proposal and Slice A token/primitive foundation
+
+- Added `docs/work-packets/ui-uplift-next-phases.md`: full-repo UI enhancement proposal sequenced as Slice A (token/primitive foundation) → B (Phase 4 recipe detail hierarchy) → C (planner + randomisation) → D (capture flows) → E (operational surfaces) → F (deferred watch list). Awaiting B review/sequencing against the meal-plan packet and Phase 3 acceptance.
+- Slice A implemented on `ui-uplift`: exposed the full `--ui-*` token set through `@theme inline` in `app/src/app/globals.css` (border-strong, accent-muted, action/action-hover/action-text, focus/focus-soft, success/warning/danger/info + -soft variants); removed the stale undeclared `"Satoshi"` font fallback from the landing-content stack.
+- Token-ized shared primitives with no intended visual change: `Alert.tsx` (semantic tone tokens), `CollapsibleSection.tsx`, `Combobox.tsx`, and the `RecipeResultRow.tsx` badge now consume `ui-*` tokens instead of hardcoded Tailwind palette colors and `#800020`/`neutral-*` literals.
+- Added `components/ui/IconButton.tsx` (44px targets, required `aria-label`, secondary/tertiary/quiet/danger variants, loading/disabled states) and `components/ui/Dialog.tsx` (solid overlay shell, focus trap with return, Escape close, body scroll lock, labelled header/footer, mobile full-height option). Exported both from `components/ui/index.ts`; nothing adopts them yet, so zero regression risk.
+- Verified the body radial-gradient only shows on the public landing page: `.mychelin-app-shell` paints solid `--ui-bg` over it on all authenticated screens, so no scoping change was needed.
+- Validation: focused ESLint passed with zero errors; `npx tsc --noEmit` passed; production build passed; `git diff --check` passed.
+- Preview deployment `dpl_MnsP7NE2821VsUdN6nuuBc2xhiaX` reached Ready and the stable staging alias `https://mychelin-ui-uplift.vercel.app` was re-pointed to it (it had still been on the 3-day-old Phase 3 deployment). Production untouched — `mychelin-sg.vercel.app` remains on the July 10 deployment. Both aliases returned HTTP 200.
+- Changes are uncommitted on `ui-uplift` pending B's review; commit on request.
+- Follow-ups: B reviews the proposal; Phase 3 acceptance still gates Slice B; conversation-capture work remains paused until B confirms the staged UI.
+
+## 2026-07-22 - Phase 3 sidebar token-ization and Slice B attempt-salience revision
+
+- Reviewed the staged Phase 3 Library surfaces against the landing page's burgundy/warm-paper token language. The serif "Library" title, warm `rgba(60,43,25,…)` shadows, and burgundy tints were already aligned; the sidebar files still hardcoded theme values.
+- Token-ized Phase 3 surfaces with no intended visual change (all replaced literals already equal the token values): 28 `#800020` sites in `RecipeSidebar.tsx`, 8 in `SidebarToolbar.tsx`, `text-[#521224]` → `text-accent-dark` in `RecipeListItem.tsx`, plus all `neutral-*`/`stone-*` text and border colors in the four sidebar files now use `ui-accent`, `ui-text`, `ui-muted`, `ui-border`, and `ui-surface-*` tokens.
+- Fixed the last stale `"Satoshi"` reference: `LandingPage.tsx` root div had an inline `fontFamily: "'Satoshi', system-ui, sans-serif"` that the globals.css fix did not cover. Satoshi no longer appears anywhere in `app/src`.
+- Left for Slice B: migrating the hand-rolled `RecipeSearchModal` shell onto the new `Dialog` primitive (grouped with the recipe-page dialog standardization), and `RecipeLibraryCard` (already token-ized).
+- Updated `docs/work-packets/ui-uplift-next-phases.md` Slice B per B's feedback: attempts and next-try notes are the improvement loop and must stay salient — active next try visible near the recipe top, attempt history directly reachable (not collapsed), one-tap promote-to-version, and Cook With Me surfaces the active next-try at session start. Only heritage metadata and ratings move into progressive disclosure.
+- Validation: focused ESLint passed with zero errors (one pre-existing raw-`img` warning in `RecipeListItem.tsx`); `npx tsc --noEmit` passed; production build passed; `git diff --check` passed.
+
+## 2026-07-22 - Meal-plan randomisation packet tightened for product review
+
+- Improved `docs/work-packets/meal-plan-randomisation.md` with concrete implementation guidance: proposed data model (add `state` to `meal_plans`, nullable `recipe_id`, default existing rows to `locked`), exact API surface (`POST /api/meal-plans/randomise`), recipe scoring algorithm, file starting points, UI placement, a 10-step smoke-test scenario, and expanded product-trap checks.
+- Marked all open implementation questions as "proposed defaults for B confirmation" rather than unresolved.
+- No code change; document-only. Validation: `git diff --check` passed.
+
+## 2026-07-22 - Meal-plan randomisation packet rev 3
+
+- Second tightening pass on `docs/work-packets/meal-plan-randomisation.md`: fixed a heading swallowed during the Starting points insertion; added undo mechanics (implicit-open slots, randomise creates rows, undo = batch delete of created rows, no server undo log), skip-clears-recipe decision, scope = currently viewed planner range, double-submit protection, one-request/one-batch-insert performance gate, `meal_plan_randomised` usage event with sanitized properties, changelog convention, and aria-live/state-not-color-alone accessibility notes.
+- No code change; document-only. Validation: `git diff --check` passed.
