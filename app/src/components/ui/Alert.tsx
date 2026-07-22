@@ -11,10 +11,10 @@ interface AlertProps {
 }
 
 const tones: Record<AlertTone, string> = {
-  info: "border-blue-200 bg-blue-50 text-blue-900",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  warning: "border-amber-200 bg-amber-50 text-amber-950",
-  danger: "border-red-200 bg-red-50 text-red-900",
+  info: "border-ui-info/20 bg-ui-info-soft text-ui-info",
+  success: "border-ui-success/20 bg-ui-success-soft text-ui-success",
+  warning: "border-ui-warning/25 bg-ui-warning-soft text-ui-warning-text",
+  danger: "border-ui-danger/20 bg-ui-danger-soft text-ui-danger",
 };
 
 export function Alert({ tone = "info", title, children, className }: AlertProps) {

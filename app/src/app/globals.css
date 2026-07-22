@@ -59,7 +59,23 @@
   --color-ui-text: var(--ui-text);
   --color-ui-muted: var(--ui-muted);
   --color-ui-border: var(--ui-border);
+  --color-ui-border-strong: var(--ui-border-strong);
   --color-ui-accent: var(--ui-accent);
+  --color-ui-accent-muted: var(--ui-accent-muted);
+  --color-ui-action: var(--ui-action);
+  --color-ui-action-hover: var(--ui-action-hover);
+  --color-ui-action-text: var(--ui-action-text);
+  --color-ui-focus: var(--ui-focus);
+  --color-ui-focus-soft: var(--ui-focus-soft);
+  --color-ui-success: var(--ui-success);
+  --color-ui-success-soft: var(--ui-success-soft);
+  --color-ui-warning: var(--ui-warning);
+  --color-ui-warning-soft: var(--ui-warning-soft);
+  --color-ui-warning-text: var(--ui-warning-text);
+  --color-ui-danger: var(--ui-danger);
+  --color-ui-danger-soft: var(--ui-danger-soft);
+  --color-ui-info: var(--ui-info);
+  --color-ui-info-soft: var(--ui-info-soft);
 
   --font-sans: var(--font-dm-sans, "DM Sans"), system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -195,7 +211,7 @@ h6,
 .landing-content a,
 .landing-content button,
 .landing-content span {
-  font-family: "Satoshi", var(--font-dm-sans), system-ui, sans-serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
 
 .landing-content .landing-serif {

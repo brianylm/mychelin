@@ -45,7 +45,7 @@ export function RecipeResultRow({
             {badges.map((badge) => (
               <span
                 key={badge}
-                className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold text-[#800020] ring-1 ring-[#800020]/15"
+                className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold text-ui-accent ring-1 ring-ui-accent/15"
               >
                 {badge}
               </span>

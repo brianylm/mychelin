@@ -25,12 +25,12 @@ export function CollapsibleSection({
 
   return (
     <section
-      className={cn("rounded-2xl border border-neutral-200 bg-white", className)}
+      className={cn("rounded-2xl border border-ui-border bg-ui-surface-raised", className)}
     >
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between p-4 text-left transition hover:bg-neutral-50"
+        className="flex w-full items-center justify-between p-4 text-left transition hover:bg-ui-surface-subtle"
       >
         <div className="flex items-center gap-3">
           <ChevronRightIcon
@@ -40,20 +40,20 @@ export function CollapsibleSection({
             )}
           />
           <div>
-            <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>
+            <h3 className="text-sm font-semibold text-ui-text">{title}</h3>
             {subtitle && (
-              <p className="text-xs text-neutral-500">{subtitle}</p>
+              <p className="text-xs text-ui-muted">{subtitle}</p>
             )}
           </div>
         </div>
         {badge !== undefined && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
             {badge}
           </span>
         )}
       </button>
       {isOpen && (
-        <div className="border-t border-neutral-200 p-4">{children}</div>
+        <div className="border-t border-ui-border p-4">{children}</div>
       )}
     </section>
   );
