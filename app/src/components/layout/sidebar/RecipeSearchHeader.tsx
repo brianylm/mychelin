@@ -32,7 +32,7 @@ export function RecipeSearchHeader({
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder="Search recipes..."
               aria-label="Search recipes by title or ingredient"
-              className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-neutral-400"
+              className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-[var(--ui-muted)]"
               autoFocus
               onKeyDown={(event) => {
                 if (event.key === "Escape") {

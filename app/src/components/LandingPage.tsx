@@ -60,7 +60,7 @@ export function LandingPage() {
   return (
     <div
       className={`landing-content min-h-screen bg-white text-[#1A1A1A] ${brandSerif.variable} ${logoSerif.variable}`}
-      style={{ fontFamily: "'Satoshi', system-ui, sans-serif" }}
+      style={{ fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
       <header className="fixed top-4 left-1/2 z-50 w-[min(calc(100%-1.5rem),74rem)] -translate-x-1/2 sm:top-5">

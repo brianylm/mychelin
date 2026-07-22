@@ -43,7 +43,7 @@ export function RecipeListItem({
       className={cn(
         "group flex min-w-0 items-center rounded-lg transition-colors duration-150",
         isSelected
-          ? "bg-[var(--ui-accent-muted)] text-[#521224]"
+          ? "bg-[var(--ui-accent-muted)] text-accent-dark"
           : "hover:bg-[var(--ui-surface-subtle)]",
         isDraft && !isSelected && "text-[var(--ui-muted)]"
       )}
