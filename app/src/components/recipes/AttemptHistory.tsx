@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, ChevronUp, History, Pencil, Star, Target, Trash2 } from "lucide-react";
+import { Check, ChevronUp, History, Pencil, Star, Target, Trash2 } from "lucide-react";
 import { Button, EmptyState, Panel } from "@/components/ui";
 import { HalfStarRating } from "./HalfStarRating";
 
@@ -34,13 +34,22 @@ function formatCookedAt(value: string): string {
   });
 }
 
-function RatingPill({ rating, label }: { rating: number | null; label: string }) {
-  if (!rating) return <span className="text-xs text-[var(--ui-muted)]">Unrated</span>;
+function cookedAtParts(value: string): { day: string; month: string; time: string } {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { day: "–", month: "", time: "" };
+  return {
+    day: String(date.getDate()),
+    month: date.toLocaleDateString("en-SG", { month: "short" }),
+    time: date.toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit" }),
+  };
+}
 
+function RatingNote({ rating, label }: { rating: number | null; label: string }) {
+  if (!rating) return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-[#f7c86a]/20 px-2 py-1 text-xs font-semibold text-[#5a3500]">
-      <Star className="h-3.5 w-3.5 fill-[#f7c86a] text-[#c68a18]" />
-      {label}: {rating.toFixed(1).replace(".0", "")}/5
+    <span className="inline-flex items-center gap-1 text-xs text-[var(--ui-muted)]">
+      <Star className="h-3.5 w-3.5 fill-[#f7c86a] text-[#c68a18]" aria-hidden="true" />
+      {label} {rating.toFixed(1).replace(".0", "")}
     </span>
   );
 }
@@ -228,21 +237,21 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
             )}
           </div>
           <p className="mt-1 text-sm text-[var(--ui-muted)]">
-            Cook sessions stay here until one is worth preserving as a recipe version.
+            Every cook is saved here as an attempt. Keep a note for next time, then promote the ones worth keeping into a recipe version.
           </p>
         </div>
       </div>
 
       {error && (
-        <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-3 rounded-md border border-[var(--ui-danger)]/20 bg-[var(--ui-danger-soft)] px-3 py-2 text-sm text-[var(--ui-danger)]">
           {error}
         </p>
       )}
 
       {loading ? (
         <div className="mt-4 space-y-2">
-          <div className="h-16 animate-pulse rounded-lg bg-neutral-100" />
-          <div className="h-16 animate-pulse rounded-lg bg-neutral-100" />
+          <div className="h-16 animate-pulse rounded-lg bg-[var(--ui-surface-subtle)]" />
+          <div className="h-16 animate-pulse rounded-lg bg-[var(--ui-surface-subtle)]" />
         </div>
       ) : attempts.length === 0 ? (
         <EmptyState
@@ -252,74 +261,92 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
         />
       ) : (
         <div className="mt-4 space-y-3">
-          {attempts.slice(0, visibleCount).map((attempt) => {
+          {attempts.slice(0, visibleCount).map((attempt, index) => {
             const isEditing = editingId === attempt.id;
+            const attemptNumber = attempts.length - index;
+            const tile = cookedAtParts(attempt.cookedAt);
             return (
               <div
                 key={attempt.id}
-                className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3"
+                className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3.5 shadow-sm"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-[var(--ui-text)]">
-                        {formatCookedAt(attempt.cookedAt)}
-                      </p>
-                      <RatingPill rating={attempt.rating} label="Difficulty" />
-                      {attempt.dishRating && <RatingPill rating={attempt.dishRating} label="Dish" />}
-                    </div>
+                <div className="flex items-start gap-3">
+                  {/* Date tile — gives each attempt a distinct visual anchor */}
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
+                    <span className="text-base font-bold leading-none">{tile.day}</span>
+                    <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">
+                      {tile.month}
+                    </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    {(attempt.nextTime || attempt.changeNotes.length > 0) && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="border-[#800020]/20 bg-white text-[#800020] shadow-sm hover:bg-[#800020]/5"
-                        iconEnd={<Target className="h-3.5 w-3.5" />}
-                        loading={nextTrySavingId === attempt.id}
-                        onClick={() => saveAsNextTry(attempt)}
-                      >
-                        Save as next try
-                      </Button>
-                    )}
-                    {attempt.promotedVersionId ? (
-                      <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-                        Promoted to version
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <p className="text-sm font-semibold text-[var(--ui-text)]">
+                        Attempt {attemptNumber}
+                      </p>
+                      <span className="text-xs text-[var(--ui-muted)]">
+                        {formatCookedAt(attempt.cookedAt)}{tile.time ? ` · ${tile.time}` : ""}
                       </span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="border-neutral-200 bg-white shadow-sm"
-                        iconEnd={<ArrowUpRight className="h-3.5 w-3.5" />}
-                        loading={promotingId === attempt.id}
-                        onClick={() => promoteAttempt(attempt.id)}
-                      >
-                        {attempt.nextTime ? "Promote next-time changes" : "Promote to version"}
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="quiet"
-                      iconStart={<Pencil className="h-3.5 w-3.5" />}
-                      onClick={() => isEditing ? setEditingId(null) : startEdit(attempt)}
-                    >
-                      {isEditing ? "Cancel" : "Edit"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      iconStart={<Trash2 className="h-3.5 w-3.5" />}
-                      loading={savingId === attempt.id && !isEditing}
-                      onClick={() => deleteAttempt(attempt.id)}
-                    >
-                      Delete
-                    </Button>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <RatingNote rating={attempt.rating} label="Difficulty" />
+                      <RatingNote rating={attempt.dishRating} label="Dish" />
+                      {attempt.promotedVersionId && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--ui-success)]">
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          Saved as a version
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  {!attempt.promotedVersionId && (attempt.nextTime || attempt.changeNotes.length > 0) && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="border-[var(--ui-accent)]/20 bg-ui-surface-raised text-[var(--ui-accent)] shadow-sm hover:bg-[var(--ui-accent)]/5"
+                      iconEnd={<Target className="h-3.5 w-3.5" />}
+                      loading={nextTrySavingId === attempt.id}
+                      onClick={() => saveAsNextTry(attempt)}
+                    >
+                      Use next time
+                    </Button>
+                  )}
+                  {!attempt.promotedVersionId && (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      loading={promotingId === attempt.id}
+                      onClick={() => promoteAttempt(attempt.id)}
+                    >
+                      Promote to version
+                    </Button>
+                  )}
+                  <span className="flex-1" />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    iconStart={<Pencil className="h-3.5 w-3.5" />}
+                    onClick={() => isEditing ? setEditingId(null) : startEdit(attempt)}
+                    aria-label={isEditing ? "Cancel editing attempt" : "Edit attempt"}
+                  >
+                    {isEditing ? "Cancel" : "Edit"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    iconStart={<Trash2 className="h-3.5 w-3.5" />}
+                    loading={savingId === attempt.id && !isEditing}
+                    onClick={() => deleteAttempt(attempt.id)}
+                    aria-label="Delete attempt"
+                  >
+                    Delete
+                  </Button>
+                </div>
+
                 {isEditing ? (
-                  <div className="mt-3 space-y-2 rounded-lg border border-[var(--ui-border)] bg-white p-3">
+                  <div className="mt-3 space-y-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3">
                     <label className="block text-xs font-semibold text-[var(--ui-muted)]">
                       Cooking difficulty
                       <input
@@ -361,7 +388,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                   </div>
                 ) : (
                   <>
-                    <div className="mt-3 rounded-lg border border-[#f0e5d8] bg-white px-3 py-3">
+                    <div className="mt-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-3">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted)]">
                         How did the dish turn out?
                       </p>
@@ -383,20 +410,10 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                       </ul>
                     )}
                     {attempt.nextTime && (
-                      <div className="mt-3 rounded-lg border border-[#800020]/10 bg-[#800020]/5 p-3">
+                      <div className="mt-3 rounded-lg border border-[var(--ui-accent)]/10 bg-[var(--ui-accent)]/5 p-3">
                         <p className="text-sm text-[var(--ui-muted)]">
-                          Next time: {attempt.nextTime}
+                          <span className="font-semibold text-[var(--ui-text)]">Next time:</span> {attempt.nextTime}
                         </p>
-                        {!attempt.promotedVersionId && (
-                          <button
-                            type="button"
-                            onClick={() => promoteAttempt(attempt.id)}
-                            className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-semibold text-white transition hover:bg-[#800020]"
-                          >
-                            Promote these changes to a version
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                          </button>
-                        )}
                       </div>
                     )}
                   </>

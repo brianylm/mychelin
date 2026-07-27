@@ -18,14 +18,40 @@ cd /home/cluser/projects/mychelin/app
 npm run build
 ```
 
-Deploy production:
+Deploy production (the gated, recommended path):
+
+```bash
+cd /home/cluser/projects/mychelin
+npm run deploy
+```
+
+`scripts/deploy.sh` runs the full regression gate, aborting on the first failure:
+
+1. dirty-tree guard — refuses to deploy uncommitted changes (`--allow-dirty` overrides)
+2. typecheck, 3. lint, 4. unit tests (`vitest`), 5. production build
+6. `vercel --prod` from the repo root
+7. re-aliases `mychelin-sg.vercel.app` to the new deployment (CLI deploys do NOT do this automatically)
+8. post-deploy regression smoke (`app/scripts/regression-smoke.mjs`) against the live domain
+
+Escape hatch for emergencies — deploy manually, but you skip every gate:
 
 ```bash
 cd /home/cluser/projects/mychelin
 vercel --prod
+vercel alias set <deployment-url> mychelin-sg.vercel.app --scope team_GhgWJD2sBWKzkZ5m06FWTUQv
 ```
 
 Do **not** deploy from inside `app/`. The root `.vercel/` link points at the correct production project.
+
+Local regression tooling:
+
+```bash
+cd /home/cluser/projects/mychelin/app
+npm test                # unit tests (vitest)
+npm run smoke:regression   # post-deploy HTTP smoke, MYCHELIN_BASE_URL=... to target non-prod
+```
+
+CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + build on every push and PR.
 
 Verify Vercel root directory:
 

@@ -42,28 +42,21 @@ export function RecipeSearchHeader({
                 }
               }}
             />
-            {query && (
-              <button
-                type="button"
-                className={iconButtonClass}
-                onClick={() => onQueryChange("")}
-                aria-label="Clear search"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            )}
+            {/* Single action: clears the query when there is one,
+                collapses the search field when empty — same behavior
+                as the Escape key on the input above. */}
+            <button
+              type="button"
+              className={iconButtonClass}
+              onClick={() => {
+                if (query) onQueryChange("");
+                else onExpandToggle(false);
+              }}
+              aria-label={query ? "Clear search" : "Close search"}
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
-          <button
-            type="button"
-            className={iconButtonClass}
-            onClick={() => {
-              onQueryChange("");
-              onExpandToggle(false);
-            }}
-            aria-label="Close search"
-          >
-            <X className="h-5 w-5" aria-hidden="true" />
-          </button>
         </div>
       ) : (
         <>

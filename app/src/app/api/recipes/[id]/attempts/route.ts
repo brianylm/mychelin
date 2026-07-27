@@ -70,8 +70,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensureRecipeAttemptsTable();
-    await ensureRecipeAttemptDishRatingColumn();
+    await Promise.all([
+      ensureRecipeAttemptsTable(),
+      ensureRecipeAttemptDishRatingColumn(),
+    ]);
     const { id } = await context.params;
     const recipeId = Number(id);
 
@@ -107,8 +109,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensureRecipeAttemptsTable();
-    await ensureRecipeAttemptDishRatingColumn();
+    await Promise.all([
+      ensureRecipeAttemptsTable(),
+      ensureRecipeAttemptDishRatingColumn(),
+    ]);
     const { id } = await context.params;
     const recipeId = Number(id);
 

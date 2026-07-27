@@ -76,7 +76,6 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
         {loading ? (
           <div className="mt-5 rounded-2xl border border-[#800020]/10 bg-white px-4 py-6">
             <LoadingAnimation
-              variant="hei-burst"
               size={132}
               label="Drafting your first recipe..."
             />

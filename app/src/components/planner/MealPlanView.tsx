@@ -20,6 +20,10 @@ import {
 } from "@/components/ui";
 import { getMealDateTime, getDefaultMealEndTime, CalendarEvent } from "@/lib/calendar";
 import { recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
+import {
+  mergeLoggedAttempts,
+  type LoggedAttempt,
+} from "@/lib/planner-logged-meals";
 
 interface MealPlan {
   id: number;
@@ -30,6 +34,9 @@ interface MealPlan {
   notes: string | null;
   cookedAt: string | null;
   recipe?: { id: number; title: string; yield: string | null };
+  // True when this entry comes from a logged cook attempt rather than a
+  // planned meal. Logged entries are read-only in the calendar.
+  loggedAttempt?: boolean;
 }
 
 interface Recipe {
@@ -193,6 +200,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
   const [viewType, setViewType] = useState<ViewType>("week");
   const [offset, setOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
+  const [attempts, setAttempts] = useState<LoggedAttempt[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingSlot, setAddingSlot] = useState<{
@@ -255,7 +263,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
 
   const currentDateRange = getCurrentDates();
 
-  // Fetch meal plans
+  // Fetch meal plans and logged cook attempts
   useEffect(() => {
     let cancelled = false;
 
@@ -266,9 +274,21 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
           `/api/meal-plans?startDate=${currentDateRange.startDate}&endDate=${currentDateRange.endDate}`
         );
         const data = await response.json();
-        if (!cancelled) setPlans(Array.isArray(data) ? data : []);
+        if (!cancelled) {
+          // Tolerate the legacy bare-array response shape.
+          if (Array.isArray(data)) {
+            setPlans(data);
+            setAttempts([]);
+          } else {
+            setPlans(Array.isArray(data?.plans) ? data.plans : []);
+            setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
+          }
+        }
       } catch {
-        if (!cancelled) setPlans([]);
+        if (!cancelled) {
+          setPlans([]);
+          setAttempts([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -388,25 +408,45 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
     [addToast]
   );
 
+  // Logged cook attempts become read-only calendar entries so the plan
+  // shows what was actually cooked, not just what was planned. Merge
+  // rules live in @/lib/planner-logged-meals (unit-tested there).
+  const loggedEntries = useMemo<MealPlan[]>(
+    () =>
+      mergeLoggedAttempts({
+        plans,
+        attempts,
+        visibleDates: currentDateRange.dates,
+      }),
+    [attempts, plans, currentDateRange.dates]
+  );
+
+  const allEntries = useMemo(
+    () => [...plans, ...loggedEntries],
+    [plans, loggedEntries]
+  );
+
   const getPlansForSlot = (date: string, mealType: string) =>
-    plans.filter((p) => p.date === date && p.mealType === mealType);
+    allEntries.filter((p) => p.date === date && p.mealType === mealType);
 
   const getPlansForDate = (date: string) =>
-    plans.filter((p) => p.date === date);
+    allEntries.filter((p) => p.date === date);
 
   const buildCalendarEvents = (mealPlans: MealPlan[]): CalendarEvent[] => {
-    return mealPlans.map((plan) => {
-      const start = getMealDateTime(plan.date, plan.mealType);
-      const end = getDefaultMealEndTime(start);
-      return {
-        id: String(plan.id),
-        title: `${plan.recipe?.title || "Meal"} (${plan.mealType})`,
-        startDate: start,
-        endDate: end,
-        description: `Planned meal: ${plan.recipe?.title || "Meal"}`,
-        recipeId: plan.recipeId,
-      };
-    });
+    return mealPlans
+      .filter((plan) => !plan.loggedAttempt)
+      .map((plan) => {
+        const start = getMealDateTime(plan.date, plan.mealType);
+        const end = getDefaultMealEndTime(start);
+        return {
+          id: String(plan.id),
+          title: `${plan.recipe?.title || "Meal"} (${plan.mealType})`,
+          startDate: start,
+          endDate: end,
+          description: `Planned meal: ${plan.recipe?.title || "Meal"}`,
+          recipeId: plan.recipeId,
+        };
+      });
   };
 
   return (
@@ -594,7 +634,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                 {plan.cookedAt && (
                                   <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
                                     <CheckCircle2 className="h-3 w-3" />
-                                    Cooked
+                                    {plan.loggedAttempt ? "Logged" : "Cooked"}
                                   </span>
                                 )}
                               </div>
@@ -609,15 +649,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                   Cook
                                 </button>
                               )}
-                              <IconButton
-                                variant="ghost"
-                                size="1"
-                                color="red"
-                                className="h-4 w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                                onClick={() => removePlan(plan.id)}
-                              >
-                                <Cross2Icon className="h-3 w-3" />
-                              </IconButton>
+                              {!plan.loggedAttempt && (
+                                <IconButton
+                                  variant="ghost"
+                                  size="1"
+                                  color="red"
+                                  className="h-4 w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                  onClick={() => removePlan(plan.id)}
+                                >
+                                  <Cross2Icon className="h-3 w-3" />
+                                </IconButton>
+                              )}
                             </div>
                           ))}
                           </div>
@@ -803,7 +845,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                 {plan.cookedAt && (
                                   <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
                                     <CheckCircle2 className="h-3 w-3" />
-                                    Cooked
+                                    {plan.loggedAttempt ? "Logged" : "Cooked"}
                                   </span>
                                 )}
                               </div>
@@ -820,15 +862,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                   Cook
                                 </button>
                               )}
-                              <IconButton
-                                variant="ghost"
-                                size="1"
-                                color="red"
-                                className="h-4 w-4"
-                                onClick={() => removePlan(plan.id)}
-                              >
-                                <Cross2Icon className="h-3 w-3" />
-                              </IconButton>
+                              {!plan.loggedAttempt && (
+                                <IconButton
+                                  variant="ghost"
+                                  size="1"
+                                  color="red"
+                                  className="h-4 w-4"
+                                  onClick={() => removePlan(plan.id)}
+                                >
+                                  <Cross2Icon className="h-3 w-3" />
+                                </IconButton>
+                              )}
                             </div>
                           ))}
                         </div>

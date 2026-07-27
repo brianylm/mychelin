@@ -26,6 +26,9 @@ interface CookWithMeSessionProps {
   onClose: () => void;
   onComplete?: () => void | Promise<void>;
   mealPlanId?: number | null;
+  // Active private next try for this recipe, surfaced at session start so
+  // last cook's improvement notes shape this session.
+  nextTry?: { notes: string | null; ingredientCount: number; stepCount: number } | null;
 }
 
 type TimerState = {
@@ -138,6 +141,7 @@ export function CookWithMeSession({
   onClose,
   onComplete,
   mealPlanId,
+  nextTry,
 }: CookWithMeSessionProps) {
   const [actualIngredients, setActualIngredients] = useState<SessionIngredient[]>(() => toAttemptIngredients(recipe));
   const [actualInstructions, setActualInstructions] = useState<SessionInstruction[]>(() => toAttemptInstructions(recipe));
@@ -158,6 +162,7 @@ export function CookWithMeSession({
   const [saving, setSaving] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nextTryBannerDismissed, setNextTryBannerDismissed] = useState(false);
 
   const currentInstruction = instructions[stepIndex];
   const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
@@ -454,6 +459,34 @@ export function CookWithMeSession({
             style={{ width: completed ? "100%" : `${progress}%` }}
           />
         </div>
+
+        {nextTry && !nextTryBannerDismissed && !completed && (
+          <div className="border-b border-[#f7c86a]/25 bg-[#f7c86a]/10 px-4 py-3">
+            <div className="mx-auto flex max-w-2xl items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f7c86a]">
+                  From your next try
+                </p>
+                {nextTry.notes && (
+                  <p className="mt-1 text-sm leading-5 text-white/85">{nextTry.notes}</p>
+                )}
+                {(nextTry.ingredientCount > 0 || nextTry.stepCount > 0) && (
+                  <p className="mt-1 text-xs text-white/50">
+                    {[nextTry.ingredientCount > 0 ? `${nextTry.ingredientCount} ingredient tweak${nextTry.ingredientCount === 1 ? "" : "s"}` : null, nextTry.stepCount > 0 ? `${nextTry.stepCount} step tweak${nextTry.stepCount === 1 ? "" : "s"}` : null].filter(Boolean).join(" · ")} planned for this cook
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setNextTryBannerDismissed(true)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
+                aria-label="Dismiss next try notes"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {!hasContent ? (
           <main className="flex flex-1 items-center justify-center px-6 text-center">

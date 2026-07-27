@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { recipeAttempts, recipeVersions, recipes } from "@/db/schema";
-import { and, desc, eq, inArray, like, max, or } from "drizzle-orm";
+import { and, desc, eq, inArray, max } from "drizzle-orm";
 import { ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable, ensureVersionLabelColumn } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe, canUserEditRecipe, recipesVisibleTo } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
+import { buildLineageSql } from "@/lib/recipe-lineage";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -24,8 +25,9 @@ function normalizeRating(value: unknown): number | null {
 // ─── GET /api/recipes/:id/versions ─────────────────────────
 // Returns the full fork tree's versions so the timeline can show the
 // whole lineage — not just direct ancestors, but siblings and cousins
-// spawned from the same root. Walks up via `recipes.forkedFrom` to find
-// the root, then walks down to collect every descendant.
+// spawned from the same root. The lineage walk is a single recursive
+// CTE (see @/lib/recipe-lineage); it used to be a JS loop costing 2+
+// Turso round trips per ancestor hop.
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const currentUser = await getCurrentUser();
@@ -35,73 +37,27 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
     const startRecipeId = Number(id);
+    const userId = currentUser.id;
 
-    if (!(await canUserAccessRecipe(currentUser.id, startRecipeId))) {
+    // Fire the access check, the lineage walk, and the active-version
+    // lookup in parallel — each is an independent Turso round trip.
+    const [canAccess, lineageRows, recipe] = await Promise.all([
+      canUserAccessRecipe(userId, startRecipeId),
+      db.all<{ id: number }>(buildLineageSql(startRecipeId, userId)),
+      db.query.recipes.findFirst({
+        where: eq(recipes.id, startRecipeId),
+        columns: { activeVersionId: true },
+      }),
+    ]);
+
+    if (!canAccess) {
       return NextResponse.json(
         { error: "Recipe not found" },
         { status: 404 }
       );
     }
 
-    // Walk up to the root ancestor. Stop at user boundaries so shared-page
-    // saves don't leak another user's version history. Cap at 20 hops.
-    let rootId = startRecipeId;
-    const seenUp = new Set<number>();
-    let cursor: number | null = startRecipeId;
-    for (let i = 0; i < 20 && cursor != null && !seenUp.has(cursor); i++) {
-      seenUp.add(cursor);
-      const row: { forkedFrom: string | null; userId: number | null } | undefined =
-        await db.query.recipes.findFirst({
-          where: eq(recipes.id, cursor),
-          columns: { forkedFrom: true, userId: true },
-        });
-      // forkedFrom may be "57" (legacy) or "57:Recipe Title" (new format)
-      const rawParent: string | null | undefined = row?.forkedFrom;
-      const parentId: number = rawParent ? parseInt(rawParent) : NaN;
-      if (!Number.isNaN(parentId) && parentId > 0) {
-        // Check the parent belongs to the same user before crossing
-        const parentRow: { userId: number | null } | undefined =
-          await db.query.recipes.findFirst({
-            where: eq(recipes.id, parentId),
-            columns: { userId: true },
-          });
-        if (parentRow && parentRow.userId === currentUser.id) {
-          rootId = parentId;
-          cursor = parentId;
-        } else {
-          rootId = cursor;
-          cursor = null;
-        }
-      } else {
-        rootId = cursor;
-        cursor = null;
-      }
-    }
-
-    // BFS down from the root to collect every descendant. forkedFrom is
-    // stored as text, so compare via LIKE on the string form.
-    const allRecipeIds = new Set<number>([rootId]);
-    let frontier: number[] = [rootId];
-    for (let depth = 0; depth < 20 && frontier.length > 0; depth++) {
-      const childPredicates = frontier.flatMap((parentId) => [
-        eq(recipes.forkedFrom, String(parentId)),
-        like(recipes.forkedFrom, String(parentId) + ":%"),
-      ]);
-      const children = await db
-        .select({ id: recipes.id, forkedFrom: recipes.forkedFrom })
-        .from(recipes)
-        .where(and(recipesVisibleTo(currentUser.id), or(...childPredicates)));
-      const next: number[] = [];
-      for (const child of children) {
-        if (!allRecipeIds.has(child.id)) {
-          allRecipeIds.add(child.id);
-          next.push(child.id);
-        }
-      }
-      frontier = next;
-    }
-
-    const recipeIds = Array.from(allRecipeIds);
+    const recipeIds = lineageRows.map((row) => row.id);
 
     const versions = recipeIds.length
       ? await db
@@ -118,12 +74,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       instructions: v.instructions ? JSON.parse(v.instructions as string) : [],
       photos: v.photos ? JSON.parse(v.photos as string) : [],
     }));
-
-    // Get the current recipe's active version id
-    const recipe = await db.query.recipes.findFirst({
-      where: eq(recipes.id, startRecipeId),
-      columns: { activeVersionId: true },
-    });
 
     return NextResponse.json({
       versions: parsed,

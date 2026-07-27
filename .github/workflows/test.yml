@@ -1,0 +1,47 @@
+name: Test
+
+# Fast regression gate on every push and PR: typecheck, lint, unit
+# tests, and a production build. Deploys stay local via
+# `npm run deploy` (scripts/deploy.sh), which runs the same checks plus
+# the post-deploy regression smoke.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # needed so lint-changed.sh can diff against origin/main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      - run: npx tsc --noEmit -p tsconfig.json
+
+      # Lints only files changed vs main — the repo carries pre-existing
+      # lint debt; the gate blocks NEW debt, not the world.
+      - run: LINT_BASE=origin/main bash scripts/lint-changed.sh
+        working-directory: .
+
+      - run: npm test
+
+      # db/auth clients are lazy, but Next collects page data at build
+      # time — give the build harmless placeholder env vars.
+      - run: npm run build
+        env:
+          JWT_SECRET: ci-build-placeholder-secret
+          TURSO_DATABASE_URL: libsql://placeholder.turso.io
+          TURSO_AUTH_TOKEN: ci-build-placeholder

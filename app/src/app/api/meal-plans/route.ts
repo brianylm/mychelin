@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { mealPlans } from "@/db/schema";
+import { mealPlans, recipeAttempts, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import { ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { shiftDateKey } from "@/lib/planner-logged-meals";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -14,7 +15,11 @@ const VALID_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ─── GET /api/meal-plans ───────────────────────────────────
-// Returns meal plans owned by the current user, optionally filtered by date.
+// Returns the current user's meal plans for the date range, plus cook
+// attempts logged in that range so the calendar can show what was
+// actually cooked — even when it was never planned. Attempts are
+// fetched with a 1-day pad on each side because cooked_at is UTC while
+// the calendar works in local dates; the client re-filters precisely.
 export async function GET(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
@@ -22,8 +27,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
-    await ensureMealPlanCookedAtColumn();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureMealPlanCookedAtColumn(),
+      ensureRecipeAttemptsTable(),
+    ]);
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get("startDate");
@@ -34,17 +42,42 @@ export async function GET(request: NextRequest) {
     if (startDate) whereConditions.push(gte(mealPlans.date, startDate));
     if (endDate) whereConditions.push(lte(mealPlans.date, endDate));
 
-    const plans = await db.query.mealPlans.findMany({
-      where: and(...whereConditions),
-      with: {
-        recipe: {
-          columns: { id: true, title: true, yield: true },
-        },
-      },
-      orderBy: (mp, { asc }) => [asc(mp.date), asc(mp.mealType)],
-    });
+    const fetchAttempts =
+      startDate && endDate && DATE_RE.test(startDate) && DATE_RE.test(endDate);
 
-    return NextResponse.json(plans);
+    const [plans, attemptRows] = await Promise.all([
+      db.query.mealPlans.findMany({
+        where: and(...whereConditions),
+        with: {
+          recipe: {
+            columns: { id: true, title: true, yield: true },
+          },
+        },
+        orderBy: (mp, { asc }) => [asc(mp.date), asc(mp.mealType)],
+      }),
+      fetchAttempts
+        ? db
+            .select({
+              id: recipeAttempts.id,
+              recipeId: recipeAttempts.recipeId,
+              cookedAt: recipeAttempts.cookedAt,
+              notes: recipeAttempts.notes,
+              mealPlanId: recipeAttempts.mealPlanId,
+              recipeTitle: recipes.title,
+            })
+            .from(recipeAttempts)
+            .innerJoin(recipes, eq(recipeAttempts.recipeId, recipes.id))
+            .where(
+              and(
+                eq(recipeAttempts.userId, currentUser.id),
+                gte(recipeAttempts.cookedAt, shiftDateKey(startDate, -1)),
+                lt(recipeAttempts.cookedAt, shiftDateKey(endDate, 2))
+              )
+            )
+        : Promise.resolve([]),
+    ]);
+
+    return NextResponse.json({ plans, attempts: attemptRows });
   } catch (error) {
     console.error("GET /api/meal-plans error:", error);
     return NextResponse.json(
@@ -63,8 +96,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
-    await ensureMealPlanCookedAtColumn();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureMealPlanCookedAtColumn(),
+    ]);
 
     const body = await request.json();
     const { date, mealType, recipeId, servings, notes } = body;

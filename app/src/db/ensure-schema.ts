@@ -1,14 +1,22 @@
 // Lazy, idempotent schema fixups. These run at the top of routes that
-// depend on the migration having been applied. Once the ALTER succeeds
-// once in the database, subsequent calls are cheap no-ops because the
-// duplicate-column error is swallowed.
+// depend on the migration having been applied.
 //
 // This exists because this project does not auto-run Drizzle migrations
 // on deploy — they have to be applied manually against Turso. Rather
 // than block features on that manual step, the routes that need the
 // schema change bring it along themselves.
+//
+// Cost model: every Turso query is an HTTP round trip, and these flags
+// are per-isolate, so on a cold edge isolate each ensure used to fire
+// its full DDL batch (3–10 sequential round trips) even when the schema
+// was already current — the duplicate-column errors were just
+// swallowed. Now each ensure probes first (one cheap round trip via
+// sqlite_master / PRAGMA table_info) and only runs DDL when something
+// is genuinely missing. Caveat: probes check tables/columns, not
+// indexes — indexes are created together with their table, so a table
+// that exists is assumed to have its indexes.
 
-import { createClient } from "@libsql/client/web";
+import { createClient, type Client } from "@libsql/client/web";
 
 let versionLabelEnsured = false;
 let planningOwnershipEnsured = false;
@@ -23,99 +31,151 @@ let userOAuthEnsured = false;
 let pilotFeedbackEnsured = false;
 let recipeFlagsEnsured = false;
 
-export async function ensureVersionLabelColumn(): Promise<void> {
-  if (versionLabelEnsured) return;
+let _client: Client | null = null;
 
+function getClient(): Client | null {
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
-
-  const client = createClient({ url, authToken });
-  try {
-    await client.execute(`ALTER TABLE recipe_versions ADD COLUMN version_label text`);
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    const msg = message.toLowerCase();
-    if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-      // Unknown error — log it but don't block the request. Worst case
-      // the downstream insert will surface a clearer error.
-      console.warn("ensureVersionLabelColumn:", message);
-    }
-  }
-
-  // Best-effort backfill of any rows missing a label. Cheap after the
-  // first run because the WHERE clause matches nothing.
-  try {
-    await client.execute(
-      `UPDATE recipe_versions SET version_label = CAST(version_number AS TEXT) WHERE version_label IS NULL`
-    );
-  } catch {
-    /* ignore */
-  }
-
-  versionLabelEnsured = true;
+  if (!url) return null;
+  if (!_client) _client = createClient({ url, authToken });
+  return _client;
 }
 
+// One round trip: which of these tables/indexes already exist?
+async function existingObjects(client: Client, names: string[]): Promise<Set<string>> {
+  const placeholders = names.map(() => "?").join(",");
+  const res = await client.execute({
+    sql: `SELECT name FROM sqlite_master WHERE name IN (${placeholders})`,
+    args: names,
+  });
+  return new Set(res.rows.map((row) => String(row.name)));
+}
 
-export async function ensurePlanningOwnershipColumns(): Promise<void> {
-  if (planningOwnershipEnsured) return;
+// One round trip: column names of a table. Table names are code
+// constants, never user input, so identifier interpolation is safe.
+async function tableColumns(client: Client, table: string): Promise<Set<string>> {
+  const res = await client.execute(`PRAGMA table_info(${table})`);
+  return new Set(res.rows.map((row) => String(row.name)));
+}
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
+function isDuplicateError(e: unknown): boolean {
+  const message = e instanceof Error ? e.message : String(e);
+  const msg = message.toLowerCase();
+  return msg.includes("duplicate") || msg.includes("already exists");
+}
 
-  const client = createClient({ url, authToken });
-  const statements = [
-    `ALTER TABLE meal_plans ADD COLUMN user_id integer REFERENCES users(id) ON DELETE cascade`,
-    `ALTER TABLE inventory ADD COLUMN user_id integer REFERENCES users(id) ON DELETE cascade`,
-    `UPDATE meal_plans SET user_id = (SELECT id FROM users ORDER BY id LIMIT 1) WHERE user_id IS NULL`,
-    `UPDATE inventory SET user_id = (SELECT id FROM users ORDER BY id LIMIT 1) WHERE user_id IS NULL`,
-  ];
-
+// Runs DDL statements best-effort: duplicate errors are swallowed,
+// anything else is logged but does not block the request.
+async function runDdl(client: Client, statements: string[], label: string): Promise<void> {
   for (const statement of statements) {
     try {
       await client.execute(statement);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensurePlanningOwnershipColumns:", message);
+      if (!isDuplicateError(e)) {
+        console.warn(label + ":", e instanceof Error ? e.message : String(e));
       }
     }
   }
+}
 
+export async function ensureVersionLabelColumn(): Promise<void> {
+  if (versionLabelEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  try {
+    if ((await tableColumns(client, "recipe_versions")).has("version_label")) {
+      versionLabelEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureVersionLabelColumn probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  await runDdl(client, [
+    `ALTER TABLE recipe_versions ADD COLUMN version_label text`,
+    // Best-effort backfill of any rows missing a label. Cheap after the
+    // first run because the WHERE clause matches nothing.
+    `UPDATE recipe_versions SET version_label = CAST(version_number AS TEXT) WHERE version_label IS NULL`,
+  ], "ensureVersionLabelColumn");
+
+  versionLabelEnsured = true;
+}
+
+export async function ensurePlanningOwnershipColumns(): Promise<void> {
+  if (planningOwnershipEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  let mealPlanCols: Set<string>;
+  let inventoryCols: Set<string>;
+  try {
+    [mealPlanCols, inventoryCols] = await Promise.all([
+      tableColumns(client, "meal_plans"),
+      tableColumns(client, "inventory"),
+    ]);
+  } catch (e: unknown) {
+    console.warn("ensurePlanningOwnershipColumns probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const statements: string[] = [];
+  if (!mealPlanCols.has("user_id")) {
+    statements.push(
+      `ALTER TABLE meal_plans ADD COLUMN user_id integer REFERENCES users(id) ON DELETE cascade`,
+      `UPDATE meal_plans SET user_id = (SELECT id FROM users ORDER BY id LIMIT 1) WHERE user_id IS NULL`
+    );
+  }
+  if (!inventoryCols.has("user_id")) {
+    statements.push(
+      `ALTER TABLE inventory ADD COLUMN user_id integer REFERENCES users(id) ON DELETE cascade`,
+      `UPDATE inventory SET user_id = (SELECT id FROM users ORDER BY id LIMIT 1) WHERE user_id IS NULL`
+    );
+  }
+
+  await runDdl(client, statements, "ensurePlanningOwnershipColumns");
   planningOwnershipEnsured = true;
 }
+
 export async function ensureMealPlanCookedAtColumn(): Promise<void> {
   if (mealPlanCookedAtEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
-
-  const client = createClient({ url, authToken });
   try {
-    await client.execute(`ALTER TABLE meal_plans ADD COLUMN cooked_at text`);
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    const msg = message.toLowerCase();
-    if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-      console.warn("ensureMealPlanCookedAtColumn:", message);
+    if ((await tableColumns(client, "meal_plans")).has("cooked_at")) {
+      mealPlanCookedAtEnsured = true;
+      return;
     }
+  } catch (e: unknown) {
+    console.warn("ensureMealPlanCookedAtColumn probe:", e instanceof Error ? e.message : String(e));
+    return;
   }
+
+  await runDdl(client, [
+    `ALTER TABLE meal_plans ADD COLUMN cooked_at text`,
+  ], "ensureMealPlanCookedAtColumn");
 
   mealPlanCookedAtEnsured = true;
 }
 
 export async function ensureRecipeAttemptsTable(): Promise<void> {
   if (recipeAttemptsEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
+  try {
+    if ((await existingObjects(client, ["recipe_attempts"])).has("recipe_attempts")) {
+      recipeAttemptsEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureRecipeAttemptsTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
 
-  const client = createClient({ url, authToken });
-  const statements = [
+  await runDdl(client, [
     `CREATE TABLE IF NOT EXISTS recipe_attempts (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       recipe_id integer NOT NULL REFERENCES recipes(id) ON DELETE cascade,
@@ -138,19 +198,7 @@ export async function ensureRecipeAttemptsTable(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS recipe_attempts_user_id_idx ON recipe_attempts(user_id)`,
     `CREATE INDEX IF NOT EXISTS recipe_attempts_version_id_idx ON recipe_attempts(version_id)`,
     `CREATE INDEX IF NOT EXISTS recipe_attempts_meal_plan_id_idx ON recipe_attempts(meal_plan_id)`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureRecipeAttemptsTable:", message);
-      }
-    }
-  }
+  ], "ensureRecipeAttemptsTable");
 
   recipeAttemptsEnsured = true;
 }
@@ -158,21 +206,22 @@ export async function ensureRecipeAttemptsTable(): Promise<void> {
 
 export async function ensureRecipeAttemptDishRatingColumn(): Promise<void> {
   if (recipeAttemptDishRatingEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
-
-  const client = createClient({ url, authToken });
   try {
-    await client.execute("ALTER TABLE recipe_attempts ADD COLUMN dish_rating real");
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    const msg = message.toLowerCase();
-    if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-      console.warn("ensureRecipeAttemptDishRatingColumn:", message);
+    if ((await tableColumns(client, "recipe_attempts")).has("dish_rating")) {
+      recipeAttemptDishRatingEnsured = true;
+      return;
     }
+  } catch (e: unknown) {
+    console.warn("ensureRecipeAttemptDishRatingColumn probe:", e instanceof Error ? e.message : String(e));
+    return;
   }
+
+  await runDdl(client, [
+    "ALTER TABLE recipe_attempts ADD COLUMN dish_rating real",
+  ], "ensureRecipeAttemptDishRatingColumn");
 
   recipeAttemptDishRatingEnsured = true;
 }
@@ -180,13 +229,20 @@ export async function ensureRecipeAttemptDishRatingColumn(): Promise<void> {
 
 export async function ensureRecipeNextTriesTable(): Promise<void> {
   if (recipeNextTriesEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
+  try {
+    if ((await existingObjects(client, ["recipe_next_tries"])).has("recipe_next_tries")) {
+      recipeNextTriesEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureRecipeNextTriesTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
 
-  const client = createClient({ url, authToken });
-  const statements = [
+  await runDdl(client, [
     `CREATE TABLE IF NOT EXISTS recipe_next_tries (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       recipe_id integer NOT NULL REFERENCES recipes(id) ON DELETE cascade,
@@ -206,19 +262,7 @@ export async function ensureRecipeNextTriesTable(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS recipe_next_tries_status_idx ON recipe_next_tries(status)`,
     `CREATE INDEX IF NOT EXISTS recipe_next_tries_source_attempt_id_idx ON recipe_next_tries(source_attempt_id)`,
     `CREATE INDEX IF NOT EXISTS recipe_next_tries_source_version_id_idx ON recipe_next_tries(source_version_id)`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureRecipeNextTriesTable:", message);
-      }
-    }
-  }
+  ], "ensureRecipeNextTriesTable");
 
   recipeNextTriesEnsured = true;
 }
@@ -226,44 +270,52 @@ export async function ensureRecipeNextTriesTable(): Promise<void> {
 
 export async function ensureUserOnboardingColumns(): Promise<void> {
   if (userOnboardingEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
-
-  const client = createClient({ url, authToken });
-  const statements = [
-    `ALTER TABLE users ADD COLUMN onboarding_completed integer NOT NULL DEFAULT 0`,
-    `ALTER TABLE users ADD COLUMN cooking_goal text`,
-    `ALTER TABLE users ADD COLUMN cooking_frequency text`,
-    `ALTER TABLE users ADD COLUMN first_capture_mode text`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureUserOnboardingColumns:", message);
-      }
-    }
+  let userCols: Set<string>;
+  try {
+    userCols = await tableColumns(client, "users");
+  } catch (e: unknown) {
+    console.warn("ensureUserOnboardingColumns probe:", e instanceof Error ? e.message : String(e));
+    return;
   }
 
+  const statements: string[] = [];
+  if (!userCols.has("onboarding_completed")) {
+    statements.push(`ALTER TABLE users ADD COLUMN onboarding_completed integer NOT NULL DEFAULT 0`);
+  }
+  if (!userCols.has("cooking_goal")) {
+    statements.push(`ALTER TABLE users ADD COLUMN cooking_goal text`);
+  }
+  if (!userCols.has("cooking_frequency")) {
+    statements.push(`ALTER TABLE users ADD COLUMN cooking_frequency text`);
+  }
+  if (!userCols.has("first_capture_mode")) {
+    statements.push(`ALTER TABLE users ADD COLUMN first_capture_mode text`);
+  }
+
+  await runDdl(client, statements, "ensureUserOnboardingColumns");
   userOnboardingEnsured = true;
 }
 
 
 export async function ensureUsageEventsTable(): Promise<void> {
   if (usageEventsEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
+  try {
+    if ((await existingObjects(client, ["usage_events"])).has("usage_events")) {
+      usageEventsEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureUsageEventsTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
 
-  const client = createClient({ url, authToken });
-  const statements = [
+  await runDdl(client, [
     `CREATE TABLE IF NOT EXISTS usage_events (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       user_id integer REFERENCES users(id) ON DELETE set null,
@@ -281,19 +333,7 @@ export async function ensureUsageEventsTable(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS usage_events_created_at_idx ON usage_events(created_at)`,
     `CREATE INDEX IF NOT EXISTS usage_events_recipe_id_idx ON usage_events(recipe_id)`,
     `CREATE INDEX IF NOT EXISTS usage_events_meal_plan_id_idx ON usage_events(meal_plan_id)`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureUsageEventsTable:", message);
-      }
-    }
-  }
+  ], "ensureUsageEventsTable");
 
   usageEventsEnsured = true;
 }
@@ -301,113 +341,130 @@ export async function ensureUsageEventsTable(): Promise<void> {
 
 export async function ensureNotificationTables(): Promise<void> {
   if (notificationsEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
-
-  const client = createClient({ url, authToken });
-  const statements = [
-    `CREATE TABLE IF NOT EXISTS notification_preferences (
-      user_id integer PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE cascade,
-      weekly_cooking_goal integer NOT NULL DEFAULT 2,
-      rhythm_reminders integer NOT NULL DEFAULT 1,
-      meal_reminders integer NOT NULL DEFAULT 1,
-      prep_reminders integer NOT NULL DEFAULT 1,
-      review_reminders integer NOT NULL DEFAULT 1,
-      family_activity integer NOT NULL DEFAULT 1,
-      reminder_time text NOT NULL DEFAULT '18:00',
-      timezone text NOT NULL DEFAULT 'Asia/Singapore',
-      updated_at text NOT NULL
-    )`,
-    `CREATE TABLE IF NOT EXISTS push_subscriptions (
-      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-      user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
-      endpoint text NOT NULL UNIQUE,
-      p256dh text NOT NULL,
-      auth text NOT NULL,
-      user_agent text,
-      disabled_at text,
-      last_success_at text,
-      created_at text NOT NULL,
-      updated_at text NOT NULL
-    )`,
-    `CREATE INDEX IF NOT EXISTS push_subscriptions_user_id_idx ON push_subscriptions(user_id)`,
-    `CREATE TABLE IF NOT EXISTS notification_jobs (
-      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-      user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
-      type text NOT NULL,
-      title text NOT NULL,
-      body text NOT NULL,
-      url text NOT NULL DEFAULT '/app',
-      due_at text NOT NULL,
-      sent_at text,
-      canceled_at text,
-      attempts integer NOT NULL DEFAULT 0,
-      last_error text,
-      created_at text NOT NULL
-    )`,
-    `CREATE INDEX IF NOT EXISTS notification_jobs_due_idx ON notification_jobs(due_at, sent_at, canceled_at)`,
-    `CREATE INDEX IF NOT EXISTS notification_jobs_user_id_idx ON notification_jobs(user_id)`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureNotificationTables:", message);
-      }
-    }
+  let existing: Set<string>;
+  try {
+    existing = await existingObjects(client, [
+      "notification_preferences",
+      "push_subscriptions",
+      "notification_jobs",
+    ]);
+  } catch (e: unknown) {
+    console.warn("ensureNotificationTables probe:", e instanceof Error ? e.message : String(e));
+    return;
   }
 
+  const statements: string[] = [];
+  if (!existing.has("notification_preferences")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS notification_preferences (
+        user_id integer PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE cascade,
+        weekly_cooking_goal integer NOT NULL DEFAULT 2,
+        rhythm_reminders integer NOT NULL DEFAULT 1,
+        meal_reminders integer NOT NULL DEFAULT 1,
+        prep_reminders integer NOT NULL DEFAULT 1,
+        review_reminders integer NOT NULL DEFAULT 1,
+        family_activity integer NOT NULL DEFAULT 1,
+        reminder_time text NOT NULL DEFAULT '18:00',
+        timezone text NOT NULL DEFAULT 'Asia/Singapore',
+        updated_at text NOT NULL
+      )`
+    );
+  }
+  if (!existing.has("push_subscriptions")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        endpoint text NOT NULL UNIQUE,
+        p256dh text NOT NULL,
+        auth text NOT NULL,
+        user_agent text,
+        disabled_at text,
+        last_success_at text,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS push_subscriptions_user_id_idx ON push_subscriptions(user_id)`
+    );
+  }
+  if (!existing.has("notification_jobs")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS notification_jobs (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        type text NOT NULL,
+        title text NOT NULL,
+        body text NOT NULL,
+        url text NOT NULL DEFAULT '/app',
+        due_at text NOT NULL,
+        sent_at text,
+        canceled_at text,
+        attempts integer NOT NULL DEFAULT 0,
+        last_error text,
+        created_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS notification_jobs_due_idx ON notification_jobs(due_at, sent_at, canceled_at)`,
+      `CREATE INDEX IF NOT EXISTS notification_jobs_user_id_idx ON notification_jobs(user_id)`
+    );
+  }
+
+  await runDdl(client, statements, "ensureNotificationTables");
   notificationsEnsured = true;
 }
 
 export async function ensureUserOAuthColumns(): Promise<void> {
   if (userOAuthEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
-
-  const client = createClient({ url, authToken });
-  const statements = [
-    `ALTER TABLE users ADD COLUMN auth_provider text NOT NULL DEFAULT 'password'`,
-    `ALTER TABLE users ADD COLUMN google_sub text`,
-    `ALTER TABLE users ADD COLUMN email_verified integer NOT NULL DEFAULT 0`,
-    `CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_idx ON users(google_sub) WHERE google_sub IS NOT NULL`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureUserOAuthColumns:", message);
-      }
-    }
+  let userCols: Set<string>;
+  try {
+    userCols = await tableColumns(client, "users");
+  } catch (e: unknown) {
+    console.warn("ensureUserOAuthColumns probe:", e instanceof Error ? e.message : String(e));
+    return;
   }
 
+  const statements: string[] = [];
+  if (!userCols.has("auth_provider")) {
+    statements.push(`ALTER TABLE users ADD COLUMN auth_provider text NOT NULL DEFAULT 'password'`);
+  }
+  if (!userCols.has("google_sub")) {
+    statements.push(`ALTER TABLE users ADD COLUMN google_sub text`);
+  }
+  if (!userCols.has("email_verified")) {
+    statements.push(`ALTER TABLE users ADD COLUMN email_verified integer NOT NULL DEFAULT 0`);
+  }
+  if (statements.length > 0) {
+    statements.push(`CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_idx ON users(google_sub) WHERE google_sub IS NOT NULL`);
+  }
+
+  await runDdl(client, statements, "ensureUserOAuthColumns");
   userOAuthEnsured = true;
 }
 
 export async function ensurePilotFeedbackTable(): Promise<void> {
   if (pilotFeedbackEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
+  try {
+    if ((await existingObjects(client, ["pilot_feedback"])).has("pilot_feedback")) {
+      pilotFeedbackEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensurePilotFeedbackTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
 
-  const client = createClient({ url, authToken });
-  const statements = [
+  await runDdl(client, [
     `CREATE TABLE IF NOT EXISTS pilot_feedback (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-      user_id integer REFERENCES users(id) ON DELETE cascade,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
       stage text NOT NULL,
       rating integer,
       comment text,
@@ -417,19 +474,7 @@ export async function ensurePilotFeedbackTable(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS pilot_feedback_user_id_idx ON pilot_feedback(user_id)`,
     `CREATE INDEX IF NOT EXISTS pilot_feedback_stage_idx ON pilot_feedback(stage)`,
     `CREATE INDEX IF NOT EXISTS pilot_feedback_created_at_idx ON pilot_feedback(created_at)`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensurePilotFeedbackTable:", message);
-      }
-    }
-  }
+  ], "ensurePilotFeedbackTable");
 
   pilotFeedbackEnsured = true;
 }
@@ -437,36 +482,31 @@ export async function ensurePilotFeedbackTable(): Promise<void> {
 
 export async function ensureRecipeFlagsTable(): Promise<void> {
   if (recipeFlagsEnsured) return;
+  const client = getClient();
+  if (!client) return;
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-  if (!url) return;
+  try {
+    if ((await existingObjects(client, ["recipe_flags"])).has("recipe_flags")) {
+      recipeFlagsEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureRecipeFlagsTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
 
-  const client = createClient({ url, authToken });
-  const statements = [
+  await runDdl(client, [
     `CREATE TABLE IF NOT EXISTS recipe_flags (
       id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       recipe_id integer NOT NULL REFERENCES recipes(id) ON DELETE cascade,
-      user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+      user_id integer REFERENCES users(id) ON DELETE cascade,
       flag text NOT NULL,
       created_at text NOT NULL
     )`,
     `CREATE UNIQUE INDEX IF NOT EXISTS recipe_flags_unique_idx ON recipe_flags(recipe_id, user_id, flag)`,
     `CREATE INDEX IF NOT EXISTS recipe_flags_user_id_idx ON recipe_flags(user_id)`,
     `CREATE INDEX IF NOT EXISTS recipe_flags_recipe_id_idx ON recipe_flags(recipe_id)`,
-  ];
-
-  for (const statement of statements) {
-    try {
-      await client.execute(statement);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      const msg = message.toLowerCase();
-      if (!msg.includes("duplicate") && !msg.includes("already exists")) {
-        console.warn("ensureRecipeFlagsTable:", message);
-      }
-    }
-  }
+  ], "ensureRecipeFlagsTable");
 
   recipeFlagsEnsured = true;
 }

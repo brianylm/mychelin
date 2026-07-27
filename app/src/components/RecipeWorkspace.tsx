@@ -152,9 +152,29 @@ function RecipeWorkspaceContent({
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }) {
-  const { selectRecipe } = useRecipeStore();
+  const { selectRecipe, selectedRecipeId } = useRecipeStore();
   const qc = useQueryClient();
   const { addToast } = useToast();
+
+  // Selecting a recipe must always reveal it. The sidebar is available
+  // over every view (e.g. the planner), and its onSelect only updates
+  // store state — without this, tapping a recipe in the panel while on
+  // the Plan view closed the drawer but left the calendar on screen.
+  // Only react to the selection *changing* — otherwise navigating to
+  // Plan with a recipe already selected would be forced straight back
+  // to the recipes view.
+  const prevSelectedIdRef = useRef(selectedRecipeId);
+  useEffect(() => {
+    const previousId = prevSelectedIdRef.current;
+    prevSelectedIdRef.current = selectedRecipeId;
+    if (
+      selectedRecipeId !== null &&
+      selectedRecipeId !== previousId &&
+      currentView !== "recipes"
+    ) {
+      setCurrentView("recipes");
+    }
+  }, [selectedRecipeId, currentView, setCurrentView]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [shoppingDateRange, setShoppingDateRange] = useState<{ start: string; end: string } | undefined>();
   const [manualScratchpadOpen, setManualScratchpadOpen] = useState(false);

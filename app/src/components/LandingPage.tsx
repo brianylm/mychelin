@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Libre_Baskerville, Newsreader } from "next/font/google";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 
 const brandSerif = Newsreader({
@@ -120,16 +120,42 @@ export function LandingPage() {
 
       {/* ==================== HERO ==================== */}
       <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
-        {/* Background image */}
-        <Image
-          src="/images/hero-family-table.jpg"
-          alt="A family sharing a home-cooked meal together"
-          fill
-          preload
-          fetchPriority="high"
-          sizes="100vw"
-          className="landing-hero-image absolute inset-0 h-full w-full object-cover"
-        />
+        {/* Background image — art-directed: portrait crop on mobile so the
+            browser never upscales a thin slice of the 16:9 original. */}
+        {(() => {
+          const common = {
+            alt: "A family sharing a home-cooked meal together",
+            sizes: "100vw",
+            quality: 90,
+          } as const;
+          const {
+            props: { srcSet: mobileSrcSet },
+          } = getImageProps({
+            ...common,
+            src: "/images/hero-family-table-mobile.jpg",
+            fill: true,
+          });
+          const {
+            props: { srcSet: desktopSrcSet, alt: desktopAlt, ...desktopRest },
+          } = getImageProps({
+            ...common,
+            src: "/images/hero-family-table.jpg",
+            fill: true,
+            preload: true,
+            fetchPriority: "high",
+          });
+          return (
+            <picture>
+              <source media="(max-width: 639px)" srcSet={mobileSrcSet} />
+              <source media="(min-width: 640px)" srcSet={desktopSrcSet} />
+              <img
+                {...desktopRest}
+                alt={desktopAlt}
+                className="landing-hero-image absolute inset-0 h-full w-full object-cover"
+              />
+            </picture>
+          );
+        })()}
         {/* Mobile readability scrim. Keeps faces visible and reserves
             the strongest wash for the copy area rather than the whole image. */}
         <div className="landing-hero-readable-scrim absolute inset-0 sm:hidden" />

@@ -15,6 +15,7 @@ import { RecipeSteps } from "./RecipeSteps";
 import { StorySection } from "./StorySection";
 import { RatingSection } from "./RatingSection";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { Dialog } from "@/components/ui/Dialog";
 
 import { PhotoUploadSection } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
@@ -107,8 +108,8 @@ type RecipeNextTry = {
 };
 
 const recipeFlagClass: Record<RecipeFlag, string> = {
-  newly_added: "border-[#d7c7ad] bg-[#fff8ea] text-[#6f4a12]",
-  try_soon: "border-[#800020]/20 bg-[#800020]/10 text-[#800020]",
+  newly_added: "border-ui-warning/25 bg-ui-warning-soft text-ui-warning-text",
+  try_soon: "border-ui-accent/20 bg-ui-accent/10 text-ui-accent",
 };
 
 function RecipeFlagBadges({ flags }: { flags?: RecipeFlag[] }) {
@@ -278,16 +279,16 @@ function NextTryPanel({
   onDismiss: () => void;
 }) {
   return (
-    <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+    <section className="rounded-2xl border border-ui-warning/25 bg-ui-warning-soft p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ui-warning">
             Private next try
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-[#241017]">
+          <h2 className="mt-1 text-lg font-semibold text-ui-text">
             Try this before changing the definitive recipe
           </h2>
-          <p className="mt-1 text-sm leading-6 text-neutral-600">
+          <p className="mt-1 text-sm leading-6 text-ui-muted">
             This is not shared. Promote it to a version only after you want to preserve it.
           </p>
         </div>
@@ -296,7 +297,7 @@ function NextTryPanel({
             type="button"
             onClick={onPromote}
             disabled={busy !== null}
-            className="rounded-full bg-[#17131f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#800020] disabled:opacity-60"
+            className="rounded-full bg-ui-action px-3 py-2 text-xs font-semibold text-white transition hover:bg-ui-accent disabled:opacity-60"
           >
             {busy === "promote" ? "Promoting..." : "Promote to version"}
           </button>
@@ -304,7 +305,7 @@ function NextTryPanel({
             type="button"
             onClick={onSetDefinitive}
             disabled={busy !== null}
-            className="rounded-full border border-[#800020]/20 bg-white px-3 py-2 text-xs font-semibold text-[#800020] transition hover:bg-[#800020]/5 disabled:opacity-60"
+            className="rounded-full border border-ui-accent/20 bg-ui-surface-raised px-3 py-2 text-xs font-semibold text-ui-accent transition hover:bg-ui-accent/5 disabled:opacity-60"
           >
             {busy === "definitive" ? "Setting..." : "Promote + set definitive"}
           </button>
@@ -312,7 +313,7 @@ function NextTryPanel({
             type="button"
             onClick={onDismiss}
             disabled={busy !== null}
-            className="rounded-full bg-white/70 px-3 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-white disabled:opacity-60"
+            className="rounded-full bg-ui-surface-raised/70 px-3 py-2 text-xs font-semibold text-ui-muted transition hover:bg-ui-surface-raised disabled:opacity-60"
           >
             {busy === "dismiss" ? "Discarding..." : "Discard"}
           </button>
@@ -320,36 +321,36 @@ function NextTryPanel({
       </div>
 
       {nextTry.notes && (
-        <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-sm leading-6 text-neutral-700">
+        <p className="mt-3 rounded-xl bg-ui-surface-raised/70 px-3 py-2 text-sm leading-6 text-ui-text">
           {nextTry.notes}
         </p>
       )}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {nextTry.ingredients.length > 0 && (
-          <div className="rounded-xl bg-white/75 p-3">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Ingredients to try</h3>
-            <ul className="mt-2 space-y-1.5 text-sm text-neutral-700">
+          <div className="rounded-xl bg-ui-surface-raised/75 p-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ui-muted">Ingredients to try</h3>
+            <ul className="mt-2 space-y-1.5 text-sm text-ui-text">
               {nextTry.ingredients.slice(0, 5).map((ingredient, index) => (
                 <li key={ingredient.name + index} className="flex gap-2">
-                  <span className="font-semibold text-[#521224]">{formatNextTryAmount(ingredient)}</span>
+                  <span className="font-semibold text-accent-dark">{formatNextTryAmount(ingredient)}</span>
                   <span>{ingredient.name}</span>
                 </li>
               ))}
-              {nextTry.ingredients.length > 5 && <li className="text-xs text-neutral-400">+ {nextTry.ingredients.length - 5} more</li>}
+              {nextTry.ingredients.length > 5 && <li className="text-xs text-ui-muted">+ {nextTry.ingredients.length - 5} more</li>}
             </ul>
           </div>
         )}
         {nextTry.instructions.length > 0 && (
-          <div className="rounded-xl bg-white/75 p-3">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Steps to try</h3>
-            <ol className="mt-2 space-y-1.5 text-sm text-neutral-700">
+          <div className="rounded-xl bg-ui-surface-raised/75 p-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ui-muted">Steps to try</h3>
+            <ol className="mt-2 space-y-1.5 text-sm text-ui-text">
               {nextTry.instructions.slice(0, 3).map((step, index) => (
                 <li key={index} className="line-clamp-2">
-                  <span className="font-semibold text-[#521224]">{step.step ?? step.stepNumber ?? index + 1}.</span> {instructionText(step)}
+                  <span className="font-semibold text-accent-dark">{step.step ?? step.stepNumber ?? index + 1}.</span> {instructionText(step)}
                 </li>
               ))}
-              {nextTry.instructions.length > 3 && <li className="text-xs text-neutral-400">+ {nextTry.instructions.length - 3} more steps</li>}
+              {nextTry.instructions.length > 3 && <li className="text-xs text-ui-muted">+ {nextTry.instructions.length - 3} more steps</li>}
             </ol>
           </div>
         )}
@@ -960,32 +961,14 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
 
   // Surprise-me-by modal — extracted as a variable so it renders in
   // BOTH the card-grid return and the recipe-detail return.
-  const surpriseByModal = surpriseByOpen ? (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={() => setSurpriseByOpen(false)}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-1 flex items-center gap-2">
-          <Target className="h-5 w-5 text-[#800020]" />
-          <h3 className="text-base font-semibold text-neutral-900">
-            Surprise me by…
-          </h3>
-        </div>
-        <p className="mb-4 text-xs text-neutral-500">
-          Narrow the random pick by an ingredient, cuisine, or keyword.
-        </p>
-        <input
-          type="text"
-          autoFocus
-          value={surpriseByQuery}
-          onChange={(e) => setSurpriseByQuery(e.target.value)}
-          placeholder="Search by ingredient, cuisine, or keyword…"
-          className="mb-4 w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2.5 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
-        />
+  const surpriseByModal = (
+    <Dialog
+      open={surpriseByOpen}
+      onClose={() => setSurpriseByOpen(false)}
+      title="Surprise me by…"
+      subtitle="Narrow the random pick by an ingredient, cuisine, or keyword."
+      mobileFullHeight={false}
+      footer={
         <div className="flex gap-2">
           <Button
             variant="soft"
@@ -995,7 +978,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             Cancel
           </Button>
           <Button
-            className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
+            className="flex-1 bg-ui-action hover:bg-ui-accent text-white"
             onClick={async () => {
               const q = surpriseByQuery.trim();
               if (!q) {
@@ -1027,9 +1010,19 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             Pick one
           </Button>
         </div>
-      </div>
-    </div>
-  ) : null;
+      }
+    >
+      <input
+        type="text"
+        autoFocus
+        value={surpriseByQuery}
+        onChange={(e) => setSurpriseByQuery(e.target.value)}
+        placeholder="Search by ingredient, cuisine, or keyword…"
+        aria-label="Narrow random pick by ingredient, cuisine, or keyword"
+        className="w-full rounded-xl border border-ui-border-strong bg-ui-surface-subtle px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
+      />
+    </Dialog>
+  );
 
   // Keep the Library geometry stable while recipes load.
   if (loading && recipes.length === 0) {
@@ -1427,7 +1420,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           subtitle={
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/75">
               {recipeEditMode ? (
-                <span className="rounded-full bg-[#f7c86a]/95 px-2.5 py-1 font-semibold text-[#17131f]">Editing</span>
+                <span className="rounded-full bg-[#f7c86a]/95 px-2.5 py-1 font-semibold text-ui-action">Editing</span>
               ) : (
                 <span className="rounded-full bg-black/35 px-2.5 py-1 font-semibold text-white">Reading mode</span>
               )}
@@ -1455,7 +1448,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                 <button
                   type="button"
                   onClick={handleSaveAndLock}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#17131f] shadow-sm transition hover:bg-[#fff7e8]"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-ui-surface-raised px-3 text-xs font-semibold text-ui-action shadow-sm transition hover:bg-[#fff7e8]"
                 >
                   <Check className="h-3.5 w-3.5" />
                   Save and lock
@@ -1464,7 +1457,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                 <button
                   type="button"
                   onClick={() => setRecipeEditMode(true)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-[#17131f] shadow-sm transition hover:bg-[#fff7e8]"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-ui-surface-raised px-3 text-xs font-semibold text-ui-action shadow-sm transition hover:bg-[#fff7e8]"
                 >
                   <PencilLine className="h-3.5 w-3.5" />
                   Edit
@@ -1520,19 +1513,19 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               <button
                 type="button"
                 onClick={() => setShowScratchpadModal(true)}
-                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+                className="group flex w-full items-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-surface-raised px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-ui-accent/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] sm:h-10 sm:w-10 sm:rounded-xl">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent sm:h-10 sm:w-10 sm:rounded-xl">
                   <PencilLine className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2 sm:block">
-                    <span className="text-sm font-semibold text-[#241017]">Write or paste recipe</span>
-                    <span className="rounded-full bg-[#800020]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224] sm:ml-0 sm:mt-2 sm:inline-flex">
+                    <span className="text-sm font-semibold text-ui-text">Write or paste recipe</span>
+                    <span className="rounded-full bg-ui-accent/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent-dark sm:ml-0 sm:mt-2 sm:inline-flex">
                       Local
                     </span>
                   </span>
-                  <span className="mt-0.5 hidden text-xs leading-relaxed text-neutral-600 sm:block">
+                  <span className="mt-0.5 hidden text-xs leading-relaxed text-ui-muted sm:block">
                     Type naturally, paste OCR text, or drop in rough notes.
                   </span>
                 </span>
@@ -1544,19 +1537,19 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                   setPasteMode("url");
                   setShowPasteModal(true);
                 }}
-                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+                className="group flex w-full items-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-surface-raised px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-ui-accent/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] sm:h-10 sm:w-10 sm:rounded-xl">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent sm:h-10 sm:w-10 sm:rounded-xl">
                   <Link2 className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2 sm:block">
-                    <span className="text-sm font-semibold text-[#241017]">Import from link</span>
-                    <span className="rounded-full bg-[#800020]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224] sm:ml-0 sm:mt-2 sm:inline-flex">
+                    <span className="text-sm font-semibold text-ui-text">Import from link</span>
+                    <span className="rounded-full bg-ui-accent/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent-dark sm:ml-0 sm:mt-2 sm:inline-flex">
                       AI
                     </span>
                   </span>
-                  <span className="mt-0.5 hidden text-xs leading-relaxed text-neutral-600 sm:block">
+                  <span className="mt-0.5 hidden text-xs leading-relaxed text-ui-muted sm:block">
                     Paste a recipe page, blog post, or video URL.
                   </span>
                 </span>
@@ -1565,19 +1558,19 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               <button
                 type="button"
                 onClick={() => setShowCaptureModal(true)}
-                className="group flex w-full items-center gap-3 rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-[#800020]/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
+                className="group flex w-full items-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-surface-raised px-3 py-2.5 text-left shadow-sm transition-[border-color,box-shadow] hover:border-ui-accent/30 hover:shadow-md sm:flex-col sm:items-start sm:gap-3 sm:rounded-2xl sm:p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] sm:h-10 sm:w-10 sm:rounded-xl">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent sm:h-10 sm:w-10 sm:rounded-xl">
                   <Mic2 className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2 sm:block">
-                    <span className="text-sm font-semibold text-[#241017]">Live conversation</span>
-                    <span className="rounded-full bg-[#800020]/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#521224] sm:ml-0 sm:mt-2 sm:inline-flex">
+                    <span className="text-sm font-semibold text-ui-text">Live conversation</span>
+                    <span className="rounded-full bg-ui-accent/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-accent-dark sm:ml-0 sm:mt-2 sm:inline-flex">
                       AI
                     </span>
                   </span>
-                  <span className="mt-0.5 hidden text-xs leading-relaxed text-neutral-600 sm:block">
+                  <span className="mt-0.5 hidden text-xs leading-relaxed text-ui-muted sm:block">
                     Record a family recipe while Mychelin helps you ask follow-up questions.
                   </span>
                 </span>
@@ -1595,7 +1588,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
 
         {/* Source URL attribution */}
         {selectedRecipe.sourceUrl && (
-          <div className="flex items-center gap-1.5 rounded-lg border border-[#800020]/15 bg-[#800020]/5 px-3 py-2 text-sm text-[#521224]">
+          <div className="flex items-center gap-1.5 rounded-lg border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-sm text-accent-dark">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
@@ -1605,7 +1598,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               href={selectedRecipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium underline underline-offset-2 hover:text-[#241017]"
+              className="font-medium underline underline-offset-2 hover:text-ui-text"
             >
               {(() => { try { return new URL(selectedRecipe.sourceUrl).hostname.replace(/^www\./, ""); } catch { return selectedRecipe.sourceUrl; } })()}
             </a>
@@ -1639,6 +1632,62 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           ingredients={selectedRecipe.ingredients ?? []}
           readOnly={!recipeEditMode}
         />
+
+        {/* Attempts & versions — the improvement loop sits directly after
+            the core recipe so the next cook is one glance away. */}
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-ui-border bg-ui-surface-raised/85 p-3 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ui-muted">
+                Refinement
+              </p>
+              <h2 className="text-base font-semibold text-ui-text">
+                Attempts & versions
+              </h2>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0 sm:items-center sm:justify-end">
+              <button
+                onClick={() => setShowCookWithMe(true)}
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-ui-action px-3 text-xs font-semibold text-white transition-colors hover:bg-ui-accent"
+              >
+                <ChefHat className="h-3.5 w-3.5" />
+                Cook with me
+              </button>
+              <button
+                onClick={() => setShowCookAlong(true)}
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-ui-accent/15 bg-ui-accent/10 px-3 text-xs font-semibold text-ui-accent transition-colors hover:bg-ui-accent/15"
+              >
+                <PencilLine className="h-3.5 w-3.5" />
+                Log cook
+              </button>
+            </div>
+          </div>
+
+          <AttemptHistory
+            recipeId={selectedRecipe.id}
+            refreshKey={versionTimelineKey}
+            onNextTrySaved={() => {
+              void loadNextTry();
+              addToast("Next try saved", "success");
+            }}
+            onPromoted={() => {
+              setVersionTimelineKey((k) => k + 1);
+              qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+              qc.invalidateQueries({ queryKey: ["recipes"] });
+              addToast("Attempt promoted to version", "success");
+              promptVersionFeedback();
+            }}
+          />
+
+          <VersionTimeline
+            key={versionTimelineKey}
+            recipeId={selectedRecipe.id}
+            onCompare={(baseId, compareId) =>
+              setCompareVersions({ base: baseId, compare: compareId })
+            }
+            onVersionSelect={(version) => setViewingVersion(version)}
+          />
+        </div>
 
         {/* ─── Library info tier — collapsed by default ───── */}
         <CollapsibleSection
@@ -1714,63 +1763,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           </div>
         </CollapsibleSection>
 
-        {/* Version History */}
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-neutral-200 bg-white/85 p-3 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                Refinement
-              </p>
-              <h2 className="text-base font-semibold text-neutral-900">
-                Attempts & versions
-              </h2>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0 sm:items-center sm:justify-end">
-              <button
-                onClick={() => setShowCookWithMe(true)}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#17131f] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#800020]"
-              >
-                <ChefHat className="h-3.5 w-3.5" />
-                Cook with me
-              </button>
-              <button
-                onClick={() => setShowCookAlong(true)}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#800020]/15 bg-[#800020]/10 px-3 text-xs font-semibold text-[#800020] transition-colors hover:bg-[#800020]/15"
-              >
-                <PencilLine className="h-3.5 w-3.5" />
-                Log cook
-              </button>
-            </div>
-          </div>
-
-          <AttemptHistory
-            recipeId={selectedRecipe.id}
-            refreshKey={versionTimelineKey}
-            onNextTrySaved={() => {
-              void loadNextTry();
-              addToast("Next try saved", "success");
-            }}
-            onPromoted={() => {
-              setVersionTimelineKey((k) => k + 1);
-              qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
-              qc.invalidateQueries({ queryKey: ["recipes"] });
-              addToast("Attempt promoted to version", "success");
-              promptVersionFeedback();
-            }}
-          />
-
-          <VersionTimeline
-            key={versionTimelineKey}
-            recipeId={selectedRecipe.id}
-            onCompare={(baseId, compareId) =>
-              setCompareVersions({ base: baseId, compare: compareId })
-            }
-            onVersionSelect={(version) => setViewingVersion(version)}
-          />
-        </div>
-
         {/* Share + Delete */}
-        <div className="border-t border-neutral-200 pt-6 pb-20 md:pb-6 space-y-3">
+        <div className="border-t border-ui-border pt-6 pb-20 md:pb-6 space-y-3">
           {/* Fork button — shown when current user is not the owner */}
           {user && selectedRecipe.userId !== user.id && (
             <RecipeForkButton
@@ -1784,7 +1778,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           )}
           <button
             onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-[#800020]/30 hover:bg-[#800020]/5"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-sm font-medium text-ui-text transition-colors hover:border-ui-accent/30 hover:bg-ui-accent/5"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="18" cy="5" r="3" />
@@ -1797,7 +1791,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           </button>
           <button
             onClick={handleDelete}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-ui-danger/20 bg-ui-danger-soft px-4 py-3 text-sm font-medium text-ui-danger transition-colors hover:bg-ui-danger/15"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6" />
@@ -1824,6 +1818,15 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       {showCookWithMe && selectedRecipe && (
         <CookWithMeSession
           recipe={selectedRecipe}
+          nextTry={
+            nextTry
+              ? {
+                  notes: nextTry.notes,
+                  ingredientCount: nextTry.ingredients.length,
+                  stepCount: nextTry.instructions.length,
+                }
+              : null
+          }
           onClose={() => setShowCookWithMe(false)}
           onComplete={() => {
             setVersionTimelineKey((k) => k + 1);

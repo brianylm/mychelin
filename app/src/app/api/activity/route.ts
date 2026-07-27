@@ -25,9 +25,11 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensureRecipeAttemptsTable();
-    await ensureRecipeAttemptDishRatingColumn();
-    await ensurePlanningOwnershipColumns();
+    await Promise.all([
+      ensureRecipeAttemptsTable(),
+      ensureRecipeAttemptDishRatingColumn(),
+      ensurePlanningOwnershipColumns(),
+    ]);
 
     const rows = await db
       .select({

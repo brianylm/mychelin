@@ -95,9 +95,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(orderedRecipesWithFlags);
     }
 
-    await ensurePlanningOwnershipColumns();
-    await ensureMealPlanCookedAtColumn();
-    await ensureRecipeAttemptsTable();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureMealPlanCookedAtColumn(),
+      ensureRecipeAttemptsTable(),
+    ]);
 
     const recipeIds = orderedRecipes.map((recipe) => recipe.id);
     const ingredientRows = await db

@@ -7,14 +7,14 @@ interface ServingScalerProps {
   onScaleChange: (scale: number) => void;
 }
 
-function parseBaseServings(yieldStr: string): number | null {
+export function parseBaseServings(yieldStr: string): number | null {
   if (!yieldStr) return null;
   // Extract first number from yield string
   const match = yieldStr.match(/(\d+\.?\d*)/);
   return match ? parseFloat(match[1]) : null;
 }
 
-function getYieldLabel(yieldStr: string): string {
+export function getYieldLabel(yieldStr: string): string {
   // Extract the label part (e.g. "servings", "portions", "pax")
   const match = yieldStr.match(/\d+\.?\d*\s*(.*)/);
   const label = match?.[1]?.trim();
@@ -25,6 +25,18 @@ export function ServingScaler({ baseYield, onScaleChange }: ServingScalerProps) 
   const baseServings = useMemo(() => parseBaseServings(baseYield), [baseYield]);
   const yieldLabel = useMemo(() => getYieldLabel(baseYield), [baseYield]);
   const [currentServings, setCurrentServings] = useState<number>(baseServings ?? 1);
+
+  // Re-sync when the recipe's base yield changes (recipe loads, recipe
+  // switch, or yield edited). useState's initial value only applies on
+  // first mount, so without this the scaler keeps showing a stale count
+  // (e.g. "1 servings") after the real yield arrives. Adjusting state
+  // during render is React's documented pattern for prop-driven resets;
+  // the parent already resets the ingredient scale to 1 on recipe change.
+  const [prevBaseServings, setPrevBaseServings] = useState(baseServings);
+  if (prevBaseServings !== baseServings) {
+    setPrevBaseServings(baseServings);
+    setCurrentServings(baseServings ?? 1);
+  }
 
   if (baseServings === null || baseServings <= 0) return null;
 

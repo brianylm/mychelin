@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { recipes, ingredients, instructions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  recipes,
+  ingredients,
+  instructions,
+  voiceRecordings,
+  recipePhotos,
+} from "@/db/schema";
+import { asc, eq } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
@@ -23,22 +29,53 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     const recipeId = Number(id);
 
-    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+    // Every drizzle query is a separate HTTP round trip to Turso, so the
+    // access check, recipe row, all four relation fetches, and the flags
+    // fetch are fired in parallel — one round-trip's latency instead of
+    // ~7 sequential ones. If the access check fails the other results are
+    // simply discarded, so nothing is leaked.
+    const [
+      canAccess,
+      recipe,
+      ingredientRows,
+      instructionRows,
+      voiceRecordingRows,
+      photoRows,
+      recipeFlags,
+    ] = await Promise.all([
+      canUserAccessRecipe(currentUser.id, recipeId),
+      db.query.recipes.findFirst({
+        where: eq(recipes.id, recipeId),
+      }),
+      db
+        .select()
+        .from(ingredients)
+        .where(eq(ingredients.recipeId, recipeId))
+        .orderBy(asc(ingredients.sortOrder)),
+      db
+        .select()
+        .from(instructions)
+        .where(eq(instructions.recipeId, recipeId))
+        .orderBy(asc(instructions.stepNumber)),
+      db
+        .select()
+        .from(voiceRecordings)
+        .where(eq(voiceRecordings.recipeId, recipeId))
+        .orderBy(asc(voiceRecordings.sortOrder)),
+      db
+        .select()
+        .from(recipePhotos)
+        .where(eq(recipePhotos.recipeId, recipeId))
+        .orderBy(asc(recipePhotos.sortOrder)),
+      getRecipeFlagsForRecipe(currentUser.id, recipeId),
+    ]);
+
+    if (!canAccess) {
       return NextResponse.json(
         { error: "Recipe not found" },
         { status: 404 }
       );
     }
-
-    const recipe = await db.query.recipes.findFirst({
-      where: eq(recipes.id, recipeId),
-      with: {
-        ingredients: { orderBy: (ing, { asc }) => [asc(ing.sortOrder)] },
-        instructions: { orderBy: (inst, { asc }) => [asc(inst.stepNumber)] },
-        voiceRecordings: { orderBy: (v, { asc }) => [asc(v.sortOrder)] },
-        photos: { orderBy: (p, { asc }) => [asc(p.sortOrder)] },
-      },
-    });
 
     if (!recipe) {
       return NextResponse.json(
@@ -47,9 +84,14 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    const recipeFlags = await getRecipeFlagsForRecipe(currentUser.id, recipeId);
-
-    return NextResponse.json({ ...recipe, recipeFlags });
+    return NextResponse.json({
+      ...recipe,
+      ingredients: ingredientRows,
+      instructions: instructionRows,
+      voiceRecordings: voiceRecordingRows,
+      photos: photoRows,
+      recipeFlags,
+    });
   } catch (error) {
     console.error("GET /api/recipes/[id] error:", error);
     return NextResponse.json(

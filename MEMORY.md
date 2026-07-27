@@ -2564,3 +2564,51 @@ Checks:
 
 - Second tightening pass on `docs/work-packets/meal-plan-randomisation.md`: fixed a heading swallowed during the Starting points insertion; added undo mechanics (implicit-open slots, randomise creates rows, undo = batch delete of created rows, no server undo log), skip-clears-recipe decision, scope = currently viewed planner range, double-submit protection, one-request/one-batch-insert performance gate, `meal_plan_randomised` usage event with sanitized properties, changelog convention, and aria-live/state-not-color-alone accessibility notes.
 - No code change; document-only. Validation: `git diff --check` passed.
+
+## 2026-07-22 - Slice B recipe detail hierarchy (staging candidate)
+
+- B accepted Phase 3; Slice B proceeded per `docs/work-packets/ui-uplift-next-phases.md` with the attempt-salience revision.
+- Re-hierarchied `RecipeView.tsx`: Attempts & versions (Cook with me / Log cook actions, AttemptHistory, VersionTimeline) now sits directly after core recipe steps, before the collapsed Library info and Heritage tiers. NextTryPanel remains directly under the cover header.
+- Cook With Me now surfaces the active private next try at session start: dismissible banner with the saved notes plus ingredient/step tweak counts, so last cook's improvement plan shapes the current session.
+- Token-ized RecipeView end to end: all `#800020`/`#17131f`/`#521224`/`#241017`/`neutral-*`/`amber-*`/`red-*` literals replaced with `ui-*` tokens (NextTryPanel amber → warning palette, flag badges, empty-state CTAs, source-URL strip, share/delete rows). Intentional `#f7c86a` Cook With Me accent and `#fff7e8` hover tint retained.
+- Deleted dead `capture/RecipeReview.tsx` (285 lines, unimported); `RecipeCaptureReview.tsx` remains the single live review component used by PasteRecipeModal and ConversationCapture.
+- Migrated the in-file Surprise-me-by modal onto the new `Dialog` primitive (focus trap, Escape, scroll lock, focus return).
+- Validation: focused ESLint passed with zero errors (two pre-existing raw-`img` warnings in RecipeView); `npx tsc --noEmit` passed; production build passed; `git diff --check` passed.
+
+## 2026-07-22 - Landing hero mobile quality fix and attempt card declutter
+
+- B reported the landing hero looked blurrier on mobile after the Phase 1 next/image move. Root cause: `object-fit: cover` on a tall phone viewport shows only a narrow vertical slice of the 2752x1536 original, so the browser upscales that slice; the optimizer's default quality made it worse.
+- Generated `public/images/hero-family-table-mobile.jpg` — a 1100x1536 portrait crop around the two cooks (matches the old object-position 84% 44% framing) at JPEG quality 92.
+- Hero now uses art direction via `getImageProps` + `<picture>`: portrait crop for viewports under 640px, original wide image for 640px+, `quality: 90` on both. Mobile object-position changed to `center 44%` since the crop already frames the subjects. Responsive `sizes: 100vw` behavior retained; no layout/composition change.
+- Decluttered attempt cards in `AttemptHistory.tsx`: rating pills became quiet inline notes, "Saved as a version" replaces the emerald promoted tag, duplicate promote button inside the next-time box removed, Delete demoted from danger-styled to quiet, header copy now explains the model ("every cook is an attempt; keep a note for next time; promote the ones worth keeping into a version"). "Use next time" (was "Save as next try") remains the single emphasized action; Promote to version stays available for all unpromoted attempts as a quiet action.
+- Token-ized AttemptHistory as touched (accent/danger/surface tokens).
+- Validation: focused ESLint passed with zero errors; `npx tsc --noEmit` passed; production build passed; `git diff --check` passed.
+
+## Loading Animations
+
+`app/src/components/ui/LoadingAnimation.tsx` holds the app's loading animations (hand-drawn inline SVG + CSS keyframes). As of 2026-07-27 the loader picks a **random variant per mount** when no `variant` prop is passed — variants are deliberately NOT tied to actions right now.
+
+The variants were designed with specific processing actions in mind. Keep this mapping for the day we want to tie them back to contexts:
+
+| Variant | Designed for | Default label |
+|---|---|---|
+| `ignition` | general loading (original wok) | "Firing up the wok..." |
+| `hei-burst` | search | "Finding wok hei..." |
+| `steamer` | default page loads | "Steaming..." |
+| `rolling-dough` | general / form prep | "Rolling things out..." |
+| `simmering-pot` | AI draft / thinking waits | "Simmering..." |
+| `chopping-board` | URL import / paste extraction | "Chopping things up..." |
+| `teh-tarik` | AI draft / brewing | "Pulling the teh tarik..." |
+| `satay` | app boot / slow saves | "Fanning the coals..." |
+| `rempah` | transcription / conversation capture | "Pounding the rempah..." |
+
+To pin a variant at a call site: `<LoadingAnimation variant="chopping-board" />`.
+
+## Regression Testing
+
+Added 2026-07-27 after a run of prod regressions (Plan nav blocked by a view-switch effect, mobile hero crop cutting off a subject, slow cold-isolate schema migrations).
+
+- **Unit tests**: Vitest in `app/` (`npm test`). Covers `ServingScaler` yield parsing/scaling, the fork-lineage recursive CTE (`src/lib/recipe-lineage.ts`, tested against the old JS walk as reference), and the planner logged-meals merge (`src/lib/planner-logged-meals.ts`).
+- **Post-deploy smoke**: `app/scripts/regression-smoke.mjs` (`npm run smoke:regression`) — synthetic user + recipe against the live domain, asserts recipe detail shape, logged cooks in the meal-plans payload, versions endpoint, landing hero; cleans up after itself.
+- **Deploy gate**: `npm run deploy` at repo root (`scripts/deploy.sh`) — dirty-tree guard → typecheck → lint → unit tests → build → `vercel --prod` → re-alias `mychelin-sg.vercel.app` → regression smoke. This is THE deploy path; bare `vercel --prod` skips every gate.
+- **CI**: `.github/workflows/test.yml` runs typecheck + lint + unit tests + build on every push/PR. No browser E2E yet (deferred).

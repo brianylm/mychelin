@@ -229,7 +229,11 @@ h6,
   inset: 0;
   height: 100%;
   object-fit: cover;
-  object-position: 84% 44%;
+  /* Mobile uses the pre-cropped portrait hero. Phones are narrower than
+     the crop, so ~35% of the width is cut — anchor left-of-centre to
+     keep BOTH subjects' faces in frame (centre cuts the younger woman
+     off at the left edge). */
+  object-position: 15% 44%;
 }
 
 .landing-hero-readable-scrim {
