@@ -200,11 +200,45 @@ async function main() {
       "meal-plans payload has { plans, attempts } shape",
       `got ${JSON.stringify(plans.body).slice(0, 200)}`
     );
+    assert(Array.isArray(plans.body?.blocks), "meal-plans payload includes blocks array", `got ${JSON.stringify(plans.body).slice(0, 200)}`);
     const logged = Array.isArray(plans.body?.attempts)
       ? plans.body.attempts.find((a) => a.recipeId === recipeId)
       : null;
     assert(Boolean(logged), "logged cook appears in meal-plans attempts");
     assert(logged?.recipeTitle?.includes("Regression smoke"), "logged attempt carries recipe title", `got ${JSON.stringify(logged?.recipeTitle)}`);
+
+    // 5b. Block a meal slot: clears its plans, shows up in payload, unblocks cleanly
+    const plan = await session.json("/api/meal-plans", {
+      method: "POST",
+      json: { date: today, mealType: "lunch", recipeId, servings: 1 },
+    });
+    assert(plan.response.status === 201, "create meal plan returns 201", `got ${plan.response.status} ${JSON.stringify(plan.body).slice(0, 200)}`);
+    const block = await session.json("/api/meal-plans/blocks", {
+      method: "POST",
+      json: { date: today, mealType: "lunch" },
+    });
+    assert(block.response.status === 201, "block meal slot returns 201", `got ${block.response.status} ${JSON.stringify(block.body).slice(0, 200)}`);
+    const afterBlock = await session.json(`/api/meal-plans?startDate=${today}&endDate=${today}`);
+    assert(
+      Array.isArray(afterBlock.body?.blocks) &&
+        afterBlock.body.blocks.some((b) => b.date === today && b.mealType === "lunch"),
+      "blocked slot appears in meal-plans blocks"
+    );
+    assert(
+      Array.isArray(afterBlock.body?.plans) &&
+        !afterBlock.body.plans.some((p) => p.date === today && p.mealType === "lunch"),
+      "blocking cleared the slot's plans"
+    );
+    const unblock = await session.json("/api/meal-plans/blocks", {
+      method: "DELETE",
+      json: { date: today, mealType: "lunch" },
+    });
+    assert(unblock.response.status === 200, "unblock meal slot returns 200", `got ${unblock.response.status}`);
+    const afterUnblock = await session.json(`/api/meal-plans?startDate=${today}&endDate=${today}`);
+    assert(
+      Array.isArray(afterUnblock.body?.blocks) && afterUnblock.body.blocks.length === 0,
+      "blocks empty after unblock"
+    );
 
     // 6. Versions: create one, then the lineage query returns it
     const version = await session.json(`/api/recipes/${recipeId}/versions`, {

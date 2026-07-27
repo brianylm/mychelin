@@ -30,6 +30,7 @@ let notificationsEnsured = false;
 let userOAuthEnsured = false;
 let pilotFeedbackEnsured = false;
 let recipeFlagsEnsured = false;
+let mealPlanBlocksEnsured = false;
 
 let _client: Client | null = null;
 
@@ -509,4 +510,35 @@ export async function ensureRecipeFlagsTable(): Promise<void> {
   ], "ensureRecipeFlagsTable");
 
   recipeFlagsEnsured = true;
+}
+
+
+export async function ensureMealPlanBlocksTable(): Promise<void> {
+  if (mealPlanBlocksEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  try {
+    if ((await existingObjects(client, ["meal_plan_blocks"])).has("meal_plan_blocks")) {
+      mealPlanBlocksEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureMealPlanBlocksTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  await runDdl(client, [
+    `CREATE TABLE IF NOT EXISTS meal_plan_blocks (
+      id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+      date text NOT NULL,
+      meal_type text NOT NULL,
+      note text,
+      created_at text NOT NULL
+    )`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS meal_plan_blocks_unique_idx ON meal_plan_blocks(user_id, date, meal_type)`,
+  ], "ensureMealPlanBlocksTable");
+
+  mealPlanBlocksEnsured = true;
 }

@@ -277,6 +277,23 @@ export const mealPlans = sqliteTable("meal_plans", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Meal Plan Blocks ──────────────────────────────────────
+// A blocked slot means "we're eating something else / headed out" —
+// skipped by randomize and (since blocking clears the slot's plans)
+// excluded from the shopping list.
+export const mealPlanBlocks = sqliteTable("meal_plan_blocks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: text("date").notNull(), // "YYYY-MM-DD"
+  mealType: text("meal_type").notNull(), // "breakfast" | "lunch" | "dinner" | "snack"
+  note: text("note"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Inventory ─────────────────────────────────────────────
 export const inventory = sqliteTable("inventory", {
   id: integer("id").primaryKey({ autoIncrement: true }),

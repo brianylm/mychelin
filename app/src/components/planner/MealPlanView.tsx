@@ -8,7 +8,7 @@ import {
   PlusIcon,
   Cross2Icon,
 } from "@radix-ui/react-icons";
-import { CheckCircle2, ChefHat, ShoppingBasket } from "lucide-react";
+import { CheckCircle2, ChefHat, ShoppingBasket, Dices, Ban, Undo2 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { CalendarExport } from "@/components/CalendarExport";
 import {
@@ -24,6 +24,10 @@ import {
   mergeLoggedAttempts,
   type LoggedAttempt,
 } from "@/lib/planner-logged-meals";
+import {
+  pickRecipesForSlots,
+  findFillableSlots,
+} from "@/lib/planner-randomize";
 
 interface MealPlan {
   id: number;
@@ -37,6 +41,15 @@ interface MealPlan {
   // True when this entry comes from a logged cook attempt rather than a
   // planned meal. Logged entries are read-only in the calendar.
   loggedAttempt?: boolean;
+}
+
+// A blocked meal slot ("eating out / something else"), as returned by
+// GET /api/meal-plans.
+interface MealPlanBlock {
+  id: number;
+  date: string;
+  mealType: string;
+  note: string | null;
 }
 
 interface Recipe {
@@ -201,6 +214,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
   const [offset, setOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
   const [attempts, setAttempts] = useState<LoggedAttempt[]>([]);
+  const [blocks, setBlocks] = useState<MealPlanBlock[]>([]);
+  const [randomizing, setRandomizing] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingSlot, setAddingSlot] = useState<{
@@ -279,15 +294,18 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
           if (Array.isArray(data)) {
             setPlans(data);
             setAttempts([]);
+            setBlocks([]);
           } else {
             setPlans(Array.isArray(data?.plans) ? data.plans : []);
             setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
+            setBlocks(Array.isArray(data?.blocks) ? data.blocks : []);
           }
         }
       } catch {
         if (!cancelled) {
           setPlans([]);
           setAttempts([]);
+          setBlocks([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -387,6 +405,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
       const newPlan = await res.json();
       if (res.ok) {
         setPlans((prev) => [...prev, newPlan]);
+        // Planning a meal lifts any block on the slot (server-side too).
+        setBlocks((prev) =>
+          prev.filter((b) => !(b.date === addingSlot.date && b.mealType === addingSlot.mealType))
+        );
         closeAddDialog();
         addToast("Meal added", "success");
       }
@@ -407,6 +429,131 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
     },
     [addToast]
   );
+
+  const getBlockForSlot = useCallback(
+    (date: string, mealType: string) =>
+      blocks.find((b) => b.date === date && b.mealType === mealType) ?? null,
+    [blocks]
+  );
+
+  // 🎲 Per-slot randomize: re-rolls that one slot with a weighted pick.
+  const randomizeSlot = useCallback(
+    async (date: string, mealType: string) => {
+      const [pick] = pickRecipesForSlots({ recipes, count: 1 });
+      if (!pick) {
+        addToast("No recipes to pick from", "error");
+        return;
+      }
+      try {
+        const slotPlans = plans.filter(
+          (p) => p.date === date && p.mealType === mealType
+        );
+        await Promise.all(
+          slotPlans.map((p) => fetch(`/api/meal-plans/${p.id}`, { method: "DELETE" }))
+        );
+        const res = await fetch("/api/meal-plans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date, mealType, recipeId: pick.id, servings: 1 }),
+        });
+        const newPlan = await res.json();
+        if (!res.ok) throw new Error(newPlan?.error || "Failed to plan meal");
+        setPlans((prev) => [
+          ...prev.filter((p) => !(p.date === date && p.mealType === mealType)),
+          newPlan,
+        ]);
+        addToast(`${MEAL_LABELS[mealType]}: ${pick.title}`, "success");
+      } catch {
+        addToast("Failed to randomize meal", "error");
+      }
+    },
+    [recipes, plans, addToast]
+  );
+
+  const blockSlot = useCallback(
+    async (date: string, mealType: string) => {
+      try {
+        const res = await fetch("/api/meal-plans/blocks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date, mealType }),
+        });
+        const block = await res.json();
+        if (!res.ok) throw new Error(block?.error || "Failed to block meal");
+        setBlocks((prev) => [
+          ...prev.filter((b) => !(b.date === date && b.mealType === mealType)),
+          block,
+        ]);
+        // Blocking clears the slot's plans server-side too.
+        setPlans((prev) => prev.filter((p) => !(p.date === date && p.mealType === mealType)));
+        addToast("Meal blocked — eating something else", "success");
+      } catch {
+        addToast("Failed to block meal", "error");
+      }
+    },
+    [addToast]
+  );
+
+  const unblockSlot = useCallback(
+    async (date: string, mealType: string) => {
+      try {
+        await fetch("/api/meal-plans/blocks", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date, mealType }),
+        });
+        setBlocks((prev) => prev.filter((b) => !(b.date === date && b.mealType === mealType)));
+      } catch {
+        addToast("Failed to unblock meal", "error");
+      }
+    },
+    [addToast]
+  );
+
+  // 🎲 Time-frame randomize: fills empty, unblocked breakfast/lunch/
+  // dinner slots across the visible range.
+  const randomizeRange = useCallback(async () => {
+    const slots = findFillableSlots({
+      dates: currentDateRange.dates,
+      plans,
+      blocks,
+    });
+    if (slots.length === 0) {
+      addToast("No empty slots to fill in this " + viewType, "error");
+      return;
+    }
+    const picks = pickRecipesForSlots({ recipes, count: slots.length });
+    if (picks.length === 0) {
+      addToast("No recipes to pick from", "error");
+      return;
+    }
+    setRandomizing(true);
+    try {
+      const newPlans: MealPlan[] = [];
+      for (let i = 0; i < slots.length; i++) {
+        const res = await fetch("/api/meal-plans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: slots[i].date,
+            mealType: slots[i].mealType,
+            recipeId: picks[i].id,
+            servings: 1,
+          }),
+        });
+        if (res.ok) newPlans.push(await res.json());
+      }
+      setPlans((prev) => [...prev, ...newPlans]);
+      addToast(
+        `Planned ${newPlans.length} meal${newPlans.length === 1 ? "" : "s"} for this ${viewType}`,
+        "success"
+      );
+    } catch {
+      addToast("Randomize failed partway — some slots may be filled", "error");
+    } finally {
+      setRandomizing(false);
+    }
+  }, [currentDateRange.dates, plans, blocks, recipes, viewType, addToast]);
 
   // Logged cook attempts become read-only calendar entries so the plan
   // shows what was actually cooked, not just what was planned. Merge
@@ -519,23 +666,32 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             </IconButton>
           </div>
 
-          {plans.length > 0 && (
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {onOpenShoppingList && (
-                <Button
-                  variant="solid"
-                  color="gray"
-                  onClick={() =>
-                    onOpenShoppingList({
-                      start: currentDateRange.startDate,
-                      end: currentDateRange.endDate,
-                    })
-                  }
-                >
-                  <ShoppingBasket className="mr-1 h-4 w-4" />
-                  Generate shopping list
-                </Button>
-              )}
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button
+              variant="solid"
+              color="gray"
+              disabled={randomizing || recipes.length === 0}
+              onClick={randomizeRange}
+            >
+              <Dices className="mr-1 h-4 w-4" />
+              {randomizing ? "Randomizing…" : `Randomize ${viewType}`}
+            </Button>
+            {plans.length > 0 && onOpenShoppingList && (
+              <Button
+                variant="solid"
+                color="gray"
+                onClick={() =>
+                  onOpenShoppingList({
+                    start: currentDateRange.startDate,
+                    end: currentDateRange.endDate,
+                  })
+                }
+              >
+                <ShoppingBasket className="mr-1 h-4 w-4" />
+                Generate shopping list
+              </Button>
+            )}
+            {plans.length > 0 && (
               <Button
                 variant="soft"
                 color="amber"
@@ -548,8 +704,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 <span className="mr-1">📤</span>
                 Send to Calendar
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -595,6 +751,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                   <div className="grid gap-2 sm:grid-cols-4">
                     {MEAL_TYPES.map((mealType) => {
                       const slotPlans = getPlansForSlot(date, mealType);
+                      const slotBlock = getBlockForSlot(date, mealType);
                       return (
                         <div
                           key={mealType}
@@ -604,71 +761,115 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                             <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400">
                               {MEAL_LABELS[mealType]}
                             </p>
-                            {onCookMeals && slotPlans.filter((plan) => !plan.cookedAt).length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onCookMeals(
-                                    slotPlans
-                                      .filter((plan) => !plan.cookedAt)
-                                      .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
-                                  )
-                                }
-                                className="inline-flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white transition hover:bg-[#800020]"
-                              >
-                                <ChefHat className="h-3 w-3" />
-                                Cook together
-                              </button>
-                            )}
-                          </div>
-                          <div className="space-y-1.5">
-                          {slotPlans.map((plan) => (
-                            <div
-                              key={plan.id}
-                              className="group flex items-center gap-2 rounded-md bg-white px-2.5 py-2 text-xs shadow-sm"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <span className={`block truncate text-neutral-800 ${plan.cookedAt ? "line-through decoration-neutral-300" : ""}`}>
-                                  {plan.recipe?.title || "Unknown recipe"}
-                                </span>
-                                {plan.cookedAt && (
-                                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
-                                    <CheckCircle2 className="h-3 w-3" />
-                                    {plan.loggedAttempt ? "Logged" : "Cooked"}
-                                  </span>
-                                )}
-                              </div>
-                              {onCookMeal && !plan.cookedAt && (
+                            <span className="flex items-center gap-1">
+                              {onCookMeals && slotPlans.filter((plan) => !plan.cookedAt).length > 1 && (
                                 <button
                                   type="button"
-                                  onClick={() => onCookMeal(plan.recipeId, plan.id)}
-                                  className="flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white opacity-100 transition hover:bg-[#800020] sm:opacity-0 sm:group-hover:opacity-100"
-                                  aria-label={`Cook ${plan.recipe?.title || "planned meal"}`}
+                                  onClick={() =>
+                                    onCookMeals(
+                                      slotPlans
+                                        .filter((plan) => !plan.cookedAt)
+                                        .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
+                                    )
+                                  }
+                                  className="inline-flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white transition hover:bg-[#800020]"
                                 >
                                   <ChefHat className="h-3 w-3" />
-                                  Cook
+                                  Cook together
                                 </button>
                               )}
-                              {!plan.loggedAttempt && (
-                                <IconButton
-                                  variant="ghost"
-                                  size="1"
-                                  color="red"
-                                  className="h-4 w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                                  onClick={() => removePlan(plan.id)}
-                                >
-                                  <Cross2Icon className="h-3 w-3" />
-                                </IconButton>
+                              {!slotBlock && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => randomizeSlot(date, mealType)}
+                                    disabled={recipes.length === 0}
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-[#800020] disabled:opacity-30"
+                                    aria-label={`Randomize ${mealType}`}
+                                    title={`Randomize ${mealType}`}
+                                  >
+                                    <Dices className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => blockSlot(date, mealType)}
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-neutral-700"
+                                    aria-label={`Block ${mealType} — eating something else`}
+                                    title="Block — eating something else"
+                                  >
+                                    <Ban className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
                               )}
-                            </div>
-                          ))}
+                            </span>
                           </div>
-                          <button
-                            onClick={() => openAddDialog(date, mealType)}
-                            className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-[#800020]/30 hover:text-[#800020]"
-                          >
-                            <PlusIcon className="h-3 w-3" />
-                          </button>
+                          {slotBlock ? (
+                            <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-neutral-300 bg-neutral-100/60 px-2.5 py-2">
+                              <span className="text-[11px] italic text-neutral-500">
+                                {slotBlock.note || "Eating something else"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => unblockSlot(date, mealType)}
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-neutral-700"
+                                aria-label={`Unblock ${mealType}`}
+                                title="Unblock"
+                              >
+                                <Undo2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="space-y-1.5">
+                              {slotPlans.map((plan) => (
+                                <div
+                                  key={plan.id}
+                                  className="group flex items-center gap-2 rounded-md bg-white px-2.5 py-2 text-xs shadow-sm"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <span className={`block truncate text-neutral-800 ${plan.cookedAt ? "line-through decoration-neutral-300" : ""}`}>
+                                      {plan.recipe?.title || "Unknown recipe"}
+                                    </span>
+                                    {plan.cookedAt && (
+                                      <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        {plan.loggedAttempt ? "Logged" : "Cooked"}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {onCookMeal && !plan.cookedAt && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onCookMeal(plan.recipeId, plan.id)}
+                                      className="flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white opacity-100 transition hover:bg-[#800020] sm:opacity-0 sm:group-hover:opacity-100"
+                                      aria-label={`Cook ${plan.recipe?.title || "planned meal"}`}
+                                    >
+                                      <ChefHat className="h-3 w-3" />
+                                      Cook
+                                    </button>
+                                  )}
+                                  {!plan.loggedAttempt && (
+                                    <IconButton
+                                      variant="ghost"
+                                      size="1"
+                                      color="red"
+                                      className="h-4 w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                      onClick={() => removePlan(plan.id)}
+                                    >
+                                      <Cross2Icon className="h-3 w-3" />
+                                    </IconButton>
+                                  )}
+                                </div>
+                              ))}
+                              </div>
+                              <button
+                                onClick={() => openAddDialog(date, mealType)}
+                                className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-[#800020]/30 hover:text-[#800020]"
+                              >
+                                <PlusIcon className="h-3 w-3" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       );
                     })}
@@ -697,6 +898,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 {week.map((date) => {
                   const { date: num, isToday, month } = formatDate(date, todayKey);
                   const dayPlans = getPlansForDate(date);
+                  const dayBlocks = blocks.filter((b) => b.date === date);
                   const baseDate = dateFromKey(todayKey);
                   const currentMonth = new Date(
                     baseDate.getFullYear(),
@@ -704,6 +906,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                     1
                   ).getMonth();
                   const isCurrentMonth = month === currentMonth;
+                  const dotCount = dayPlans.length + dayBlocks.length;
 
                   return (
                     <button
@@ -737,9 +940,16 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                               title={`${MEAL_LABELS[plan.mealType]}: ${plan.recipe?.title}`}
                             />
                           ))}
-                          {dayPlans.length > 3 && (
+                          {dayBlocks.slice(0, Math.max(0, 3 - dayPlans.length)).map((block) => (
+                            <div
+                              key={block.id}
+                              className="h-1.5 rounded-full bg-neutral-300 opacity-80"
+                              title={`${MEAL_LABELS[block.mealType]}: blocked — eating something else`}
+                            />
+                          ))}
+                          {dotCount > 3 && (
                             <div className="text-[9px] text-neutral-500">
-                              +{dayPlans.length - 3} more
+                              +{dotCount - 3} more
                             </div>
                           )}
                         </div>
@@ -782,6 +992,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
               <div className="space-y-2">
                 {MEAL_TYPES.map((mealType) => {
                   const slotPlans = getPlansForSlot(selectedDayDate, mealType);
+                  const slotBlock = getBlockForSlot(selectedDayDate, mealType);
 
                   return (
                     <div
@@ -809,18 +1020,54 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                               Cook together
                             </button>
                           )}
-                        <button
-                          type="button"
-                          onClick={() => openAddDialog(selectedDayDate, mealType)}
-                          className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020]"
-                        >
-                          <PlusIcon className="h-3 w-3" />
-                          Add meal
-                        </button>
+                          {!slotBlock && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => randomizeSlot(selectedDayDate, mealType)}
+                                disabled={recipes.length === 0}
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-[#800020]/40 hover:text-[#800020] disabled:opacity-40"
+                              >
+                                <Dices className="h-3 w-3" />
+                                Random
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openAddDialog(selectedDayDate, mealType)}
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                              >
+                                <PlusIcon className="h-3 w-3" />
+                                Add meal
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => blockSlot(selectedDayDate, mealType)}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                                aria-label={`Block ${mealType} — eating something else`}
+                                title="Block — eating something else"
+                              >
+                                <Ban className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
 
-                      {slotPlans.length === 0 ? (
+                      {slotBlock ? (
+                        <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-neutral-300 bg-neutral-100/60 px-3 py-2">
+                          <span className="text-xs italic text-neutral-500">
+                            {slotBlock.note || "Eating something else"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => unblockSlot(selectedDayDate, mealType)}
+                            className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-neutral-500 transition hover:bg-white hover:text-neutral-700"
+                          >
+                            <Undo2 className="h-3 w-3" />
+                            Unblock
+                          </button>
+                        </div>
+                      ) : slotPlans.length === 0 ? (
                         <p className="rounded-md bg-white px-3 py-2 text-xs text-neutral-400">
                           No meal planned.
                         </p>

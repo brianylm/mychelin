@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq, gte, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { mealPlans, recipeAttempts, recipes } from "@/db/schema";
+import { mealPlanBlocks, mealPlans, recipeAttempts, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
+import { ensureMealPlanBlocksTable, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { shiftDateKey } from "@/lib/planner-logged-meals";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
@@ -17,7 +17,8 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 // ─── GET /api/meal-plans ───────────────────────────────────
 // Returns the current user's meal plans for the date range, plus cook
 // attempts logged in that range so the calendar can show what was
-// actually cooked — even when it was never planned. Attempts are
+// actually cooked — even when it was never planned — plus blocked
+// slots ("eating out / something else") in the range. Attempts are
 // fetched with a 1-day pad on each side because cooked_at is UTC while
 // the calendar works in local dates; the client re-filters precisely.
 export async function GET(request: NextRequest) {
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
       ensurePlanningOwnershipColumns(),
       ensureMealPlanCookedAtColumn(),
       ensureRecipeAttemptsTable(),
+      ensureMealPlanBlocksTable(),
     ]);
 
     const { searchParams } = new URL(request.url);
@@ -38,14 +40,21 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("endDate");
 
     const whereConditions = [eq(mealPlans.userId, currentUser.id)];
+    const blockConditions = [eq(mealPlanBlocks.userId, currentUser.id)];
 
-    if (startDate) whereConditions.push(gte(mealPlans.date, startDate));
-    if (endDate) whereConditions.push(lte(mealPlans.date, endDate));
+    if (startDate) {
+      whereConditions.push(gte(mealPlans.date, startDate));
+      blockConditions.push(gte(mealPlanBlocks.date, startDate));
+    }
+    if (endDate) {
+      whereConditions.push(lte(mealPlans.date, endDate));
+      blockConditions.push(lte(mealPlanBlocks.date, endDate));
+    }
 
     const fetchAttempts =
       startDate && endDate && DATE_RE.test(startDate) && DATE_RE.test(endDate);
 
-    const [plans, attemptRows] = await Promise.all([
+    const [plans, attemptRows, blockRows] = await Promise.all([
       db.query.mealPlans.findMany({
         where: and(...whereConditions),
         with: {
@@ -75,9 +84,13 @@ export async function GET(request: NextRequest) {
               )
             )
         : Promise.resolve([]),
+      db
+        .select()
+        .from(mealPlanBlocks)
+        .where(and(...blockConditions)),
     ]);
 
-    return NextResponse.json({ plans, attempts: attemptRows });
+    return NextResponse.json({ plans, attempts: attemptRows, blocks: blockRows });
   } catch (error) {
     console.error("GET /api/meal-plans error:", error);
     return NextResponse.json(
@@ -99,6 +112,7 @@ export async function POST(request: NextRequest) {
     await Promise.all([
       ensurePlanningOwnershipColumns(),
       ensureMealPlanCookedAtColumn(),
+      ensureMealPlanBlocksTable(),
     ]);
 
     const body = await request.json();
@@ -148,6 +162,17 @@ export async function POST(request: NextRequest) {
         notes,
       })
       .returning();
+
+    // Planning a meal in a blocked slot lifts the block.
+    await db
+      .delete(mealPlanBlocks)
+      .where(
+        and(
+          eq(mealPlanBlocks.userId, currentUser.id),
+          eq(mealPlanBlocks.date, date),
+          eq(mealPlanBlocks.mealType, mealType)
+        )
+      );
 
     const fullPlan = await db.query.mealPlans.findFirst({
       where: and(eq(mealPlans.id, newPlan.id), eq(mealPlans.userId, currentUser.id)),
