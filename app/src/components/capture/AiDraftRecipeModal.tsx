@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui";
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
+import { WorkflowDialog, WorkflowError } from "@/components/ui/WorkflowDialog";
 
 interface DraftRecipe {
   title: string;
@@ -60,67 +62,69 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 p-3 backdrop-blur-sm sm:items-center" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-[1.75rem] border border-white/70 bg-[#fffdfb] p-5 shadow-[0_24px_80px_rgba(60,43,25,0.2)]" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">Create recipe</p>
-            <h2 className="app-editorial-title mt-2 text-3xl leading-tight text-[#1A1A1A]">Ask Mychelin for a first draft</h2>
-            <p className="mt-2 text-sm leading-6 text-stone-600">Tell Mychelin what you want to cook. You will get an editable draft, not a definitive family recipe.</p>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700" aria-label="Close">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="mt-5 rounded-2xl border border-[#800020]/10 bg-white px-4 py-6">
-            <LoadingAnimation
-              size={132}
-              label="Drafting your first recipe..."
-            />
-          </div>
-        ) : (
-          <textarea
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder="e.g. I want to cook chicken curry for 2, not too spicy, beginner friendly"
-            className="mt-5 min-h-32 w-full rounded-2xl border border-[#d8d8d2] bg-white px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:ring-4 focus:ring-[#800020]/10"
-            autoFocus
-          />
-        )}
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {examples.map((example) => (
-            <button
-              key={example}
-              type="button"
-              onClick={() => setPrompt(example)}
-              disabled={loading}
-              className="rounded-full border border-[#ebe5dc] bg-white px-3 py-1.5 text-xs text-stone-600 transition hover:border-[#800020]/25 hover:text-[#521224] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {example}
-            </button>
-          ))}
-        </div>
-
-        {error && <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</p>}
-
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onClose} className="rounded-full px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800">
+    <WorkflowDialog
+      open
+      onClose={onClose}
+      title="Ask Mychelin for a first draft"
+      subtitle="Tell Mychelin what you want to cook. You will get an editable draft, not a definitive family recipe."
+      mobileFullHeight={false}
+      footer={
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            className="flex-1"
             onClick={() => void submit()}
             disabled={loading || prompt.trim().length < 4}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#800020] disabled:cursor-not-allowed disabled:opacity-50"
+            loading={loading}
+            iconStart={<Sparkles className="h-4 w-4" />}
           >
-            <Sparkles className="h-4 w-4" />
             {loading ? "Drafting..." : "Create draft"}
-          </button>
+          </Button>
         </div>
+      }
+    >
+      {loading ? (
+        <div className="rounded-2xl border border-ui-accent/10 bg-ui-surface px-4 py-6">
+          <LoadingAnimation
+            size={132}
+            label="Drafting your first recipe..."
+          />
+        </div>
+      ) : (
+        <textarea
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          placeholder="e.g. I want to cook chicken curry for 2, not too spicy, beginner friendly"
+          className="min-h-32 w-full rounded-2xl border border-ui-border-strong bg-ui-surface px-4 py-3 text-sm leading-6 text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent/45 focus:ring-4 focus:ring-ui-focus-soft"
+          autoFocus
+        />
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {examples.map((example) => (
+          <button
+            key={example}
+            type="button"
+            onClick={() => setPrompt(example)}
+            disabled={loading}
+            className="rounded-full border border-ui-border bg-ui-surface px-3 py-1.5 text-xs text-ui-muted transition hover:border-ui-accent/25 hover:text-ui-text disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {example}
+          </button>
+        ))}
       </div>
-    </div>
+
+      {error && (
+        <div className="mt-4">
+          <WorkflowError
+            title="Drafting didn't work"
+            message="Your prompt is still here — tweak it and try again."
+            technicalDetails={error}
+          />
+        </div>
+      )}
+    </WorkflowDialog>
   );
 }
