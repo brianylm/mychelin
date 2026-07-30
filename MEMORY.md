@@ -2612,3 +2612,9 @@ Added 2026-07-27 after a run of prod regressions (Plan nav blocked by a view-swi
 - **Post-deploy smoke**: `app/scripts/regression-smoke.mjs` (`npm run smoke:regression`) — synthetic user + recipe against the live domain, asserts recipe detail shape, logged cooks in the meal-plans payload, versions endpoint, landing hero; cleans up after itself.
 - **Deploy gate**: `npm run deploy` at repo root (`scripts/deploy.sh`) — dirty-tree guard → typecheck → lint → unit tests → build → `vercel --prod` → re-alias `mychelin-sg.vercel.app` → regression smoke. This is THE deploy path; bare `vercel --prod` skips every gate.
 - **CI**: `.github/workflows/test.yml` runs typecheck + lint + unit tests + build on every push/PR. No browser E2E yet (deferred).
+
+## Planner Randomize + Block-a-Meal
+
+Added 2026-07-27. Meal planner supports: per-slot dice re-roll, a "Randomize week/month" button (fills empty, unblocked breakfast/lunch/dinner slots — snacks stay manual), and per-slot block ("eating something else") via the `meal_plan_blocks` table. Blocking a slot deletes its plans (which is what keeps blocked slots out of the shopping list — no plans, nothing to buy); planning in a blocked slot lifts the block. Pick weighting (`src/lib/planner-randomize.ts`): try_soon/newly_added flags first, then least-recently-cooked; no repeats until the pool is exhausted. `GET /api/meal-plans` returns `{ plans, attempts, blocks }`.
+
+Updated 2026-07-27 (slice 2): pre-randomise review dialog (`RandomizeReviewDialog`) for day/week/month scopes — mark slots Fill/Eating out before the roll; "Randomize day" in the month day-planner; one-step undo banner for the last roll. The packet (`docs/work-packets/meal-plan-randomisation.md`) has an addendum recording the shipped model vs the original state-column proposal.

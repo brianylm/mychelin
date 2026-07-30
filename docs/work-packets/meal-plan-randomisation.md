@@ -247,3 +247,25 @@ Act as a senior product engineer on Mychelin. Implement timeframe-aware meal-pla
 - Slot-state changes must not leak between users; every read/write is scoped to `mealPlans.userId`.
 - Cook-from-plan and Cook With Me must still work for randomly generated meals; `mealPlanId` and recipe linkage are unchanged for `locked` slots and identical for newly filled slots.
 - Touch targets for slot state toggles must be ≥ 44px on mobile.
+
+## Addendum — what actually shipped (2026-07-27)
+
+Shipped in two slices on the `ui-uplift` branch and deployed to prod:
+
+**Slice 1 (randomize + block):**
+- Data model: `meal_plan_blocks` table (user, date, meal_type, note) instead of the `state` column proposed above. The state-column model is **superseded**. Blocking a slot deletes its plans — that is also what keeps blocked slots out of the shopping list (no plans → nothing to buy), and planning in a blocked slot lifts the block. `GET /api/meal-plans` returns `{ plans, attempts, blocks }`.
+- `locked` semantics are covered by fill-empty-only randomize: occupied slots are never overwritten. Per-slot dice is the explicit re-roll.
+- Scopes shipped: slot (instant dice), week, month.
+- Weighting: `try_soon`/`newly_added` flags first, then least-recently-cooked, shuffled within ties; no repeats until the pool is exhausted (`src/lib/planner-randomize.ts`, unit-tested). Note: deliberately NOT deterministic as the trap-check above suggests — B accepted shuffle-randomness with weighted classes.
+
+**Slice 2 (this slice):**
+- Pre-randomise review dialog for day/week/month scopes (`RandomizeReviewDialog`, on the shared `Dialog` primitive): each open slot toggles Fill (default) / Eating out; eating-out slots become blocks on confirm.
+- Day scope: "Randomize day" in the month day-planner modal.
+- One-step undo: inline banner after a roll ("Planned N meals … Undo"), deletes exactly the plans that roll created; clears on scope change.
+
+**Deviations from the packet, recorded:**
+- Blocked slots do not retain their plans (packet wanted nullable recipe_id + state); delete-on-block was chosen for shopping-list simplicity. Undo of a block is re-planning manually.
+- Undo covers only the plans created by the last roll, not review-time block operations (those are individually reversible via unblock).
+- Snack slots are excluded from time-frame randomize (B's decision).
+
+**Trap checks honoured:** few-recipe pools cycle without faking recipes; all-blocked/locked scope yields "No empty slots to fill"; blocked slots excluded from shopping list by construction; user isolation unchanged (all queries userId-scoped; privacy smoke in gate).

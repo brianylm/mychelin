@@ -27,7 +27,9 @@ import {
 import {
   pickRecipesForSlots,
   findFillableSlots,
+  type SlotRef,
 } from "@/lib/planner-randomize";
+import { RandomizeReviewDialog } from "./RandomizeReviewDialog";
 
 interface MealPlan {
   id: number;
@@ -216,6 +218,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
   const [attempts, setAttempts] = useState<LoggedAttempt[]>([]);
   const [blocks, setBlocks] = useState<MealPlanBlock[]>([]);
   const [randomizing, setRandomizing] = useState(false);
+  const [review, setReview] = useState<{ slots: SlotRef[]; label: string } | null>(null);
+  const [lastRandomized, setLastRandomized] = useState<{ planIds: number[]; label: string } | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingSlot, setAddingSlot] = useState<{
@@ -510,50 +514,98 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
     [addToast]
   );
 
-  // 🎲 Time-frame randomize: fills empty, unblocked breakfast/lunch/
-  // dinner slots across the visible range.
-  const randomizeRange = useCallback(async () => {
-    const slots = findFillableSlots({
-      dates: currentDateRange.dates,
-      plans,
-      blocks,
-    });
-    if (slots.length === 0) {
-      addToast("No empty slots to fill in this " + viewType, "error");
-      return;
-    }
-    const picks = pickRecipesForSlots({ recipes, count: slots.length });
-    if (picks.length === 0) {
-      addToast("No recipes to pick from", "error");
-      return;
-    }
-    setRandomizing(true);
-    try {
-      const newPlans: MealPlan[] = [];
-      for (let i = 0; i < slots.length; i++) {
-        const res = await fetch("/api/meal-plans", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date: slots[i].date,
-            mealType: slots[i].mealType,
-            recipeId: picks[i].id,
-            servings: 1,
-          }),
-        });
-        if (res.ok) newPlans.push(await res.json());
+  // Time-frame randomize goes through a review dialog first — the user
+  // marks slots Fill vs Eating out before the roll.
+  const openRandomizeReview = useCallback(
+    (dates: string[], label: string) => {
+      const slots = findFillableSlots({ dates, plans, blocks });
+      if (slots.length === 0) {
+        addToast("No empty slots to fill", "error");
+        return;
       }
-      setPlans((prev) => [...prev, ...newPlans]);
-      addToast(
-        `Planned ${newPlans.length} meal${newPlans.length === 1 ? "" : "s"} for this ${viewType}`,
-        "success"
+      setReview({ slots, label });
+    },
+    [plans, blocks, addToast]
+  );
+
+  const confirmRandomize = useCallback(
+    async (fillSlots: SlotRef[], eatingOutSlots: SlotRef[]) => {
+      const label = review?.label ?? "range";
+      const picks = pickRecipesForSlots({ recipes, count: fillSlots.length });
+      if (fillSlots.length > 0 && picks.length === 0) {
+        addToast("No recipes to pick from", "error");
+        return;
+      }
+      setRandomizing(true);
+      try {
+        // Mark eating-out slots as blocked.
+        for (const slot of eatingOutSlots) {
+          const res = await fetch("/api/meal-plans/blocks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: slot.date, mealType: slot.mealType }),
+          });
+          const block = await res.json();
+          if (res.ok) {
+            setBlocks((prev) => [
+              ...prev.filter((b) => !(b.date === slot.date && b.mealType === slot.mealType)),
+              block,
+            ]);
+          }
+        }
+
+        const newPlans: MealPlan[] = [];
+        for (let i = 0; i < fillSlots.length; i++) {
+          const res = await fetch("/api/meal-plans", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date: fillSlots[i].date,
+              mealType: fillSlots[i].mealType,
+              recipeId: picks[i].id,
+              servings: 1,
+            }),
+          });
+          if (res.ok) newPlans.push(await res.json());
+        }
+        setPlans((prev) => [...prev, ...newPlans]);
+        setReview(null);
+        if (newPlans.length > 0) {
+          setLastRandomized({ planIds: newPlans.map((p) => p.id), label });
+        }
+        const parts = [`Planned ${newPlans.length} meal${newPlans.length === 1 ? "" : "s"}`];
+        if (eatingOutSlots.length > 0) parts.push(`${eatingOutSlots.length} marked eating out`);
+        addToast(parts.join(" · "), "success");
+      } catch {
+        addToast("Randomize failed partway — some slots may be filled", "error");
+      } finally {
+        setRandomizing(false);
+      }
+    },
+    [review, recipes, addToast]
+  );
+
+  // One-step undo for the last randomize roll.
+  const undoRandomize = useCallback(async () => {
+    if (!lastRandomized) return;
+    const { planIds } = lastRandomized;
+    setLastRandomized(null);
+    try {
+      await Promise.all(
+        planIds.map((id) => fetch(`/api/meal-plans/${id}`, { method: "DELETE" }))
       );
+      const removed = new Set(planIds);
+      setPlans((prev) => prev.filter((p) => !removed.has(p.id)));
+      addToast("Randomize undone", "success");
     } catch {
-      addToast("Randomize failed partway — some slots may be filled", "error");
-    } finally {
-      setRandomizing(false);
+      addToast("Undo failed partway — some meals may remain", "error");
     }
-  }, [currentDateRange.dates, plans, blocks, recipes, viewType, addToast]);
+  }, [lastRandomized, addToast]);
+
+  // The undo banner is only meaningful for the scope it was created in.
+  useEffect(() => {
+    setLastRandomized(null);
+  }, [offset, viewType]);
 
   // Logged cook attempts become read-only calendar entries so the plan
   // shows what was actually cooked, not just what was planned. Merge
@@ -671,7 +723,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
               variant="solid"
               color="gray"
               disabled={randomizing || recipes.length === 0}
-              onClick={randomizeRange}
+              onClick={() => openRandomizeReview(currentDateRange.dates, `this ${viewType}`)}
             >
               <Dices className="mr-1 h-4 w-4" />
               {randomizing ? "Randomizing…" : `Randomize ${viewType}`}
@@ -706,6 +758,30 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
               </Button>
             )}
           </div>
+
+          {lastRandomized && (
+            <div className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-xs text-ui-text">
+              <span>
+                Planned {lastRandomized.planIds.length} meal{lastRandomized.planIds.length === 1 ? "" : "s"} for {lastRandomized.label}
+              </span>
+              <button
+                type="button"
+                onClick={undoRandomize}
+                className="inline-flex items-center gap-1 font-semibold text-[#800020] hover:underline"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                Undo
+              </button>
+              <button
+                type="button"
+                onClick={() => setLastRandomized(null)}
+                className="text-neutral-400 hover:text-neutral-600"
+                aria-label="Dismiss undo banner"
+              >
+                <Cross2Icon className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -979,15 +1055,31 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                     Add meals without leaving month view.
                   </p>
                 </div>
-                <IconButton
-                  variant="ghost"
-                  size="1"
-                  color="gray"
-                  onClick={() => setSelectedDayDate(null)}
-                  aria-label="Close day planner"
-                >
-                  <Cross2Icon />
-                </IconButton>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openRandomizeReview(
+                        [selectedDayDate],
+                        formatDate(selectedDayDate, todayKey).full
+                      )
+                    }
+                    disabled={recipes.length === 0}
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-[#800020]/40 hover:text-[#800020] disabled:opacity-40"
+                  >
+                    <Dices className="h-3 w-3" />
+                    Randomize day
+                  </button>
+                  <IconButton
+                    variant="ghost"
+                    size="1"
+                    color="gray"
+                    onClick={() => setSelectedDayDate(null)}
+                    aria-label="Close day planner"
+                  >
+                    <Cross2Icon />
+                  </IconButton>
+                </div>
               </div>
               <div className="space-y-2">
                 {MEAL_TYPES.map((mealType) => {
@@ -1245,6 +1337,16 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             events={exportEvents}
             title={exportTitle}
             onClose={() => setShowExportModal(false)}
+          />
+        )}
+        {review && (
+          <RandomizeReviewDialog
+            open
+            onClose={() => setReview(null)}
+            scopeLabel={review.label}
+            slots={review.slots}
+            busy={randomizing}
+            onConfirm={confirmRandomize}
           />
         )}
       </div>
