@@ -41,9 +41,30 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
     const node = targetRef.current;
     if (!node || exporting) return;
     setExporting(true);
+    // Render a full-width clone, not the live card: the live grid sits in
+    // a horizontal scroller, so capturing it directly would clip all but
+    // the visible viewport (and include the scrollbar and action
+    // buttons). The clone expands the scroll container to natural width
+    // and strips interactive artifacts; the watermark stays.
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll("[data-export-hide]").forEach((el) => el.remove());
+    const expandEl = node.querySelector<HTMLElement>("[data-export-expand]");
+    if (expandEl) {
+      const cloneExpandEl = clone.querySelector<HTMLElement>("[data-export-expand]");
+      if (cloneExpandEl) cloneExpandEl.style.overflow = "visible";
+    }
+    // Keep the live column sizing but expand to the grid's full scroll
+    // width — an unconstrained width would let fr tracks balloon.
+    const extraChrome = node.clientWidth - (expandEl?.clientWidth ?? node.clientWidth);
+    clone.style.position = "absolute";
+    clone.style.left = "-10000px";
+    clone.style.top = "0";
+    clone.style.width = `${Math.max(node.clientWidth, (expandEl?.scrollWidth ?? 0) + extraChrome)}px`;
+    clone.style.maxWidth = "none";
+    document.body.appendChild(clone);
     try {
       const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(node, {
+      const dataUrl = await toPng(clone, {
         pixelRatio: 2,
         backgroundColor: "#fffdfb",
       });
@@ -57,6 +78,7 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
       console.error("PNG export failed:", err);
       addToast("PNG export failed — use Copy recipe instead", "error");
     } finally {
+      clone.remove();
       setExporting(false);
     }
   };

@@ -109,11 +109,11 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
       )}
 
       {/* Timeline grid: ingredient rows × step columns */}
-      <div className="overflow-x-auto" role="region" aria-label="Cooking card timeline" tabIndex={0}>
+      <div className="overflow-x-auto" role="region" aria-label="Cooking card timeline" tabIndex={0} data-export-expand>
         <div
           className="grid min-w-max gap-px rounded-xl bg-ui-border"
           style={{
-            gridTemplateColumns: `minmax(150px, 1.2fr) repeat(${layout.steps.length}, minmax(132px, 1fr))`,
+            gridTemplateColumns: `minmax(96px, 128px) repeat(${layout.steps.length}, minmax(132px, 1fr))`,
           }}
         >
           {/* Header row: step cards */}
@@ -205,17 +205,20 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
         <button
           type="button"
           onClick={onStartCooking}
+          data-export-hide
           className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-ui-action px-4 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover"
         >
           <ChefHat className="h-4 w-4" aria-hidden="true" />
           Start Cooking
         </button>
-        <CookingCardExport
-          targetRef={cardRef}
-          markdown={markdown}
-          fileSlug={recipe.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "recipe"}
-          recipeId={recipe.id}
-        />
+        <span data-export-hide className="contents">
+          <CookingCardExport
+            targetRef={cardRef}
+            markdown={markdown}
+            fileSlug={recipe.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "recipe"}
+            recipeId={recipe.id}
+          />
+        </span>
         <span className="ml-auto text-[9px] text-ui-muted/70">
           made with Mychelin · mychelin-sg.vercel.app
         </span>
