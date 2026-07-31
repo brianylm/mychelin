@@ -18,7 +18,10 @@ export type UsageEventName =
   | "next_try_promoted_to_version"
   | "transcription_completed"
   | "conversation_assist_completed"
-  | "pilot_feedback_submitted";
+  | "pilot_feedback_submitted"
+  | "cooking_card_viewed"
+  | "cooking_card_export_png"
+  | "cooking_card_export_copy";
 
 type Primitive = string | number | boolean | null;
 export type UsageEventProperties = Record<string, Primitive | Primitive[]>;

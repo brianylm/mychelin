@@ -22,6 +22,8 @@ import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
 import { VoiceRecording } from "@/components/heritage/VoiceRecording";
 
 import { ServingScaler } from "./ServingScaler";
+import { CookingCard } from "./CookingCard";
+import { COOKING_CARD_ENABLED } from "@/lib/feature-flags";
 import { CookWithMeSession } from "./CookWithMeSession";
 import { AttemptHistory } from "./AttemptHistory";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
@@ -393,6 +395,23 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [savingCookTime, setSavingCookTime] = useState(false);
   const [savingYield, setSavingYield] = useState(false);
   const [ingredientScale, setIngredientScale] = useState(1);
+  // Recipe vs Cooking Card view. Remembered per user; the card is a
+  // read-only transformation of the same data behind a kill switch.
+  const RECIPE_VIEW_MODE_KEY = "mychelin:recipe-view-mode";
+  const [viewMode, setViewModeState] = useState<"recipe" | "card">(() =>
+    typeof window !== "undefined" &&
+    window.localStorage.getItem(RECIPE_VIEW_MODE_KEY) === "card"
+      ? "card"
+      : "recipe"
+  );
+  const setViewMode = (mode: "recipe" | "card") => {
+    setViewModeState(mode);
+    try {
+      window.localStorage.setItem(RECIPE_VIEW_MODE_KEY, mode);
+    } catch {
+      /* private mode — preference just doesn't persist */
+    }
+  };
   const [showAddToBookModal, setShowAddToBookModal] = useState(false);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
   const [activeBookRecipes, setActiveBookRecipes] = useState<RecipeCard[]>([]);
@@ -1444,6 +1463,15 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                   compact
                 />
               )}
+              <button
+                type="button"
+                onClick={() => setShowShareModal({ type: "recipe", id: selectedRecipe.id, name: selectedRecipe.title })}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-ui-surface-raised px-3 text-xs font-semibold text-ui-action shadow-sm transition hover:bg-[#fff7e8]"
+                aria-label="Share recipe"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                Share
+              </button>
               {recipeEditMode ? (
                 <button
                   type="button"
@@ -1605,33 +1633,67 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
           </div>
         )}
 
+        {/* Recipe / Cooking Card view toggle (kill switch: COOKING_CARD_ENABLED) */}
+        {COOKING_CARD_ENABLED && !recipeEditMode && (
+          <div className="flex justify-center">
+            <div className="inline-flex rounded-lg bg-ui-surface-subtle p-1" role="tablist" aria-label="Recipe view mode">
+              {(["recipe", "card"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
+                    viewMode === mode
+                      ? "bg-ui-action text-ui-action-text shadow-sm"
+                      : "text-ui-muted hover:text-ui-text"
+                  }`}
+                >
+                  {mode === "recipe" ? "Recipe" : "Card"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Serving Scaler */}
         <ServingScaler
           baseYield={selectedRecipe.yield ?? ""}
           onScaleChange={setIngredientScale}
         />
 
-        {/* Ingredients */}
-        <IngredientList
-          ingredients={selectedRecipe.ingredients ?? []}
-          recipeId={selectedRecipe.id}
-          onAdd={addIngredient}
-          onUpdate={updateIngredient}
-          onDelete={deleteIngredient}
-          scale={ingredientScale}
-          readOnly={!recipeEditMode}
-        />
+        {COOKING_CARD_ENABLED && viewMode === "card" && !recipeEditMode ? (
+          <CookingCard
+            recipe={selectedRecipe}
+            scale={ingredientScale}
+            onStartCooking={() => setShowCookWithMe(true)}
+          />
+        ) : (
+          <>
+            {/* Ingredients */}
+            <IngredientList
+              ingredients={selectedRecipe.ingredients ?? []}
+              recipeId={selectedRecipe.id}
+              onAdd={addIngredient}
+              onUpdate={updateIngredient}
+              onDelete={deleteIngredient}
+              scale={ingredientScale}
+              readOnly={!recipeEditMode}
+            />
 
-        {/* Steps */}
-        <RecipeSteps
-          instructions={selectedRecipe.instructions ?? []}
-          recipeId={selectedRecipe.id}
-          onAdd={addInstruction}
-          onUpdate={updateInstruction}
-          onDelete={deleteInstruction}
-          ingredients={selectedRecipe.ingredients ?? []}
-          readOnly={!recipeEditMode}
-        />
+            {/* Steps */}
+            <RecipeSteps
+              instructions={selectedRecipe.instructions ?? []}
+              recipeId={selectedRecipe.id}
+              onAdd={addInstruction}
+              onUpdate={updateInstruction}
+              onDelete={deleteInstruction}
+              ingredients={selectedRecipe.ingredients ?? []}
+              readOnly={!recipeEditMode}
+            />
+          </>
+        )}
 
         {/* Attempts & versions — the improvement loop sits directly after
             the core recipe so the next cook is one glance away. */}

@@ -6,6 +6,16 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-07-30",
+    title: "Cooking Card view with PNG export",
+    items: [
+      "Open any recipe and switch between Recipe and the new Card view — a visual timeline of step cards with heat and timer chips.",
+      "The card's ingredient rail scales with servings and offers mise-en-place checkboxes for the current cook.",
+      "Export the card as a PNG image with a small Mychelin watermark, or copy a clean markdown summary for WhatsApp and notes.",
+      "Share recipe now has a one-tap button with an icon at the top of the recipe page.",
+    ],
+  },
+  {
     date: "2026-07-10",
     title: "Recipe parsing, save flow, and planning flags",
     items: [

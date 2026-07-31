@@ -189,3 +189,19 @@ Act as a senior product engineer on Mychelin. Implement a read-only "Cooking Car
 - Export watermark should be small and not cover recipe text; it is a growth cue, not an ad.
 - Touch targets on mobile must not overlap; test on the smallest common width (iPhone SE 375px).
 - Do not let the card view become the default until B explicitly accepts it; default stays on the existing Recipe view.
+
+## Addendum — implementation decisions (2026-07-30, from grilling session with B)
+
+- **Both jobs equally** (cook aid + shareable artifact); **full grid everywhere** — mobile scrolls horizontally, ingredient rail is sticky-left.
+- **Grid rendering**: dot-matrix alignment (filled dot where step × ingredient match) instead of row-spanning cards — far less fragile with imperfect matching; same glanceable "what's used where".
+- **Step titles**: verb extraction (`src/lib/cooking-card-verbs.ts`) with an exported lexicon (English + SEA/dialect starters: tumis, goreng, rebus, kukus, panggang, agak-agak, zhup — extend freely) and truncate-first-line fallback. No LLM at render.
+- **Timers**: chips only when the step text explicitly states a duration (strict regex). NOT `detectStepTimerSeconds`, which keyword-guesses and defaults to 5 min. No distributed estimates.
+- **Heat**: chips only when a `[heat:x]` tag exists on the step's tip.
+- **Matching**: `matchIngredientsForStep` shipped as-is, unmeasured — B accepted.
+- **Dropped from v1**: vessel, unit conversion.
+- **Checkboxes**: reset on view switch, not persisted. **View memory**: last view remembered per user (localStorage `mychelin:recipe-view-mode`).
+- **PNG export is v1-required** (`html-to-image`); copy-markdown is the always-works fallback on export failure.
+- **Rollback**: whole feature is one isolated commit behind the `COOKING_CARD_ENABLED` kill switch (`src/lib/feature-flags.ts`) — `git revert` or flip one line. RecipeView diff is a toggle + one conditional block.
+- **Accepted deviation**: Start Cooking opens CookWithMeSession with unscaled ingredients (the session has no scale prop) — card scaling does not carry into the session. Candidate for a later pass.
+- **Gate**: preview-first on `mychelin-ui-uplift.vercel.app`; prod only after B accepts.
+- Also shipped in the same pass: share CTA with icon at the top of the recipe detail page (B's request).
