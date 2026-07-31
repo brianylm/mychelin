@@ -56,12 +56,19 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
     // Keep the live column sizing but expand to the grid's full scroll
     // width — an unconstrained width would let fr tracks balloon.
     const extraChrome = node.clientWidth - (expandEl?.clientWidth ?? node.clientWidth);
-    clone.style.position = "absolute";
-    clone.style.left = "-10000px";
-    clone.style.top = "0";
     clone.style.width = `${Math.max(node.clientWidth, (expandEl?.scrollWidth ?? 0) + extraChrome)}px`;
     clone.style.maxWidth = "none";
-    document.body.appendChild(clone);
+    // On-screen but painted behind the app: off-screen positioning
+    // (negative left) renders blank on mobile Safari with html-to-image,
+    // and opacity:0/visibility:hidden produce empty captures too.
+    const host = document.createElement("div");
+    host.style.position = "fixed";
+    host.style.left = "0";
+    host.style.top = "0";
+    host.style.zIndex = "-1";
+    host.style.pointerEvents = "none";
+    host.appendChild(clone);
+    document.body.appendChild(host);
     try {
       const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(clone, {
@@ -78,7 +85,7 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
       console.error("PNG export failed:", err);
       addToast("PNG export failed — use Copy recipe instead", "error");
     } finally {
-      clone.remove();
+      host.remove();
       setExporting(false);
     }
   };

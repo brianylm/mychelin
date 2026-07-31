@@ -108,12 +108,15 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
         </div>
       )}
 
-      {/* Timeline grid: ingredient rows × step columns */}
+      {/* Timeline grid: ingredient rows × step columns. Columns squeeze
+          to a 96px floor and headers wrap to two lines so the whole grid
+          fits without scrolling whenever there's room; it scrolls only
+          when the floor is hit. */}
       <div className="overflow-x-auto" role="region" aria-label="Cooking card timeline" tabIndex={0} data-export-expand>
         <div
-          className="grid min-w-max gap-px rounded-xl bg-ui-border"
+          className="grid w-full gap-px rounded-xl bg-ui-border"
           style={{
-            gridTemplateColumns: `minmax(96px, 128px) repeat(${layout.steps.length}, minmax(132px, 1fr))`,
+            gridTemplateColumns: `minmax(88px, 120px) repeat(${layout.steps.length}, minmax(96px, 1fr))`,
           }}
         >
           {/* Header row: step cards */}
@@ -126,7 +129,7 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-white">
                   {step.stepNumber}
                 </span>
-                <span className="truncate text-xs font-semibold text-ui-text" title={step.title}>
+                <span className="line-clamp-2 text-xs font-semibold leading-4 text-ui-text" title={step.title}>
                   {step.title}
                 </span>
               </div>
