@@ -109,12 +109,12 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
       )}
 
       {/* Timeline grid: ingredient rows × step columns. Columns squeeze
-          to a 96px floor and headers wrap to two lines so the whole grid
-          fits without scrolling whenever there's room; it scrolls only
-          when the floor is hit. */}
+          to a 96px floor and the grid grows to fit its tracks (w-fit) so
+          the gap-lines render across the whole scrollable width; it
+          scrolls only when the floor is hit. */}
       <div className="overflow-x-auto" role="region" aria-label="Cooking card timeline" tabIndex={0} data-export-expand>
         <div
-          className="grid w-full gap-px rounded-xl bg-ui-border"
+          className="grid w-fit min-w-full gap-px rounded-xl bg-ui-border"
           style={{
             gridTemplateColumns: `minmax(88px, 120px) repeat(${layout.steps.length}, minmax(96px, 1fr))`,
           }}
@@ -129,7 +129,7 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-white">
                   {step.stepNumber}
                 </span>
-                <span className="line-clamp-2 text-xs font-semibold leading-4 text-ui-text" title={step.title}>
+                <span className="text-xs font-semibold leading-4 text-ui-text">
                   {step.title}
                 </span>
               </div>
@@ -149,7 +149,7 @@ export function CookingCard({ recipe, scale, onStartCooking }: CookingCardProps)
                   )}
                 </div>
               )}
-              <p className="mt-1 line-clamp-4 text-[10px] leading-4 text-ui-muted">
+              <p className="mt-1 text-[10px] leading-4 text-ui-muted">
                 {step.text}
               </p>
             </div>
