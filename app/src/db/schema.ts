@@ -222,6 +222,10 @@ export const recipePhotos = sqliteTable("recipe_photos", {
     .notNull()
     .references(() => recipes.id, { onDelete: "cascade" }),
   blobUrl: text("blob_url").notNull(),
+  // "upload" (user-added) or "generated" (AI-beautified variant of an
+  // upload). Generated rows keep a pointer to their source upload.
+  source: text("source").notNull().default("upload"),
+  sourcePhotoId: integer("source_photo_id"),
   sortOrder: integer("sort_order").default(0),
   createdAt: text("created_at")
     .notNull()

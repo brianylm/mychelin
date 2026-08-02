@@ -866,6 +866,37 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     [selectedRecipe, qc]
   );
 
+  const [beautifyingPhotoId, setBeautifyingPhotoId] = useState<string | null>(null);
+  const handlePhotoBeautify = useCallback(
+    async (photo: { id: string }) => {
+      if (!selectedRecipe || beautifyingPhotoId) return;
+      setBeautifyingPhotoId(photo.id);
+      try {
+        const response = await fetch(
+          `/api/recipes/${selectedRecipe.id}/photos/${photo.id}/beautify`,
+          { method: "POST" }
+        );
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body.error || "Failed to beautify photo");
+        }
+        qc.setQueryData<import("@/store/RecipeStore").RecipeWithRelations | null>(
+          ["recipe", selectedRecipe.id],
+          (current) =>
+            current
+              ? { ...current, photos: [...(current.photos ?? []), body] }
+              : current
+        );
+        addToast("Painterly version ready", "success");
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Beautify failed", "error");
+      } finally {
+        setBeautifyingPhotoId(null);
+      }
+    },
+    [selectedRecipe, beautifyingPhotoId, qc, addToast]
+  );
+
   const handleDelete = useCallback(async () => {
     if (!selectedRecipe) return;
     if (!confirm("Delete this recipe? This cannot be undone.")) return;
@@ -1497,10 +1528,14 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             id: String(p.id),
             url: p.blobUrl,
             sortOrder: p.sortOrder ?? 0,
+            source: p.source,
+            sourcePhotoId: p.sourcePhotoId,
           }))}
           coverUrl={selectedRecipe.imageUrl}
           onUpload={handlePhotoUpload}
           onRemove={handlePhotoRemove}
+          onBeautify={handlePhotoBeautify}
+          beautifyingId={beautifyingPhotoId}
           readOnly={!recipeEditMode}
           onSetCover={async (photoUrl) => {
             if (!selectedRecipe) return;

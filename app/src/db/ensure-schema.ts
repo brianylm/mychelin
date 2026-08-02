@@ -31,6 +31,7 @@ let userOAuthEnsured = false;
 let pilotFeedbackEnsured = false;
 let recipeFlagsEnsured = false;
 let mealPlanBlocksEnsured = false;
+let recipePhotoSourceEnsured = false;
 
 let _client: Client | null = null;
 
@@ -541,4 +542,30 @@ export async function ensureMealPlanBlocksTable(): Promise<void> {
   ], "ensureMealPlanBlocksTable");
 
   mealPlanBlocksEnsured = true;
+}
+
+
+export async function ensureRecipePhotoSourceColumns(): Promise<void> {
+  if (recipePhotoSourceEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  let cols: Set<string>;
+  try {
+    cols = await tableColumns(client, "recipe_photos");
+  } catch (e: unknown) {
+    console.warn("ensureRecipePhotoSourceColumns probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const statements: string[] = [];
+  if (!cols.has("source")) {
+    statements.push(`ALTER TABLE recipe_photos ADD COLUMN source text NOT NULL DEFAULT 'upload'`);
+  }
+  if (!cols.has("source_photo_id")) {
+    statements.push(`ALTER TABLE recipe_photos ADD COLUMN source_photo_id integer`);
+  }
+
+  await runDdl(client, statements, "ensureRecipePhotoSourceColumns");
+  recipePhotoSourceEnsured = true;
 }

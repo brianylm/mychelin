@@ -8,12 +8,16 @@ import {
   ChevronRightIcon,
   TrashIcon,
   RotateCounterClockwiseIcon,
+  MagicWandIcon,
 } from "@radix-ui/react-icons";
 
 export interface RecipePhoto {
   id: string;
   url: string;
   sortOrder: number;
+  // "upload" (user-added) or "generated" (AI-beautified variant).
+  source?: string | null;
+  sourcePhotoId?: number | null;
 }
 
 interface PhotoUploadSectionProps {
@@ -26,6 +30,8 @@ interface PhotoUploadSectionProps {
   onUpload: (file: File, onProgress?: (progress: number | null) => void) => Promise<void>;
   onRemove: (photoId: string) => Promise<void>;
   onSetCover?: (photoUrl: string) => Promise<void>;
+  onBeautify?: (photo: RecipePhoto) => Promise<void>;
+  beautifyingId?: string | null;
   isUploading?: boolean;
   uploadError?: string | null;
   readOnly?: boolean;
@@ -80,6 +86,8 @@ export function PhotoUploadSection({
   onUpload,
   onRemove,
   onSetCover,
+  onBeautify,
+  beautifyingId = null,
   isUploading = false,
   uploadError,
   readOnly = false,
@@ -300,6 +308,26 @@ export function PhotoUploadSection({
               )}
               {photos[galleryIndex].url === coverUrl && (
                 <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-medium text-white">Current cover</span>
+              )}
+              {!readOnly && onBeautify && photos[galleryIndex].source !== "generated" && (
+                <button
+                  onClick={() => void onBeautify(photos[galleryIndex])}
+                  disabled={beautifyingId !== null}
+                  className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f] disabled:opacity-60"
+                  title="Beautify — repaint as an illustration"
+                >
+                  {beautifyingId === photos[galleryIndex].id ? (
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : (
+                    <MagicWandIcon className="h-3.5 w-3.5" />
+                  )}
+                  {beautifyingId === photos[galleryIndex].id ? "Painting…" : "Beautify"}
+                </button>
+              )}
+              {photos[galleryIndex].source === "generated" && (
+                <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#800020]/80 px-3 text-xs font-medium text-white">
+                  AI illustration
+                </span>
               )}
               <button onClick={rotatePhoto} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Rotate">
                 <RotateCounterClockwiseIcon className="h-4 w-4 text-white" />
@@ -575,6 +603,26 @@ export function PhotoUploadSection({
             {photos[galleryIndex].url === coverUrl && (
               <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-medium text-white">
                 Current cover
+              </span>
+            )}
+            {!readOnly && onBeautify && photos[galleryIndex].source !== "generated" && (
+              <button
+                onClick={() => void onBeautify(photos[galleryIndex])}
+                disabled={beautifyingId !== null}
+                className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f] disabled:opacity-60"
+                title="Beautify — repaint as an illustration"
+              >
+                {beautifyingId === photos[galleryIndex].id ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <MagicWandIcon className="h-3.5 w-3.5" />
+                )}
+                {beautifyingId === photos[galleryIndex].id ? "Painting…" : "Beautify"}
+              </button>
+            )}
+            {photos[galleryIndex].source === "generated" && (
+              <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#800020]/80 px-3 text-xs font-medium text-white">
+                AI illustration
               </span>
             )}
             <button
