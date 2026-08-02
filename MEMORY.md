@@ -2626,3 +2626,7 @@ Added 2026-07-30. The three capture modals (PasteRecipeModal, AiDraftRecipeModal
 ## Cooking Card View
 
 Added 2026-07-30. Recipes have a Recipe/Card toggle (remembered per user): the card is a read-only visual timeline — verb-extracted step titles (`cooking-card-verbs.ts`, lexicon is easily extended), strict explicit timer chips, heat chips from `[heat:x]` tags, scaled sticky-left ingredient rail with mise-en-place checkboxes (reset on view switch), dot-matrix ingredient×step alignment (`matchIngredientsForStep` as-is), PNG (`html-to-image`) + markdown export with watermark, and analytics via the new allowlisted `POST /api/usage-events`. Rollback: single commit behind `COOKING_CARD_ENABLED` in `src/lib/feature-flags.ts`. Known deviation: Start Cooking opens Cook With Me unscaled. Deploy gate: preview alias first, prod after B accepts.
+
+## AI Photo Beautify + Shareable Recipe Card
+
+Added 2026-07-30 (packet: `docs/work-packets/ai-recipe-image-card.md`). User photos can be repainted as painterly illustrations (Gemini image model, hero style) — auto on share for the cover photo, or per-photo via the gallery Beautify button. Generated variants are `recipe_photos` rows with `source="generated"` (originals untouched, still the cover source). The public `/shared/[token]` recipe page is now a recipe card (AI hero + static cooking-card table + signup CTA with printed URL + "Save as image" PNG export) behind `SHARED_RECIPE_CARD_ENABLED`. Export clone technique shared via `src/lib/export-node-png.ts`.

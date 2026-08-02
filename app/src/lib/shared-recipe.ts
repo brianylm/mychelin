@@ -25,7 +25,10 @@ export type SharedRecipeInstruction = {
 };
 
 export type SharedRecipePhoto = {
+  id: number;
   blobUrl: string;
+  source: string | null;
+  sourcePhotoId: number | null;
   sortOrder: number | null;
 };
 
@@ -185,7 +188,10 @@ export async function getSharedRecipeDTO(recipeId: number): Promise<SharedRecipe
     ingredients: sharedIngredients,
     instructions: sharedInstructions,
     photos: (recipe.photos ?? []).map((photo) => ({
+      id: photo.id,
       blobUrl: photo.blobUrl,
+      source: photo.source ?? null,
+      sourcePhotoId: photo.sourcePhotoId ?? null,
       sortOrder: photo.sortOrder ?? null,
     })),
   };

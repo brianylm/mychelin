@@ -5,28 +5,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ServingScaler, formatScaledQuantity } from "@/components/recipes/ServingScaler";
 import { SignupNudge } from "@/components/sharing/SignupNudge";
+import { SharedRecipeCard } from "@/components/sharing/SharedRecipeCard";
+import { SHARED_RECIPE_CARD_ENABLED } from "@/lib/feature-flags";
+import type { SharedRecipeDTO } from "@/lib/shared-recipe";
 
-interface SharedRecipe {
-  id: number;
-  title: string;
-  description: string | null;
-  cuisine: string | null;
-  yield: string | null;
-  prepTime: number | null;
-  cookTime: number | null;
-  story: string | null;
-  imageUrl: string | null;
-  origin: string | null;
-  dialect: string | null;
-  occasion: string | null;
-  familyMember: string | null;
-  generation: string | null;
-  sourceUrl: string | null;
-  definitiveVersionLabel: string | null;
-  ingredients: { name: string; quantity: number | null; unit: string | null; approximate?: boolean; quantityText?: string | null; notes: string | null }[];
-  instructions: { stepNumber: number; content: string; tip: string | null; imageUrl?: string | null }[];
-  photos: { blobUrl: string; sortOrder: number | null }[];
-}
+type SharedRecipe = SharedRecipeDTO;
 
 interface SharedBook {
   id: number;
@@ -341,6 +324,30 @@ export default function SharedPage() {
   if (shared.type === "recipe" || selectedRecipe) {
     const recipe = selectedRecipe || (shared.type === "recipe" ? shared.data : null);
     if (!recipe) return null;
+
+    if (SHARED_RECIPE_CARD_ENABLED && !selectedRecipe) {
+      return (
+        <div className="min-h-screen bg-neutral-50 pb-24">
+          <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
+            <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-3">
+              <img src="/icons/icon-96.png" alt="Mychelin" className="h-8 w-8 rounded-lg" />
+              <span className="text-sm font-semibold text-neutral-800">Mychelin</span>
+              <span className="ml-auto rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-medium text-[#800020]">
+                {shared.permission === "edit" ? "Collaborator" : "View only"}
+              </span>
+            </div>
+          </header>
+          <main className="mx-auto max-w-3xl px-4 py-5 sm:px-5">
+            <SharedRecipeCard recipe={recipe} shareToken={token} />
+          </main>
+          {isLoggedIn ? (
+            <SaveRecipeButton token={token} />
+          ) : (
+            <SignupNudge context="recipe" resourceName={recipe.title} />
+          )}
+        </div>
+      );
+    }
 
     return (
       <>

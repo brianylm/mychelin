@@ -3,6 +3,7 @@
 import { useState, type RefObject } from "react";
 import { Copy, ImageDown } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { exportNodeToPng } from "@/lib/export-node-png";
 
 interface CookingCardExportProps {
   targetRef: RefObject<HTMLDivElement | null>;
@@ -41,51 +42,17 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
     const node = targetRef.current;
     if (!node || exporting) return;
     setExporting(true);
-    // Render a full-width clone, not the live card: the live grid sits in
-    // a horizontal scroller, so capturing it directly would clip all but
-    // the visible viewport (and include the scrollbar and action
-    // buttons). The clone expands the scroll container to natural width
-    // and strips interactive artifacts; the watermark stays.
-    const clone = node.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll("[data-export-hide]").forEach((el) => el.remove());
-    const expandEl = node.querySelector<HTMLElement>("[data-export-expand]");
-    if (expandEl) {
-      const cloneExpandEl = clone.querySelector<HTMLElement>("[data-export-expand]");
-      if (cloneExpandEl) cloneExpandEl.style.overflow = "visible";
-    }
-    // Keep the live column sizing but expand to the grid's full scroll
-    // width — an unconstrained width would let fr tracks balloon.
-    const extraChrome = node.clientWidth - (expandEl?.clientWidth ?? node.clientWidth);
-    clone.style.width = `${Math.max(node.clientWidth, (expandEl?.scrollWidth ?? 0) + extraChrome)}px`;
-    clone.style.maxWidth = "none";
-    // On-screen but painted behind the app: off-screen positioning
-    // (negative left) renders blank on mobile Safari with html-to-image,
-    // and opacity:0/visibility:hidden produce empty captures too.
-    const host = document.createElement("div");
-    host.style.position = "fixed";
-    host.style.left = "0";
-    host.style.top = "0";
-    host.style.zIndex = "-1";
-    host.style.pointerEvents = "none";
-    host.appendChild(clone);
-    document.body.appendChild(host);
     try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(clone, {
-        pixelRatio: 2,
-        backgroundColor: "#fffdfb",
+      await exportNodeToPng({
+        node,
+        fileName: `mychelin-${fileSlug}-card.png`,
       });
-      const link = document.createElement("a");
-      link.download = `mychelin-${fileSlug}-card.png`;
-      link.href = dataUrl;
-      link.click();
       addToast("Card image downloaded", "success");
       trackCardEvent("cooking_card_export_png", recipeId);
     } catch (err) {
       console.error("PNG export failed:", err);
       addToast("PNG export failed — use Copy recipe instead", "error");
     } finally {
-      host.remove();
       setExporting(false);
     }
   };

@@ -3,3 +3,7 @@
 //   2. flip this constant to false and redeploy — the Recipe/Card toggle
 //      disappears and every card module becomes unreachable.
 export const COOKING_CARD_ENABLED = true;
+
+// Rollback for the shared-page recipe card: flip to false and the public
+// /shared/[token] page falls back to the classic recipe detail layout.
+export const SHARED_RECIPE_CARD_ENABLED = true;
