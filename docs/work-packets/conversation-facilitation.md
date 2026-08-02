@@ -143,3 +143,11 @@ The implementation is done when:
 - Post-recording review assistant.
 - Analytics for which suggestion categories were dismissed/resolved.
 - Advanced speaker labeling between learner and older cook.
+
+## Addendum — what shipped (2026-07-30)
+
+- **Card lifecycle**: ≤3 visible cards + "Show more (N)" caret + per-card dismiss (client-side `question-cards.ts`). Auto-resolution stays passive — the backend regenerates suggestions every assist poll, so answered cards vanish on their own.
+- **Dialect fix**: the Gemini chunk recorder now runs the entire session, even when realtime connects. Chunk segments accumulate as a canonical backup transcript (`conversation-transcript.ts`); naming/extraction use it, live captions stay fast. A final assist call on the canonical transcript fires at naming so the review gist/questions are dialect-accurate.
+- **OpenAI realtime gated off** by default via `CONVERSATION_REALTIME_ENABLED` (no free tier on OpenAI API).
+- **Consent**: first-recording-per-device warm checkpoint (localStorage `mychelin:voice-consent-v1`); no raw audio stored.
+- Modal migrated to WorkflowDialog.

@@ -36,3 +36,9 @@ The consent UX should be human, not scary:
 - What should be visible during recording so older cooks know recording is active?
 - Should sharing a recipe ever include transcript/audio, or recipe text only by default?
 - What is the minimum consent copy that feels warm rather than legalistic?
+
+## Addendum — decisions shipped (2026-07-30)
+
+- Consent is a **first-recording-per-device** warm checkpoint, not a per-session gate: "Make sure everyone is okay being recorded. Audio is used to create your private recipe draft, and you can delete it later." Persisted in localStorage (`mychelin:voice-consent-v1`).
+- **No raw audio stored** — chunks are transcribed and discarded (unchanged from before).
+- Provider note superseded: this packet preferred OpenAI Realtime for live captions, but OpenAI API has no free tier and its Hokkien handling is weak — Gemini chunked transcription is now the canonical path (`CONVERSATION_REALTIME_ENABLED = false` by default).

@@ -2,10 +2,19 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@radix-ui/themes";
-import { StopIcon, MagicWandIcon, Cross2Icon } from "@radix-ui/react-icons";
-import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower } from "lucide-react";
+import { StopIcon, MagicWandIcon, ChevronDownIcon } from "@radix-ui/react-icons";
+import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower, X } from "lucide-react";
 import { ChatBubble } from "./ChatBubble";
 import { RecipeCaptureReview } from "./RecipeCaptureReview";
+import { WorkflowDialog } from "@/components/ui/WorkflowDialog";
+import { CONVERSATION_REALTIME_ENABLED } from "@/lib/feature-flags";
+import {
+  mergeTranscriptSegments,
+  pickCanonicalTranscript,
+  nameTranscript,
+  type TranscriptSegment,
+} from "@/lib/conversation-transcript";
+import { selectVisibleCards } from "@/lib/question-cards";
 
 // Modal-based conversation facilitation. Opens from the recipe page,
 // records the family recipe conversation with zero pre-setup, streams
@@ -154,6 +163,8 @@ function ConversationAssistPanel({
   copiedQuestion,
   hasMessages,
   onCopyQuestion,
+  onDismissQuestion,
+  dismissedQuestions,
   transcriptionMode,
 }: {
   assist: ConversationAssist | null;
@@ -162,17 +173,29 @@ function ConversationAssistPanel({
   copiedQuestion: string | null;
   hasMessages: boolean;
   onCopyQuestion: (question: string) => void;
+  onDismissQuestion: (question: string) => void;
+  dismissedQuestions: string[];
   transcriptionMode: TranscriptionMode;
 }) {
   const questions = assist?.suggestedQuestions ?? [];
   const missingCues = assist?.missingCues ?? [];
   const uncertainTerms = assist?.uncertainTerms ?? [];
+  const [showOverflow, setShowOverflow] = useState(false);
+  const { visible: visibleQuestions, overflowCount } = selectVisibleCards({
+    suggestions: questions,
+    dismissed: dismissedQuestions,
+  });
+  const overflowQuestions = showOverflow
+    ? questions.filter(
+        (q) => !visibleQuestions.includes(q) && !dismissedQuestions.includes(q)
+      )
+    : [];
   const statusLabel = transcriptionMode === "realtime"
-    ? "Realtime captions"
+    ? "Live captions + dialect backup"
     : transcriptionMode === "browser"
       ? "Browser captions"
       : transcriptionMode === "chunked"
-        ? "Backup captions"
+        ? "Dialect AI captions"
         : "Ready";
 
   return (
@@ -237,24 +260,75 @@ function ConversationAssistPanel({
         </div>
       )}
 
-      {questions.length > 0 && (
+      {visibleQuestions.length > 0 && (
         <div className="mt-3">
           <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
             <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden="true" />
             Ask next
           </p>
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {questions.map((question) => (
-              <button
+            {visibleQuestions.map((question) => (
+              <div
                 key={question}
-                type="button"
-                onClick={() => onCopyQuestion(question)}
-                className="min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2 text-left text-xs leading-5 text-[#241017] transition hover:border-[#800020]/30 hover:bg-[#800020]/10"
+                className="relative min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2"
               >
-                {question}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onCopyQuestion(question)}
+                  className="block w-full pr-5 text-left text-xs leading-5 text-[#241017] transition hover:opacity-80"
+                >
+                  {question}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDismissQuestion(question)}
+                  aria-label="Dismiss suggestion"
+                  title="Dismiss"
+                  className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-stone-400 transition hover:bg-white/70 hover:text-stone-700"
+                >
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              </div>
             ))}
           </div>
+          {overflowCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowOverflow((v) => !v)}
+              className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 transition hover:text-[#800020]"
+              aria-expanded={showOverflow}
+            >
+              <ChevronDownIcon className={showOverflow ? "rotate-180" : ""} />
+              {showOverflow ? "Show fewer" : `Show more (${overflowCount})`}
+            </button>
+          )}
+          {showOverflow && overflowQuestions.length > 0 && (
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+              {overflowQuestions.map((question) => (
+                <div
+                  key={question}
+                  className="relative min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onCopyQuestion(question)}
+                    className="block w-full pr-5 text-left text-xs leading-5 text-stone-600 transition hover:opacity-80"
+                  >
+                    {question}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDismissQuestion(question)}
+                    aria-label="Dismiss suggestion"
+                    title="Dismiss"
+                    className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-stone-400 transition hover:bg-white/70 hover:text-stone-700"
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -351,6 +425,22 @@ export function ConversationCapture({
   const lastChunkFailureNoticeAtRef = useRef(0);
   const chunkFailureCountRef = useRef(0);
   const currentChunkHasSpeechRef = useRef(false);
+  // Dialect-strong Gemini chunk segments accumulate here for the whole
+  // session — the canonical transcript at extraction time. Live captions
+  // (realtime/browser) drive the live view; this is the accurate record.
+  const backupSegmentsRef = useRef<TranscriptSegment[]>([]);
+  // State mirror so memos can react to backup growth (refs don't render).
+  const [backupSegmentCount, setBackupSegmentCount] = useState(0);
+  const [dismissedQuestions, setDismissedQuestions] = useState<string[]>([]);
+  // First-recording-per-device consent checkpoint (voice-consent packet):
+  // a warm one-liner, persisted — not a per-session legal gate.
+  const VOICE_CONSENT_KEY = "mychelin:voice-consent-v1";
+  const [consentAcked, setConsentAcked] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.localStorage.getItem(VOICE_CONSENT_KEY) === "1"
+  );
+  const [showConsent, setShowConsent] = useState(false);
 
   const transcriptSignature = useMemo(
     () => messages.map((m) => m.speakerLabel + ":" + m.text).join("\n").slice(-5000),
@@ -415,6 +505,10 @@ export function ConversationCapture({
     window.setTimeout(() => {
       setCopiedQuestion((current) => (current === question ? null : current));
     }, 1300);
+  }, []);
+
+  const handleDismissQuestion = useCallback((question: string) => {
+    setDismissedQuestions((prev) => (prev.includes(question) ? prev : [...prev, question]));
   }, []);
 
   const appendRealtimeDelta = useCallback((itemId: string, delta: string) => {
@@ -573,9 +667,21 @@ export function ConversationCapture({
       const segments = data.segments ?? [];
       if (segments.length === 0) return;
 
-      const recentLiveTranscript = Date.now() - lastLiveTranscriptAtRef.current < CHUNK_DURATION_MS * 3;
-      const hasReliableRealtimeStream = transcriptionModeRef.current === "realtime";
-      if (hasReliableRealtimeStream && recentLiveTranscript) return;
+      // Always accumulate into the canonical backup transcript.
+      const timestamp = new Date().toISOString();
+      backupSegmentsRef.current = mergeTranscriptSegments([
+        ...backupSegmentsRef.current,
+        ...segments.map((seg) => ({
+          speaker: seg.speaker || "Speaker 1",
+          text: seg.text,
+          timestamp,
+        })),
+      ]);
+      setBackupSegmentCount((n) => n + 1);
+
+      // In realtime mode the live view is driven by the realtime stream —
+      // chunks stay silent backup. Outside realtime they ARE the captions.
+      if (transcriptionModeRef.current === "realtime") return;
 
       setMessages((prev) => {
         const next = [...prev];
@@ -594,7 +700,7 @@ export function ConversationCapture({
               id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
               speakerLabel: label,
               text: seg.text,
-              timestamp: new Date().toISOString(),
+              timestamp,
             });
           }
         }
@@ -933,6 +1039,9 @@ export function ConversationCapture({
 
       recordingActiveRef.current = true;
       chunkBackupActiveRef.current = true;
+      backupSegmentsRef.current = [];
+      setBackupSegmentCount(0);
+      setDismissedQuestions([]);
       lastLiveTranscriptAtRef.current = 0;
       lastChunkFailureNoticeAtRef.current = 0;
       chunkFailureCountRef.current = 0;
@@ -950,18 +1059,22 @@ export function ConversationCapture({
         setAssistError("Recording is live. Dialect-aware AI captions will arrive in short batches if speech transcription is available.");
       }
 
+      // OpenAI realtime is opt-in (CONVERSATION_REALTIME_ENABLED): it has
+      // no free tier, and it used to kill the dialect-strong Gemini path
+      // when it connected. When enabled, realtime provides live captions
+      // while the chunk recorder keeps running as the canonical backup.
+      if (!CONVERSATION_REALTIME_ENABLED) return;
+
       const attemptId = realtimeAttemptRef.current + 1;
       realtimeAttemptRef.current = attemptId;
       void startRealtimeTranscription(stream).then((realtimeStarted) => {
         if (!recordingActiveRef.current || realtimeAttemptRef.current !== attemptId) return;
         if (realtimeStarted) {
-          chunkBackupActiveRef.current = false;
           try {
-            mediaRecorderRef.current?.stop();
+            stopBrowserSpeechInternal();
           } catch {
             /* ignore */
           }
-          stopBrowserSpeechInternal();
           setTranscriptionMode("realtime");
           setAssistError(null);
           return;
@@ -999,39 +1112,83 @@ export function ConversationCapture({
     hardStopInternal();
   }, [hardStopInternal]);
 
-  // Unique speaker labels that appeared during the conversation, in the
-  // order they first spoke. Used in the naming step.
+  // The canonical transcript: dialect-strong Gemini backup segments when
+  // available, else the live caption messages.
+  const canonicalSegments = useCallback((): TranscriptSegment[] => {
+    return pickCanonicalTranscript({
+      backup: backupSegmentsRef.current,
+      live: messages.map((m) => ({
+        speaker: m.speakerLabel,
+        text: m.text,
+        timestamp: m.timestamp,
+      })),
+    });
+  }, [messages]);
+
+  // Unique speaker labels in first-spoken order, from the canonical
+  // transcript — the naming step names these. backupSegmentCount is a
+  // state mirror so this recomputes as backup segments arrive.
   const uniqueSpeakerLabels = useMemo(() => {
     const seen = new Set<string>();
     const order: string[] = [];
-    for (const m of messages) {
-      if (!seen.has(m.speakerLabel)) {
-        seen.add(m.speakerLabel);
-        order.push(m.speakerLabel);
+    const source =
+      backupSegmentsRef.current.length > 0
+        ? backupSegmentsRef.current
+        : messages.map((m) => ({ speaker: m.speakerLabel, text: m.text }));
+    for (const s of source) {
+      if (!seen.has(s.speaker)) {
+        seen.add(s.speaker);
+        order.push(s.speaker);
       }
     }
     return order;
-  }, [messages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, backupSegmentCount]);
 
   // When moving to the naming step, seed the map with sensible defaults
   // so the user only has to adjust.
   const goToNaming = () => {
     if (isRecording) stopRecording();
+    const canonical = canonicalSegments();
     const seeded: Record<string, string> = {};
     const defaults = ["Me", "Ah Ma"];
     uniqueSpeakerLabels.forEach((label, i) => {
       seeded[label] = speakerNameMap[label] || defaults[i] || label;
     });
     setSpeakerNameMap(seeded);
+
+    // Best-effort final assist on the canonical (dialect-accurate)
+    // transcript, so the review screen's gist/questions match what was
+    // actually said — not the rough live captions.
+    if (canonical.length > 0) {
+      void fetch("/api/capture/conversation-assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: canonical.slice(-14).map((s) => ({
+            speaker: s.speaker,
+            text: s.text,
+            timestamp: s.timestamp,
+          })),
+        }),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setConversationAssist(data);
+        })
+        .catch(() => {});
+    }
+
     setStep("naming");
   };
 
-  const namedConversation = () => messages.map((m) => ({
-    speaker: speakerNameMap[m.speakerLabel]?.trim() || m.speakerLabel,
-    text: m.text,
-    language: "auto",
-    timestamp: m.timestamp,
-  }));
+  const namedConversation = () =>
+    nameTranscript(canonicalSegments(), speakerNameMap).map((s) => ({
+      speaker: s.speaker,
+      text: s.text,
+      language: "auto",
+      timestamp: s.timestamp,
+    }));
 
   const patchRecipe = async (recipe: ExtractedRecipe) => {
     const patchRes = await fetch(`/api/recipes/${recipeId}`, {
@@ -1081,7 +1238,7 @@ export function ConversationCapture({
         throw new Error("AI extraction returned an empty recipe object");
       }
       setReviewRecipe(extractData.recipe);
-      setReviewTranscript(named.map(({ speaker, text, timestamp }) => ({ speaker, text, timestamp })));
+      setReviewTranscript(named.map(({ speaker, text, timestamp }) => ({ speaker, text, timestamp: timestamp ?? "" })));
       setStep("review");
     } catch (err: unknown) {
       console.error("Extract conversation failed:", err);
@@ -1117,42 +1274,29 @@ export function ConversationCapture({
     return idx === 1 ? "right" : "left";
   };
 
+  const stepSubtitle =
+    step === "recording" && isRecording
+      ? "Listening, translating gist, and spotting gaps"
+      : step === "recording" && messages.length === 0
+        ? "Start while the recipe is being narrated"
+        : step === "recording"
+          ? "Keep talking, or review and save"
+          : step === "naming"
+            ? "Confirm who was speaking"
+            : step === "processing"
+              ? reviewRecipe
+                ? "Saving reviewed recipe..."
+                : "Extracting your recipe..."
+              : "Review before saving";
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
-      onClick={handleClose}
+    <WorkflowDialog
+      open
+      onClose={handleClose}
+      title="Recipe conversation"
+      subtitle={stepSubtitle}
+      className="sm:max-w-lg"
     >
-      <div
-        className="flex h-full w-full flex-col bg-white sm:h-[90vh] sm:max-h-[720px] sm:max-w-lg sm:rounded-2xl sm:shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
-              <Mic2 className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-sm font-semibold text-neutral-900">
-                Recipe conversation
-              </h2>
-              <p className="text-[11px] text-neutral-500">
-                {step === "recording" && isRecording && "Listening, translating gist, and spotting gaps"}
-                {step === "recording" && !isRecording && messages.length === 0 && "Start while the recipe is being narrated"}
-                {step === "recording" && !isRecording && messages.length > 0 && "Keep talking, or review and save"}
-                {step === "naming" && "Confirm who was speaking"}
-                {step === "processing" && (reviewRecipe ? "Saving reviewed recipe..." : "Extracting your recipe...")}
-                {step === "review" && "Review before saving"}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
-          >
-            <Cross2Icon className="h-4 w-4" />
-          </button>
-        </div>
 
         {step === "recording" && (
           <>
@@ -1165,6 +1309,8 @@ export function ConversationCapture({
                 copiedQuestion={copiedQuestion}
                 hasMessages={messages.length > 0}
                 onCopyQuestion={handleCopyQuestion}
+                onDismissQuestion={handleDismissQuestion}
+                dismissedQuestions={dismissedQuestions}
                 transcriptionMode={transcriptionMode}
               />
 
@@ -1182,16 +1328,55 @@ export function ConversationCapture({
 
               {messages.length === 0 && !isRecording && !connecting && (
                 <div className="flex h-full items-center justify-center">
-                  <div className="max-w-xs text-center">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#800020]/10 text-[#800020]">
-                      <Mic2 className="h-6 w-6" aria-hidden="true" />
+                  {showConsent && !consentAcked ? (
+                    <div className="max-w-xs rounded-2xl border border-[#800020]/15 bg-white p-4 text-center shadow-sm">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#800020]/10 text-[#800020]">
+                        <Mic2 className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <p className="text-sm font-semibold text-neutral-800">
+                        Before you record
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-neutral-600">
+                        Make sure everyone is okay being recorded. Audio is used
+                        to create your private recipe draft, and you can delete
+                        it later.
+                      </p>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              window.localStorage.setItem(VOICE_CONSENT_KEY, "1");
+                            } catch { /* private mode */ }
+                            setConsentAcked(true);
+                            setShowConsent(false);
+                            void startRecording();
+                          }}
+                          className="rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#800020]"
+                        >
+                          Got it — start recording
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowConsent(false)}
+                          className="text-xs font-medium text-neutral-500 transition hover:text-neutral-700"
+                        >
+                          Not now
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-sm leading-6 text-neutral-600">
-                      Start while a parent or grandparent explains the recipe.
-                      Mychelin will capture the transcript, translate the gist,
-                      and suggest questions you can ask out loud.
-                    </p>
-                  </div>
+                  ) : (
+                    <div className="max-w-xs text-center">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#800020]/10 text-[#800020]">
+                        <Mic2 className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <p className="text-sm leading-6 text-neutral-600">
+                        Start while a parent or grandparent explains the recipe.
+                        Mychelin will capture the transcript, translate the gist,
+                        and suggest questions you can ask out loud.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1287,7 +1472,10 @@ export function ConversationCapture({
                   </button>
                 ) : (
                   <button
-                    onClick={startRecording}
+                    onClick={() => {
+                      if (!consentAcked) setShowConsent(true);
+                      else void startRecording();
+                    }}
                     disabled={connecting}
                     className="flex items-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#800020] active:scale-95 disabled:opacity-60"
                   >
@@ -1433,7 +1621,6 @@ export function ConversationCapture({
             </p>
           </div>
         )}
-      </div>
-    </div>
+    </WorkflowDialog>
   );
 }

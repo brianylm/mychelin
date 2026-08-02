@@ -7,3 +7,9 @@ export const COOKING_CARD_ENABLED = true;
 // Rollback for the shared-page recipe card: flip to false and the public
 // /shared/[token] page falls back to the classic recipe detail layout.
 export const SHARED_RECIPE_CARD_ENABLED = true;
+
+// OpenAI Realtime transcription for live conversation. OFF by default:
+// OpenAI API has no free tier, and the Gemini chunked path handles
+// dialect (Hokkien/Cantonese) far better. When false, recording goes
+// straight to the chunked+-browser path and OpenAI is never called.
+export const CONVERSATION_REALTIME_ENABLED = false;
