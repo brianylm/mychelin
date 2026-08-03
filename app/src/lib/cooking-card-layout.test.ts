@@ -60,11 +60,7 @@ describe("buildCookingCardLayout", () => {
     const layout = buildCookingCardLayout({ ingredients, instructions, scale: 2 });
     expect(layout.rows).toHaveLength(3);
     expect(layout.rows[1].amount).toBe("400 g");
-    // 3 real steps + the synthetic "Combine all" column (the recipe never
-    // reaches an explicit whole-pot step).
-    expect(layout.steps).toHaveLength(4);
-    expect(layout.steps[3].combine).toBe(true);
-    expect(layout.steps[3].blockRowIndexes).toEqual([0, 1, 2]);
+    expect(layout.steps).toHaveLength(3);
 
     expect(layout.steps[0].title).toBe("Fry");
     expect(layout.steps[0].heat).toBe("high");
@@ -227,48 +223,5 @@ describe("merged block rows (blockRowIndexes)", () => {
     // Rows are banded [potato, onion, beef]; the final whole-pot step's
     // block spans all three.
     expect(layout.steps[2].blockRowIndexes).toEqual([0, 1, 2]);
-  });
-});
-
-describe("final Combine all step", () => {
-  it("appends a synthetic combine column spanning all ingredients when the recipe never combines explicitly", () => {
-    const layout = buildCookingCardLayout({
-      ingredients,
-      instructions: [
-        { content: "Fry garlic until fragrant" },
-        { content: "Add rice and soy sauce, toss for 2 min" },
-        { content: "Plate and serve" },
-      ],
-      scale: 1,
-    });
-    const combine = layout.steps[layout.steps.length - 1];
-    expect(combine.combine).toBe(true);
-    expect(combine.title).toBe("Combine all");
-    expect(combine.blockRowIndexes).toEqual([0, 1, 2]);
-  });
-
-  it("does not append combine when the last step already covers every ingredient", () => {
-    const layout = buildCookingCardLayout({
-      ingredients: [{ name: "garlic" }, { name: "rice" }, { name: "oyster sauce" }],
-      instructions: [
-        { content: "Fry garlic" },
-        { content: "Add rice and oyster sauce, toss" },
-        { content: "Add everything and mix well" },
-      ],
-      scale: 1,
-    });
-    // Rows are banded [garlic, rice, oyster sauce]; the whole-pot step
-    // covers all three, so no synthetic combine is needed.
-    expect(layout.steps[layout.steps.length - 1].combine).toBeUndefined();
-    expect(layout.steps[layout.steps.length - 1].blockRowIndexes).toEqual([0, 1, 2]);
-  });
-
-  it("omits combine when there are no ingredient rows", () => {
-    const layout = buildCookingCardLayout({
-      ingredients: [],
-      instructions: [{ content: "Fry garlic until fragrant" }],
-      scale: 1,
-    });
-    expect(layout.steps.some((s) => s.combine)).toBe(false);
   });
 });

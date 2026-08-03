@@ -28,13 +28,9 @@ export function recipeToMarkdown(input: {
     }
   }
 
-  // The synthetic final "Combine all" column is a card-only visual — it is
-  // not a recipe step, so it must not appear in the copied markdown.
-  const realSteps = steps.filter((step) => !step.combine);
-
-  if (realSteps.length > 0) {
+  if (steps.length > 0) {
     lines.push("", "## Steps");
-    realSteps.forEach((step, index) => {
+    steps.forEach((step, index) => {
       // When no action verb was extracted, the title is just a
       // truncation of the text — print the full text, not both.
       const titleCore = step.title.replace(/…$/, "");

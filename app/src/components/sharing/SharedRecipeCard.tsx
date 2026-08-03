@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Combine, Flame, ImageDown, Timer, Wand2 } from "lucide-react";
+import { Flame, ImageDown, Timer, Wand2 } from "lucide-react";
 import type { SharedRecipeDTO } from "@/lib/shared-recipe";
 import { HEAT_CONFIG } from "@/lib/instruction-heat";
 import { buildCookingCardLayout } from "@/lib/cooking-card-layout";
@@ -151,15 +151,9 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
               {layout.steps.map((step) => (
                 <div key={step.stepNumber} className="bg-ui-surface-raised p-2" style={{ gridColumn: step.stepNumber + 1, gridRow: 1 }}>
                   <div className="flex items-center gap-1.5">
-                    {step.combine ? (
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent/20 text-ui-accent" title="Final combine">
-                        <Combine className="h-3 w-3" aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-white">
-                        {step.stepNumber}
-                      </span>
-                    )}
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-white">
+                      {step.stepNumber}
+                    </span>
                     <span className="text-xs font-semibold leading-4 text-ui-text">{step.title}</span>
                   </div>
                   {(step.heat || step.timerText) && (
@@ -178,7 +172,7 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
                       )}
                     </div>
                   )}
-                  {step.text && <p className="mt-1 text-[10px] leading-4 text-ui-muted">{step.text}</p>}
+                  <p className="mt-1 text-[10px] leading-4 text-ui-muted">{step.text}</p>
                 </div>
               ))}
 

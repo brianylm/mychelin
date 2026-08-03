@@ -1,7 +1,10 @@
 import { formatScaledQuantity } from "@/components/recipes/ServingScaler";
 import { parseHeatFromTip, type HeatLevel } from "@/lib/instruction-heat";
-import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
+import { matchIngredientsForStep, stepEncompassesAll } from "@/lib/step-ingredient-amounts";
 import { extractStepAction, truncateStepTitle } from "@/lib/cooking-card-verbs";
+
+// Re-exported for callers/tests that relied on it living here.
+export { stepEncompassesAll };
 
 // Layout computation for the Cooking Card. Pure and unit-tested — the
 // card component just renders what this returns.
@@ -21,6 +24,7 @@ export interface CardIngredientInput {
   unit?: string | null;
   approximate?: boolean | null;
   quantityText?: string | null;
+  notes?: string | null;
 }
 
 export interface CardInstructionInput {
@@ -52,9 +56,6 @@ export interface CardStep {
   // by construction: a step's own band (ingredients it first references),
   // or — for whole-pot steps — every ingredient introduced so far.
   blockRowIndexes: number[];
-  // True for the synthetic final "Combine all" column appended when the
-  // recipe never reaches an explicit whole-pot step.
-  combine?: boolean;
 }
 
 export interface CookingCardLayout {
@@ -110,29 +111,6 @@ export function explicitTimerText(text: string): string | null {
 
 function normalizeName(name: string): string {
   return name.trim().toLowerCase();
-}
-
-// Steps that handle the whole dish — "add everything", "pressure cook",
-// "mix well", "stir-fried ingredients" — implicitly touch every
-// ingredient already in the pot, even when the text names none of them.
-// Conservative on purpose: only strong whole-mixture phrases fire, so a
-// step that names specific ingredients doesn't accidentally cover all.
-const ENCOMPASS_ALL_PATTERNS: RegExp[] = [
-  /\beverything\b/,
-  /\b(?:all|everything)\s+(?:of\s+)?(?:it|them)\b/,
-  /\bthe\s+whole\s+(?:thing|pot|dish|batch|lot|contents|mixture)\b/,
-  /\bpressure\s*[- ]?cook(?:er|ed|ing)?\b/,
-  /\bstir\s*[- ]?fried\b/,
-  /\b(?:cook|simmer|boil|stew|braise|saute|sauté|fry)\s+(?:everything|them\s+together|all\s+together|it\s+all)\b/,
-  /\badd\s+(?:everything|it\s+all|them\s+all|all\s+of\s+it)\b/,
-  /\bmix(?:ed|ing)?\s+well\b/,
-  /\bcombine(?:d|ing)?\s+(?:everything|all|the\s+whole)\b/,
-];
-
-// Whether this step handles the whole dish (see ENCOMPASS_ALL_PATTERNS).
-export function stepEncompassesAll(text: string): boolean {
-  const t = text.toLowerCase();
-  return ENCOMPASS_ALL_PATTERNS.some((pattern) => pattern.test(t));
 }
 
 export function buildCookingCardLayout(input: {
@@ -241,30 +219,6 @@ export function buildCookingCardLayout(input: {
       blockRowIndexes: blockRowIndexes[index],
     };
   });
-
-  // Final synthetic "Combine all" column: the card ends with the whole
-  // dish coming together even when no step text says so explicitly.
-  // Skipped when the last real step already spans every ingredient (e.g.
-  // a recipe that ends in "pressure cook everything") or there are no
-  // ingredients to combine.
-  const allRowIndexes = rows.map((_, i) => i);
-  const lastRealStep = steps[steps.length - 1];
-  const lastCoversAll =
-    lastRealStep &&
-    lastRealStep.blockRowIndexes.length === allRowIndexes.length &&
-    lastRealStep.blockRowIndexes.every((v, i) => v === i);
-  if (rows.length > 0 && !lastCoversAll) {
-    steps.push({
-      stepNumber: steps.length + 1,
-      title: "Combine all",
-      text: "",
-      heat: null,
-      timerText: null,
-      matchedRowIndexes: allRowIndexes,
-      blockRowIndexes: allRowIndexes,
-      combine: true,
-    });
-  }
 
   return {
     rows,
