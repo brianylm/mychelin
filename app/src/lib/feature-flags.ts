@@ -13,3 +13,9 @@ export const SHARED_RECIPE_CARD_ENABLED = true;
 // dialect (Hokkien/Cantonese) far better. When false, recording goes
 // straight to the chunked+-browser path and OpenAI is never called.
 export const CONVERSATION_REALTIME_ENABLED = false;
+
+// First Recipe Guided Mission (post-onboarding dashboard card + flow).
+// Rollback: flip to false and the mission card and flow disappear; the
+// modules become unreachable and nothing else changes. Preview-first —
+// production only after B accepts the staged mission.
+export const FIRST_COOK_MISSION_ENABLED = true;

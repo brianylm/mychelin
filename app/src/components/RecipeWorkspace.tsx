@@ -13,6 +13,7 @@ import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
+import { FIRST_COOK_MISSION_ENABLED } from "@/lib/feature-flags";
 import { Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
 
 const LazyPanelFallback = () => (
@@ -73,6 +74,14 @@ const MultiCookWithMeSession = dynamic(
 const PilotFeedbackPrompt = dynamic(
   () => import("@/components/pilot/PilotFeedbackPrompt").then((mod) => mod.PilotFeedbackPrompt)
 );
+const FirstCookMissionCard = dynamic(
+  () => import("@/components/mission/FirstCookMissionCard").then((mod) => mod.FirstCookMissionCard),
+  { loading: () => null }
+);
+const FirstCookMissionFlow = dynamic(
+  () => import("@/components/mission/FirstCookMissionFlow").then((mod) => mod.FirstCookMissionFlow),
+  { loading: LazyPanelFallback }
+);
 
 type PilotFeedbackStage = "first_capture" | "first_cook" | "first_version" | "pilot_general";
 
@@ -81,6 +90,7 @@ export function RecipeWorkspace() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("recipes");
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -95,6 +105,7 @@ export function RecipeWorkspace() {
         const createdAt = data.createdAt ? Date.parse(data.createdAt) : 0;
         const rolloutAt = Date.parse("2026-06-06T00:00:00.000Z");
         const newSinceRollout = Number.isFinite(createdAt) && createdAt >= rolloutAt;
+        setOnboardingCompleted(data.onboardingCompleted === true);
         setShowOnboarding(
           data.onboardingCompleted !== true && (pendingSignup || newSinceRollout)
         );
@@ -131,11 +142,12 @@ export function RecipeWorkspace() {
 
   return (
     <RecipeStoreProvider>
-      <RecipeWorkspaceContent 
+      <RecipeWorkspaceContent
         currentView={currentView}
         setCurrentView={setCurrentView}
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        onboardingCompleted={onboardingCompleted}
       />
     </RecipeStoreProvider>
   );
@@ -145,12 +157,14 @@ function RecipeWorkspaceContent({
   currentView,
   setCurrentView,
   isSidebarOpen,
-  setSidebarOpen
+  setSidebarOpen,
+  onboardingCompleted
 }: {
   currentView: AppView;
   setCurrentView: (view: AppView) => void;
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  onboardingCompleted: boolean;
 }) {
   const { selectRecipe, selectedRecipeId } = useRecipeStore();
   const qc = useQueryClient();
@@ -187,6 +201,34 @@ function RecipeWorkspaceContent({
     mealPlanId?: number;
   }> | null>(null);
   const [pilotFeedbackStage, setPilotFeedbackStage] = useState<PilotFeedbackStage | null>(null);
+
+  // ── First Recipe Guided Mission ──────────────────────────
+  const [missionOpen, setMissionOpen] = useState(false);
+  const [missionPhase, setMissionPhase] = useState<"flow" | "completion">("flow");
+  const [missionRecipeId, setMissionRecipeId] = useState<number | null>(null);
+  const [missionRecipeTitle, setMissionRecipeTitle] = useState<string | null>(null);
+  const [missionDismissed, setMissionDismissed] = useState(false);
+  const [hasAttemptedAny, setHasAttemptedAny] = useState<boolean | null>(null);
+  // True only between "start cook from the mission" and the completion
+  // screen — so a later unrelated cook never re-opens the mission.
+  const missionActiveRef = useRef(false);
+
+  const fetchMissionState = useCallback(() => {
+    fetch("/api/notifications/rhythm")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.hasAttemptedAny === "boolean") {
+          setHasAttemptedAny(data.hasAttemptedAny);
+        }
+      })
+      .catch(() => {
+        /* best-effort — the card simply stays hidden if unknown */
+      });
+  }, []);
+
+  useEffect(() => {
+    fetchMissionState();
+  }, [fetchMissionState]);
 
   const promptPilotFeedback = useCallback((stage: PilotFeedbackStage) => {
     if (typeof window === "undefined") return;
@@ -303,6 +345,15 @@ function RecipeWorkspaceContent({
 
     qc.invalidateQueries({ queryKey: ["recipe", activeCookMeal.recipe.id] });
 
+    // If this cook came from the First Recipe Guided Mission, reopen it at
+    // the completion screen now that the first attempt is recorded.
+    if (missionActiveRef.current) {
+      missionActiveRef.current = false;
+      fetchMissionState();
+      setMissionPhase("completion");
+      setMissionOpen(true);
+    }
+
     if (activeCookMeal.mealPlanId == null) {
       addToast("Cooking session saved", "success");
       promptPilotFeedback("first_cook");
@@ -322,7 +373,7 @@ function RecipeWorkspaceContent({
 
     addToast("Cooking session saved and meal marked cooked", "success");
     promptPilotFeedback("first_cook");
-  }, [activeCookMeal, addToast, promptPilotFeedback, qc]);
+  }, [activeCookMeal, addToast, fetchMissionState, promptPilotFeedback, qc]);
 
 
   const handleCookBatchComplete = useCallback(async (mealPlanIds: number[]) => {
@@ -386,6 +437,61 @@ function RecipeWorkspaceContent({
     setCurrentView("recipes");
     setManualScratchpadOpen(true);
   }, [setCurrentView, setSidebarOpen]);
+
+  // ── First Recipe Guided Mission ──────────────────────────
+  // Handlers live after their dependencies (startCookSession,
+  // handleFromScratch, handleNavigateToRecipe) to avoid TDZ on the
+  // useCallback dep arrays. fetchMissionState itself sits at the top.
+  const openMission = useCallback(() => {
+    setMissionPhase("flow");
+    setMissionOpen(true);
+  }, []);
+
+  const closeMission = useCallback(() => {
+    setMissionOpen(false);
+    if (missionPhase === "completion") {
+      // Mission finished — drop the completion context so a future cook
+      // does not re-open it. hasAttemptedAny is true by now, so the card
+      // stays hidden on its own.
+      missionActiveRef.current = false;
+      setMissionRecipeId(null);
+      setMissionRecipeTitle(null);
+      setMissionPhase("flow");
+    }
+  }, [missionPhase]);
+
+  const startMissionCook = useCallback(
+    (recipeId: number, recipeTitle: string) => {
+      missionActiveRef.current = true;
+      setMissionRecipeId(recipeId);
+      setMissionRecipeTitle(recipeTitle);
+      setMissionOpen(false);
+      void startCookSession(recipeId);
+    },
+    [startCookSession]
+  );
+
+  const missionHandoff = useCallback(
+    (view: AppView) => {
+      setMissionOpen(false);
+      setSidebarOpen(false);
+      setCurrentView(view);
+    },
+    [setCurrentView, setSidebarOpen]
+  );
+
+  const openMissionCreate = useCallback(() => {
+    setMissionOpen(false);
+    handleFromScratch();
+  }, [handleFromScratch]);
+
+  const openMissionRecipe = useCallback(
+    (recipeId: number) => {
+      setMissionOpen(false);
+      handleNavigateToRecipe(recipeId);
+    },
+    [handleNavigateToRecipe]
+  );
 
   const createDraftForCapture = useCallback(async (mode: "paste" | "url") => {
     setFabOpen(false);
@@ -556,6 +662,14 @@ function RecipeWorkspaceContent({
 
   const showFab = currentView === "recipes" && !isSidebarOpen;
 
+  // First Recipe Guided Mission card: post-onboarding, before the first
+  // attempt, and not dismissed this session.
+  const showMissionCard =
+    FIRST_COOK_MISSION_ENABLED &&
+    onboardingCompleted &&
+    hasAttemptedAny === false &&
+    !missionDismissed;
+
   return (
     <div className="mychelin-app-shell min-h-[100dvh]">
       <Header
@@ -601,10 +715,18 @@ function RecipeWorkspaceContent({
               onAiDraft={() => setAiDraftOpen(true)}
               onManualRecipe={handleFromScratch}
             />
-            <RecipeView
-              onOpenSidebar={() => setSidebarOpen(true)}
-              onCookRecipe={handleCookRecipe}
-            />
+            <div className="flex min-w-0 flex-1 flex-col">
+              {showMissionCard && (
+                <FirstCookMissionCard
+                  onStart={openMission}
+                  onDismiss={() => setMissionDismissed(true)}
+                />
+              )}
+              <RecipeView
+                onOpenSidebar={() => setSidebarOpen(true)}
+                onCookRecipe={handleCookRecipe}
+              />
+            </div>
           </>
         )}
         {currentView === "activity" && <ActivityView onNavigateToRecipe={handleNavigateToRecipe} />}
@@ -778,6 +900,21 @@ function RecipeWorkspaceContent({
           onClose={handlePasteModalClose}
           onRecipeUpdated={handlePasteModalDone}
           initialMode={pasteMode}
+        />
+      )}
+
+      {missionOpen && (
+        <FirstCookMissionFlow
+          phase={missionPhase}
+          recipeTitle={missionRecipeTitle}
+          recipeId={missionRecipeId}
+          onClose={closeMission}
+          onStartCook={startMissionCook}
+          onOpenPlanner={() => missionHandoff("plan")}
+          onOpenShopping={() => missionHandoff("shopping")}
+          onOpenCreate={openMissionCreate}
+          onOpenRecipe={openMissionRecipe}
+          onDone={closeMission}
         />
       )}
 

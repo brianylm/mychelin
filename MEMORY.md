@@ -2642,3 +2642,12 @@ Added 2026-07-30. Diagnosis: OpenAI Realtime transcription used to kill the dial
 - Grounding found: onboarding already copies a starter recipe into the library; `starter-recipes.ts` holds 3 real dishes; `weeklyCookingGoal` progress already counts completed cook-with-me attempts (`ProfileView`); attempts post to `/api/recipes/[id]/attempts`. The mission is the second half of the loop (recipe → optional plan/shop → Cook With Me → attempt → rhythm), guidance over existing surfaces, not new capture.
 - Packet now includes a v1 definition of done, implementation starting points, acceptance criteria, a 2-user smoke-test scenario, and product trap checks (e.g. no silent starter-recipe creation for non-starter onboarding paths; dismissal must stay resumable).
 - Document-only change; `git diff --check` passed. Implementation is the next step, preview-first on the ui-uplift alias.
+
+## 2026-08-03 - First Recipe Guided Mission v1 implemented (gated, preview-first)
+
+- Implemented the grilled packet `docs/work-packets/first-recipe-guided-mission.md` as a gated slice on `ui-uplift` behind `FIRST_COOK_MISSION_ENABLED` (`src/lib/feature-flags.ts`, default true — preview only; prod unchanged).
+- New `src/components/mission/FirstCookMissionCard.tsx` (post-onboarding dashboard card; "Not now" hides for the session only — resumable until first attempt, per the locked decision) and `src/components/mission/FirstCookMissionFlow.tsx` (Dialog stepper: pick active recipe → optional plan → optional shopping → Cook With Me; completion screen shows "X of N meals this week" from `/api/notifications/rhythm` and offers save-as-version / plan-next-meal / done).
+- Wired into `RecipeWorkspace.tsx`: card gated on flag + onboardingCompleted + `hasAttemptedAny === false` + not dismissed; cook started from the mission reopens the flow at completion after `CookWithMeSession` completes (`missionActiveRef`); planner/shopping/create/recipe handoffs reuse existing flows. No new schema.
+- `GET /api/notifications/rhythm` now also returns `hasAttemptedAny` (user-scoped, any attempt ever) used for card visibility; completion numbers reuse the existing weekly count — no new tracking.
+- Validation: focused ESLint 0 errors, `npx tsc --noEmit` pass, production build pass, `git diff --check` pass.
+- Next: preview deploy to `mychelin-ui-uplift.vercel.app` for B's UI test before any prod consideration. Known v1 edges: plan/shop steps hand off to their surfaces (card is the resume point); drafts excluded from the mission picker.

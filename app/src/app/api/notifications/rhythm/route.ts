@@ -29,7 +29,7 @@ export async function GET() {
       prefs = created;
     }
 
-    const [attempts, plans] = await Promise.all([
+    const [attempts, plans, anyAttempt] = await Promise.all([
       db
         .select({ id: recipeAttempts.id })
         .from(recipeAttempts)
@@ -50,6 +50,13 @@ export async function GET() {
             lte(mealPlans.date, window.endDate)
           )
         ),
+      // Any attempt ever (not just this week) — lets the first-recipe
+      // guided mission know whether the user has recorded a first cook.
+      db
+        .select({ id: recipeAttempts.id })
+        .from(recipeAttempts)
+        .where(eq(recipeAttempts.userId, currentUser.id))
+        .limit(1),
     ]);
 
     const cookedThisWeek = attempts.length;
@@ -57,6 +64,7 @@ export async function GET() {
     const cookedFromPlan = plans.filter((plan) => Boolean(plan.cookedAt)).length;
     const goal = prefs.weeklyCookingGoal;
     const progress = Math.min(100, Math.round((cookedThisWeek / Math.max(goal, 1)) * 100));
+    const hasAttemptedAny = anyAttempt.length > 0;
 
     return NextResponse.json({
       weekStart: window.startDate,
@@ -67,6 +75,7 @@ export async function GET() {
       cookedFromPlan,
       remainingToGoal: Math.max(0, goal - cookedThisWeek),
       progress,
+      hasAttemptedAny,
       status: cookedThisWeek >= goal ? "on_track" : plannedThisWeek >= goal ? "planned" : "needs_plan",
     });
   } catch (error) {
