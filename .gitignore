@@ -23,6 +23,7 @@ scripts/node_modules
 
 # local agent/session notes
 .commandcode/
+.claude/
 
 # misc
 .DS_Store
