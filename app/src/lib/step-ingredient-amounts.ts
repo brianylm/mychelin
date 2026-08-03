@@ -236,6 +236,124 @@ export function formatIngredientAmount(ingredient: IngredientLike): string {
   return amount || "agak-agak";
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// PRINCIPLE — a step claims an ingredient only on positive evidence, ranked
+// by strength; the strongest evidence wins. Two cross-cutting rules:
+//
+//   • Anti-guessing: when evidence could name any of several ingredients
+//     and doesn't single one out ("add the sauce" with several sauces), the
+//     step claims NONE of them. A missing claim is better than a wrong one.
+//   • The pot accumulates: once an ingredient is claimed it stays in; a
+//     whole-dish step ("add everything") takes every ingredient introduced
+//     so far — the card layout's carry-forward models that.
+//
+// Evidence tiers, strongest first. Each tier only looks at ingredients the
+// stronger tiers have not already claimed:
+//   T1  NAMED       the step says the ingredient (its phrase or a token)
+//   T2  ANNOTATED   the step references what the ingredient's own notes
+//                   describe ("stems separated from leaves")
+//   T3  CLASSED     the step names the ingredient's class ("the greens")
+//   T4  IMPLIED     the action implies its input even when unnamed
+//                   (frying needs the recipe's oil; "the oil" is the one
+//                   cooking oil)
+// ─────────────────────────────────────────────────────────────────────────
+
+// Claim an ingredient for a step (tiers T2–T4) unless a stronger tier
+// already claimed it. Weak evidence never overrides a stronger claim.
+function claimWeakCandidate(
+  candidates: IngredientCandidate[],
+  matchedIndexes: Set<number>,
+  ingredientIndex: number,
+  ingredient: IngredientLike
+): void {
+  if (matchedIndexes.has(ingredientIndex)) return;
+  candidates.push({ ingredient, name: ingredient.name, ingredientIndex, significantTokens: [], phraseRanges: [], fuzzyMatched: true });
+  matchedIndexes.add(ingredientIndex);
+}
+
+// T2 — ANNOTATED: the step references a detail the ingredient itself
+// declares in its notes.
+function annotatedEvidence(
+  stepTokens: Set<string>,
+  ingredients: IngredientLike[],
+  matchedIndexes: Set<number>,
+  candidates: IngredientCandidate[]
+): void {
+  ingredients.forEach((ingredient, ingredientIndex) => {
+    if (matchedIndexes.has(ingredientIndex)) return;
+    const noteTokens = significantTokens(ingredient.notes ?? "");
+    if (noteTokens.length > 0 && noteTokens.some((token) => tokenAppears(stepTokens, token))) {
+      claimWeakCandidate(candidates, matchedIndexes, ingredientIndex, ingredient);
+    }
+  });
+}
+
+// T3 — CLASSED: the step names an ingredient's class. Triggers are plural /
+// collective and matched as exact tokens, so the ambiguous singular
+// "the sauce" never guesses among several sauces.
+function classedEvidence(
+  stepTokens: Set<string>,
+  ingredients: IngredientLike[],
+  matchedIndexes: Set<number>,
+  candidates: IngredientCandidate[]
+): void {
+  for (const [category, triggers] of CATEGORY_TRIGGERS) {
+    if (!triggers.some((trigger) => stepTokens.has(trigger))) continue;
+    ingredients.forEach((ingredient, ingredientIndex) => {
+      if (matchedIndexes.has(ingredientIndex)) return;
+      if (categoryOfIngredient(ingredient.name ?? "") === category) {
+        claimWeakCandidate(candidates, matchedIndexes, ingredientIndex, ingredient);
+      }
+    });
+  }
+}
+
+// T4 — IMPLIED: the action implies its input even when the step never names
+// it. Two forms, both subject to the anti-guessing rule:
+//   • an unambiguous generic token — "heat oil" is the single cooking oil,
+//     but "sauce" with several sauces stays unclaimed;
+//   • frying needs the recipe's one oil.
+function impliedEvidence(
+  stepContent: string,
+  stepTokens: Set<string>,
+  ingredients: IngredientLike[],
+  matchedIndexes: Set<number>,
+  candidates: IngredientCandidate[]
+): void {
+  const genericCount = new Map<string, number>();
+  const genericIngredientIndex = new Map<string, number>();
+  ingredients.forEach((ingredient, ingredientIndex) => {
+    if (matchedIndexes.has(ingredientIndex)) return;
+    significantTokens(ingredient.name ?? "").forEach((token) => {
+      const base = singularize(token);
+      if (GENERIC_SINGLE_TOKEN_MATCHES.has(base)) {
+        genericCount.set(base, (genericCount.get(base) ?? 0) + 1);
+        genericIngredientIndex.set(base, ingredientIndex);
+      }
+    });
+  });
+  for (const [token, count] of genericCount) {
+    if (count !== 1) continue;
+    if (!tokenAppears(stepTokens, token)) continue;
+    const ingredientIndex = genericIngredientIndex.get(token)!;
+    claimWeakCandidate(candidates, matchedIndexes, ingredientIndex, ingredients[ingredientIndex]);
+  }
+
+  if (/\b(?:fry|fries|fried|frying|saute|sauté|pan-?fry|deep-?fry|shallow-?fry)\b/i.test(stepContent)) {
+    const oilCount = ingredients.filter(
+      (ingredient) => significantTokens(ingredient.name ?? "").some((token) => singularize(token) === "oil")
+    ).length;
+    if (oilCount === 1) {
+      const oilIndex = ingredients.findIndex(
+        (ingredient, ingredientIndex) =>
+          !matchedIndexes.has(ingredientIndex) &&
+          significantTokens(ingredient.name ?? "").some((token) => singularize(token) === "oil")
+      );
+      if (oilIndex >= 0) claimWeakCandidate(candidates, matchedIndexes, oilIndex, ingredients[oilIndex]);
+    }
+  }
+}
+
 export function matchIngredientsForStep(
   stepContent: string,
   ingredients: IngredientLike[],
@@ -289,80 +407,10 @@ export function matchIngredientsForStep(
     }
   });
 
-  // Semantic hints for references that don't name the ingredient directly:
-
-  // 1. Ingredient notes that mention the step's words — e.g. a xiao bai cai
-  //    noted "washed; stems separated from leaves" is used by a step that
-  //    says "add the stems".
-  ingredients.forEach((ingredient, ingredientIndex) => {
-    if (matchedIndexes.has(ingredientIndex)) return;
-    const noteTokens = significantTokens(ingredient.notes ?? "");
-    if (noteTokens.length === 0) return;
-    if (noteTokens.some((token) => tokenAppears(stepTokens, token))) {
-      candidates.push({ ingredient, name: ingredient.name, ingredientIndex, significantTokens: [], phraseRanges: [], fuzzyMatched: true });
-      matchedIndexes.add(ingredientIndex);
-    }
-  });
-
-  // 2. Category words ("the aromatics", "the greens", "the meat", "the
-  //    sauces") resolve to the actual ingredients in that category.
-  //    Triggers are matched as exact tokens — NOT via tokenAppears, which
-  //    would let the singular "sauce" fire the plural trigger "sauces".
-  for (const [category, triggers] of CATEGORY_TRIGGERS) {
-    const triggered = triggers.some((trigger) => stepTokens.has(trigger));
-    if (!triggered) continue;
-    ingredients.forEach((ingredient, ingredientIndex) => {
-      if (matchedIndexes.has(ingredientIndex)) return;
-      if (categoryOfIngredient(ingredient.name ?? "") === category) {
-        candidates.push({ ingredient, name: ingredient.name, ingredientIndex, significantTokens: [], phraseRanges: [], fuzzyMatched: true });
-        matchedIndexes.add(ingredientIndex);
-      }
-    });
-  }
-
-  // 3. Unambiguous generic tokens — "heat oil" is the cooking oil when it
-  //    is the only ingredient containing "oil"; "sauce" with several sauces
-  //    stays ambiguous and is skipped.
-  const genericCount = new Map<string, number>();
-  const genericIngredientIndex = new Map<string, number>();
-  ingredients.forEach((ingredient, ingredientIndex) => {
-    if (matchedIndexes.has(ingredientIndex)) return;
-    significantTokens(ingredient.name ?? "").forEach((token) => {
-      const base = singularize(token);
-      if (GENERIC_SINGLE_TOKEN_MATCHES.has(base)) {
-        genericCount.set(base, (genericCount.get(base) ?? 0) + 1);
-        genericIngredientIndex.set(base, ingredientIndex);
-      }
-    });
-  });
-  for (const [token, count] of genericCount) {
-    if (count !== 1) continue;
-    if (!tokenAppears(stepTokens, token)) continue;
-    const ingredientIndex = genericIngredientIndex.get(token)!;
-    if (matchedIndexes.has(ingredientIndex)) continue;
-    const ingredient = ingredients[ingredientIndex];
-    candidates.push({ ingredient, name: ingredient.name, ingredientIndex, significantTokens: [], phraseRanges: [], fuzzyMatched: true });
-    matchedIndexes.add(ingredientIndex);
-  }
-
-  // 4. Frying implies cooking oil — "fry onions" uses the recipe's oil even
-  //    though the step never names it. Only when there is exactly one oil
-  //    ingredient (two oils = ambiguous, skip).
-  if (/\b(?:fry|fries|fried|frying|saute|sauté|pan-?fry|deep-?fry|shallow-?fry)\b/i.test(stepContent)) {
-    const unclaimedOilIndex = ingredients.findIndex(
-      (ingredient, ingredientIndex) =>
-        !matchedIndexes.has(ingredientIndex) &&
-        significantTokens(ingredient.name ?? "").some((token) => singularize(token) === "oil")
-    );
-    const oilCount = ingredients.filter(
-      (ingredient) => significantTokens(ingredient.name ?? "").some((token) => singularize(token) === "oil")
-    ).length;
-    if (oilCount === 1 && unclaimedOilIndex >= 0) {
-      const ingredient = ingredients[unclaimedOilIndex];
-      candidates.push({ ingredient, name: ingredient.name, ingredientIndex: unclaimedOilIndex, significantTokens: [], phraseRanges: [], fuzzyMatched: true });
-      matchedIndexes.add(unclaimedOilIndex);
-    }
-  }
+  // T2–T4 — weaker evidence only claims ingredients the named tier didn't.
+  annotatedEvidence(stepTokens, ingredients, matchedIndexes, candidates);
+  classedEvidence(stepTokens, ingredients, matchedIndexes, candidates);
+  impliedEvidence(stepContent, stepTokens, ingredients, matchedIndexes, candidates);
 
   const exactCandidates = candidates.filter(
     (candidate) =>
