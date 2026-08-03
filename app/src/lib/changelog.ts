@@ -6,6 +6,14 @@ export interface ChangelogEntry {
 
 export const changelogEntries: ChangelogEntry[] = [
   {
+    date: "2026-08-03",
+    title: "Cooking Card groups ingredients by step",
+    items: [
+      "The card's ingredient rail now groups each step's ingredients into one band, so the dots under a step read as a single block.",
+      "Steps that handle the whole dish — add everything, pressure cook, mix well, stir-fried ingredients — now cover every ingredient already in the pot.",
+    ],
+  },
+  {
     date: "2026-07-30",
     title: "Cooking Card view with PNG export",
     items: [

@@ -3,6 +3,7 @@ import {
   buildCookingCardLayout,
   explicitTimerText,
   formatCardAmount,
+  stepEncompassesAll,
 } from "./cooking-card-layout";
 
 const ingredients = [
@@ -81,5 +82,103 @@ describe("buildCookingCardLayout", () => {
     expect(stepsOnly.hasIngredients).toBe(false);
     expect(stepsOnly.hasInstructions).toBe(true);
     expect(stepsOnly.steps).toHaveLength(3);
+  });
+});
+
+describe("ingredient rows reordered into per-step bands (dot matrix)", () => {
+  it("groups each step's matched ingredients into a contiguous band", () => {
+    const layout = buildCookingCardLayout({
+      ingredients,
+      instructions: [
+        { content: "Fry garlic until fragrant", tip: "[heat:high] watch it" },
+        { content: "Add rice and soy sauce, toss for 2 min" },
+        { content: "Plate and serve" },
+      ],
+      scale: 1,
+    });
+
+    // Step 1's band = [garlic]; step 2's band = [rice, light soy sauce].
+    expect(layout.rows.map((r) => r.name)).toEqual([
+      "garlic",
+      "rice",
+      "light soy sauce",
+    ]);
+    expect(layout.steps[0].matchedRowIndexes).toEqual([0]);
+    expect(layout.steps[1].matchedRowIndexes).toEqual([1, 2]);
+    expect(layout.steps[2].matchedRowIndexes).toEqual([]);
+  });
+
+  it("reorders rows so a step that uses several ingredients gets a full dot column", () => {
+    const layout = buildCookingCardLayout({
+      ingredients: [
+        { name: "oyster sauce", quantity: 1, unit: "tbsp" },
+        { name: "rice", quantity: 200, unit: "g" },
+        { name: "garlic", quantity: 2, unit: "clove" },
+      ],
+      instructions: [
+        { content: "Fry garlic until fragrant" },
+        { content: "Add rice and oyster sauce, toss" },
+      ],
+      scale: 1,
+    });
+
+    // Step 1's band (garlic) first, then step 2's band (oyster sauce, rice).
+    expect(layout.rows.map((r) => r.name)).toEqual([
+      "garlic",
+      "oyster sauce",
+      "rice",
+    ]);
+    expect(layout.steps[1].matchedRowIndexes).toEqual([1, 2]);
+  });
+
+  it("sends unreferenced ingredients to a trailing band", () => {
+    const layout = buildCookingCardLayout({
+      ingredients: [
+        { name: "garlic", quantity: 2, unit: "clove" },
+        { name: "salt" },
+      ],
+      instructions: [{ content: "Fry garlic" }],
+      scale: 1,
+    });
+
+    expect(layout.rows.map((r) => r.name)).toEqual(["garlic", "salt"]);
+    expect(layout.steps[0].matchedRowIndexes).toEqual([0]);
+  });
+});
+
+describe("stepEncompassesAll", () => {
+  it("fires on whole-dish phrases", () => {
+    expect(stepEncompassesAll("Add everything to the pot and pressure cook 20 min")).toBe(true);
+    expect(stepEncompassesAll("Mix well and serve")).toBe(true);
+    expect(stepEncompassesAll("Pressure cook for 30-40 mins")).toBe(true);
+    expect(stepEncompassesAll("Add the stir fried ingredients and carrots")).toBe(true);
+  });
+
+  it("does not fire when the step names specific ingredients", () => {
+    expect(stepEncompassesAll("Dice carrots and potatoes to bitesize")).toBe(false);
+    expect(stepEncompassesAll("Sear beef cubes on high heat")).toBe(false);
+    expect(stepEncompassesAll("Add rice and soy sauce, toss for 2 min")).toBe(false);
+  });
+});
+
+describe("whole-pot steps carry forward introduced ingredients", () => {
+  it("a pressure-cook step covers every ingredient an earlier step introduced", () => {
+    const layout = buildCookingCardLayout({
+      ingredients: [
+        { name: "Holland potato" },
+        { name: "Beef cubes" },
+        { name: "Onion" },
+        { name: "Carrots" },
+      ],
+      instructions: [
+        { content: "Dice carrots and potatoes, slice onions" },
+        { content: "Sear beef cubes on high heat" },
+        { content: "Add to pressure cooker with the stir fried ingredients and carrots. Pressure cook 30 mins" },
+      ],
+      scale: 1,
+    });
+
+    // The final step now encompasses all four prepped ingredients.
+    expect(layout.steps[2].matchedRowIndexes).toEqual([0, 1, 2, 3]);
   });
 });
