@@ -366,7 +366,7 @@ export const recipeAttempts = sqliteTable("recipe_attempts", {
   cookedAt: text("cooked_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
-  rating: real("rating"), // 0.5-5, cooking-session difficulty score
+  rating: real("rating"), // legacy: session difficulty score (removed 2026-08-03), kept for existing rows
   dishRating: real("dish_rating"), // 0.5-5, food rating captured after eating
   notes: text("notes"),
   changeNotes: text("change_notes"), // JSON stringified cook-session changes

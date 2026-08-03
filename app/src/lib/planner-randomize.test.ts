@@ -47,18 +47,18 @@ describe("pickRecipesForSlots", () => {
     }
   });
 
-  it("puts flagged recipes (try_soon, newly_added) before unflagged ones", () => {
+  it("puts newly_added recipes before unflagged ones", () => {
     const recipes = [
       recipe(1),
       recipe(2, { recipeFlags: ["newly_added"] }),
-      recipe(3, { recipeFlags: ["try_soon"] }),
+      recipe(3),
       recipe(4),
     ];
     const picks = pickRecipesForSlots({ recipes, count: 4, rng: seededRng(5) });
-    expect(picks[0].id).toBe(3);
-    expect(picks[1].id).toBe(2);
-    expect([1, 4]).toContain(picks[2].id);
-    expect([1, 4]).toContain(picks[3].id);
+    expect(picks[0].id).toBe(2);
+    expect([1, 3, 4]).toContain(picks[1].id);
+    expect([1, 3, 4]).toContain(picks[2].id);
+    expect([1, 3, 4]).toContain(picks[3].id);
   });
 
   it("prefers least-recently-cooked within the same flag class", () => {

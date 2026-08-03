@@ -116,7 +116,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
           year: "numeric",
         })
       : "cook attempt";
-    const ratingSuffix = attempt.rating ? " (" + attempt.rating + "/5)" : "";
 
     const [newVersion] = await db
       .insert(recipeVersions)
@@ -130,7 +129,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         instructions: JSON.stringify(instructionsData),
         notes: attempt.notes ?? null,
         changedBy: currentUser.id,
-        changeNote: body.changeNote ?? "Promoted from " + cookedDate + ratingSuffix,
+        changeNote: body.changeNote ?? "Promoted from " + cookedDate,
         closenessRating: null,
         closenessNotes: attempt.nextTime ?? null,
         cookingSessionDate: cookedAtToUnix(attempt.cookedAt),

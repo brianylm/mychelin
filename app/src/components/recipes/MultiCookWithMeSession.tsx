@@ -57,53 +57,12 @@ function toAttemptInstructions(recipe: RecipeWithRelations) {
   }));
 }
 
-const DIFFICULTY_OPTIONS = [
-  { value: 1, emoji: "🙂", label: "Calm" },
-  { value: 2, emoji: "😐", label: "Manageable" },
-  { value: 3, emoji: "😅", label: "Busy" },
-  { value: 4, emoji: "😰", label: "Stressful" },
-  { value: 5, emoji: "🤯", label: "Too much" },
-];
-
-function DifficultyRating({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  return (
-    <div>
-      <div className="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="Cooking difficulty rating">
-        {DIFFICULTY_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onChange(option.value)}
-            role="radio"
-            aria-checked={value === option.value}
-            aria-label={"Difficulty " + option.value + " out of 5: " + option.label}
-            className={"flex min-h-14 flex-col items-center justify-center rounded-xl border px-1.5 py-2 transition " + (
-              value === option.value
-                ? "border-[#f7c86a] bg-[#f7c86a]/20 text-white ring-2 ring-[#f7c86a]/30"
-                : "border-white/10 bg-white/10 text-white/70 hover:border-[#f7c86a]/45 hover:bg-white/15"
-            )}
-          >
-            <span className="text-lg" aria-hidden="true">{option.emoji}</span>
-            <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.08em]">{option.label}</span>
-          </button>
-        ))}
-      </div>
-      <div className="mt-1 flex items-center justify-between text-[10px] text-white/45">
-        <span>Not hard</span>
-        <span className="text-white/70">{value > 0 ? value + "/5" : "Not rated"}</span>
-        <span>Very hard</span>
-      </div>
-    </div>
-  );
-}
-
 export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCookWithMeSessionProps) {
   const [stepIndexes, setStepIndexes] = useState<Record<number, number>>({});
   const [completedRecipes, setCompletedRecipes] = useState<Record<number, boolean>>({});
   const [timers, setTimers] = useState<Record<string, TimerState>>({});
   const previousTimersRef = useRef<Record<string, TimerState>>({});
   const [reviewing, setReviewing] = useState(false);
-  const [sessionEaseRatings, setSessionEaseRatings] = useState<Record<number, number>>({});
   const [nextTimeNotes, setNextTimeNotes] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
   const [confirmingExit, setConfirmingExit] = useState(false);
@@ -240,7 +199,6 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
           body: JSON.stringify({
             versionId: meal.recipe.activeVersionId ?? null,
             mealPlanId: meal.mealPlanId ?? null,
-            rating: sessionEaseRatings[meal.recipe.id] || null,
             notes: "Batch cook-with-me session",
             changeNotes: [],
             nextTime: nextTimeNotes[meal.recipe.id]?.trim() || null,
@@ -262,7 +220,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
     } finally {
       setSaving(false);
     }
-  }, [meals, nextTimeNotes, onClose, onComplete, sessionEaseRatings]);
+  }, [meals, nextTimeNotes, onClose, onComplete]);
 
   const activeTimerRows = useMemo(() => {
     return Object.entries(timers)
@@ -309,18 +267,12 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
             <div className="mx-auto max-w-3xl space-y-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f7c86a]">Session complete</p>
-                <h3 className="mt-2 text-3xl font-semibold">How hard was each session?</h3>
+                <h3 className="mt-2 text-3xl font-semibold">Any notes for next cook?</h3>
                 <p className="mt-2 text-sm leading-6 text-white/60">Dish ratings happen later from Activity after everyone has eaten.</p>
               </div>
               {meals.map((meal) => (
                 <section key={meal.recipe.id} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
                   <h4 className="text-base font-semibold">{meal.recipe.title}</h4>
-                  <div className="mt-3">
-                    <DifficultyRating
-                      value={sessionEaseRatings[meal.recipe.id] ?? 0}
-                      onChange={(value) => setSessionEaseRatings((state) => ({ ...state, [meal.recipe.id]: value }))}
-                    />
-                  </div>
                   <textarea
                     value={nextTimeNotes[meal.recipe.id] ?? ""}
                     onChange={(event) => setNextTimeNotes((state) => ({ ...state, [meal.recipe.id]: event.target.value }))}

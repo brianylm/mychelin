@@ -90,52 +90,6 @@ function toAttemptInstructions(recipe: RecipeWithRelations): SessionInstruction[
   }));
 }
 
-const DIFFICULTY_OPTIONS = [
-  { value: 1, emoji: "🙂", label: "Calm" },
-  { value: 2, emoji: "😐", label: "Manageable" },
-  { value: 3, emoji: "😅", label: "Busy" },
-  { value: 4, emoji: "😰", label: "Stressful" },
-  { value: 5, emoji: "🤯", label: "Too much" },
-];
-
-function DifficultyRating({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div>
-      <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Cooking difficulty rating">
-        {DIFFICULTY_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onChange(option.value)}
-            role="radio"
-            aria-checked={value === option.value}
-            aria-label={"Difficulty " + option.value + " out of 5: " + option.label}
-            className={"flex min-h-20 flex-col items-center justify-center rounded-2xl border px-2 py-3 transition " + (
-              value === option.value
-                ? "border-[#f7c86a] bg-[#f7c86a]/20 text-white ring-2 ring-[#f7c86a]/30"
-                : "border-white/10 bg-white/10 text-white/70 hover:border-[#f7c86a]/45 hover:bg-white/15"
-            )}
-          >
-            <span className="text-2xl" aria-hidden="true">{option.emoji}</span>
-            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em]">{option.label}</span>
-          </button>
-        ))}
-      </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-white/45">
-        <span>Not hard</span>
-        <span className="text-white/70">{value > 0 ? value + "/5" : "Not rated"}</span>
-        <span>Very hard</span>
-      </div>
-    </div>
-  );
-}
-
 export function CookWithMeSession({
   recipe,
   onClose,
@@ -155,7 +109,6 @@ export function CookWithMeSession({
   const [changeDraft, setChangeDraft] = useState("");
   const [showChangeCapture, setShowChangeCapture] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [sessionEaseRating, setSessionEaseRating] = useState(0);
   const [nextTimeNotes, setNextTimeNotes] = useState("");
   const [saveNextTry, setSaveNextTry] = useState(false);
   const [showNextTryEditor, setShowNextTryEditor] = useState(false);
@@ -190,14 +143,11 @@ export function CookWithMeSession({
         parts.push(`${index + 1}. ${note}`);
       });
     }
-    if (sessionEaseRating > 0) {
-      parts.push("Cooking difficulty rating: " + sessionEaseRating + "/5");
-    }
     if (nextTimeNotes.trim()) {
       parts.push(`Next time: ${nextTimeNotes.trim()}`);
     }
     return parts.join("\n");
-  }, [changeNotes, sessionEaseRating, nextTimeNotes]);
+  }, [changeNotes, nextTimeNotes]);
 
   useEffect(() => {
     const activeEntries = Object.entries(timers).filter(
@@ -387,7 +337,6 @@ export function CookWithMeSession({
         body: JSON.stringify({
           versionId: recipe.activeVersionId ?? null,
           mealPlanId: mealPlanId ?? null,
-          rating: sessionEaseRating || null,
           notes: sessionSummary || null,
           changeNotes,
           nextTime: nextTimeNotes.trim() || null,
@@ -428,7 +377,7 @@ export function CookWithMeSession({
     } finally {
       setSaving(false);
     }
-  }, [actualIngredients, actualInstructions, changeNotes, sessionEaseRating, mealPlanId, nextTimeNotes, nextTryIngredients, nextTryInstructions, onClose, onComplete, recipe, saveNextTry, sessionSummary]);
+  }, [actualIngredients, actualInstructions, changeNotes, mealPlanId, nextTimeNotes, nextTryIngredients, nextTryInstructions, onClose, onComplete, recipe, saveNextTry, sessionSummary]);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#17131f] text-white">
@@ -507,15 +456,11 @@ export function CookWithMeSession({
                   Session complete
                 </p>
                 <h3 className="mt-3 text-3xl font-semibold leading-tight">
-                  How hard was this session?
+                  Nice cook!
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-white/60">
-                  Rate how stressful the cook felt now. You can rate the dish later from Activity after eating.
+                  Rate how the dish tasted later from Activity after eating.
                 </p>
-
-                <div className="mt-6">
-                  <DifficultyRating value={sessionEaseRating} onChange={setSessionEaseRating} />
-                </div>
 
                 <label className="mt-6 block text-sm font-medium text-white/80">
                   What should change next time?

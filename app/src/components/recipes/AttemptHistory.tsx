@@ -8,7 +8,6 @@ import { HalfStarRating } from "./HalfStarRating";
 interface RecipeAttempt {
   id: number;
   cookedAt: string;
-  rating: number | null;
   dishRating: number | null;
   notes: string | null;
   nextTime: string | null;
@@ -62,7 +61,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
   const [editingId, setEditingId] = useState<number | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(5);
-  const [draftRating, setDraftRating] = useState("");
   const [draftNotes, setDraftNotes] = useState("");
   const [draftNextTime, setDraftNextTime] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +143,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
 
   const startEdit = useCallback((attempt: RecipeAttempt) => {
     setEditingId(attempt.id);
-    setDraftRating(attempt.rating ? String(attempt.rating) : "");
     setDraftNotes(attempt.notes ?? "");
     setDraftNextTime(attempt.nextTime ?? "");
   }, []);
@@ -158,7 +155,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          rating: draftRating.trim() ? Number(draftRating) : null,
           notes: draftNotes.trim() || null,
           nextTime: draftNextTime.trim() || null,
         }),
@@ -173,7 +169,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
     } finally {
       setSavingId(null);
     }
-  }, [draftNextTime, draftNotes, draftRating, loadAttempts, recipeId]);
+  }, [draftNextTime, draftNotes, loadAttempts, recipeId]);
 
   const saveDishRating = useCallback(async (attemptId: number, rating: number) => {
     setSavingId(attemptId);
@@ -288,7 +284,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <RatingNote rating={attempt.rating} label="Difficulty" />
                       <RatingNote rating={attempt.dishRating} label="Dish" />
                       {attempt.promotedVersionId && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--ui-success)]">
@@ -347,19 +342,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
 
                 {isEditing ? (
                   <div className="mt-3 space-y-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3">
-                    <label className="block text-xs font-semibold text-[var(--ui-muted)]">
-                      Cooking difficulty
-                      <input
-                        value={draftRating}
-                        onChange={(event) => setDraftRating(event.target.value)}
-                        type="number"
-                        min="0.5"
-                        max="5"
-                        step="0.5"
-                        className="mt-1 h-9 w-full rounded-md border border-[var(--ui-border)] px-2 text-sm text-[var(--ui-text)]"
-                        placeholder="1 calm, 5 too much"
-                      />
-                    </label>
                     <label className="block text-xs font-semibold text-[var(--ui-muted)]">
                       Attempt notes
                       <textarea

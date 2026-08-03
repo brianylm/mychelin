@@ -513,6 +513,22 @@ export async function ensureRecipeFlagsTable(): Promise<void> {
   recipeFlagsEnsured = true;
 }
 
+// One-time cleanup for the removed "try_soon" recipe flag (2026-08-03).
+// Stale rows are invisible (normalizeRecipeFlags drops unknown values) but
+// linger in the table; delete them once per process.
+let trySoonFlagCleanupDone = false;
+export async function ensureTrySoonFlagCleanup(): Promise<void> {
+  if (trySoonFlagCleanupDone) return;
+  const client = getClient();
+  if (!client) return;
+  try {
+    await client.execute("DELETE FROM recipe_flags WHERE flag = 'try_soon'");
+  } catch (e: unknown) {
+    console.warn("ensureTrySoonFlagCleanup:", e instanceof Error ? e.message : String(e));
+  }
+  trySoonFlagCleanupDone = true;
+}
+
 
 export async function ensureMealPlanBlocksTable(): Promise<void> {
   if (mealPlanBlocksEnsured) return;

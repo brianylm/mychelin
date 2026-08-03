@@ -38,7 +38,6 @@ export async function GET() {
         recipeTitle: recipes.title,
         recipeImageUrl: recipes.imageUrl,
         cookedAt: recipeAttempts.cookedAt,
-        sessionEaseRating: recipeAttempts.rating,
         dishRating: recipeAttempts.dishRating,
         notes: recipeAttempts.notes,
         nextTime: recipeAttempts.nextTime,

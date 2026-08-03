@@ -10,6 +10,7 @@ import {
 import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
 import { getSharedRecipeDTO } from "@/lib/shared-recipe";
+import { replaceRecipeFlagsForUser } from "@/lib/recipe-flags-db";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -143,6 +144,10 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       .update(recipes)
       .set({ activeVersionId: version.id })
       .where(eq(recipes.id, saved.id));
+
+    // A freshly saved shared recipe is newly added — mark it "new" until its
+    // first attempt.
+    await replaceRecipeFlagsForUser(currentUser.id, saved.id, ["newly_added"]);
 
     return NextResponse.json(
       { id: saved.id, title: saved.title },

@@ -75,13 +75,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const updateData: Partial<typeof recipeAttempts.$inferInsert> = {};
 
-    if (body.rating !== undefined) {
-      const rating = normalizeRating(body.rating);
-      if (body.rating !== null && body.rating !== "" && rating === null) {
-        return NextResponse.json({ error: "rating must be a half-star value from 0.5 to 5" }, { status: 400 });
-      }
-      updateData.rating = rating;
-    }
     if (body.dishRating !== undefined) {
       const dishRating = normalizeRating(body.dishRating);
       if (body.dishRating !== null && body.dishRating !== "" && dishRating === null) {

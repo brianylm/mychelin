@@ -3,12 +3,12 @@
 // already loads for the add-meal dialog.
 //
 // Weighting follows the existing "Surprise me" convention: flagged
-// recipes (try_soon first, then newly_added) come before unflagged
-// ones, and within a weight class the least-recently-cooked recipes
-// come first. Within the same weight + recency, order is shuffled.
-// Picks never repeat a recipe until the whole pool has been used; when
-// the pool is exhausted it reshuffles, avoiding an immediate repeat of
-// the last pick at the boundary.
+// recipes (newly_added) come before unflagged ones, and within a
+// weight class the least-recently-cooked recipes come first. Within
+// the same weight + recency, order is shuffled. Picks never repeat a
+// recipe until the whole pool has been used; when the pool is exhausted
+// it reshuffles, avoiding an immediate repeat of the last pick at the
+// boundary.
 
 export interface RandomizableRecipe {
   id: number;
@@ -21,7 +21,6 @@ type Rng = () => number;
 
 function flagPriority(recipe: RandomizableRecipe): number {
   const flags = recipe.recipeFlags ?? [];
-  if (flags.includes("try_soon")) return 2;
   if (flags.includes("newly_added")) return 1;
   return 0;
 }

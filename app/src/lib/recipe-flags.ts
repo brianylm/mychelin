@@ -5,12 +5,6 @@ export const RECIPE_FLAG_OPTIONS = [
     shortLabel: "New",
     description: "Recipes that still need a first pass or cleanup.",
   },
-  {
-    value: "try_soon",
-    label: "Try soon",
-    shortLabel: "Try soon",
-    description: "Recipes to prioritize when planning meals.",
-  },
 ] as const;
 
 export type RecipeFlag = (typeof RECIPE_FLAG_OPTIONS)[number]["value"];

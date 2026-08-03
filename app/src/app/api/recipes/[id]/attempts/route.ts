@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { notificationJobs, notificationPreferences, recipeAttempts, recipes } from "@/db/schema";
+import { notificationJobs, notificationPreferences, recipeAttempts, recipeFlags, recipes } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { ensureNotificationTables, ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
+import { ensureNotificationTables, ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable, ensureRecipeFlagsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
@@ -112,6 +112,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     await Promise.all([
       ensureRecipeAttemptsTable(),
       ensureRecipeAttemptDishRatingColumn(),
+      ensureRecipeFlagsTable(),
     ]);
     const { id } = await context.params;
     const recipeId = Number(id);
@@ -126,15 +127,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
     const body = await request.json();
     const now = new Date().toISOString();
-    const rating = normalizeRating(body.rating);
     const dishRating = normalizeRating(body.dishRating);
-
-    if (body.rating !== undefined && body.rating !== null && rating === null) {
-      return NextResponse.json(
-        { error: "rating must be a half-star value from 0.5 to 5" },
-        { status: 400 }
-      );
-    }
 
     if (body.dishRating !== undefined && body.dishRating !== null && dishRating === null) {
       return NextResponse.json(
@@ -151,7 +144,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
         mealPlanId: body.mealPlanId ? Number(body.mealPlanId) : null,
         userId: currentUser.id,
         cookedAt: typeof body.cookedAt === "string" ? body.cookedAt : now,
-        rating,
         dishRating,
         notes: body.notes ?? null,
         changeNotes: Array.isArray(body.changeNotes)
@@ -169,6 +161,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
       })
       .returning();
 
+    // New-recipe flag lifecycle: the first logged attempt retires the
+    // recipe's "new" flag. Idempotent — there is nothing left to clear
+    // once an attempt exists. Best-effort: a flags-table hiccup must not
+    // fail the attempt save.
+    try {
+      await db
+        .delete(recipeFlags)
+        .where(
+          and(
+            eq(recipeFlags.userId, currentUser.id),
+            eq(recipeFlags.recipeId, recipeId),
+            eq(recipeFlags.flag, "newly_added")
+          )
+        );
+    } catch (error) {
+      console.warn("newly_added flag cleanup skipped:", error);
+    }
+
     await trackUsageEvent({
       userId: currentUser.id,
       eventName: "cook_attempt_created",
@@ -176,9 +186,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       recipeId,
       mealPlanId: body.mealPlanId ? Number(body.mealPlanId) : null,
       properties: {
-        has_rating: rating !== null,
-        rating: rating ?? null,
         has_dish_rating: dishRating !== null,
+        dish_rating: dishRating ?? null,
         has_next_time: Boolean(body.nextTime),
         change_notes_count: Array.isArray(body.changeNotes) ? body.changeNotes.length : 0,
         ingredients_count: Array.isArray(body.ingredientsSnapshot) ? body.ingredientsSnapshot.length : 0,

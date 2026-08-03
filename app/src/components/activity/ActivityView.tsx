@@ -11,7 +11,6 @@ interface ActivityAttempt {
   recipeTitle: string;
   recipeImageUrl: string | null;
   cookedAt: string;
-  sessionEaseRating: number | null;
   dishRating: number | null;
   notes: string | null;
   nextTime: string | null;
@@ -232,7 +231,6 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
                                     <Clock3 className="h-3.5 w-3.5" />
                                     {formatTime(attempt.cookedAt)}
                                   </span>
-                                  <RatingPill value={attempt.sessionEaseRating} label="Difficulty" />
                                   <RatingPill value={attempt.dishRating} label="Dish" />
                                 </div>
                               </div>

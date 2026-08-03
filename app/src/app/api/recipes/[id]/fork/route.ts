@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { eq, desc } from "drizzle-orm";
 import { ensureVersionLabelColumn } from "@/db/ensure-schema";
+import { replaceRecipeFlagsForUser } from "@/lib/recipe-flags-db";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -211,6 +212,9 @@ export async function POST(
       .update(recipes)
       .set({ activeVersionId: newVersion.id })
       .where(eq(recipes.id, forkedRecipe.id));
+
+    // A fork is a newly added recipe — mark it "new" until its first attempt.
+    await replaceRecipeFlagsForUser(currentUser.id, forkedRecipe.id, ["newly_added"]);
 
     return NextResponse.json(
       { ...forkedRecipe, activeVersionId: newVersion.id, versionLabel: newLabel },

@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { recipeFlags } from "@/db/schema";
-import { ensureRecipeFlagsTable } from "@/db/ensure-schema";
+import { ensureRecipeFlagsTable, ensureTrySoonFlagCleanup } from "@/db/ensure-schema";
 import { normalizeRecipeFlags, type RecipeFlag } from "@/lib/recipe-flags";
 
 export async function getRecipeFlagsForUser(
@@ -9,6 +9,7 @@ export async function getRecipeFlagsForUser(
   recipeIds: number[]
 ): Promise<Map<number, RecipeFlag[]>> {
   await ensureRecipeFlagsTable();
+  await ensureTrySoonFlagCleanup();
   const uniqueIds = Array.from(new Set(recipeIds)).filter((id) => Number.isInteger(id));
   const result = new Map<number, RecipeFlag[]>();
   if (uniqueIds.length === 0) return result;

@@ -170,7 +170,6 @@ function getLastCookedLabel(lastCookedAt?: string | null): string {
 
 function getRecipeFlagPriority(recipe: Recipe): number {
   const flags = recipe.recipeFlags ?? [];
-  if (flags.includes("try_soon")) return 2;
   if (flags.includes("newly_added")) return 1;
   return 0;
 }

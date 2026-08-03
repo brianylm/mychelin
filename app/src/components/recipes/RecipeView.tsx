@@ -111,7 +111,6 @@ type RecipeNextTry = {
 
 const recipeFlagClass: Record<RecipeFlag, string> = {
   newly_added: "border-ui-warning/25 bg-ui-warning-soft text-ui-warning-text",
-  try_soon: "border-ui-accent/20 bg-ui-accent/10 text-ui-accent",
 };
 
 function RecipeFlagBadges({ flags }: { flags?: RecipeFlag[] }) {
