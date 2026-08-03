@@ -56,4 +56,17 @@ describe("recipeToMarkdown", () => {
     expect(md).not.toContain("Cuisine:");
     expect(md).not.toContain("Serves");
   });
+
+  it("excludes the synthetic combine column from the copied steps", () => {
+    const md = recipeToMarkdown({
+      title: "Combined",
+      rows,
+      steps: [
+        { stepNumber: 1, title: "Fry", text: "garlic until fragrant", heat: null, timerText: null, matchedRowIndexes: [0], blockRowIndexes: [0] },
+        { stepNumber: 2, title: "Combine all", text: "", heat: null, timerText: null, matchedRowIndexes: [0, 1], blockRowIndexes: [0, 1], combine: true },
+      ],
+    });
+    expect(md).toContain("1. Fry — garlic until fragrant");
+    expect(md).not.toContain("Combine all");
+  });
 });

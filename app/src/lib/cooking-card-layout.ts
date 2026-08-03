@@ -52,6 +52,9 @@ export interface CardStep {
   // by construction: a step's own band (ingredients it first references),
   // or — for whole-pot steps — every ingredient introduced so far.
   blockRowIndexes: number[];
+  // True for the synthetic final "Combine all" column appended when the
+  // recipe never reaches an explicit whole-pot step.
+  combine?: boolean;
 }
 
 export interface CookingCardLayout {
@@ -238,6 +241,30 @@ export function buildCookingCardLayout(input: {
       blockRowIndexes: blockRowIndexes[index],
     };
   });
+
+  // Final synthetic "Combine all" column: the card ends with the whole
+  // dish coming together even when no step text says so explicitly.
+  // Skipped when the last real step already spans every ingredient (e.g.
+  // a recipe that ends in "pressure cook everything") or there are no
+  // ingredients to combine.
+  const allRowIndexes = rows.map((_, i) => i);
+  const lastRealStep = steps[steps.length - 1];
+  const lastCoversAll =
+    lastRealStep &&
+    lastRealStep.blockRowIndexes.length === allRowIndexes.length &&
+    lastRealStep.blockRowIndexes.every((v, i) => v === i);
+  if (rows.length > 0 && !lastCoversAll) {
+    steps.push({
+      stepNumber: steps.length + 1,
+      title: "Combine all",
+      text: "",
+      heat: null,
+      timerText: null,
+      matchedRowIndexes: allRowIndexes,
+      blockRowIndexes: allRowIndexes,
+      combine: true,
+    });
+  }
 
   return {
     rows,
