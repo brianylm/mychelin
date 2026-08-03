@@ -2659,3 +2659,10 @@ Added 2026-07-30. Diagnosis: OpenAI Realtime transcription used to kill the dial
 - Removed the cook-session difficulty rating ("how hard was the session"): dropped the difficulty UI from `CookWithMeSession` + `MultiCookWithMeSession` (review screens are now just next-time notes), the Difficulty pill from `AttemptHistory` + `ActivityView`, the difficulty edit field, and `rating` handling from the attempts POST/PATCH routes + the promote `changeNote`. Dish taste (`dishRating`) is now the only attempt rating. The legacy `rating` column stays (existing rows preserved, no longer written).
 - Validation: `npx tsc --noEmit`, 84 unit tests, focused ESLint (0 new errors), production build, `git diff --check` all pass. Full-repo `npm run lint` still reports pre-existing errors in untouched files (RefinementPanel.tsx, VersionCompare.tsx, …) — not introduced here.
 - Note: work landed on branch `flags-ratings-cleanup` (worktree off `ui-uplift`) because the bg-job isolation guard blocked direct edits to the shared checkout; pending merge back to `ui-uplift` + preview deploy.
+
+## 2026-08-03 - Cooking card: merged row-spanning blocks (reverses dot-matrix)
+
+- B reversed the 07-30 dot-matrix decision and chose **merged cells**: each step column now shows one solid row-spanning block instead of dots.
+- Block geometry (`blockRowIndexes` in `src/lib/cooking-card-layout.ts`): a step's block spans its own contiguous band (ingredients it first references). Whole-pot steps carry forward the leading run of introduced rows. Deliberately NOT first-to-last matched-index spanning — that over-claims (a step re-using an earlier ingredient would claim rows it doesn't use, the robustness issue that sank the first merged-cell prototype).
+- Rendered in `CookingCard.tsx` + `SharedRecipeCard.tsx` via CSS Grid explicit placement (rail col 1, per-row plain cells, block painted over its span). Banding reorder retained. `cooking-card-layout.test.ts` +2 tests.
+- Deployed preview-only on `mychelin-ui-uplift.vercel.app`.

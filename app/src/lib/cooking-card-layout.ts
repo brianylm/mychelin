@@ -6,13 +6,14 @@ import { extractStepAction, truncateStepTitle } from "@/lib/cooking-card-verbs";
 // Layout computation for the Cooking Card. Pure and unit-tested — the
 // card component just renders what this returns.
 //
-// The card is a dot matrix: steps across the top, ingredients down the
-// rail, a filled dot wherever a step references an ingredient. To keep
-// each step's dots grouped (its ingredients reading as one block), the
-// ingredient rows are REORDERED here into contiguous bands — one band
-// per step (the ingredients that step is the first to reference), then
-// any ingredients no step references. The Recipe view keeps the original
-// stored order; only the card groups them.
+// The card is a row-spanning block grid: steps across the top,
+// ingredients down the rail, and each step column shows one merged block
+// spanning the ingredient rows that step references. The ingredient rows
+// are REORDERED here into contiguous bands — one band per step (the
+// ingredients that step is the first to reference), then any ingredients
+// no step references — so each step's block is a single contiguous run.
+// The Recipe view keeps the original stored order; only the card groups
+// them.
 
 export interface CardIngredientInput {
   name: string;
@@ -47,6 +48,10 @@ export interface CardStep {
   // Indexes into rows[] (the reordered rail) of every ingredient this
   // step references — the filled dots in the matrix.
   matchedRowIndexes: number[];
+  // Indexes into rows[] that this step's MERGED block spans. Contiguous
+  // by construction: a step's own band (ingredients it first references),
+  // or — for whole-pot steps — every ingredient introduced so far.
+  blockRowIndexes: number[];
 }
 
 export interface CookingCardLayout {
@@ -191,6 +196,29 @@ export function buildCookingCardLayout(input: {
     if (!rowIndexByName.has(key)) rowIndexByName.set(key, newIdx);
   });
 
+  // Per step, the rows of the ingredients it is the FIRST to reference —
+  // its band. Bands are contiguous by construction (rows are ordered band
+  // by band), so a merged block over a band is a clean solid run.
+  const bandRows: number[][] = instructions.map((_, stepIndex) =>
+    orderedOriginalIndexes
+      .map((origIdx, rowIndex) => ({ origIdx, rowIndex }))
+      .filter(({ origIdx }) => assignedStep[origIdx] === stepIndex)
+      .map(({ rowIndex }) => rowIndex)
+  );
+
+  // Per step, the rows its merged block spans. A whole-pot step
+  // ("pressure cook", "add everything", "mix well"…) carries forward
+  // every ingredient introduced so far — the leading run of rows — plus
+  // anything this step itself introduces.
+  let introducedRowCount = 0;
+  const blockRowIndexes: number[][] = instructions.map((instruction, stepIndex) => {
+    introducedRowCount += bandRows[stepIndex].length;
+    if (stepEncompassesAll(instruction.content ?? "")) {
+      return Array.from({ length: introducedRowCount }, (_, i) => i);
+    }
+    return bandRows[stepIndex];
+  });
+
   const steps: CardStep[] = instructions.map((instruction, index) => {
     const content = instruction.content ?? "";
     const { action, rest } = extractStepAction(content);
@@ -207,6 +235,7 @@ export function buildCookingCardLayout(input: {
       heat: parseHeatFromTip(instruction.tip ?? null).heat,
       timerText: explicitTimerText(content),
       matchedRowIndexes,
+      blockRowIndexes: blockRowIndexes[index],
     };
   });
 

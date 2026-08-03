@@ -182,3 +182,46 @@ describe("whole-pot steps carry forward introduced ingredients", () => {
     expect(layout.steps[2].matchedRowIndexes).toEqual([0, 1, 2, 3]);
   });
 });
+
+describe("merged block rows (blockRowIndexes)", () => {
+  it("a step's block is its own band — contiguous, no over-claiming", () => {
+    const layout = buildCookingCardLayout({
+      ingredients: [
+        { name: "pork belly" },
+        { name: "garlic" },
+        { name: "dark soy sauce" },
+        { name: "light soy sauce" },
+        { name: "rock sugar" },
+      ],
+      instructions: [
+        { content: "Blanch pork belly in boiling water" },
+        { content: "Fry garlic, then add pork and toss" },
+        { content: "Add dark soy, light soy and rock sugar, simmer" },
+      ],
+      scale: 1,
+    });
+
+    // Bands are pork → garlic → the three seasonings. Step 2 re-uses pork
+    // but does NOT claim its row — that block lives in step 1's band.
+    expect(layout.steps[0].blockRowIndexes).toEqual([0]);
+    expect(layout.steps[1].blockRowIndexes).toEqual([1]);
+    expect(layout.steps[2].blockRowIndexes).toEqual([2, 3, 4]);
+    expect(layout.steps[2].blockRowIndexes.every((v, i) => i === 0 || v === layout.steps[2].blockRowIndexes[i - 1] + 1)).toBe(true);
+  });
+
+  it("whole-pot steps carry forward every introduced ingredient", () => {
+    const layout = buildCookingCardLayout({
+      ingredients: [{ name: "potato" }, { name: "beef" }, { name: "onion" }],
+      instructions: [
+        { content: "Dice potatoes and onion" },
+        { content: "Sear beef" },
+        { content: "Add everything to the pressure cooker and pressure cook 30 mins" },
+      ],
+      scale: 1,
+    });
+
+    // Rows are banded [potato, onion, beef]; the final whole-pot step's
+    // block spans all three.
+    expect(layout.steps[2].blockRowIndexes).toEqual([0, 1, 2]);
+  });
+});

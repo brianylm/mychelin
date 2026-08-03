@@ -14,6 +14,7 @@ const steps = [
     heat: "high" as const,
     timerText: null,
     matchedRowIndexes: [0],
+    blockRowIndexes: [0],
   },
   {
     stepNumber: 2,
@@ -22,6 +23,7 @@ const steps = [
     heat: null,
     timerText: "2 min",
     matchedRowIndexes: [1],
+    blockRowIndexes: [1],
   },
 ];
 

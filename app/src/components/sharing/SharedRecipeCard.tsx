@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Flame, ImageDown, Timer, Wand2 } from "lucide-react";
 import type { SharedRecipeDTO } from "@/lib/shared-recipe";
 import { HEAT_CONFIG } from "@/lib/instruction-heat";
@@ -142,11 +142,14 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
                 gridTemplateColumns: `minmax(88px, 120px) repeat(${layout.steps.length}, minmax(96px, 1fr))`,
               }}
             >
-              <div className="sticky left-0 z-10 bg-ui-surface-raised p-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted">
+              <div
+                className="sticky left-0 z-20 bg-ui-surface-raised p-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted"
+                style={{ gridColumn: 1, gridRow: 1 }}
+              >
                 Ingredients
               </div>
               {layout.steps.map((step) => (
-                <div key={step.stepNumber} className="bg-ui-surface-raised p-2">
+                <div key={step.stepNumber} className="bg-ui-surface-raised p-2" style={{ gridColumn: step.stepNumber + 1, gridRow: 1 }}>
                   <div className="flex items-center gap-1.5">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-white">
                       {step.stepNumber}
@@ -173,25 +176,47 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
                 </div>
               ))}
 
+              {/* Ingredient rail: one static cell per row */}
               {layout.rows.map((row, rowIndex) => (
-                <Fragment key={rowIndex}>
-                  <div className="sticky left-0 z-10 flex min-h-11 items-center bg-ui-surface-raised p-2">
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-medium text-ui-text">{row.name}</span>
-                      {row.amount && (
-                        <span className="block truncate text-[10px] text-ui-muted">{row.amount}</span>
-                      )}
-                    </span>
-                  </div>
-                  {layout.steps.map((step) => (
-                    <div key={step.stepNumber} className="flex items-center justify-center bg-ui-surface-raised">
-                      {step.matchedRowIndexes.includes(rowIndex) && (
-                        <span className="h-2 w-2 rounded-full bg-ui-accent" aria-hidden="true" />
-                      )}
-                    </div>
-                  ))}
-                </Fragment>
+                <div
+                  key={`rail-${rowIndex}`}
+                  className="sticky left-0 z-20 flex min-h-11 items-center bg-ui-surface-raised p-2"
+                  style={{ gridColumn: 1, gridRow: rowIndex + 2 }}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-medium text-ui-text">{row.name}</span>
+                    {row.amount && (
+                      <span className="block truncate text-[10px] text-ui-muted">{row.amount}</span>
+                    )}
+                  </span>
+                </div>
               ))}
+
+              {/* Step columns: plain per-row cells (the grid body) */}
+              {layout.steps.flatMap((step) =>
+                layout.rows.map((row, rowIndex) => (
+                  <div
+                    key={`cell-${step.stepNumber}-${rowIndex}`}
+                    className="bg-ui-surface-raised"
+                    style={{ gridColumn: step.stepNumber + 1, gridRow: rowIndex + 2 }}
+                  />
+                ))
+              )}
+
+              {/* Step columns: one merged block spanning each step's matched band */}
+              {layout.steps.flatMap((step) => {
+                const indexes = step.blockRowIndexes;
+                if (indexes.length === 0) return [];
+                const first = indexes[0];
+                const last = indexes[indexes.length - 1];
+                return [
+                  <div
+                    key={`block-${step.stepNumber}`}
+                    className="flex items-center justify-center rounded-lg border border-ui-accent/10 bg-ui-accent/20"
+                    style={{ gridColumn: step.stepNumber + 1, gridRow: `${first + 2} / ${last + 3}` }}
+                  />,
+                ];
+              })}
             </div>
           </div>
         )}
