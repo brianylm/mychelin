@@ -60,6 +60,9 @@ bash "$ROOT/scripts/lint-changed.sh"
 step "4/8 Unit tests"
 (cd "$APP" && npm test -- --run)
 
+step "4b/8 E2E regression tests (Playwright)"
+(cd "$APP" && npx playwright test)
+
 step "5/8 Production build"
 (cd "$APP" && npm run build)
 

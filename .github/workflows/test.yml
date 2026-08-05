@@ -38,6 +38,15 @@ jobs:
 
       - run: npm test
 
+      # E2E against the dev Turso DB (secrets point at the DEV database,
+      # never prod). Playwright boots its own dev server on :3100.
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+        env:
+          JWT_SECRET: playwright-test-secret
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
       # db/auth clients are lazy, but Next collects page data at build
       # time — give the build harmless placeholder env vars.
       - run: npm run build
