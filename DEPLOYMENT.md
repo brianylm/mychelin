@@ -48,10 +48,11 @@ Local regression tooling:
 ```bash
 cd /home/cluser/projects/mychelin/app
 npm test                # unit tests (vitest)
+npm run test:e2e        # Playwright e2e (dev server on :3100, dev Turso DB)
 npm run smoke:regression   # post-deploy HTTP smoke, MYCHELIN_BASE_URL=... to target non-prod
 ```
 
-CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + build on every push and PR.
+CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + Playwright e2e + build on every push and PR. The e2e step needs `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` GitHub secrets pointing at the **dev** database (never prod).
 
 Verify Vercel root directory:
 
