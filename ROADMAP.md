@@ -59,6 +59,7 @@ Mychelin's roadmap is about making family food heritage capture trustworthy, pra
 - Strengthen family recipe-book invitations.
 - Clarify private vs shared recipes. Initial rule shipped: public recipe shares expose the definitive recipe snapshot only; attempts, next tries, private ratings, meal plans, and owner metadata stay private.
 - Add tests around auth, recipe access, and invitation boundaries.
+- Add households: one shared meal plan, shared inventory, and shared shopping list for people who cook together, with per-recipe household sharing and a 30-day recoverable deletion flow. See work packet `docs/work-packets/households-shared-plan-inventory.md`.
 
 ## Medium term
 

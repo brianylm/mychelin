@@ -113,6 +113,10 @@ export const preferredRegion = "hnd1";
 - AI capture currently uses OpenAI/Whisper or Realtime speech-to-text paths, browser live captions where available, Gemini as optional audio fallback, and DeepSeek for lower-cost text reasoning/extraction where configured. Treat transcripts, recordings, and prompts as sensitive.
 - Migrations are not guaranteed to auto-run on deploy. For schema changes, add a Drizzle migration under `app/drizzle/`, explain data impact, and verify with app-level checks/scripts. Do not rely on stale Turso migration docs that point to `mychelin-1/`.
 
+## Work Packet Execution Rule
+
+Work packets in `docs/work-packets/` may only be executed (implementation started) once they are fully grilled: all product decisions locked with B, no open grill questions, and any unresolvable points written down as explicit v1 assumptions in the packet. A packet with unanswered questions goes back for a grilling round with B before any code is written. Packet format: product intent, target user, locked decisions, v1 scope/non-goals, definition of done, implementation starting points, acceptance criteria, smoke-test scenario, trap checks.
+
 ## Safety and Privacy
 
 Mychelin may handle private family recipes, stories, photos, voice recordings, transcripts, account data, and sharing permissions.
