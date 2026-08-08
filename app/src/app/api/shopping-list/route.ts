@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { inventory, mealPlans } from "@/db/schema";
+import {
+  householdMemberBlocks,
+  householdMembers,
+  inventory,
+  mealPlans,
+  shoppingListItems,
+  users,
+} from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import {
+  ensureHouseholdSlice2Tables,
+  ensurePlanningOwnershipColumns,
+} from "@/db/ensure-schema";
+import { getUserHousehold } from "@/lib/households";
+import {
+  blockedMembersForSlot,
+  type HouseholdBlockScope,
+  type HouseholdMemberBlockView,
+} from "@/lib/household-blocking";
+import { blockingScaleFactor } from "@/lib/household-portions";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -20,6 +37,12 @@ interface ShoppingListItem {
   unit: string;
   approximate: boolean;
   sourceMealCount: number;
+  catalogIngredientId: number | null;
+  // Household mode only: persisted shared tick state (2-step flow —
+  // ticking marks bought; moving to inventory is a separate action).
+  ticked?: boolean;
+  tickedByName?: string | null;
+  manual?: boolean;
 }
 
 interface NeededIngredient {
@@ -60,7 +83,15 @@ function approximateKey(name: string, label: string): string {
 }
 
 // ─── GET /api/shopping-list ────────────────────────────────
-// Generate a shopping list from the current user's meal plan and inventory.
+// Solo users: the list is generated from their meal plan and inventory,
+// exactly as before — no rows are ever read or written for them.
+//
+// Household members: the list generates from the SHARED plan with
+// quantities scaled by non-blocked eaters (fully blocked slots drop
+// out), offsets against the SHARED inventory, merges manual adds, and
+// annotates each item with the shared tick state. Items already moved
+// to inventory come back in `movedItems` (shown as such, never
+// re-pushed — the 2-step flow is idempotent).
 export async function GET(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
@@ -68,7 +99,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureHouseholdSlice2Tables(),
+    ]);
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get("startDate");
@@ -88,12 +122,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const membership = await getUserHousehold(currentUser.id);
+
     const mealPlansInRange = await db.query.mealPlans.findMany({
-      where: and(
-        eq(mealPlans.userId, currentUser.id),
-        gte(mealPlans.date, startDate),
-        lte(mealPlans.date, endDate)
-      ),
+      where: membership
+        ? and(
+            eq(mealPlans.householdId, membership.household.id),
+            gte(mealPlans.date, startDate),
+            lte(mealPlans.date, endDate)
+          )
+        : and(
+            eq(mealPlans.userId, currentUser.id),
+            gte(mealPlans.date, startDate),
+            lte(mealPlans.date, endDate)
+          ),
       with: {
         recipe: {
           with: {
@@ -107,10 +149,53 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Household-only context for blocking-aware scaling.
+    let memberBlocks: HouseholdMemberBlockView[] = [];
+    let memberCount = 0;
+    let stateRows: Array<typeof shoppingListItems.$inferSelect> = [];
+    if (membership) {
+      const [blockRows, shoppingRows] = await Promise.all([
+        db
+          .select({
+            id: householdMemberBlocks.id,
+            userId: householdMemberBlocks.userId,
+            scope: householdMemberBlocks.scope,
+            date: householdMemberBlocks.date,
+            mealType: householdMemberBlocks.mealType,
+          })
+          .from(householdMemberBlocks)
+          .where(eq(householdMemberBlocks.householdId, membership.household.id)),
+        db
+          .select()
+          .from(shoppingListItems)
+          .where(eq(shoppingListItems.householdId, membership.household.id)),
+      ]);
+      memberBlocks = blockRows.map((row) => ({
+        ...row,
+        scope: row.scope as HouseholdBlockScope,
+      }));
+      stateRows = shoppingRows;
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(householdMembers)
+        .where(eq(householdMembers.householdId, membership.household.id));
+      memberCount = Number(count);
+    }
+
     const neededIngredients = new Map<string, NeededIngredient>();
 
     for (const mealPlan of mealPlansInRange) {
       const servingsMultiplier = mealPlan.servings || 1;
+      // Blocking-aware scaling (packet decision 3/6): quantities scale
+      // by the share of members still eating; a fully blocked slot
+      // contributes nothing.
+      const eaterScale = membership
+        ? blockingScaleFactor(
+            memberCount,
+            blockedMembersForSlot(memberBlocks, mealPlan.date, mealPlan.mealType).length
+          )
+        : 1;
+      if (eaterScale <= 0) continue;
 
       for (const ingredient of mealPlan.recipe.ingredients) {
         const name = ingredient.catalogIngredient?.name || ingredient.name;
@@ -123,7 +208,7 @@ export async function GET(request: NextRequest) {
           !ingredient.approximate;
 
         const scaledQuantity = hasNumericQuantity
-          ? ingredient.quantity! * servingsMultiplier
+          ? ingredient.quantity! * servingsMultiplier * eaterScale
           : null;
         const displayLabel = ingredient.approximate
           ? ingredient.quantityText?.trim() || quantityLabel(scaledQuantity, unit)
@@ -158,7 +243,9 @@ export async function GET(request: NextRequest) {
     }
 
     const inventoryItems = await db.query.inventory.findMany({
-      where: eq(inventory.userId, currentUser.id),
+      where: membership
+        ? eq(inventory.householdId, membership.household.id)
+        : and(eq(inventory.userId, currentUser.id), isNull(inventory.householdId)),
       with: {
         catalogIngredient: true,
       },
@@ -196,7 +283,81 @@ export async function GET(request: NextRequest) {
         unit: needed.unit,
         approximate: needed.approximate,
         sourceMealCount: needed.sourceMealIds.size,
+        catalogIngredientId: needed.catalogIngredientId,
       });
+    }
+
+    // Household mode: merge manual adds and annotate the shared tick
+    // state. Already-moved rows are reported separately and never
+    // re-enter the buy list.
+    let movedItems: Array<{
+      key: string;
+      name: string;
+      unit: string;
+      quantity: number | null;
+      movedByName: string | null;
+      movedAt: string;
+    }> = [];
+    if (membership) {
+      const actorIds = [
+        ...new Set(
+          stateRows
+            .flatMap((row) => [row.tickedBy, row.movedBy])
+            .filter((id): id is number => id != null)
+        ),
+      ];
+      const actorRows = actorIds.length
+        ? await db
+            .select({ id: users.id, name: users.name })
+            .from(users)
+            .where(inArray(users.id, actorIds))
+        : [];
+      const actorNames = new Map(actorRows.map((row) => [row.id, row.name]));
+
+      const stateByKey = new Map(stateRows.map((row) => [row.itemKey, row]));
+
+      for (const item of shoppingList) {
+        const state = stateByKey.get(item.key);
+        if (state?.tickedAt && !state.movedAt) {
+          item.ticked = true;
+          item.tickedByName = state.tickedBy != null ? actorNames.get(state.tickedBy) ?? null : null;
+        }
+      }
+
+      for (const row of stateRows) {
+        if (row.source !== "manual") continue;
+        if (row.movedAt) continue; // moved manual items show in movedItems only
+        // A generated item with the same key already covers this row;
+        // its tick state was annotated above.
+        if (neededIngredients.has(row.itemKey)) continue;
+        shoppingList.push({
+          key: row.itemKey,
+          name: row.name,
+          category: row.category,
+          quantityNeeded: row.quantity,
+          quantityOnHand: 0,
+          quantityToBuy: row.quantity,
+          quantityLabel: quantityLabel(row.quantity, row.unit),
+          unit: row.unit,
+          approximate: row.approximate,
+          sourceMealCount: 0,
+          catalogIngredientId: row.catalogIngredientId,
+          ticked: Boolean(row.tickedAt),
+          tickedByName: row.tickedBy != null ? actorNames.get(row.tickedBy) ?? null : null,
+          manual: true,
+        });
+      }
+
+      movedItems = stateRows
+        .filter((row) => row.movedAt)
+        .map((row) => ({
+          key: row.itemKey,
+          name: row.name,
+          unit: row.unit,
+          quantity: row.quantity,
+          movedByName: row.movedBy != null ? actorNames.get(row.movedBy) ?? null : null,
+          movedAt: row.movedAt!,
+        }));
     }
 
     shoppingList.sort((a, b) => {
@@ -219,12 +380,17 @@ export async function GET(request: NextRequest) {
         recipe_count: new Set(mealPlansInRange.map((plan) => plan.recipeId)).size,
         item_count: shoppingList.length,
         approximate_item_count: shoppingList.filter((item) => item.approximate).length,
+        household: membership ? true : false,
       },
       path: requestPath(request),
     });
 
     return NextResponse.json({
       items: shoppingList,
+      movedItems,
+      household: membership
+        ? { id: membership.household.id, name: membership.household.name }
+        : null,
       summary: {
         startDate,
         endDate,

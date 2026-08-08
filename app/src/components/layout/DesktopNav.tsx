@@ -21,7 +21,7 @@ interface DesktopNavProps {
 const baseTabs: { id: AppView; label: string; icon: LucideIcon }[] = [
   { id: "recipes", label: "Library", icon: BookOpen },
   { id: "activity", label: "Activity", icon: ClipboardList },
-  { id: "fridge", label: "Fridge", icon: Refrigerator },
+  { id: "fridge", label: "Inventory", icon: Refrigerator },
   { id: "shopping", label: "Shopping", icon: ShoppingBasket },
   { id: "plan", label: "Meal Plan", icon: CalendarDays },
 ];

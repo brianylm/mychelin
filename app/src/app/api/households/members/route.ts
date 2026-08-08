@@ -6,6 +6,7 @@ import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { ensureHouseholdTables } from "@/db/ensure-schema";
 import {
   getUserHousehold,
+  handleMemberDeparture,
   isHouseholdAdmin,
   isHouseholdMember,
   logHouseholdActivity,
@@ -166,7 +167,12 @@ export async function DELETE(request: NextRequest) {
       targetUser?.name ?? null
     );
 
-    return NextResponse.json({ success: true });
+    // Same data treatment as leaving (packet decision 7): ghost their
+    // on-plan recipes, clean up their block rows, and start the 30-day
+    // flow if the removal emptied the household.
+    const emptied = await handleMemberDeparture(householdId, targetUserId);
+
+    return NextResponse.json({ success: true, householdDeleted: emptied });
   } catch (error) {
     console.error("DELETE /api/households/members error:", error);
     return NextResponse.json(

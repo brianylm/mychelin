@@ -61,6 +61,18 @@ export function formatServingLabel(scale: ServingScale): string {
   return `serves ${formatServings(scale.scaledServings)} of ${formatServings(scale.baseServings)}`;
 }
 
+// Multiplier for quantity-side scaling (shopping list generation and
+// cook-time deduction): the share of members still eating. Returns 1
+// when there is no household context, 0 when everyone blocked the slot —
+// callers skip fully-blocked slots rather than emitting zero-quantity
+// rows.
+export function blockingScaleFactor(memberCount: number, blockedCount: number): number {
+  const members = Math.max(0, Math.floor(memberCount));
+  if (members <= 0) return 1;
+  const blocked = Math.min(members, Math.max(0, Math.floor(blockedCount)));
+  return (members - blocked) / members;
+}
+
 function formatServings(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }

@@ -116,6 +116,24 @@ export function CookWithMeSession({
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextTryBannerDismissed, setNextTryBannerDismissed] = useState(false);
+  // Household cook-time deduction (Slice 2): when the attempt response
+  // carries a deduction proposal (own recipe + meal on the household
+  // plan), the session shows a one-click confirm sheet with editable
+  // quantities instead of closing immediately. Never fires for cooks of
+  // other people's recipes — the server gates that.
+  const [deduction, setDeduction] = useState<{
+    mealPlanId: number;
+    items: Array<{
+      name: string;
+      unit: string;
+      quantity: number;
+      catalogIngredientId: number | null;
+      onHand: number | null;
+    }>;
+    notTracked: string[];
+  } | null>(null);
+  const [deductionDrafts, setDeductionDrafts] = useState<Record<number, string>>({});
+  const [deducting, setDeducting] = useState(false);
 
   const currentInstruction = instructions[stepIndex];
   const currentStepMeta = parseHeatFromTip(currentInstruction?.tip);
@@ -370,6 +388,26 @@ export function CookWithMeSession({
         }
       }
 
+      const proposal = savedAttempt?.deduction;
+      if (
+        proposal &&
+        Array.isArray(proposal.items) &&
+        (proposal.items.length > 0 || (proposal.notTracked ?? []).length > 0)
+      ) {
+        // Household deduction proposal — hand off to the confirm sheet;
+        // it closes the session after confirm/skip.
+        setDeduction(proposal);
+        setDeductionDrafts(
+          Object.fromEntries(
+            proposal.items.map((item: { quantity: number }, index: number) => [
+              index,
+              String(item.quantity),
+            ])
+          )
+        );
+        return;
+      }
+
       await onComplete?.();
       onClose();
     } catch (err) {
@@ -378,6 +416,42 @@ export function CookWithMeSession({
       setSaving(false);
     }
   }, [actualIngredients, actualInstructions, changeNotes, mealPlanId, nextTimeNotes, nextTryIngredients, nextTryInstructions, onClose, onComplete, recipe, saveNextTry, sessionSummary]);
+
+  const finishDeduction = useCallback(
+    async (confirm: boolean) => {
+      if (!deduction) return;
+      if (confirm) {
+        setDeducting(true);
+        try {
+          const items = deduction.items
+            .map((item, index) => ({
+              name: item.name,
+              unit: item.unit,
+              catalogIngredientId: item.catalogIngredientId,
+              quantity: parseFloat(deductionDrafts[index] ?? "") || 0,
+            }))
+            .filter((item) => item.quantity > 0);
+          const response = await fetch("/api/households/inventory/deduct", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mealPlanId: deduction.mealPlanId, items }),
+          });
+          if (!response.ok) {
+            // Best-effort: the attempt is already saved; a failed
+            // deduction must not trap the cook in the session.
+            console.warn("inventory deduction failed", await response.text().catch(() => ""));
+          }
+        } catch (deductError) {
+          console.warn("inventory deduction failed", deductError);
+        } finally {
+          setDeducting(false);
+        }
+      }
+      await onComplete?.();
+      onClose();
+    },
+    [deduction, deductionDrafts, onComplete, onClose]
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-[#17131f] text-white">
@@ -826,6 +900,78 @@ export function CookWithMeSession({
                   className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#800020] px-4 text-sm font-semibold text-white"
                 >
                   Exit session
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {deduction && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center">
+            <div className="w-full max-w-md rounded-t-3xl bg-[#fffdfb] p-5 text-[#17131f] sm:rounded-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#800020]">
+                Shared inventory
+              </p>
+              <h3 className="mt-2 text-xl font-semibold">Update the household inventory?</h3>
+              <p className="mt-1 text-xs leading-5 text-neutral-500">
+                This meal is on the household plan. Confirm what you used — edit any amount first.
+              </p>
+              <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+                {deduction.items.map((item, index) => {
+                  const draft = parseFloat(deductionDrafts[index] ?? "");
+                  const overdraws =
+                    item.onHand != null && Number.isFinite(draft) && draft > item.onHand;
+                  return (
+                    <div key={`${item.name}-${index}`} className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-neutral-800">{item.name}</p>
+                        <p className="text-[10px] text-neutral-400">
+                          {item.onHand != null
+                            ? `${item.onHand} ${item.unit} on hand`
+                            : "not tracked in inventory"}
+                          {overdraws && (
+                            <span className="ml-1 font-semibold text-amber-700">
+                              · will dip below zero
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <input
+                        type="number"
+                        value={deductionDrafts[index] ?? ""}
+                        onChange={(event) =>
+                          setDeductionDrafts((d) => ({ ...d, [index]: event.target.value }))
+                        }
+                        inputMode="decimal"
+                        aria-label={`Amount used of ${item.name}`}
+                        className="w-24 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#800020]/45"
+                      />
+                      <span className="w-10 text-xs text-neutral-500">{item.unit}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {deduction.notTracked.length > 0 && (
+                <p className="mt-3 text-[11px] leading-4 text-neutral-400">
+                  Not tracked: {deduction.notTracked.join(", ")}
+                </p>
+              )}
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => finishDeduction(true)}
+                  disabled={deducting}
+                  className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#800020] px-4 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-50"
+                >
+                  {deducting ? "Updating..." : "Deduct from inventory"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => finishDeduction(false)}
+                  disabled={deducting}
+                  className="flex min-h-12 items-center justify-center rounded-full border border-neutral-200 px-4 text-sm font-medium text-neutral-600"
+                >
+                  Skip
                 </button>
               </div>
             </div>

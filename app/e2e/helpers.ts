@@ -117,3 +117,38 @@ export async function cleanupUsers(prefix: string): Promise<void> {
     args: [`${prefix}-%@example.com`],
   });
 }
+
+// Direct DB handle for fixture time-travel (e.g. aging a household's
+// deleted_at past the 30-day window) and assertions. DEV database only.
+export function devDb() {
+  return turso();
+}
+
+// Best-effort cleanup for synthetic households. Child rows are deleted
+// explicitly — SQLite FK cascade enforcement is connection-dependent,
+// so cleanup does not rely on it. Run BEFORE cleanupUsers (member rows
+// reference users).
+export async function cleanupHouseholds(namePrefix: string): Promise<void> {
+  const db = turso();
+  const { rows } = await db.execute({
+    sql: "SELECT id FROM households WHERE name LIKE ?",
+    args: [`${namePrefix}%`],
+  });
+  for (const row of rows) {
+    const id = Number(row.id);
+    for (const table of [
+      "shopping_list_items",
+      "inventory",
+      "meal_plans",
+      "household_member_blocks",
+      "household_activity_log",
+      "household_members",
+    ]) {
+      await db.execute({
+        sql: `DELETE FROM ${table} WHERE household_id = ?`,
+        args: [id],
+      });
+    }
+    await db.execute({ sql: "DELETE FROM households WHERE id = ?", args: [id] });
+  }
+}

@@ -5,6 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { ensureNotificationTables, ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable, ensureRecipeFlagsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { buildDeductionProposal } from "@/lib/household-deduct";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -199,7 +200,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     await queuePostCookReviewReminder(currentUser.id);
 
-    return NextResponse.json(parseAttempt(attempt), { status: 201 });
+    // Slice 2: cook-time deduction proposal. Only fires when the meal is
+    // on the cook's household plan AND the recipe is the cook's own
+    // (trap check inside buildDeductionProposal). Best-effort — a
+    // proposal hiccup must not fail the attempt save.
+    let deduction = null;
+    if (body.mealPlanId) {
+      try {
+        deduction = await buildDeductionProposal(
+          currentUser.id,
+          Number(body.mealPlanId),
+          Array.isArray(body.ingredientsSnapshot) ? body.ingredientsSnapshot : null
+        );
+      } catch (error) {
+        console.warn("deduction proposal skipped:", error);
+      }
+    }
+
+    return NextResponse.json({ ...parseAttempt(attempt), deduction }, { status: 201 });
   } catch (error) {
     console.error("POST /api/recipes/[id]/attempts error:", error);
     return NextResponse.json(

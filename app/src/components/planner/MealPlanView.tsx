@@ -53,11 +53,23 @@ interface MealPlan {
   notes: string | null;
   cookedAt: string | null;
   recipe?: { id: number; title: string; yield: string | null };
+  // Household ghost copies (Slice 2): display snapshot captured when the
+  // recipe's owner left the household — the slot keeps rendering even if
+  // the recipe later becomes inaccessible.
+  ghostTitle?: string | null;
+  ghostYield?: string | null;
+  ghostedAt?: string | null;
   // Household shared plan: who added this slot (null for solo plans).
   addedByName?: string | null;
   // True when this entry comes from a logged cook attempt rather than a
   // planned meal. Logged entries are read-only in the calendar.
   loggedAttempt?: boolean;
+}
+
+// Slot display title: the live recipe wins; the ghost snapshot is the
+// fallback for departed members' recipes.
+function planTitle(plan: MealPlan): string {
+  return plan.recipe?.title || plan.ghostTitle || "Unknown recipe";
 }
 
 // Household summary returned by GET /api/meal-plans when the user is in
@@ -567,7 +579,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
   const getServingLabel = useCallback(
     (plan: MealPlan, date: string, mealType: string): string | null => {
       if (!household) return null;
-      const base = parseYieldServings(plan.recipe?.yield);
+      const base = parseYieldServings(plan.recipe?.yield ?? plan.ghostYield);
       if (!base) return null;
       const blockedCount = getOutMembersForSlot(date, mealType).length;
       if (blockedCount === 0) return null;
@@ -1081,7 +1093,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                 >
                                   <div className="min-w-0 flex-1">
                                     <span className={`block truncate text-neutral-800 ${plan.cookedAt ? "line-through decoration-neutral-300" : ""}`}>
-                                      {plan.recipe?.title || "Unknown recipe"}
+                                      {planTitle(plan)}
                                     </span>
                                     {plan.cookedAt && (
                                       <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
@@ -1407,7 +1419,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                       : "")
                                   }
                                 >
-                                  {plan.recipe?.title || "Unknown recipe"}
+                                  {planTitle(plan)}
                                 </span>
                                 {plan.cookedAt && (
                                   <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">

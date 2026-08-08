@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Crown, House, LogOut, UserMinus, UserPlus } from "lucide-react";
+import { Check, Copy, Crown, House, LogOut, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -49,6 +49,26 @@ function describeActivity(item: HouseholdActivityRow): string {
       return `${item.userName} removed${target} from the plan`;
     case "blocked_slot":
       return `${item.userName} is out for${target}`;
+    case "added_item":
+      return `${item.userName} added${target} to inventory`;
+    case "edited_item":
+      return `${item.userName} updated${target} in inventory`;
+    case "removed_item":
+      return `${item.userName} removed${target} from inventory`;
+    case "used_item":
+      return `${item.userName} used${target}`;
+    case "added_shopping_item":
+      return `${item.userName} added${target} to the shopping list`;
+    case "removed_shopping_item":
+      return `${item.userName} removed${target} from the shopping list`;
+    case "ticked_shopping_item":
+      return `${item.userName} bought${target}`;
+    case "moved_to_inventory":
+      return `${item.userName} moved${target} to inventory`;
+    case "reactivated_household":
+      return `${item.userName} reactivated the household`;
+    case "deleted_household":
+      return `${item.userName} deleted the household`;
     default:
       return `${item.userName} ${item.action}${target}`;
   }
@@ -151,10 +171,35 @@ export function HouseholdView() {
       const res = await fetch("/api/households/leave", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to leave household");
-      addToast("You left the household", "success");
+      addToast(
+        data.householdDeleted
+          ? "You left — the household is now empty and will be deleted in 30 days unless reactivated"
+          : "You left the household",
+        "success"
+      );
       await load();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Failed to leave household", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (busy) return;
+    const confirmed = window.confirm(
+      "Delete this household? It disappears for everyone now, but anyone with the join code can bring it back within 30 days."
+    );
+    if (!confirmed) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/households", { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to delete household");
+      addToast("Household deleted — recoverable for 30 days via the join code", "success");
+      await load();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to delete household", "error");
     } finally {
       setBusy(false);
     }
@@ -229,7 +274,7 @@ export function HouseholdView() {
           <div>
             <h1 className="text-xl font-bold text-neutral-900">Household</h1>
             <p className="text-sm text-neutral-500">
-              One shared meal plan for the people you cook with.
+              One shared plan, inventory, and shopping list for the people you cook with.
             </p>
           </div>
         </div>
@@ -316,6 +361,17 @@ export function HouseholdView() {
                   Leave
                 </button>
               </div>
+              {household.myRole === "admin" && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={busy}
+                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete household
+                </button>
+              )}
               <button
                 type="button"
                 onClick={copyJoinCode}

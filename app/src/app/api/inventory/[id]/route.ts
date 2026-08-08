@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { inventory } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import {
+  ensureHouseholdSlice2Tables,
+  ensurePlanningOwnershipColumns,
+} from "@/db/ensure-schema";
+import { getUserHousehold, logHouseholdActivity } from "@/lib/households";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -13,6 +17,28 @@ type RouteContext = { params: Promise<{ id: string }> };
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VALID_LOCATIONS = ["pantry", "fridge", "freezer"];
 
+// Household members address shared rows by id + household scope; solo
+// users address their own personal rows exactly as before. A member of
+// household A can never reach household B's (or a solo user's) rows.
+async function resolveScope(userId: number) {
+  const membership = await getUserHousehold(userId);
+  return membership
+    ? {
+        membership,
+        where: (itemId: number) =>
+          and(eq(inventory.id, itemId), eq(inventory.householdId, membership.household.id)),
+      }
+    : {
+        membership: null,
+        where: (itemId: number) =>
+          and(
+            eq(inventory.id, itemId),
+            eq(inventory.userId, userId),
+            isNull(inventory.householdId)
+          ),
+      };
+}
+
 // ─── GET /api/inventory/:id ────────────────────────────────
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
@@ -21,13 +47,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureHouseholdSlice2Tables(),
+    ]);
 
     const { id } = await context.params;
     const itemId = Number(id);
+    const scope = await resolveScope(currentUser.id);
 
     const item = await db.query.inventory.findFirst({
-      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
+      where: scope.where(itemId),
       with: {
         catalogIngredient: {
           columns: { id: true, name: true, category: true, defaultUnit: true },
@@ -53,6 +83,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 // ─── PATCH /api/inventory/:id ──────────────────────────────
+// Also the manual-reconcile path: a member adjusting a quantity
+// directly lands here and is attributed in the household activity feed.
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const currentUser = await getCurrentUser();
@@ -60,14 +92,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureHouseholdSlice2Tables(),
+    ]);
 
     const { id } = await context.params;
     const itemId = Number(id);
     const body = await request.json();
+    const scope = await resolveScope(currentUser.id);
 
     const existing = await db.query.inventory.findFirst({
-      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
+      where: scope.where(itemId),
     });
 
     if (!existing) {
@@ -117,10 +153,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     await db
       .update(inventory)
       .set(updateFields)
-      .where(and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)));
+      .where(scope.where(itemId));
+
+    if (scope.membership) {
+      await logHouseholdActivity(
+        scope.membership.household.id,
+        currentUser.id,
+        "edited_item",
+        existing.name
+      );
+    }
 
     const updatedItem = await db.query.inventory.findFirst({
-      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
+      where: scope.where(itemId),
       with: {
         catalogIngredient: {
           columns: { id: true, name: true, category: true, defaultUnit: true },
@@ -146,13 +191,17 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureHouseholdSlice2Tables(),
+    ]);
 
     const { id } = await context.params;
     const itemId = Number(id);
+    const scope = await resolveScope(currentUser.id);
 
     const existing = await db.query.inventory.findFirst({
-      where: and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)),
+      where: scope.where(itemId),
     });
 
     if (!existing) {
@@ -162,9 +211,16 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    await db
-      .delete(inventory)
-      .where(and(eq(inventory.id, itemId), eq(inventory.userId, currentUser.id)));
+    await db.delete(inventory).where(scope.where(itemId));
+
+    if (scope.membership) {
+      await logHouseholdActivity(
+        scope.membership.household.id,
+        currentUser.id,
+        "removed_item",
+        existing.name
+      );
+    }
 
     return NextResponse.json({ message: "Inventory item deleted successfully" });
   } catch (error) {

@@ -281,6 +281,13 @@ export const mealPlans = sqliteTable("meal_plans", {
   servings: real("servings").notNull().default(1), // multiplier against recipe's base yield
   notes: text("notes"), // optional
   cookedAt: text("cooked_at"), // ISO string, null until cooked
+  // Ghost snapshot (Slice 2): minimal display data captured when the
+  // recipe's owner leaves the household (or the household is deleted), so
+  // existing shared slots keep rendering even if the recipe later becomes
+  // inaccessible. NULL while the owner is around — the recipe join wins.
+  ghostTitle: text("ghost_title"),
+  ghostYield: text("ghost_yield"),
+  ghostedAt: text("ghosted_at"), // ISO string; when the owner departed
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
@@ -406,6 +413,11 @@ export const householdMemberBlocks = sqliteTable(
 export const inventory = sqliteTable("inventory", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  // Household scope (Slice 2). NULL = personal item (solo users, and all
+  // rows that predate households). When set, the row belongs to the
+  // household's shared inventory; userId then records who added it (for
+  // attribution), not ownership. Any member can edit/decrement it.
+  householdId: integer("household_id").references(() => households.id, { onDelete: "cascade" }),
   catalogIngredientId: integer("catalog_ingredient_id")
     .references(() => ingredientCatalog.id), // nullable FK to catalog
   name: text("name").notNull(), // display name (denormalized for items without catalog entry)
@@ -417,6 +429,44 @@ export const inventory = sqliteTable("inventory", {
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
 });
+
+// ─── Shopping List Items ───────────────────────────────────
+// Slice 2. There is no legacy shopping-list table: the solo list is
+// generated on read from the meal plan and ticks live in component
+// state. This table persists the SHARED household list's state — tick
+// (bought) and the 2-step move-to-inventory markers — plus manual adds.
+// householdId NULL + userId set is the reserved seam for per-user
+// persistence later; v1 only writes household rows. Solo behaviour is
+// unchanged (no rows are ever read or written for solo users).
+export const shoppingListItems = sqliteTable(
+  "shopping_list_items",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    householdId: integer("household_id").references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    // Stable aggregation key shared with the generator:
+    // "catalog_<id>_<unit>" | "manual_<name>_<unit>" | "approx_<name>_<label>".
+    itemKey: text("item_key").notNull(),
+    name: text("name").notNull(),
+    category: text("category"),
+    unit: text("unit").notNull().default(""),
+    quantity: real("quantity"), // snapshot of the to-buy quantity at tick time
+    approximate: integer("approximate", { mode: "boolean" }).notNull().default(false),
+    source: text("source").notNull().default("generated"), // "generated" | "manual"
+    catalogIngredientId: integer("catalog_ingredient_id")
+      .references(() => ingredientCatalog.id),
+    tickedBy: integer("ticked_by").references(() => users.id),
+    tickedAt: text("ticked_at"),
+    // 2-step tick → inventory idempotency: once movedAt is set the row is
+    // excluded from future moves (pushing twice never double-adds).
+    movedBy: integer("moved_by").references(() => users.id),
+    movedAt: text("moved_at"),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [uniqueIndex("shopping_list_items_unique_idx").on(t.householdId, t.itemKey)]
+);
 
 // ─── Instructions ──────────────────────────────────────────
 export const instructions = sqliteTable("instructions", {

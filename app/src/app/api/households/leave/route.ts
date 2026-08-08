@@ -4,7 +4,11 @@ import { householdMembers } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { ensureHouseholdTables } from "@/db/ensure-schema";
-import { getUserHousehold, logHouseholdActivity } from "@/lib/households";
+import {
+  getUserHousehold,
+  handleMemberDeparture,
+  logHouseholdActivity,
+} from "@/lib/households";
 import { and, eq } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -12,9 +16,10 @@ export const preferredRegion = "hnd1";
 
 // ─── POST /api/households/leave ────────────────────────────
 // Any member can always remove themselves. Their shared-plan meals stay
-// on the household plan (ghost behaviour per the packet); their
-// activity attribution stays as-is. Slice 2 adds the empty-household
-// 30-day deletion trigger.
+// on the household plan as ghost copies (display data snapshotted at
+// departure); their activity attribution stays as-is; their per-member
+// blocks are cleaned up. When the last member leaves, the 30-day
+// deletion flow starts (dead/recoverable, reactivatable via join code).
 export async function POST() {
   try {
     if (!HOUSEHOLDS_ENABLED) {
@@ -51,7 +56,12 @@ export async function POST() {
       currentUser.name
     );
 
-    return NextResponse.json({ success: true });
+    const emptied = await handleMemberDeparture(
+      membership.household.id,
+      currentUser.id
+    );
+
+    return NextResponse.json({ success: true, householdDeleted: emptied });
   } catch (error) {
     console.error("POST /api/households/leave error:", error);
     return NextResponse.json(

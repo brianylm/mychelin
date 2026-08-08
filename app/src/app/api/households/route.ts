@@ -13,8 +13,9 @@ import {
   generateJoinCode,
   getUserHousehold,
   logHouseholdActivity,
+  snapshotGhostSlots,
 } from "@/lib/households";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -182,6 +183,65 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/households error:", error);
     return NextResponse.json(
       { error: "Failed to create household" },
+      { status: 500 }
+    );
+  }
+}
+
+// ─── DELETE /api/households ────────────────────────────────
+// Admin-only explicit delete. Starts the 30-day flow: the household
+// goes dead/recoverable (deleted_at set) and disappears from all UI and
+// APIs except join-code reactivation. Nothing is purged here — the lazy
+// purge runs after the window (see lib/households.ts). Ghost snapshots
+// are taken for every on-plan recipe up front so slots keep rendering
+// whatever happens to members' libraries during the window.
+export async function DELETE() {
+  try {
+    if (!HOUSEHOLDS_ENABLED) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await ensureHouseholdTables();
+
+    const membership = await getUserHousehold(currentUser.id);
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You're not in a household" },
+        { status: 404 }
+      );
+    }
+    if (membership.role !== "admin") {
+      return NextResponse.json(
+        { error: "Only household admins can delete the household" },
+        { status: 403 }
+      );
+    }
+    const householdId = membership.household.id;
+
+    // ownerUserId null → snapshot every on-plan slot, not one member's.
+    await snapshotGhostSlots(householdId, null);
+
+    await logHouseholdActivity(
+      householdId,
+      currentUser.id,
+      "deleted_household",
+      membership.household.name
+    );
+
+    await db
+      .update(households)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(and(eq(households.id, householdId), isNull(households.deletedAt)));
+
+    return NextResponse.json({ success: true, deletedAt: new Date().toISOString() });
+  } catch (error) {
+    console.error("DELETE /api/households error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete household" },
       { status: 500 }
     );
   }

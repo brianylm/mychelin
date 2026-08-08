@@ -4,6 +4,7 @@ import { and, eq, isNull, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { notificationJobs, pushSubscriptions } from "@/db/schema";
 import { ensureNotificationTables } from "@/db/ensure-schema";
+import { purgeExpiredHouseholds } from "@/lib/households";
 
 export const runtime = "nodejs";
 export const preferredRegion = "hnd1";
@@ -29,8 +30,20 @@ export async function GET(request: NextRequest) {
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Slice 2: the daily cron doubles as the household purge sweep —
+    // households past their 30-day recovery window are permanently
+    // deleted here (the lazy per-access purge lives in lib/households).
+    // Best-effort: a purge hiccup must not block notifications.
+    let householdsPurged = 0;
+    try {
+      householdsPurged = await purgeExpiredHouseholds();
+    } catch (error) {
+      console.warn("household purge sweep skipped:", error);
+    }
+
     if (!configureWebPush()) {
-      return NextResponse.json({ configured: false, sent: 0, message: "VAPID keys not configured" });
+      return NextResponse.json({ configured: false, sent: 0, householdsPurged, message: "VAPID keys not configured" });
     }
 
     await ensureNotificationTables();
@@ -116,7 +129,7 @@ export async function GET(request: NextRequest) {
       else skipped += 1;
     }
 
-    return NextResponse.json({ configured: true, sent, skipped, checked: jobs.length });
+    return NextResponse.json({ configured: true, sent, skipped, checked: jobs.length, householdsPurged });
   } catch (error) {
     console.error("GET /api/notifications/dispatch error:", error);
     return NextResponse.json({ error: "Failed to dispatch notifications" }, { status: 500 });

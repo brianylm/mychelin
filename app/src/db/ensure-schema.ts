@@ -675,3 +675,74 @@ export async function ensureHouseholdTables(): Promise<void> {
   await runDdl(client, statements, "ensureHouseholdTables");
   householdsEnsured = true;
 }
+
+// Households Slice 2: shared inventory (inventory.household_id), the
+// persisted shared shopping-list state table, and ghost-slot snapshot
+// columns on meal_plans. Mirrors drizzle/0029_households_slice2.sql —
+// keep the DDL and index names in sync with it.
+let householdsSlice2Ensured = false;
+export async function ensureHouseholdSlice2Tables(): Promise<void> {
+  if (householdsSlice2Ensured) return;
+  const client = getClient();
+  if (!client) return;
+
+  // Slice 2 depends on the Slice 1 tables (FK targets), so make sure
+  // those exist first.
+  await ensureHouseholdTables();
+
+  let existing: Set<string>;
+  let inventoryCols: Set<string>;
+  let mealPlanCols: Set<string>;
+  try {
+    [existing, inventoryCols, mealPlanCols] = await Promise.all([
+      existingObjects(client, ["shopping_list_items"]),
+      tableColumns(client, "inventory"),
+      tableColumns(client, "meal_plans"),
+    ]);
+  } catch (e: unknown) {
+    console.warn("ensureHouseholdSlice2Tables probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const statements: string[] = [];
+  if (!inventoryCols.has("household_id")) {
+    statements.push(
+      `ALTER TABLE inventory ADD COLUMN household_id integer REFERENCES households(id) ON DELETE cascade`
+    );
+  }
+  if (!mealPlanCols.has("ghost_title")) {
+    statements.push(`ALTER TABLE meal_plans ADD COLUMN ghost_title text`);
+  }
+  if (!mealPlanCols.has("ghost_yield")) {
+    statements.push(`ALTER TABLE meal_plans ADD COLUMN ghost_yield text`);
+  }
+  if (!mealPlanCols.has("ghosted_at")) {
+    statements.push(`ALTER TABLE meal_plans ADD COLUMN ghosted_at text`);
+  }
+  if (!existing.has("shopping_list_items")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS shopping_list_items (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        household_id integer REFERENCES households(id) ON DELETE cascade,
+        user_id integer REFERENCES users(id) ON DELETE cascade,
+        item_key text NOT NULL,
+        name text NOT NULL,
+        category text,
+        unit text DEFAULT '' NOT NULL,
+        quantity real,
+        approximate integer DEFAULT 0 NOT NULL,
+        source text DEFAULT 'generated' NOT NULL,
+        catalog_ingredient_id integer REFERENCES ingredient_catalog(id),
+        ticked_by integer REFERENCES users(id),
+        ticked_at text,
+        moved_by integer REFERENCES users(id),
+        moved_at text,
+        created_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS shopping_list_items_unique_idx ON shopping_list_items(household_id, item_key)`
+    );
+  }
+
+  await runDdl(client, statements, "ensureHouseholdSlice2Tables");
+  householdsSlice2Ensured = true;
+}
