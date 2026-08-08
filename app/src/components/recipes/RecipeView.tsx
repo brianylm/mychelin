@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
-import { ArrowLeft, BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Plus, Share2, Shuffle, Target, Utensils } from "lucide-react";
+import { ArrowLeft, BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Plus, Share2, Shuffle, Target, Users, Utensils } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
@@ -23,7 +23,7 @@ import { VoiceRecording } from "@/components/heritage/VoiceRecording";
 
 import { ServingScaler } from "./ServingScaler";
 import { CookingCard } from "./CookingCard";
-import { COOKING_CARD_ENABLED } from "@/lib/feature-flags";
+import { COOKING_CARD_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { CookWithMeSession } from "./CookWithMeSession";
 import { AttemptHistory } from "./AttemptHistory";
 import { AddToBookModal } from "@/components/books/AddToBookModal";
@@ -417,6 +417,10 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   const [loadingBookRecipes, setLoadingBookRecipes] = useState(false);
   const [showCreateBookModal, setShowCreateBookModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState<{ type: "recipe" | "book"; id: number; name: string } | null>(null);
+  // Household share toggle (Slice 3) — local override while a toggle is in
+  // flight / after it, reset whenever the selected recipe changes.
+  const [shareHouseholdBusy, setShareHouseholdBusy] = useState(false);
+  const [householdSharedOverride, setHouseholdSharedOverride] = useState<boolean | null>(null);
   const [showCookWithMe, setShowCookWithMe] = useState(false);
   const [showCookAlong, setShowCookAlong] = useState(false);
   const [compareVersions, setCompareVersions] = useState<{ base: number; compare: number } | null>(null);
@@ -902,6 +906,41 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     await deleteRecipe(selectedRecipe.id);
     addToast("Recipe deleted", "success");
   }, [selectedRecipe, deleteRecipe, addToast]);
+
+  // ── Household share toggle (Slice 3) ─────────────────────
+  // Reset the local override whenever the selected recipe changes.
+  useEffect(() => {
+    setHouseholdSharedOverride(null);
+  }, [selectedRecipe?.id]);
+
+  const isHouseholdShared = householdSharedOverride ?? Boolean(selectedRecipe?.sharedToHouseholdAt);
+
+  const toggleHouseholdShare = useCallback(async () => {
+    if (!selectedRecipe || shareHouseholdBusy) return;
+    setShareHouseholdBusy(true);
+    try {
+      const res = await fetch(`/api/recipes/${selectedRecipe.id}/household-share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shared: !isHouseholdShared }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        addToast(data.error || "Failed to update household share", "error");
+        return;
+      }
+      setHouseholdSharedOverride(data.shared === true);
+      addToast(
+        data.shared ? "Shared with household" : "No longer shared with household",
+        "success"
+      );
+      qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });
+    } catch {
+      addToast("Failed to update household share", "error");
+    } finally {
+      setShareHouseholdBusy(false);
+    }
+  }, [addToast, isHouseholdShared, qc, selectedRecipe, shareHouseholdBusy]);
 
   const handleBookChange = useCallback(
     async (bookId: number | null) => {
@@ -1885,6 +1924,16 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
             </svg>
             Share Recipe
           </button>
+          {HOUSEHOLDS_ENABLED && user && selectedRecipe.userId === user.id && (
+            <button
+              onClick={() => void toggleHouseholdShare()}
+              disabled={shareHouseholdBusy}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-sm font-medium text-ui-text transition-colors hover:border-ui-accent/30 hover:bg-ui-accent/5 disabled:opacity-50"
+            >
+              <Users className="h-4 w-4" aria-hidden="true" />
+              {isHouseholdShared ? "Shared with household — tap to unshare" : "Share with household"}
+            </button>
+          )}
           <button
             onClick={handleDelete}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-ui-danger/20 bg-ui-danger-soft px-4 py-3 text-sm font-medium text-ui-danger transition-colors hover:bg-ui-danger/15"

@@ -10,7 +10,8 @@ import {
 import { asc, eq } from "drizzle-orm";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
+import { ensureHouseholdSlice3Columns } from "@/db/ensure-schema";
+import { canUserAccessRecipe, canUserEditRecipe, canUserReadRecipe } from "@/lib/recipe-access";
 import { getRecipeFlagsForRecipe, replaceRecipeFlagsForUser } from "@/lib/recipe-flags-db";
 
 export const runtime = "edge";
@@ -29,6 +30,11 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     const recipeId = Number(id);
 
+    // Slice 3: the read predicate references recipes.shared_to_household_at,
+    // which may not exist until the lazy ensure runs (migrations are not
+    // auto-applied on deploy).
+    await ensureHouseholdSlice3Columns();
+
     // Every drizzle query is a separate HTTP round trip to Turso, so the
     // access check, recipe row, all four relation fetches, and the flags
     // fetch are fired in parallel — one round-trip's latency instead of
@@ -43,7 +49,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       photoRows,
       recipeFlags,
     ] = await Promise.all([
-      canUserAccessRecipe(currentUser.id, recipeId),
+      // Read access includes household-shared recipes (Slice 3); mutation
+      // routes still gate on canUserAccessRecipe / canUserEditRecipe.
+      canUserReadRecipe(currentUser.id, recipeId),
       db.query.recipes.findFirst({
         where: eq(recipes.id, recipeId),
       }),

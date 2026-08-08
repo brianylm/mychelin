@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
+  ensureHouseholdSlice3Columns,
   ensureMealPlanCookedAtColumn,
   ensurePlanningOwnershipColumns,
   ensureRecipeAttemptsTable,
@@ -38,6 +39,11 @@ export async function GET(request: NextRequest) {
     if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Slice 3: full-row recipe selects include shared_to_household_at,
+    // which lazy-ensure DBs need before the first select (migrations are
+    // not auto-applied on deploy).
+    await ensureHouseholdSlice3Columns();
 
     // One-shot backfill: claim any legacy NULL-owner recipes for the
     // original (lowest-id) user. Runs once per warm container.
@@ -208,6 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     await ensureVersionLabelColumn();
+    await ensureHouseholdSlice3Columns();
     const body = await request.json();
     const {
       title,

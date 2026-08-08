@@ -33,6 +33,7 @@ let recipeFlagsEnsured = false;
 let mealPlanBlocksEnsured = false;
 let recipePhotoSourceEnsured = false;
 let householdsEnsured = false;
+let householdsSlice3Ensured = false;
 
 let _client: Client | null = null;
 
@@ -745,4 +746,36 @@ export async function ensureHouseholdSlice2Tables(): Promise<void> {
 
   await runDdl(client, statements, "ensureHouseholdSlice2Tables");
   householdsSlice2Ensured = true;
+}
+
+export async function ensureHouseholdSlice3Columns(): Promise<void> {
+  if (householdsSlice3Ensured) return;
+  const client = getClient();
+  if (!client) return;
+
+  // Slice 3 columns live on recipes; the household tables are already
+  // ensured by Slice 1/2 paths that callers run first, but the FK targets
+  // (households, users) must exist, so ensure the base household tables.
+  await ensureHouseholdTables();
+
+  let recipeCols: Set<string>;
+  try {
+    recipeCols = await tableColumns(client, "recipes");
+  } catch (e: unknown) {
+    console.warn("ensureHouseholdSlice3Columns probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const statements: string[] = [];
+  if (!recipeCols.has("shared_to_household_at")) {
+    statements.push(`ALTER TABLE recipes ADD COLUMN shared_to_household_at text`);
+  }
+  if (!recipeCols.has("shared_to_household_by")) {
+    statements.push(
+      `ALTER TABLE recipes ADD COLUMN shared_to_household_by integer REFERENCES users(id)`
+    );
+  }
+
+  await runDdl(client, statements, "ensureHouseholdSlice3Columns");
+  householdsSlice3Ensured = true;
 }

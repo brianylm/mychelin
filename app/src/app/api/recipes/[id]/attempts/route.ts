@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { notificationJobs, notificationPreferences, recipeAttempts, recipeFlags, recipes } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { ensureNotificationTables, ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable, ensureRecipeFlagsTable } from "@/db/ensure-schema";
+import { ensureNotificationTables, ensureRecipeAttemptDishRatingColumn, ensureRecipeAttemptsTable, ensureRecipeFlagsTable, ensureHouseholdSlice3Columns } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canReadHouseholdSharedRecipe } from "@/lib/recipe-access";
 import { buildDeductionProposal } from "@/lib/household-deduct";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
@@ -74,22 +74,32 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     await Promise.all([
       ensureRecipeAttemptsTable(),
       ensureRecipeAttemptDishRatingColumn(),
+      ensureHouseholdSlice3Columns(),
     ]);
     const { id } = await context.params;
     const recipeId = Number(id);
 
-    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+    const canAccess = await canUserAccessRecipe(currentUser.id, recipeId);
+    const canReadShared = await canReadHouseholdSharedRecipe(currentUser.id, recipeId);
+    if (!canAccess && !canReadShared) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
     }
 
+    // Owner/direct access → their own attempts (as before). Household
+    // member reading a shared recipe → all attempts on it (Slice 3
+    // visibility relaxation; members cannot write attempts, so this is
+    // read-only). Ratings stay private (they are on the recipe row, not
+    // attempts).
     const attempts = await db
       .select()
       .from(recipeAttempts)
       .where(
-        and(
-          eq(recipeAttempts.recipeId, recipeId),
-          eq(recipeAttempts.userId, currentUser.id)
-        )
+        canAccess
+          ? and(
+              eq(recipeAttempts.recipeId, recipeId),
+              eq(recipeAttempts.userId, currentUser.id)
+            )
+          : eq(recipeAttempts.recipeId, recipeId)
       )
       .orderBy(desc(recipeAttempts.cookedAt), desc(recipeAttempts.id));
 
@@ -114,6 +124,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       ensureRecipeAttemptsTable(),
       ensureRecipeAttemptDishRatingColumn(),
       ensureRecipeFlagsTable(),
+      ensureHouseholdSlice3Columns(),
     ]);
     const { id } = await context.params;
     const recipeId = Number(id);

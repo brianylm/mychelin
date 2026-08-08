@@ -26,6 +26,12 @@ interface CookWithMeSessionProps {
   onClose: () => void;
   onComplete?: () => void | Promise<void>;
   mealPlanId?: number | null;
+  // Practice mode (Slice 3 household): the cook does not own this recipe
+  // (e.g. a household-shared recipe they haven't imported). Nothing is
+  // persisted — no attempt, no next-try, no inventory deduction. The
+  // session still runs end-to-end and onComplete fires so a plan slot can
+  // be marked cooked.
+  ephemeral?: boolean;
   // Active private next try for this recipe, surfaced at session start so
   // last cook's improvement notes shape this session.
   nextTry?: { notes: string | null; ingredientCount: number; stepCount: number } | null;
@@ -96,6 +102,7 @@ export function CookWithMeSession({
   onComplete,
   mealPlanId,
   nextTry,
+  ephemeral,
 }: CookWithMeSessionProps) {
   const [actualIngredients, setActualIngredients] = useState<SessionIngredient[]>(() => toAttemptIngredients(recipe));
   const [actualInstructions, setActualInstructions] = useState<SessionInstruction[]>(() => toAttemptInstructions(recipe));
@@ -312,10 +319,10 @@ export function CookWithMeSession({
     setChangeNotes((notes) => [...notes, stepLabel]);
     setNextTryIngredients(actualIngredients);
     setNextTryInstructions(actualInstructions);
-    setSaveNextTry(true);
+    if (!ephemeral) setSaveNextTry(true);
     setChangeDraft("");
     setShowChangeCapture(false);
-  }, [actualIngredients, actualInstructions, changeDraft, currentInstruction]);
+  }, [actualIngredients, actualInstructions, changeDraft, currentInstruction, ephemeral]);
 
   const goNext = useCallback(() => {
     if (stepIndex >= totalSteps - 1) {
@@ -346,6 +353,15 @@ export function CookWithMeSession({
   }, [onClose]);
 
   const saveSession = useCallback(async () => {
+    if (ephemeral) {
+      // Practice cook on a recipe the cook doesn't own: persist nothing,
+      // but still signal completion so a plan slot can be marked cooked
+      // (and the caller's post-cook flow runs).
+      await onComplete?.();
+      onClose();
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
@@ -415,7 +431,7 @@ export function CookWithMeSession({
     } finally {
       setSaving(false);
     }
-  }, [actualIngredients, actualInstructions, changeNotes, mealPlanId, nextTimeNotes, nextTryIngredients, nextTryInstructions, onClose, onComplete, recipe, saveNextTry, sessionSummary]);
+  }, [actualIngredients, actualInstructions, changeNotes, ephemeral, mealPlanId, nextTimeNotes, nextTryIngredients, nextTryInstructions, onClose, onComplete, recipe, saveNextTry, sessionSummary]);
 
   const finishDeduction = useCallback(
     async (confirm: boolean) => {
@@ -533,23 +549,30 @@ export function CookWithMeSession({
                   Nice cook!
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-white/60">
-                  Rate how the dish tasted later from Activity after eating.
+                  {ephemeral
+                    ? "This is a practice cook of a shared recipe — nothing is saved. Import it to keep your own attempts."
+                    : "Rate how the dish tasted later from Activity after eating."}
                 </p>
 
-                <label className="mt-6 block text-sm font-medium text-white/80">
-                  What should change next time?
-                </label>
-                <textarea
-                  value={nextTimeNotes}
-                  onChange={(event) => {
-                    setNextTimeNotes(event.target.value);
-                    if (event.target.value.trim()) setSaveNextTry(true);
-                  }}
-                  rows={4}
-                  placeholder="Texture, timing, seasoning, missing family trick..."
-                  className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
-                />
+                {!ephemeral && (
+                  <label className="mt-6 block text-sm font-medium text-white/80">
+                    What should change next time?
+                  </label>
+                )}
+                {!ephemeral && (
+                  <textarea
+                    value={nextTimeNotes}
+                    onChange={(event) => {
+                      setNextTimeNotes(event.target.value);
+                      if (event.target.value.trim()) setSaveNextTry(true);
+                    }}
+                    rows={4}
+                    placeholder="Texture, timing, seasoning, missing family trick..."
+                    className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
+                  />
+                )}
 
+                {!ephemeral && (
                 <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
                   <label className="flex items-start gap-3">
                     <input
@@ -646,6 +669,7 @@ export function CookWithMeSession({
                     </div>
                   )}
                 </div>
+                )}
 
                 {changeNotes.length > 0 && (
                   <div className="mt-5 rounded-2xl bg-black/20 p-4">
@@ -884,7 +908,9 @@ export function CookWithMeSession({
             <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#fffdfb] p-5 text-[#17131f] shadow-2xl">
               <h3 className="text-lg font-semibold">Exit cook-with-me?</h3>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
-                This session has not been saved as an attempt yet. Exit anyway?
+                {ephemeral
+                  ? "This is a practice cook — nothing is saved. Exit anyway?"
+                  : "This session has not been saved as an attempt yet. Exit anyway?"}
               </p>
               <div className="mt-5 flex gap-2">
                 <button

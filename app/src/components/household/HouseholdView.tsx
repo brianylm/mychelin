@@ -1,7 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Crown, House, LogOut, Trash2, UserMinus, UserPlus } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  ChefHat,
+  Copy,
+  Crown,
+  Download,
+  House,
+  Loader2,
+  LogOut,
+  Trash2,
+  UserMinus,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -69,6 +83,14 @@ function describeActivity(item: HouseholdActivityRow): string {
       return `${item.userName} reactivated the household`;
     case "deleted_household":
       return `${item.userName} deleted the household`;
+    case "shared_recipe":
+      return `${item.userName} shared${target} with the household`;
+    case "unshared_recipe":
+      return `${item.userName} unshared${target}`;
+    case "shared_all_recipes":
+      return `${item.userName} shared all their recipes with the household`;
+    case "imported_recipe":
+      return `${item.userName} imported${target} from the household`;
     default:
       return `${item.userName} ${item.action}${target}`;
   }
@@ -89,7 +111,42 @@ function formatActivityTime(iso: string): string {
 // role badges, promote/remove/leave controls, and the activity feed
 // once inside one. The whole view only mounts when HOUSEHOLDS_ENABLED
 // (see RecipeWorkspace / the nav tabs).
-export function HouseholdView() {
+interface HouseholdViewProps {
+  // Launch a Cook With Me session for a household-shared recipe (practice
+  // mode when the cook doesn't own it — nothing is persisted).
+  onCookRecipe?: (recipeId: number) => void;
+}
+
+interface SharedRecipeRow {
+  id: number;
+  title: string;
+  cuisine: string | null;
+  status: string;
+  yield: string | null;
+  imageUrl: string | null;
+  ownerId: number;
+  ownerName: string;
+  isOwner: boolean;
+}
+
+interface SharedRecipeDetail {
+  id: number;
+  title: string;
+  description: string | null;
+  cuisine: string | null;
+  yield: string | null;
+  ingredients: Array<{
+    name: string;
+    quantity: number | null;
+    unit: string | null;
+    approximate: boolean;
+    quantityText: string | null;
+    notes: string | null;
+  }>;
+  instructions: Array<{ stepNumber: number; content: string; tip: string | null }>;
+}
+
+export function HouseholdView({ onCookRecipe }: HouseholdViewProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -100,6 +157,26 @@ export function HouseholdView() {
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Slice 3 — shared recipes surface.
+  const [sharedRecipes, setSharedRecipes] = useState<SharedRecipeRow[]>([]);
+  const [recipesLoading, setRecipesLoading] = useState(true);
+  const [viewingRecipeId, setViewingRecipeId] = useState<number | null>(null);
+  const [viewingRecipe, setViewingRecipe] = useState<SharedRecipeDetail | null>(null);
+  const [viewingLoading, setViewingLoading] = useState(false);
+  const [importingId, setImportingId] = useState<number | null>(null);
+
+  const loadRecipes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/households/recipes");
+      if (!res.ok) return;
+      const data = await res.json();
+      setSharedRecipes(Array.isArray(data.recipes) ? data.recipes : []);
+    } catch {
+      // best-effort — the recipes card stays empty rather than erroring
+    } finally {
+      setRecipesLoading(false);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -114,7 +191,8 @@ export function HouseholdView() {
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+    await loadRecipes();
+  }, [addToast, loadRecipes]);
 
   useEffect(() => {
     void load();
@@ -245,6 +323,74 @@ export function HouseholdView() {
     }
   };
 
+  // ── Shared recipes (Slice 3) ─────────────────────────────
+  const handleShareAll = async () => {
+    const confirmed = window.confirm(
+      "Share all your current recipes with the household? This covers your library now — recipes you add later stay private until you share them individually."
+    );
+    if (!confirmed || busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/households/recipes/share-all", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to share recipes");
+      addToast(
+        `Shared ${data.count ?? 0} recipe${data.count === 1 ? "" : "s"} with the household`,
+        "success"
+      );
+      await loadRecipes();
+      await load();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to share recipes", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openRecipeView = async (recipeId: number) => {
+    setViewingRecipeId(recipeId);
+    setViewingRecipe(null);
+    setViewingLoading(true);
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}`);
+      if (!res.ok) throw new Error("Failed to load recipe");
+      const data = await res.json();
+      setViewingRecipe({
+        id: data.id,
+        title: data.title,
+        description: data.description ?? null,
+        cuisine: data.cuisine ?? null,
+        yield: data.yield ?? null,
+        ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
+        instructions: Array.isArray(data.instructions) ? data.instructions : [],
+      });
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to load recipe", "error");
+      setViewingRecipeId(null);
+    } finally {
+      setViewingLoading(false);
+    }
+  };
+
+  const handleImportRecipe = async (recipeId: number) => {
+    if (importingId != null) return;
+    setImportingId(recipeId);
+    try {
+      const res = await fetch(`/api/households/recipes/${recipeId}/import`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to import recipe");
+      addToast(`Imported "${data.title ?? "recipe"}" to your library`, "success");
+      setViewingRecipeId(null);
+      await loadRecipes();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to import recipe", "error");
+    } finally {
+      setImportingId(null);
+    }
+  };
+
   const copyJoinCode = async () => {
     if (!household) return;
     try {
@@ -265,6 +411,7 @@ export function HouseholdView() {
   }
 
   return (
+    <>
     <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-6 flex items-center gap-3">
@@ -448,6 +595,94 @@ export function HouseholdView() {
               </ul>
             </div>
 
+            {/* Shared recipes — Slice 3 */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-neutral-900">Shared recipes</h3>
+                <button
+                  type="button"
+                  onClick={handleShareAll}
+                  disabled={busy}
+                  className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020] disabled:opacity-40"
+                >
+                  Share all my recipes
+                </button>
+              </div>
+              <p className="mb-3 text-xs text-neutral-500">
+                Recipes everyone in the household can read and cook with. Yours stay private until
+                you share them.
+              </p>
+              {recipesLoading ? (
+                <p className="text-xs text-neutral-400">Loading…</p>
+              ) : sharedRecipes.length === 0 ? (
+                <p className="text-xs text-neutral-400">
+                  Nothing shared yet. Share a recipe from its share menu, or use &ldquo;Share all my
+                  recipes&rdquo;.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {sharedRecipes.map((recipe) => (
+                    <li
+                      key={recipe.id}
+                      className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-2.5"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                        <BookOpen className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-neutral-800">
+                          {recipe.title}
+                        </p>
+                        <p className="mt-0.5 truncate text-[11px] text-neutral-500">
+                          {recipe.isOwner
+                            ? "yours"
+                            : `by ${recipe.ownerName}`}
+                          {recipe.cuisine ? ` · ${recipe.cuisine}` : ""}
+                        </p>
+                      </div>
+                      {recipe.isOwner ? (
+                        <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold text-[#800020]">
+                          <Check className="h-3 w-3" />
+                          Shared
+                        </span>
+                      ) : (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openRecipeView(recipe.id)}
+                            className="rounded-lg border border-neutral-200 px-2 py-1 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onCookRecipe?.(recipe.id)}
+                            title="Cook With Me — practice mode, nothing is saved"
+                            className="rounded-lg border border-neutral-200 px-2 py-1 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                          >
+                            Cook
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleImportRecipe(recipe.id)}
+                            disabled={importingId != null}
+                            className="flex items-center gap-1 rounded-lg border border-neutral-200 px-2 py-1 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020] disabled:opacity-40"
+                          >
+                            {importingId === recipe.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Download className="h-3 w-3" />
+                            )}
+                            Import
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {/* Activity feed — in-app only, no push notifications */}
             <div className="rounded-2xl border border-neutral-200 bg-white p-5">
               <h3 className="mb-3 text-sm font-semibold text-neutral-900">Activity</h3>
@@ -472,5 +707,111 @@ export function HouseholdView() {
         )}
       </div>
     </div>
+
+    {viewingRecipeId != null && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+        <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-neutral-200 bg-[#fffdfb] p-5 text-[#17131f] shadow-2xl">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="logo-serif text-xl font-bold leading-tight text-neutral-900">
+                {viewingRecipe?.title ?? "Recipe"}
+              </h3>
+              {viewingRecipe && (viewingRecipe.cuisine || viewingRecipe.yield) && (
+                <p className="mt-1 text-xs text-neutral-500">
+                  {[viewingRecipe.cuisine, viewingRecipe.yield].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setViewingRecipeId(null)}
+              aria-label="Close recipe"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {viewingLoading || !viewingRecipe ? (
+            <p className="py-10 text-center text-sm text-neutral-500">Loading recipe…</p>
+          ) : (
+            <>
+              {viewingRecipe.description && (
+                <p className="mt-3 text-sm leading-6 text-neutral-600">{viewingRecipe.description}</p>
+              )}
+
+              <div className="mt-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                  Ingredients
+                </p>
+                {viewingRecipe.ingredients.length === 0 ? (
+                  <p className="mt-1 text-xs text-neutral-400">No ingredients listed.</p>
+                ) : (
+                  <ul className="mt-2 space-y-1.5">
+                    {viewingRecipe.ingredients.map((ing, index) => (
+                      <li key={index} className="text-sm text-neutral-700">
+                        {ing.quantityText ??
+                          (ing.quantity != null ? `${ing.quantity}${ing.unit ? ` ${ing.unit}` : ""}` : "")}{" "}
+                        {ing.name}
+                        {ing.notes ? <span className="text-neutral-500"> — {ing.notes}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                  Steps
+                </p>
+                {viewingRecipe.instructions.length === 0 ? (
+                  <p className="mt-1 text-xs text-neutral-400">No steps listed.</p>
+                ) : (
+                  <ol className="mt-2 space-y-2">
+                    {viewingRecipe.instructions.map((inst) => (
+                      <li key={inst.stepNumber} className="text-sm leading-6 text-neutral-700">
+                        <span className="mr-1 font-semibold text-[#800020]">{inst.stepNumber}.</span>
+                        {inst.content}
+                        {inst.tip && (
+                          <span className="mt-0.5 block text-xs text-neutral-500">{inst.tip}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingRecipeId(null);
+                    onCookRecipe?.(viewingRecipe.id);
+                  }}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#17131f] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#800020]"
+                >
+                  <ChefHat className="h-4 w-4" />
+                  Cook with me (practice)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleImportRecipe(viewingRecipe.id)}
+                  disabled={importingId != null}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-[#800020] transition-colors hover:bg-neutral-50 disabled:opacity-40"
+                >
+                  {importingId === viewingRecipe.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  Import to my recipes
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }

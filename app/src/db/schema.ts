@@ -173,6 +173,12 @@ export const recipes = sqliteTable("recipes", {
   nostalgiaRating: integer("nostalgia_rating"),       // 1-5 stars, nullable
   activeVersionId: integer("active_version_id"), // pointer to current best version
   forkedFrom: text("forked_from"),
+  // Slice 3: recipe shared to the household. NULL = private. When set, any
+  // member of a household the owner belongs to can READ it (title,
+  // ingredients, steps) and run an ephemeral Cook With Me; only the owner
+  // can mutate it. sharedToHouseholdBy records who shared it.
+  sharedToHouseholdAt: text("shared_to_household_at"),
+  sharedToHouseholdBy: integer("shared_to_household_by").references(() => users.id),
   bookId: integer("book_id").references(() => books.id, { onDelete: "set null" }),
   // URL the recipe was imported from (F5). Shown as an attribution link on
   // the recipe view and public share page. Null for recipes typed from scratch.

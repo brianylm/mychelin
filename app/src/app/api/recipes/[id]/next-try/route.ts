@@ -3,11 +3,12 @@ import { db } from "@/db";
 import { recipeAttempts, recipeNextTries, recipeVersions, recipes } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import {
+  ensureHouseholdSlice3Columns,
   ensureRecipeAttemptsTable,
   ensureRecipeNextTriesTable,
 } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { canUserAccessRecipe, canReadHouseholdSharedRecipe } from "@/lib/recipe-access";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -52,22 +53,33 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     }
 
     await ensureRecipeNextTriesTable();
+    await ensureHouseholdSlice3Columns();
     const { id } = await context.params;
     const recipeId = Number(id);
 
-    if (!(await canUserAccessRecipe(currentUser.id, recipeId))) {
+    const canAccess = await canUserAccessRecipe(currentUser.id, recipeId);
+    const canReadShared = await canReadHouseholdSharedRecipe(currentUser.id, recipeId);
+    if (!canAccess && !canReadShared) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
     }
 
+    // Owner/direct access → their own active next-try (as before).
+    // Household member reading a shared recipe → the shared recipe's
+    // active next-try (Slice 3 visibility relaxation, read-only).
     const [nextTry] = await db
       .select()
       .from(recipeNextTries)
       .where(
-        and(
-          eq(recipeNextTries.recipeId, recipeId),
-          eq(recipeNextTries.userId, currentUser.id),
-          eq(recipeNextTries.status, "active")
-        )
+        canAccess
+          ? and(
+              eq(recipeNextTries.recipeId, recipeId),
+              eq(recipeNextTries.userId, currentUser.id),
+              eq(recipeNextTries.status, "active")
+            )
+          : and(
+              eq(recipeNextTries.recipeId, recipeId),
+              eq(recipeNextTries.status, "active")
+            )
       )
       .orderBy(desc(recipeNextTries.updatedAt))
       .limit(1);

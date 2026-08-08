@@ -13,7 +13,7 @@
 
 import { db } from "@/db";
 import { recipes, bookMembers, users } from "@/db/schema";
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 let backfillRan = false;
@@ -82,6 +82,59 @@ export async function canUserAccessRecipe(
     .where(and(eq(recipes.id, recipeId), recipesVisibleTo(userId)))
     .limit(1);
   return !!row;
+}
+
+// ─── Household-shared read access (Slice 3) ───────────────
+// A recipe shared to a household is READABLE by any member of a household
+// the owner belongs to. This is deliberately separate from
+// `recipesVisibleTo` / `canUserAccessRecipe`: it must NEVER appear in the
+// personal library list and must NEVER unlock a mutation route. Every
+// write path stays gated on ownership/edit via `canUserAccessRecipe` +
+// `canUserEditRecipe` unchanged.
+
+function sharedHouseholdPredicate(userId: number): SQL {
+  // recipes.user_id and :userId share at least one household.
+  return sql`exists (
+    select 1
+    from household_members hm_owner
+    join household_members hm_user on hm_owner.household_id = hm_user.household_id
+    where hm_owner.user_id = ${recipes.userId}
+      and hm_user.user_id = ${userId}
+  )`;
+}
+
+// SQL predicate for list queries: recipes shared to a household the user
+// belongs to. Used by the household shared-recipe list endpoint.
+export function householdSharedRecipesWhere(userId: number): SQL {
+  return and(isNotNull(recipes.sharedToHouseholdAt), sharedHouseholdPredicate(userId))!;
+}
+
+// True iff the user can READ the recipe because it is shared to a
+// household they belong to. Read-only by construction — mutations still
+// go through canUserAccessRecipe / canUserEditRecipe.
+export async function canReadHouseholdSharedRecipe(
+  userId: number,
+  recipeId: number
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: recipes.id })
+    .from(recipes)
+    .where(and(eq(recipes.id, recipeId), householdSharedRecipesWhere(userId)))
+    .limit(1);
+  return !!row;
+}
+
+// Read access = direct/book access OR household-shared. Use ONLY in
+// read surfaces (GET recipe, GET attempts/next-try, household recipes
+// list, import). Never for writes.
+export async function canUserReadRecipe(
+  userId: number,
+  recipeId: number
+): Promise<boolean> {
+  return (
+    (await canUserAccessRecipe(userId, recipeId)) ||
+    (await canReadHouseholdSharedRecipe(userId, recipeId))
+  );
 }
 
 export async function canUserEditRecipe(

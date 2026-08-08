@@ -175,6 +175,7 @@ function RecipeWorkspaceContent({
   const { selectRecipe, selectedRecipeId } = useRecipeStore();
   const qc = useQueryClient();
   const { addToast } = useToast();
+  const { user } = useAuth();
 
   // Selecting a recipe must always reveal it. The sidebar is available
   // over every view (e.g. the planner), and its onSelect only updates
@@ -201,6 +202,8 @@ function RecipeWorkspaceContent({
   const [activeCookMeal, setActiveCookMeal] = useState<{
     recipe: RecipeWithRelations;
     mealPlanId?: number;
+    // Practice mode when the cook does not own the recipe (household-shared).
+    ephemeral?: boolean;
   } | null>(null);
   const [activeCookBatch, setActiveCookBatch] = useState<Array<{
     recipe: RecipeWithRelations;
@@ -291,7 +294,13 @@ function RecipeWorkspaceContent({
           throw new Error(body.error || "Failed to load recipe");
         }
         const recipe = (await response.json()) as RecipeWithRelations;
-        setActiveCookMeal({ recipe, mealPlanId });
+        setActiveCookMeal({
+          recipe,
+          mealPlanId,
+          // Household-shared recipes the cook doesn't own run as an
+          // ephemeral practice cook — nothing is persisted.
+          ephemeral: recipe.userId != null && recipe.userId !== user?.id,
+        });
       } catch (err) {
         addToast(
           err instanceof Error ? err.message : "Couldn't start cooking session",
@@ -299,7 +308,7 @@ function RecipeWorkspaceContent({
         );
       }
     },
-    [addToast, selectRecipe, setCurrentView]
+    [addToast, selectRecipe, setCurrentView, user]
   );
 
   const handleCookMealPlan = useCallback(
@@ -360,9 +369,16 @@ function RecipeWorkspaceContent({
       setMissionOpen(true);
     }
 
+    const ephemeral = Boolean(activeCookMeal.ephemeral);
+
     if (activeCookMeal.mealPlanId == null) {
-      addToast("Cooking session saved", "success");
-      promptPilotFeedback("first_cook");
+      addToast(
+        ephemeral
+          ? "Practice cook finished — nothing was saved"
+          : "Cooking session saved",
+        "success"
+      );
+      if (!ephemeral) promptPilotFeedback("first_cook");
       return;
     }
 
@@ -377,8 +393,13 @@ function RecipeWorkspaceContent({
       throw new Error(body.error || "Cooking session saved, but meal was not marked cooked");
     }
 
-    addToast("Cooking session saved and meal marked cooked", "success");
-    promptPilotFeedback("first_cook");
+    addToast(
+      ephemeral
+        ? "Practice cook finished — meal marked cooked"
+        : "Cooking session saved and meal marked cooked",
+      "success"
+    );
+    if (!ephemeral) promptPilotFeedback("first_cook");
   }, [activeCookMeal, addToast, fetchMissionState, promptPilotFeedback, qc]);
 
 
@@ -751,7 +772,9 @@ function RecipeWorkspaceContent({
           />
         )}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
-        {currentView === "household" && HouseholdView && <HouseholdView />}
+        {currentView === "household" && HouseholdView && (
+          <HouseholdView onCookRecipe={handleCookRecipe} />
+        )}
         {currentView === "profile" && <ProfileView />}
       </div>
 
@@ -887,6 +910,7 @@ function RecipeWorkspaceContent({
         <CookWithMeSession
           recipe={activeCookMeal.recipe}
           mealPlanId={activeCookMeal.mealPlanId}
+          ephemeral={activeCookMeal.ephemeral}
           onClose={() => setActiveCookMeal(null)}
           onComplete={handleCookMealComplete}
         />

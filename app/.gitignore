@@ -46,3 +46,6 @@ next-env.d.ts
 # Playwright
 test-results/
 playwright-report/
+
+# Database rebuild safety backups (may contain account emails)
+scripts/.backups/
