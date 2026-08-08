@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 // ─── Users ─────────────────────────────────────────────────
@@ -268,6 +268,11 @@ export const ingredients = sqliteTable("ingredients", {
 export const mealPlans = sqliteTable("meal_plans", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  // Household scope (Slice 1). NULL = personal plan (solo users, and all
+  // rows that predate households). When set, the row belongs to the
+  // household's shared plan; userId then records who added it (for
+  // attribution), not ownership.
+  householdId: integer("household_id").references(() => households.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // "YYYY-MM-DD"
   mealType: text("meal_type").notNull(), // "breakfast" | "lunch" | "dinner" | "snack"
   recipeId: integer("recipe_id")
@@ -297,6 +302,105 @@ export const mealPlanBlocks = sqliteTable("meal_plan_blocks", {
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
 });
+
+// ─── Households ────────────────────────────────────────────
+// A household is the shared operating layer for people who cook together:
+// one shared meal plan (Slice 1), shared inventory/shopping (Slice 2).
+// Schema allows many households per user; the UI gates to one for now.
+export const households = sqliteTable("households", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  joinCode: text("join_code").notNull().unique(),
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // Slice 2: 30-day deletion flow. Set when the household goes
+  // dead/recoverable; NULL while live. Column ships now, no logic yet.
+  deletedAt: text("deleted_at"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+// ─── Household Members ─────────────────────────────────────
+// Flat hierarchy: "admin" | "member". Any admin can promote members and
+// remove any member or admin, including the creator.
+export const householdMembers = sqliteTable(
+  "household_members",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // "admin" | "member"
+    joinedAt: text("joined_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [uniqueIndex("household_members_unique_idx").on(t.householdId, t.userId)]
+);
+
+// ─── Household Activity Log ────────────────────────────────
+// Mirrors bookActivityLog. In-app feed only — never push notifications.
+export const householdActivityLog = sqliteTable(
+  "household_activity_log",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    action: text("action").notNull(), // "created_household" | "joined_household" | "left_household" | "promoted_member" | "removed_member" | "added_meal" | "removed_meal" | "blocked_slot"
+    targetName: text("target_name"), // recipe title, member name, blocked scope label, etc.
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [index("household_activity_log_household_idx").on(t.householdId)]
+);
+
+// ─── Household Member Blocks ───────────────────────────────
+// Per-member blocking on the shared plan: "I'm not eating" for a slot /
+// day / week / month. Unlike personal meal_plan_blocks, these never clear
+// the slot's plans — other members keep eating. Blocked members are
+// excluded from eater counts and the slot's servings scale down
+// display-side (stored recipe quantities are never rewritten).
+export const householdMemberBlocks = sqliteTable(
+  "household_member_blocks",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    householdId: integer("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    scope: text("scope").notNull(), // "slot" | "day" | "week" | "month"
+    // slot/day: "YYYY-MM-DD"; week: the week's Monday; month: "YYYY-MM-01".
+    date: text("date").notNull(),
+    // Only meaningful for scope "slot"; "" otherwise so the unique index
+    // stays total (SQLite treats NULLs as distinct in unique indexes).
+    mealType: text("meal_type").notNull().default(""),
+    note: text("note"),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    uniqueIndex("household_member_blocks_unique_idx").on(
+      t.householdId,
+      t.userId,
+      t.scope,
+      t.date,
+      t.mealType
+    ),
+  ]
+);
 
 // ─── Inventory ─────────────────────────────────────────────
 export const inventory = sqliteTable("inventory", {
@@ -647,9 +751,57 @@ export const mealPlansRelations = relations(mealPlans, ({ one }) => ({
     fields: [mealPlans.userId],
     references: [users.id],
   }),
+  household: one(households, {
+    fields: [mealPlans.householdId],
+    references: [households.id],
+  }),
   recipe: one(recipes, {
     fields: [mealPlans.recipeId],
     references: [recipes.id],
+  }),
+}));
+
+export const householdsRelations = relations(households, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [households.createdBy],
+    references: [users.id],
+  }),
+  members: many(householdMembers),
+  activityLog: many(householdActivityLog),
+  memberBlocks: many(householdMemberBlocks),
+  mealPlans: many(mealPlans),
+}));
+
+export const householdMembersRelations = relations(householdMembers, ({ one }) => ({
+  household: one(households, {
+    fields: [householdMembers.householdId],
+    references: [households.id],
+  }),
+  user: one(users, {
+    fields: [householdMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const householdActivityLogRelations = relations(householdActivityLog, ({ one }) => ({
+  household: one(households, {
+    fields: [householdActivityLog.householdId],
+    references: [households.id],
+  }),
+  user: one(users, {
+    fields: [householdActivityLog.userId],
+    references: [users.id],
+  }),
+}));
+
+export const householdMemberBlocksRelations = relations(householdMemberBlocks, ({ one }) => ({
+  household: one(households, {
+    fields: [householdMemberBlocks.householdId],
+    references: [households.id],
+  }),
+  user: one(users, {
+    fields: [householdMemberBlocks.userId],
+    references: [users.id],
   }),
 }));
 
@@ -818,3 +970,11 @@ export type NotificationJob = typeof notificationJobs.$inferSelect;
 export type NewNotificationJob = typeof notificationJobs.$inferInsert;
 export type PilotFeedback = typeof pilotFeedback.$inferSelect;
 export type NewPilotFeedback = typeof pilotFeedback.$inferInsert;
+export type Household = typeof households.$inferSelect;
+export type NewHousehold = typeof households.$inferInsert;
+export type HouseholdMember = typeof householdMembers.$inferSelect;
+export type NewHouseholdMember = typeof householdMembers.$inferInsert;
+export type HouseholdActivityLog = typeof householdActivityLog.$inferSelect;
+export type NewHouseholdActivityLog = typeof householdActivityLog.$inferInsert;
+export type HouseholdMemberBlock = typeof householdMemberBlocks.$inferSelect;
+export type NewHouseholdMemberBlock = typeof householdMemberBlocks.$inferInsert;

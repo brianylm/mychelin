@@ -5,10 +5,12 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  House,
   Refrigerator,
   ShoppingBasket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import type { AppView } from "./BottomNav";
 
 interface DesktopNavProps {
@@ -16,13 +18,18 @@ interface DesktopNavProps {
   onChange: (view: AppView) => void;
 }
 
-const tabs: { id: AppView; label: string; icon: LucideIcon }[] = [
+const baseTabs: { id: AppView; label: string; icon: LucideIcon }[] = [
   { id: "recipes", label: "Library", icon: BookOpen },
   { id: "activity", label: "Activity", icon: ClipboardList },
   { id: "fridge", label: "Fridge", icon: Refrigerator },
   { id: "shopping", label: "Shopping", icon: ShoppingBasket },
   { id: "plan", label: "Meal Plan", icon: CalendarDays },
 ];
+
+// Household tab only exists while the kill switch is on.
+const tabs = HOUSEHOLDS_ENABLED
+  ? [...baseTabs, { id: "household" as AppView, label: "Household", icon: House }]
+  : baseTabs;
 
 export function DesktopNav({ current, onChange }: DesktopNavProps) {
   return (

@@ -13,7 +13,7 @@ import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
-import { FIRST_COOK_MISSION_ENABLED } from "@/lib/feature-flags";
+import { FIRST_COOK_MISSION_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
 
 const LazyPanelFallback = () => (
@@ -46,6 +46,12 @@ const ShoppingListView = dynamic(
   () => import("@/components/shopping/ShoppingListView").then((mod) => mod.ShoppingListView),
   { loading: LazyPanelFallback }
 );
+const HouseholdView = HOUSEHOLDS_ENABLED
+  ? dynamic(
+      () => import("@/components/household/HouseholdView").then((mod) => mod.HouseholdView),
+      { loading: LazyPanelFallback }
+    )
+  : null;
 const RecipeSearchModal = dynamic(
   () => import("@/components/search/RecipeSearchModal").then((mod) => mod.RecipeSearchModal)
 );
@@ -745,6 +751,7 @@ function RecipeWorkspaceContent({
           />
         )}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
+        {currentView === "household" && HouseholdView && <HouseholdView />}
         {currentView === "profile" && <ProfileView />}
       </div>
 

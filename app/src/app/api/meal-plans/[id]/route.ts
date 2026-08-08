@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { mealPlans } from "@/db/schema";
+import { mealPlans, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import { ensureHouseholdTables, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { isHouseholdMember, logHouseholdActivity } from "@/lib/households";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -13,6 +14,22 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 const VALID_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// A plan row is accessible to the user when they own it (personal plan)
+// OR when it belongs to a household they are a member of (shared plan).
+// Everything in this route goes through this gate — household scoping
+// must never rely on a client-supplied id alone.
+async function findAuthorizedPlan(planId: number, userId: number) {
+  const plan = await db.query.mealPlans.findFirst({
+    where: eq(mealPlans.id, planId),
+  });
+  if (!plan) return null;
+  if (plan.userId === userId) return plan;
+  if (plan.householdId != null && (await isHouseholdMember(userId, plan.householdId))) {
+    return plan;
+  }
+  return null;
+}
 
 // ─── GET /api/meal-plans/:id ───────────────────────────────
 export async function GET(_request: NextRequest, context: RouteContext) {
@@ -24,25 +41,27 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     await ensurePlanningOwnershipColumns();
     await ensureMealPlanCookedAtColumn();
+    await ensureHouseholdTables();
 
     const { id } = await context.params;
     const planId = Number(id);
 
+    const authorized = await findAuthorizedPlan(planId, currentUser.id);
+    if (!authorized) {
+      return NextResponse.json(
+        { error: "Meal plan not found" },
+        { status: 404 }
+      );
+    }
+
     const plan = await db.query.mealPlans.findFirst({
-      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
+      where: eq(mealPlans.id, planId),
       with: {
         recipe: {
           columns: { id: true, title: true, yield: true },
         },
       },
     });
-
-    if (!plan) {
-      return NextResponse.json(
-        { error: "Meal plan not found" },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json(plan);
   } catch (error) {
@@ -64,14 +83,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     await ensurePlanningOwnershipColumns();
     await ensureMealPlanCookedAtColumn();
+    await ensureHouseholdTables();
 
     const { id } = await context.params;
     const planId = Number(id);
     const body = await request.json();
 
-    const existing = await db.query.mealPlans.findFirst({
-      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
-    });
+    const existing = await findAuthorizedPlan(planId, currentUser.id);
 
     if (!existing) {
       return NextResponse.json(
@@ -132,10 +150,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     await db
       .update(mealPlans)
       .set(updateFields)
-      .where(and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)));
+      .where(eq(mealPlans.id, planId));
 
     const updatedPlan = await db.query.mealPlans.findFirst({
-      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
+      where: eq(mealPlans.id, planId),
       with: {
         recipe: {
           columns: { id: true, title: true, yield: true },
@@ -163,13 +181,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
     await ensurePlanningOwnershipColumns();
     await ensureMealPlanCookedAtColumn();
+    await ensureHouseholdTables();
 
     const { id } = await context.params;
     const planId = Number(id);
 
-    const existing = await db.query.mealPlans.findFirst({
-      where: and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)),
-    });
+    const existing = await findAuthorizedPlan(planId, currentUser.id);
 
     if (!existing) {
       return NextResponse.json(
@@ -180,7 +197,23 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
     await db
       .delete(mealPlans)
-      .where(and(eq(mealPlans.id, planId), eq(mealPlans.userId, currentUser.id)));
+      .where(eq(mealPlans.id, planId));
+
+    // Attribution for shared-plan removals so the feed can show who
+    // took a meal off the household calendar.
+    if (existing.householdId != null) {
+      const [recipe] = await db
+        .select({ title: recipes.title })
+        .from(recipes)
+        .where(eq(recipes.id, existing.recipeId))
+        .limit(1);
+      await logHouseholdActivity(
+        existing.householdId,
+        currentUser.id,
+        "removed_meal",
+        recipe?.title ?? null
+      );
+    }
 
     return NextResponse.json({ message: "Meal plan deleted successfully" });
   } catch (error) {

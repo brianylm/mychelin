@@ -32,6 +32,7 @@ let pilotFeedbackEnsured = false;
 let recipeFlagsEnsured = false;
 let mealPlanBlocksEnsured = false;
 let recipePhotoSourceEnsured = false;
+let householdsEnsured = false;
 
 let _client: Client | null = null;
 
@@ -584,4 +585,93 @@ export async function ensureRecipePhotoSourceColumns(): Promise<void> {
 
   await runDdl(client, statements, "ensureRecipePhotoSourceColumns");
   recipePhotoSourceEnsured = true;
+}
+
+// Households Slice 1: households / members / activity log / per-member
+// blocks, plus the nullable meal_plans.household_id scoping column.
+// Mirrors the Drizzle migration 0028_households.sql — keep the DDL and
+// index names in sync with it.
+export async function ensureHouseholdTables(): Promise<void> {
+  if (householdsEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  let existing: Set<string>;
+  let mealPlanCols: Set<string>;
+  try {
+    [existing, mealPlanCols] = await Promise.all([
+      existingObjects(client, [
+        "households",
+        "household_members",
+        "household_activity_log",
+        "household_member_blocks",
+      ]),
+      tableColumns(client, "meal_plans"),
+    ]);
+  } catch (e: unknown) {
+    console.warn("ensureHouseholdTables probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const statements: string[] = [];
+  if (!existing.has("households")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS households (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        name text NOT NULL,
+        join_code text NOT NULL UNIQUE,
+        created_by integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        deleted_at text,
+        created_at text NOT NULL
+      )`
+    );
+  }
+  if (!existing.has("household_members")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS household_members (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        household_id integer NOT NULL REFERENCES households(id) ON DELETE cascade,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        role text NOT NULL,
+        joined_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS household_members_unique_idx ON household_members(household_id, user_id)`
+    );
+  }
+  if (!existing.has("household_activity_log")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS household_activity_log (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        household_id integer NOT NULL REFERENCES households(id) ON DELETE cascade,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        action text NOT NULL,
+        target_name text,
+        created_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS household_activity_log_household_idx ON household_activity_log(household_id)`
+    );
+  }
+  if (!existing.has("household_member_blocks")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS household_member_blocks (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        household_id integer NOT NULL REFERENCES households(id) ON DELETE cascade,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        scope text NOT NULL,
+        date text NOT NULL,
+        meal_type text NOT NULL DEFAULT '',
+        note text,
+        created_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS household_member_blocks_unique_idx ON household_member_blocks(household_id, user_id, scope, date, meal_type)`
+    );
+  }
+  if (!mealPlanCols.has("household_id")) {
+    statements.push(
+      `ALTER TABLE meal_plans ADD COLUMN household_id integer REFERENCES households(id) ON DELETE cascade`
+    );
+  }
+
+  await runDdl(client, statements, "ensureHouseholdTables");
+  householdsEnsured = true;
 }

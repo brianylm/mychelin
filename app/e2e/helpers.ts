@@ -40,13 +40,13 @@ export function uniqueEmail(prefix: string): string {
 // entirely — both are IP rate-limited, and tests must not depend on the
 // rate-limit bucket's state. The cookie matches createToken() in
 // src/lib/auth.ts (HS256, { id, name, email }, mychelin_token).
-export async function signup(page: Page, email: string, password: string): Promise<void> {
+export async function signup(page: Page, email: string, password: string, name = "E2E Test"): Promise<void> {
   const bcrypt = await import("bcryptjs");
   const db = turso();
   const passwordHash = await bcrypt.hash(password, 12);
   await db.execute({
     sql: "INSERT OR IGNORE INTO users (name, email, password_hash, auth_provider, email_verified, created_at) VALUES (?, ?, ?, 'password', 1, ?)",
-    args: ["E2E Test", email, passwordHash, new Date().toISOString()],
+    args: [name, email, passwordHash, new Date().toISOString()],
   });
   // Synthetic users skip onboarding — the app would otherwise show the
   // 3-step OnboardingFlow instead of the library.
@@ -60,7 +60,7 @@ export async function signup(page: Page, email: string, password: string): Promi
   if (!user) throw new Error("failed to seed synthetic user");
 
   const { SignJWT } = await import("jose");
-  const token = await new SignJWT({ id: Number(user.id), name: "E2E Test", email })
+  const token = await new SignJWT({ id: Number(user.id), name, email })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("3600s")

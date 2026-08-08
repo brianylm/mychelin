@@ -9,6 +9,7 @@ import {
   Cross2Icon,
 } from "@radix-ui/react-icons";
 import { CheckCircle2, ChefHat, ShoppingBasket, Dices, Ban, Undo2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { CalendarExport } from "@/components/CalendarExport";
 import {
@@ -29,6 +30,18 @@ import {
   findFillableSlots,
   type SlotRef,
 } from "@/lib/planner-randomize";
+import {
+  blockCoversSlot,
+  blockedMembersForSlot,
+  expandBlocksToSlots,
+  type HouseholdBlockScope,
+  type HouseholdMemberBlockView,
+} from "@/lib/household-blocking";
+import {
+  formatServingLabel,
+  parseYieldServings,
+  scaleServingsForEaters,
+} from "@/lib/household-portions";
 import { RandomizeReviewDialog } from "./RandomizeReviewDialog";
 
 interface MealPlan {
@@ -40,9 +53,19 @@ interface MealPlan {
   notes: string | null;
   cookedAt: string | null;
   recipe?: { id: number; title: string; yield: string | null };
+  // Household shared plan: who added this slot (null for solo plans).
+  addedByName?: string | null;
   // True when this entry comes from a logged cook attempt rather than a
   // planned meal. Logged entries are read-only in the calendar.
   loggedAttempt?: boolean;
+}
+
+// Household summary returned by GET /api/meal-plans when the user is in
+// a household — the plan is then shared across all members.
+interface PlanHousehold {
+  id: number;
+  name: string;
+  memberCount: number;
 }
 
 // A blocked meal slot ("eating out / something else"), as returned by
@@ -211,11 +234,18 @@ interface MealPlanViewProps {
 
 export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: MealPlanViewProps) {
   const { addToast } = useToast();
+  const { user } = useAuth();
   const [viewType, setViewType] = useState<ViewType>("week");
   const [offset, setOffset] = useState(0);
   const [plans, setPlans] = useState<MealPlan[]>([]);
   const [attempts, setAttempts] = useState<LoggedAttempt[]>([]);
   const [blocks, setBlocks] = useState<MealPlanBlock[]>([]);
+  // Household shared-plan state: present only when the user is in a
+  // household. memberBlocks are per-member "I'm out" blocks visible to
+  // everyone with attribution.
+  const [household, setHousehold] = useState<PlanHousehold | null>(null);
+  const [memberBlocks, setMemberBlocks] = useState<HouseholdMemberBlockView[]>([]);
+  const [blockMenuSlot, setBlockMenuSlot] = useState<{ date: string; mealType: string } | null>(null);
   const [randomizing, setRandomizing] = useState(false);
   const [review, setReview] = useState<{ slots: SlotRef[]; label: string } | null>(null);
   const [lastRandomized, setLastRandomized] = useState<{ planIds: number[]; label: string } | null>(null);
@@ -302,6 +332,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             setPlans(Array.isArray(data?.plans) ? data.plans : []);
             setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
             setBlocks(Array.isArray(data?.blocks) ? data.blocks : []);
+            setHousehold(data?.household ?? null);
+            setMemberBlocks(Array.isArray(data?.memberBlocks) ? data.memberBlocks : []);
           }
         }
       } catch {
@@ -309,6 +341,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
           setPlans([]);
           setAttempts([]);
           setBlocks([]);
+          setHousehold(null);
+          setMemberBlocks([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -412,13 +446,24 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
         setBlocks((prev) =>
           prev.filter((b) => !(b.date === addingSlot.date && b.mealType === addingSlot.mealType))
         );
+        setMemberBlocks((prev) =>
+          prev.filter(
+            (b) =>
+              !(
+                b.userId === user?.id &&
+                b.scope === "slot" &&
+                b.date === addingSlot.date &&
+                b.mealType === addingSlot.mealType
+              )
+          )
+        );
         closeAddDialog();
         addToast("Meal added", "success");
       }
     } catch {
       addToast("Failed to add meal", "error");
     }
-  }, [addingSlot, selectedRecipeId, closeAddDialog, addToast]);
+  }, [addingSlot, selectedRecipeId, closeAddDialog, addToast, user]);
 
   const removePlan = useCallback(
     async (id: number) => {
@@ -437,6 +482,104 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
     (date: string, mealType: string) =>
       blocks.find((b) => b.date === date && b.mealType === mealType) ?? null,
     [blocks]
+  );
+
+  // ── Household shared plan ────────────────────────────────
+  const getOutMembersForSlot = useCallback(
+    (date: string, mealType: string) =>
+      blockedMembersForSlot(memberBlocks, date, mealType),
+    [memberBlocks]
+  );
+
+  // Slots the current member blocked stay out of time-frame randomize.
+  const fillableBlocks = useMemo(() => {
+    if (!household || !user) return blocks;
+    return expandBlocksToSlots(memberBlocks, user.id, currentDateRange.dates, MEAL_TYPES);
+  }, [household, user, blocks, memberBlocks, currentDateRange.dates]);
+
+  // Per-member "I'm not eating" block at slot/day/week/month scope.
+  const blockForMe = useCallback(
+    async (date: string, mealType: string, scope: HouseholdBlockScope) => {
+      try {
+        const res = await fetch("/api/meal-plans/blocks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date, mealType, scope }),
+        });
+        const block = await res.json();
+        if (!res.ok) throw new Error(block?.error || "Failed to block");
+        setMemberBlocks((prev) => [
+          ...prev.filter(
+            (b) =>
+              !(
+                b.userId === block.userId &&
+                b.scope === block.scope &&
+                b.date === block.date &&
+                b.mealType === block.mealType
+              )
+          ),
+          block,
+        ]);
+        addToast("Marked you as out", "success");
+      } catch {
+        addToast("Failed to mark you as out", "error");
+      }
+    },
+    [addToast]
+  );
+
+  const unblockForMe = useCallback(
+    async (block: HouseholdMemberBlockView) => {
+      try {
+        await fetch("/api/meal-plans/blocks", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: block.date,
+            mealType: block.mealType || undefined,
+            scope: block.scope,
+          }),
+        });
+        setMemberBlocks((prev) => prev.filter((b) => b.id !== block.id));
+      } catch {
+        addToast("Failed to unblock", "error");
+      }
+    },
+    [addToast]
+  );
+
+  // Lifts every block of mine covering this slot (any scope).
+  const unblockSlotForMe = useCallback(
+    async (date: string, mealType: string) => {
+      const mine = memberBlocks.filter(
+        (b) => b.userId === user?.id && blockCoversSlot(b, date, mealType)
+      );
+      for (const block of mine) {
+        await unblockForMe(block);
+      }
+    },
+    [memberBlocks, user, unblockForMe]
+  );
+
+  // Display-side serving scale: recipe yield is the base for the full
+  // household; it shrinks by the share of members still eating. Stored
+  // quantities are never rewritten.
+  const getServingLabel = useCallback(
+    (plan: MealPlan, date: string, mealType: string): string | null => {
+      if (!household) return null;
+      const base = parseYieldServings(plan.recipe?.yield);
+      if (!base) return null;
+      const blockedCount = getOutMembersForSlot(date, mealType).length;
+      if (blockedCount === 0) return null;
+      return formatServingLabel(
+        scaleServingsForEaters({
+          baseServings: base * (plan.servings || 1),
+          memberCount: household.memberCount,
+          blockedCount,
+        })
+      );
+    },
+    [household, getOutMembersForSlot]
   );
 
   // 🎲 Per-slot randomize: re-rolls that one slot with a weighted pick.
@@ -517,14 +660,14 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
   // marks slots Fill vs Eating out before the roll.
   const openRandomizeReview = useCallback(
     (dates: string[], label: string) => {
-      const slots = findFillableSlots({ dates, plans, blocks });
+      const slots = findFillableSlots({ dates, plans, blocks: fillableBlocks });
       if (slots.length === 0) {
         addToast("No empty slots to fill", "error");
         return;
       }
       setReview({ slots, label });
     },
-    [plans, blocks, addToast]
+    [plans, fillableBlocks, addToast]
   );
 
   const confirmRandomize = useCallback(
@@ -537,7 +680,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
       }
       setRandomizing(true);
       try {
-        // Mark eating-out slots as blocked.
+        // Mark eating-out slots as blocked. In a household this is a
+        // per-member "I'm out" block (the shared slot's plans stay).
         for (const slot of eatingOutSlots) {
           const res = await fetch("/api/meal-plans/blocks", {
             method: "POST",
@@ -546,10 +690,25 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
           });
           const block = await res.json();
           if (res.ok) {
-            setBlocks((prev) => [
-              ...prev.filter((b) => !(b.date === slot.date && b.mealType === slot.mealType)),
-              block,
-            ]);
+            if (household) {
+              setMemberBlocks((prev) => [
+                ...prev.filter(
+                  (b) =>
+                    !(
+                      b.userId === block.userId &&
+                      b.scope === block.scope &&
+                      b.date === block.date &&
+                      b.mealType === block.mealType
+                    )
+                ),
+                block,
+              ]);
+            } else {
+              setBlocks((prev) => [
+                ...prev.filter((b) => !(b.date === slot.date && b.mealType === slot.mealType)),
+                block,
+              ]);
+            }
           }
         }
 
@@ -581,7 +740,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
         setRandomizing(false);
       }
     },
-    [review, recipes, addToast]
+    [review, recipes, addToast, household]
   );
 
   // One-step undo for the last randomize roll.
@@ -827,6 +986,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                     {MEAL_TYPES.map((mealType) => {
                       const slotPlans = getPlansForSlot(date, mealType);
                       const slotBlock = getBlockForSlot(date, mealType);
+                      const outMembers = household ? getOutMembersForSlot(date, mealType) : [];
                       return (
                         <div
                           key={mealType}
@@ -867,10 +1027,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => blockSlot(date, mealType)}
+                                    onClick={() => household ? setBlockMenuSlot({ date, mealType }) : blockSlot(date, mealType)}
                                     className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-neutral-700"
-                                    aria-label={`Block ${mealType} — eating something else`}
-                                    title="Block — eating something else"
+                                    aria-label={household ? `Mark me as not eating ${mealType}` : `Block ${mealType} — eating something else`}
+                                    title={household ? "I'm not eating" : "Block — eating something else"}
                                   >
                                     <Ban className="h-3.5 w-3.5" />
                                   </button>
@@ -895,6 +1055,24 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                             </div>
                           ) : (
                             <>
+                              {outMembers.length > 0 && (
+                                <div className="mb-1.5 flex flex-wrap gap-1">
+                                  {outMembers.map((m) => (
+                                    <button
+                                      key={m.userId}
+                                      type="button"
+                                      disabled={m.userId !== user?.id}
+                                      onClick={() => unblockSlotForMe(date, mealType)}
+                                      title={m.userId === user?.id ? "Tap to mark yourself back in" : undefined}
+                                      className={`rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-600 ${
+                                        m.userId === user?.id ? "transition hover:bg-neutral-300" : "cursor-default"
+                                      }`}
+                                    >
+                                      Out: {m.userName ?? "member"}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                               <div className="space-y-1.5">
                               {slotPlans.map((plan) => (
                                 <div
@@ -911,6 +1089,18 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                         {plan.loggedAttempt ? "Logged" : "Cooked"}
                                       </span>
                                     )}
+                                    {household && !plan.loggedAttempt && (() => {
+                                      const servingLabel = getServingLabel(plan, date, mealType);
+                                      if (!plan.addedByName && !servingLabel) return null;
+                                      return (
+                                        <span className="mt-0.5 block text-[10px] text-neutral-400">
+                                          {[
+                                            plan.addedByName ? `added by ${plan.addedByName}` : null,
+                                            servingLabel,
+                                          ].filter(Boolean).join(" · ")}
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
                                   {onCookMeal && !plan.cookedAt && (
                                     <button
@@ -1084,6 +1274,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 {MEAL_TYPES.map((mealType) => {
                   const slotPlans = getPlansForSlot(selectedDayDate, mealType);
                   const slotBlock = getBlockForSlot(selectedDayDate, mealType);
+                  const outMembers = household ? getOutMembersForSlot(selectedDayDate, mealType) : [];
 
                   return (
                     <div
@@ -1132,10 +1323,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                               </button>
                               <button
                                 type="button"
-                                onClick={() => blockSlot(selectedDayDate, mealType)}
+                                onClick={() => household ? setBlockMenuSlot({ date: selectedDayDate, mealType }) : blockSlot(selectedDayDate, mealType)}
                                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                                aria-label={`Block ${mealType} — eating something else`}
-                                title="Block — eating something else"
+                                aria-label={household ? `Mark me as not eating ${mealType}` : `Block ${mealType} — eating something else`}
+                                title={household ? "I'm not eating" : "Block — eating something else"}
                               >
                                 <Ban className="h-3.5 w-3.5" />
                               </button>
@@ -1159,11 +1350,49 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                           </button>
                         </div>
                       ) : slotPlans.length === 0 ? (
-                        <p className="rounded-md bg-white px-3 py-2 text-xs text-neutral-400">
-                          No meal planned.
-                        </p>
+                        <>
+                          {outMembers.length > 0 && (
+                            <div className="mb-1.5 flex flex-wrap gap-1">
+                              {outMembers.map((m) => (
+                                <button
+                                  key={m.userId}
+                                  type="button"
+                                  disabled={m.userId !== user?.id}
+                                  onClick={() => unblockSlotForMe(selectedDayDate, mealType)}
+                                  title={m.userId === user?.id ? "Tap to mark yourself back in" : undefined}
+                                  className={`rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-600 ${
+                                    m.userId === user?.id ? "transition hover:bg-neutral-300" : "cursor-default"
+                                  }`}
+                                >
+                                  Out: {m.userName ?? "member"}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <p className="rounded-md bg-white px-3 py-2 text-xs text-neutral-400">
+                            No meal planned.
+                          </p>
+                        </>
                       ) : (
                         <div className="space-y-1.5">
+                          {outMembers.length > 0 && (
+                            <div className="mb-1.5 flex flex-wrap gap-1">
+                              {outMembers.map((m) => (
+                                <button
+                                  key={m.userId}
+                                  type="button"
+                                  disabled={m.userId !== user?.id}
+                                  onClick={() => unblockSlotForMe(selectedDayDate, mealType)}
+                                  title={m.userId === user?.id ? "Tap to mark yourself back in" : undefined}
+                                  className={`rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-600 ${
+                                    m.userId === user?.id ? "transition hover:bg-neutral-300" : "cursor-default"
+                                  }`}
+                                >
+                                  Out: {m.userName ?? "member"}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           {slotPlans.map((plan) => (
                             <div
                               key={plan.id}
@@ -1186,6 +1415,18 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                     {plan.loggedAttempt ? "Logged" : "Cooked"}
                                   </span>
                                 )}
+                                {household && !plan.loggedAttempt && (() => {
+                                  const servingLabel = getServingLabel(plan, selectedDayDate, mealType);
+                                  if (!plan.addedByName && !servingLabel) return null;
+                                  return (
+                                    <span className="mt-0.5 block text-[10px] text-neutral-400">
+                                      {[
+                                        plan.addedByName ? `added by ${plan.addedByName}` : null,
+                                        servingLabel,
+                                      ].filter(Boolean).join(" · ")}
+                                    </span>
+                                  );
+                                })()}
                               </div>
                               {onCookMeal && !plan.cookedAt && (
                                 <button
@@ -1337,6 +1578,53 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             title={exportTitle}
             onClose={() => setShowExportModal(false)}
           />
+        )}
+        {/* Household per-member blocking: pick how long you're out.
+            Only mounts for household members — solo users keep the
+            one-tap slot block. */}
+        {blockMenuSlot && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-neutral-950/40 backdrop-blur-sm"
+              onClick={() => setBlockMenuSlot(null)}
+            />
+            <div className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-sm rounded-xl bg-white p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
+              <h3 className="text-sm font-semibold text-neutral-900">
+                I&rsquo;m not eating
+              </h3>
+              <p className="mt-1 text-xs text-neutral-500">
+                {formatDate(blockMenuSlot.date, todayKey).full} · {MEAL_LABELS[blockMenuSlot.mealType]} — the plan stays for everyone else; you&rsquo;re just not counted in servings.
+              </p>
+              <div className="mt-4 space-y-2">
+                {([
+                  ["slot", "Just this meal"],
+                  ["day", "This whole day"],
+                  ["week", "This week"],
+                  ["month", "This month"],
+                ] as Array<[HouseholdBlockScope, string]>).map(([scope, label]) => (
+                  <button
+                    key={scope}
+                    type="button"
+                    onClick={() => {
+                      void blockForMe(blockMenuSlot.date, blockMenuSlot.mealType, scope);
+                      setBlockMenuSlot(null);
+                    }}
+                    className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                  >
+                    {label}
+                    <Ban className="h-3.5 w-3.5 text-neutral-300" />
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setBlockMenuSlot(null)}
+                className="mt-3 w-full rounded-lg py-2 text-center text-xs font-medium text-neutral-500 transition hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
         )}
         {review && (
           <RandomizeReviewDialog

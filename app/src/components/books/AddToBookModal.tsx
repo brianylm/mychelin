@@ -129,7 +129,7 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-neutral-900">Add to Book</h2>
-            <p className="text-sm text-neutral-600">Add "{recipeName}" to your books</p>
+            <p className="text-sm text-neutral-600">Add &ldquo;{recipeName}&rdquo; to your books</p>
           </div>
           <button
             onClick={onClose}

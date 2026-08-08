@@ -10,6 +10,13 @@ import {
   ChevronRightIcon,
 } from "@radix-ui/react-icons";
 
+interface RefinementIngredient {
+  name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  notes?: string | null;
+}
+
 interface Version {
   id: number;
   versionNumber: number;
@@ -17,8 +24,15 @@ interface Version {
   captureMethod: string;
   closenessRating: number | null;
   closenessNotes: string | null;
-  ingredients: any[];
-  instructions: any[];
+  ingredients: RefinementIngredient[];
+  instructions: Array<{
+    content?: string;
+    text?: string;
+    step?: number;
+    stepNumber?: number;
+    tip?: string;
+    imageUrl?: string;
+  }>;
   notes: string | null;
 }
 
@@ -59,7 +73,7 @@ export function RefinementPanel({ recipeId, recipeTitle, version, onClose, onCom
 Closeness rating: ${version.closenessRating}/5
 What was different: ${version.closenessNotes || "No specific notes"}
 Current ingredients:
-${version.ingredients.map((i: any) => `- ${i.name}: ${i.quantity ?? ""} ${i.unit ?? ""} ${i.notes ? `(${i.notes})` : ""}`).join("\n")}
+${version.ingredients.map((i) => `- ${i.name}: ${i.quantity ?? ""} ${i.unit ?? ""} ${i.notes ? `(${i.notes})` : ""}`).join("\n")}
 Please suggest specific ingredient adjustments to make this recipe closer to the original.
 Return a JSON array of suggestions, each with: ingredient, currentAmount, suggestedAmount, reason.
 Only suggest changes that address the feedback. Return 2-5 suggestions maximum.
@@ -73,7 +87,7 @@ Return ONLY the JSON array, no other text.`,
           const parsed = typeof data.suggestions === "string" ? JSON.parse(data.suggestions) : data.suggestions ?? data.ingredients ?? [];
           if (Array.isArray(parsed)) {
             setSuggestions(parsed.slice(0, 5));
-            setSelectedSuggestions(new Set(parsed.slice(0, 5).map((_: any, i: number) => i)));
+            setSelectedSuggestions(new Set(parsed.slice(0, 5).map((_: unknown, i: number) => i)));
           }
         } catch { generateFallbackSuggestions(); }
       } else { generateFallbackSuggestions(); }
@@ -84,7 +98,7 @@ Return ONLY the JSON array, no other text.`,
     const notes = (version.closenessNotes ?? "").toLowerCase();
     const fallback: Suggestion[] = [];
     if (notes.includes("salty") || notes.includes("salt")) {
-      const saltIng = version.ingredients.find((i: any) =>
+      const saltIng = version.ingredients.find((i) =>
         i.name.toLowerCase().includes("salt") || i.name.toLowerCase().includes("soy sauce") || i.name.toLowerCase().includes("fish sauce"));
       if (saltIng) fallback.push({
         ingredient: saltIng.name,
@@ -94,7 +108,7 @@ Return ONLY the JSON array, no other text.`,
       });
     }
     if (notes.includes("sweet") || notes.includes("sugar")) {
-      const sugarIng = version.ingredients.find((i: any) =>
+      const sugarIng = version.ingredients.find((i) =>
         i.name.toLowerCase().includes("sugar") || i.name.toLowerCase().includes("honey"));
       if (sugarIng) fallback.push({
         ingredient: sugarIng.name,
@@ -118,7 +132,7 @@ Return ONLY the JSON array, no other text.`,
   const handleApply = async () => {
     setSaving(true);
     try {
-      const refinedIngredients = version.ingredients.map((ing: any) => {
+      const refinedIngredients = version.ingredients.map((ing) => {
         const suggestion = suggestions.find((s, i) =>
           selectedSuggestions.has(i) && s.ingredient.toLowerCase() === ing.name.toLowerCase());
         if (suggestion) {
