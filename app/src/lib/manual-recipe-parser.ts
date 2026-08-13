@@ -119,18 +119,84 @@ function parseQuantityUnitToken(token: string): { quantity: number; unit?: strin
   return quantity !== null ? { quantity } : null;
 }
 
+function parseQuantityExpression(
+  content: string,
+): { quantity?: number; unit?: string; quantityText?: string; approximate?: boolean } | null {
+  const trimmed = content.trim();
+  if (!trimmed) return null;
+
+  const approxMatch = trimmed.match(/^(a handful|handful|a pinch|pinch|some|a few|few|to taste)$/i);
+  if (approxMatch) {
+    return { quantityText: approxMatch[1], approximate: true };
+  }
+
+  const compact = trimmed.match(/^(\d+(?:\.\d+)?|\d+\/\d+)([a-zA-Z]+)$/);
+  if (compact) {
+    const quantity = parseNumberToken(compact[1]);
+    const unit = normalizeUnit(compact[2]);
+    if (quantity !== null) return { quantity, unit };
+  }
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  const quantity = parseNumberToken(parts[0]);
+  if (quantity !== null) {
+    const unit = parts[1] ? normalizeUnit(parts[1]) : undefined;
+    return { quantity, unit };
+  }
+
+  return null;
+}
+
 export function parseManualIngredientLine(rawLine: string): ManualParsedIngredient | null {
   let line = stripLinePrefix(rawLine);
   if (!line) return null;
-  if (STEP_VERBS.test(line)) return null;
 
   let notes: string | undefined;
-  const noteMatch = line.match(/\s+\(([^)]+)\)\s*$/);
-  if (noteMatch) {
-    notes = noteMatch[1].trim();
-    line = line.slice(0, noteMatch.index).trim();
+  let foundQuantity: number | undefined;
+  let foundUnit: string | undefined;
+  let foundQuantityText: string | undefined;
+  let foundApproximate: boolean | undefined;
+
+  // Pull trailing parentheticals from the end inward. If a paren content
+  // parses as a quantity expression, treat it as the amount; otherwise it
+  // is a note (e.g. "Garlic (grinded) (1 tablespoon)").
+  while (true) {
+    const parenMatch = line.match(/\s*\(([^()]*)\)\s*$/);
+    if (!parenMatch) break;
+    const content = parenMatch[1].trim();
+    const before = line.slice(0, parenMatch.index).trim();
+    const qty = parseQuantityExpression(content);
+    if (qty && foundQuantity === undefined && foundQuantityText === undefined) {
+      foundQuantity = qty.quantity;
+      foundUnit = qty.unit;
+      foundQuantityText = qty.quantityText;
+      foundApproximate = qty.approximate;
+    } else {
+      notes = notes ? `${content}; ${notes}` : content;
+    }
+    line = before;
   }
 
+  // Reject step-like lines after parens are removed, so "Salt (to taste)"
+  // isn't discarded just because the paren contains "taste".
+  if (STEP_VERBS.test(line)) return null;
+
+  if (foundQuantity !== undefined || foundQuantityText !== undefined) {
+    const name = line.replace(/,$/, "").trim();
+    if (name) {
+      return {
+        name: titleCase(name),
+        quantity: foundQuantity,
+        unit: foundUnit,
+        quantityText: foundQuantityText,
+        approximate: foundApproximate,
+        notes,
+        source: rawLine,
+      };
+    }
+  }
+
+  const strippedLine = line;
   line = line.replace(/^(\d+\/\d+|\d+(?:\.\d+)?)([a-zA-Z]+)\b/, "$1 $2");
   const parts = line.split(" ").filter(Boolean);
   if (parts.length === 0) return null;
@@ -195,6 +261,11 @@ export function parseManualIngredientLine(rawLine: string): ManualParsedIngredie
     };
   }
 
+  const fallbackName = strippedLine.replace(/,$/, "").trim();
+  if (fallbackName) {
+    return { name: titleCase(fallbackName), notes, source: rawLine };
+  }
+
   return null;
 }
 
@@ -233,10 +304,21 @@ function parseInstructionLine(rawLine: string): ManualParsedInstruction | null {
 
 function splitIngredientCandidates(line: string): string[] {
   if (!line.includes(",")) return [line];
-  return line
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const items: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const char of line) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      if (current.trim()) items.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) items.push(current.trim());
+  return items.length ? items : [line];
 }
 
 function headingMode(line: string): ParseMode | null {
@@ -276,7 +358,7 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
       mode = nextMode;
       continue;
     }
-    if (isLikelySectionHeading(line)) {
+    if (mode === "auto" && isLikelySectionHeading(line)) {
       continue;
     }
     if (mode === "notes") {
