@@ -2746,3 +2746,12 @@ Added 2026-07-30. `app/e2e/` holds the Playwright regression suite (`npm run tes
   2. `usage_events` inserts ALWAYS fail on dev ("usage event skipped: insert into usage_events (...,"id",...) values (null, ...)") — usage analytics are silently broken on the dev DB (wrong schema for the table; `ensureUsageEventsTable` only creates when missing).
   3. `GET /api/notifications/rhythm` intermittently fails → `hasAttemptedAny` stays null → the first-cook mission card never renders for that page load (mission retry flake). App falls back gracefully; the spec uses a 60s card timeout.
 - Cleanup verified: 0 leftover e2e users after the run. tsc + eslint on the 3 specs: clean.
+
+## 2026-09-10 - UI uplift release blockers cleared after staging acceptance
+
+- B accepted the staged `ui-uplift` release. Committed the previously validated book-count repair as `d8957ee` (`fix: refresh book recipe counts immediately`).
+- Fixed intermittent successful-create/500 responses from `POST /api/meal-plans`: the route now builds its 201 response from the inserted row plus a recipe summary instead of immediately re-reading the remote row and sometimes serializing `undefined`.
+- Removed the first-load write race from `GET /api/notifications/rhythm`: users without saved notification preferences now receive the schema-default weekly goal of 2; the read route no longer races to insert the same primary-key row.
+- Re-verified the earlier usage-events warning against the current dev database instead of adding a speculative migration: `usage_events` has the correct autoincrement schema, contained 895 events with a latest event on 2026-09-09, and the new planner regression confirmed five new `meal_planned` events persisted.
+- Expanded Playwright coverage: five concurrent rhythm reads for a fresh user must all return 200/default state; five consecutive meal-plan creates must each return the inserted plan with recipe data and persist five analytics events.
+- Focused Chromium Playwright validation passed 5/5. Full deploy gate and production smoke remain next.

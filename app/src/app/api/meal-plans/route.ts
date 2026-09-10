@@ -262,6 +262,12 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    const [recipeSummary] = await db
+      .select({ id: recipes.id, title: recipes.title, yield: recipes.yield })
+      .from(recipes)
+      .where(eq(recipes.id, recipeIdNumber))
+      .limit(1);
+
     if (membership) {
       // Planning a meal lifts the member's own slot-scope block, if any.
       // Day/week/month blocks stay — they are deliberate absences.
@@ -277,16 +283,11 @@ export async function POST(request: NextRequest) {
           )
         );
 
-      const [recipe] = await db
-        .select({ title: recipes.title })
-        .from(recipes)
-        .where(eq(recipes.id, recipeIdNumber))
-        .limit(1);
       await logHouseholdActivity(
         membership.household.id,
         currentUser.id,
         "added_meal",
-        recipe?.title ?? null
+        recipeSummary?.title ?? null
       );
     } else {
       // Planning a meal in a blocked slot lifts the block.
@@ -301,26 +302,11 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    const fullPlan = membership
-      ? await db.query.mealPlans.findFirst({
-          where: and(
-            eq(mealPlans.id, newPlan.id),
-            eq(mealPlans.householdId, membership.household.id)
-          ),
-          with: {
-            recipe: {
-              columns: { id: true, title: true, yield: true },
-            },
-          },
-        })
-      : await db.query.mealPlans.findFirst({
-          where: and(eq(mealPlans.id, newPlan.id), eq(mealPlans.userId, currentUser.id)),
-          with: {
-            recipe: {
-              columns: { id: true, title: true, yield: true },
-            },
-          },
-        });
+    // Build the response from the inserted row instead of immediately
+    // re-reading it. A just-written row can occasionally be absent from a
+    // follow-up remote read, and serializing that undefined value turns an
+    // otherwise successful insert into a 500 response.
+    const fullPlan = { ...newPlan, recipe: recipeSummary ?? null };
 
     await trackUsageEvent({
       userId: currentUser.id,
@@ -338,7 +324,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      membership && fullPlan
+      membership
         ? { ...fullPlan, addedByName: currentUser.name }
         : fullPlan,
       { status: 201 }

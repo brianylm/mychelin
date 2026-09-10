@@ -17,6 +17,19 @@ test.describe("first cook guided mission", () => {
     await signup(page, uniqueEmail(PREFIX), PASSWORD);
     await createRecipe(page, { title: "E2E Mission Chicken Rice" });
 
+    // A new user has no notification-preferences row yet. Concurrent reads
+    // must all use the default goal without racing to create that row.
+    const rhythmResponses = await Promise.all(
+      Array.from({ length: 5 }, () => page.request.get("/api/notifications/rhythm"))
+    );
+    for (const response of rhythmResponses) {
+      expect(response.status()).toBe(200);
+      expect(await response.json()).toMatchObject({
+        weeklyCookingGoal: 2,
+        hasAttemptedAny: false,
+      });
+    }
+
     await page.goto("/app");
 
     // Post-onboarding dashboard card (no attempts yet). Generous timeout:

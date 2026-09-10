@@ -18,16 +18,9 @@ export async function GET() {
     await ensureRecipeAttemptsTable();
 
     const window = getSingaporeWeekWindow();
-    let prefs = await db.query.notificationPreferences.findFirst({
+    const prefs = await db.query.notificationPreferences.findFirst({
       where: eq(notificationPreferences.userId, currentUser.id),
     });
-    if (!prefs) {
-      const [created] = await db
-        .insert(notificationPreferences)
-        .values({ userId: currentUser.id, updatedAt: new Date().toISOString() })
-        .returning();
-      prefs = created;
-    }
 
     const [attempts, plans, anyAttempt] = await Promise.all([
       db
@@ -62,7 +55,10 @@ export async function GET() {
     const cookedThisWeek = attempts.length;
     const plannedThisWeek = plans.length;
     const cookedFromPlan = plans.filter((plan) => Boolean(plan.cookedAt)).length;
-    const goal = prefs.weeklyCookingGoal;
+    // Rhythm is a read endpoint. New users do not need a preferences row
+    // until they actually save preferences; using the schema default here
+    // also avoids concurrent first-load inserts racing on the user_id PK.
+    const goal = prefs?.weeklyCookingGoal ?? 2;
     const progress = Math.min(100, Math.round((cookedThisWeek / Math.max(goal, 1)) * 100));
     const hasAttemptedAny = anyAttempt.length > 0;
 
