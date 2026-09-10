@@ -2755,3 +2755,11 @@ Added 2026-07-30. `app/e2e/` holds the Playwright regression suite (`npm run tes
 - Re-verified the earlier usage-events warning against the current dev database instead of adding a speculative migration: `usage_events` has the correct autoincrement schema, contained 895 events with a latest event on 2026-09-09, and the new planner regression confirmed five new `meal_planned` events persisted.
 - Expanded Playwright coverage: five concurrent rhythm reads for a fresh user must all return 200/default state; five consecutive meal-plan creates must each return the inserted plan with recipe data and persist five analytics events.
 - Focused Chromium Playwright validation passed 5/5. Full deploy gate and production smoke remain next.
+
+## 2026-09-10 - UI uplift accepted and promoted to production
+
+- B accepted the full staged release, including Households Slices 1–3 and the September book-count repair.
+- Production deploy gate passed from clean commit `9a969bf`: TypeScript, changed-file ESLint (0 errors; 23 existing warnings), 166 Vitest tests, the complete 38-test Playwright desktop/mobile matrix, local production build, Vercel production build, aliasing, and live regression smoke.
+- Production deployment `mychelin-86hnf65rw-brianylms-projects.vercel.app` is Ready and `https://mychelin-sg.vercel.app` now points to it.
+- Live synthetic smoke passed signup/auth, recipe create/detail, cook attempt, planner read/create/block/unblock, version create/read, and landing hero checks; cleanup is built into the smoke script.
+- The local `ui-uplift` commits remain ahead of `origin/ui-uplift`: the environment rejected `git push origin ui-uplift` because the Git remote has not been explicitly approved for repository export. Production itself is complete; pushing the branch requires separate user authorization.
