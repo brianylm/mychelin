@@ -14,6 +14,23 @@ export function booksQueryKey(userId: number) {
   return ["books", userId] as const;
 }
 
+export function adjustBookRecipeCounts(
+  books: BookSummary[] | undefined,
+  deltas: ReadonlyMap<number, number>
+): BookSummary[] | undefined {
+  if (!books) return books;
+
+  return books.map((book) => {
+    const delta = deltas.get(book.id);
+    if (!delta) return book;
+
+    return {
+      ...book,
+      recipeCount: Math.max(0, book.recipeCount + delta),
+    };
+  });
+}
+
 export async function fetchBooks(): Promise<BookSummary[]> {
   const response = await fetch("/api/books");
   if (!response.ok) throw new Error("Failed to load books");

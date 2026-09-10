@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import {
+  adjustBookRecipeCounts,
+  booksQueryKey,
+  type BookSummary,
+} from "@/lib/books-client";
 
 interface Book {
   id: number;
@@ -21,6 +27,7 @@ interface AddToBookModalProps {
 export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModalProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBooks, setSelectedBooks] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -86,7 +93,7 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
           } else {
             results.push({ bookId, success: false, reason: "error" });
           }
-        } catch (error) {
+        } catch {
           results.push({ bookId, success: false, reason: "network_error" });
         }
       }
@@ -95,6 +102,18 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
       const duplicateCount = results.filter(r => !r.success && r.reason === "already_exists").length;
 
       if (successCount > 0) {
+        if (user?.id) {
+          const successfulBookIds = results
+            .filter((result) => result.success)
+            .map((result) => result.bookId);
+          const deltas = new Map(successfulBookIds.map((bookId) => [bookId, 1]));
+          const queryKey = booksQueryKey(user.id);
+
+          queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks) =>
+            adjustBookRecipeCounts(currentBooks, deltas)
+          );
+          void queryClient.invalidateQueries({ queryKey });
+        }
         addToast(`Recipe added to ${successCount} book${successCount > 1 ? 's' : ''}!`, "success");
       }
 

@@ -2703,6 +2703,15 @@ Added 2026-07-30. Diagnosis: OpenAI Realtime transcription used to kill the dial
 
 Added 2026-07-30. `app/e2e/` holds the Playwright regression suite (`npm run test:e2e`, `--ui` for the inspector). Runs the app on :3100 against the DEV Turso DB with synthetic users seeded via `e2e/helpers.ts` (Turso insert + minted JWT cookie injection — the auth endpoints are IP rate-limited and must not be in the test path; `onboarding_completed=1` set on seed). Cleanup deletes each run's prefixed users. Specs cover shipped regressions: sidebar recipe select (desktop + mobile grid), Plan-nav with a recipe open, sidebar select over the planner (mobile drawer), Recipe/Card toggle. Gate: `deploy.sh` step 4b runs the full suite; CI runs it with `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` secrets (dev DB only, never prod). When adding a feature, add a spec for its happy path; when fixing a regression, add the spec that would have caught it.
 
+## 2026-09-08 - Book recipe counts refresh immediately
+
+- Fixed `/api/books` recipe counts to use the `book_recipes` membership table used by the add/remove endpoints, instead of the legacy `recipes.book_id` field.
+- Successful additions from both `AddToBookModal` and `RecipePickerModal` now update the shared React Query books cache immediately, then invalidate it for server reconciliation; sidebar and library book counts no longer wait for the 60-second stale window.
+- Added `src/lib/books-client.test.ts` for count adjustments and `e2e/books-count.spec.ts` for the add-recipe → book-summary count regression.
+- Files touched: `app/src/app/api/books/route.ts`, `app/src/components/books/AddToBookModal.tsx`, `app/src/components/books/RecipePickerModal.tsx`, `app/src/lib/books-client.ts`, the two regression tests, and `MEMORY.md`.
+- Validation: focused Vitest 2/2, focused Playwright 1/1 (chromium, dev Turso), `npx tsc --noEmit`, production build, focused ESLint (0 errors; 3 pre-existing warnings), and `git diff --check` all pass.
+- Deployed preview `mychelin-d88o9nthx-brianylms-projects.vercel.app` and updated `https://mychelin-ui-uplift.vercel.app`; Vercel reports Ready and the alias returns HTTP 200. Production unchanged.
+
 ## 2026-08-08 - Households Slice 2 deployed to preview
 
 - Slice 2 (committed `0512911`) is now live on the staging alias `https://mychelin-ui-uplift.vercel.app` (deployment `mychelin-qwx0id4iu-brianylms-projects.vercel.app`, HTTP 200). The previous session's deploy attempt had failed on a Kimi provider 403 (usage limit); the retry via the Vercel CLI here succeeded.

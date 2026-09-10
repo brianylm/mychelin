@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import {
+  adjustBookRecipeCounts,
+  booksQueryKey,
+  type BookSummary,
+} from "@/lib/books-client";
 
 interface Recipe {
   id: number;
@@ -31,6 +37,7 @@ export function RecipePickerModal({
 }: RecipePickerModalProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecipes, setSelectedRecipes] = useState<Set<number>>(new Set());
@@ -98,7 +105,7 @@ export function RecipePickerModal({
           } else {
             results.push({ recipeId, success: false });
           }
-        } catch (error) {
+        } catch {
           results.push({ recipeId, success: false });
         }
       }
@@ -106,6 +113,13 @@ export function RecipePickerModal({
       const successCount = results.filter(r => r.success).length;
       
       if (successCount > 0) {
+        if (user?.id) {
+          const queryKey = booksQueryKey(user.id);
+          queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks) =>
+            adjustBookRecipeCounts(currentBooks, new Map([[bookId, successCount]]))
+          );
+          void queryClient.invalidateQueries({ queryKey });
+        }
         addToast(`Added ${successCount} recipe${successCount > 1 ? 's' : ''} to ${bookTitle}!`, "success");
         onClose();
       } else {
@@ -125,7 +139,7 @@ export function RecipePickerModal({
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-neutral-900">Add Recipes</h2>
-            <p className="text-sm text-neutral-600">Select recipes to add to "{bookTitle}"</p>
+            <p className="text-sm text-neutral-600">Select recipes to add to &ldquo;{bookTitle}&rdquo;</p>
           </div>
           <button
             onClick={onClose}
