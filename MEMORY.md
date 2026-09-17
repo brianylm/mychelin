@@ -2763,3 +2763,11 @@ Added 2026-07-30. `app/e2e/` holds the Playwright regression suite (`npm run tes
 - Production deployment `mychelin-86hnf65rw-brianylms-projects.vercel.app` is Ready and `https://mychelin-sg.vercel.app` now points to it.
 - Live synthetic smoke passed signup/auth, recipe create/detail, cook attempt, planner read/create/block/unblock, version create/read, and landing hero checks; cleanup is built into the smoke script.
 - The local `ui-uplift` commits remain ahead of `origin/ui-uplift`: the environment rejected `git push origin ui-uplift` because the Git remote has not been explicitly approved for repository export. Production itself is complete; pushing the branch requires separate user authorization.
+
+## 2026-09-17 - Pantry and meal planning chosen as pilot focus
+
+- B explicitly authorized publishing the local `ui-uplift` history. GitHub initially rejected the push because the OAuth token lacked `workflow` scope; B completed GitHub device authorization, and `origin/ui-uplift` was updated through `5f277a9`.
+- Product decision: pause further transcription/dialect work for now because reliable transcription is not considered achievable enough for the current pilot.
+- Pilot focus is the practical household loop: plan meals → account for eating-out/blocked slots and household portions → generate a shopping list offset by Pantry stock → tick purchases and move them into Pantry → cook a planned meal → confirm Pantry deduction/reconcile remaining stock.
+- Treat Pantry as the user-facing term for the inventory capability during pilot design, even though some current UI/code still says Inventory. Do not start a broad rename or new feature slice without reviewing the pilot flow first.
+- Next action: design and run a small production pilot around this loop, observe where users lose trust or need manual correction, and prioritize fixes from evidence before adding more feature surface.
