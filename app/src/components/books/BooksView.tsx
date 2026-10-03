@@ -5,6 +5,8 @@ import { CreateBookModal } from "./CreateBookModal";
 import { BookDetailView } from "./BookDetailView";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { booksQueryKey, type BookSummary } from "@/lib/books-client";
 
 interface Book {
   id: number;
@@ -29,6 +31,7 @@ interface BooksViewProps {
 export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -79,6 +82,14 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
 
       const newBook = await response.json();
       setBooks(prev => [newBook, ...prev]);
+      if (user?.id) {
+        const queryKey = booksQueryKey(user.id);
+        queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks = []) => [
+          newBook,
+          ...currentBooks.filter((currentBook) => currentBook.id !== newBook.id),
+        ]);
+        void queryClient.invalidateQueries({ queryKey });
+      }
       setShowCreateModal(false);
       addToast("Book created successfully!", "success");
     } catch (error) {
@@ -109,9 +120,27 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
             prev.map(b => b.id === updatedBook.id ? { ...b, ...updatedBook } : b)
           );
           setSelectedBook({ ...selectedBook, ...updatedBook });
+          if (user?.id) {
+            const queryKey = booksQueryKey(user.id);
+            queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks) =>
+              currentBooks?.map((currentBook) =>
+                currentBook.id === updatedBook.id
+                  ? { ...currentBook, ...updatedBook }
+                  : currentBook
+              )
+            );
+            void queryClient.invalidateQueries({ queryKey });
+          }
         }}
         onBookDeleted={() => {
           setBooks(prev => prev.filter(b => b.id !== selectedBook.id));
+          if (user?.id) {
+            const queryKey = booksQueryKey(user.id);
+            queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks) =>
+              currentBooks?.filter((currentBook) => currentBook.id !== selectedBook.id)
+            );
+            void queryClient.invalidateQueries({ queryKey });
+          }
           setSelectedBook(null);
           addToast("Book deleted successfully", "success");
         }}

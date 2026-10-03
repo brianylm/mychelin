@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { bookMembers, bookRecipes, bookActivityLog, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
+import { mergeBookRecipeRows } from "@/lib/book-membership";
 import { eq, and } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -43,17 +44,39 @@ export async function GET(
       );
     }
 
-    // Get recipes in this book (via direct bookId on recipes table)
-    const result = await db
-      .select({
-        id: recipes.id,
-        title: recipes.title,
-        cuisine: recipes.cuisine,
-        imageUrl: recipes.imageUrl,
-      })
-      .from(recipes)
-      .where(eq(recipes.bookId, bookId))
-      .orderBy(recipes.title);
+    const [linkedRows, directRows] = await Promise.all([
+      db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          description: recipes.description,
+          cuisine: recipes.cuisine,
+          imageUrl: recipes.imageUrl,
+          prepTime: recipes.prepTime,
+          cookTime: recipes.cookTime,
+          status: recipes.status,
+        })
+        .from(bookRecipes)
+        .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
+        .where(eq(bookRecipes.bookId, bookId))
+        .orderBy(bookRecipes.sortOrder),
+      db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          description: recipes.description,
+          cuisine: recipes.cuisine,
+          imageUrl: recipes.imageUrl,
+          prepTime: recipes.prepTime,
+          cookTime: recipes.cookTime,
+          status: recipes.status,
+        })
+        .from(recipes)
+        .where(eq(recipes.bookId, bookId))
+        .orderBy(recipes.title),
+    ]);
+
+    const result = mergeBookRecipeRows(linkedRows, directRows);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -124,16 +147,23 @@ export async function POST(
       .limit(1);
 
     // Check if recipe is already in the book
-    const existing = await db
-      .select()
-      .from(bookRecipes)
-      .where(and(
-        eq(bookRecipes.bookId, bookId),
-        eq(bookRecipes.recipeId, recipeId)
-      ))
-      .limit(1);
+    const [linkedExisting, directExisting] = await Promise.all([
+      db
+        .select({ id: bookRecipes.id })
+        .from(bookRecipes)
+        .where(and(
+          eq(bookRecipes.bookId, bookId),
+          eq(bookRecipes.recipeId, recipeId)
+        ))
+        .limit(1),
+      db
+        .select({ id: recipes.id })
+        .from(recipes)
+        .where(and(eq(recipes.id, recipeId), eq(recipes.bookId, bookId)))
+        .limit(1),
+    ]);
 
-    if (existing.length) {
+    if (linkedExisting.length || directExisting.length) {
       return NextResponse.json(
         { error: "Recipe is already in this book" },
         { status: 409 }
@@ -228,33 +258,48 @@ export async function DELETE(
 
     // Get recipe title for logging, scoped to the book membership row so
     // a guessed recipe id cannot reveal another recipe title.
-    const recipe = await db
-      .select({ title: recipes.title })
-      .from(bookRecipes)
-      .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
-      .where(and(
-        eq(bookRecipes.bookId, bookId),
-        eq(bookRecipes.recipeId, recipeId)
-      ))
-      .limit(1);
+    const [linkedRecipe, directRecipe] = await Promise.all([
+      db
+        .select({ title: recipes.title })
+        .from(bookRecipes)
+        .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
+        .where(and(
+          eq(bookRecipes.bookId, bookId),
+          eq(bookRecipes.recipeId, recipeId)
+        ))
+        .limit(1),
+      db
+        .select({ title: recipes.title })
+        .from(recipes)
+        .where(and(eq(recipes.id, recipeId), eq(recipes.bookId, bookId)))
+        .limit(1),
+    ]);
+    const recipe = linkedRecipe[0] ?? directRecipe[0];
 
-    // Remove recipe from book
-    await db
-      .delete(bookRecipes)
-      .where(and(
-        eq(bookRecipes.bookId, bookId),
-        eq(bookRecipes.recipeId, recipeId)
-      ));
+    // Remove either supported membership path. A recipe can have both after
+    // legacy migrations, so clear both in one action.
+    await db.batch([
+      db
+        .delete(bookRecipes)
+        .where(and(
+          eq(bookRecipes.bookId, bookId),
+          eq(bookRecipes.recipeId, recipeId)
+        )),
+      db
+        .update(recipes)
+        .set({ bookId: null })
+        .where(and(eq(recipes.id, recipeId), eq(recipes.bookId, bookId))),
+    ]);
 
     // Log the activity if recipe was found and removed
-    if (recipe.length) {
+    if (recipe) {
       await db
         .insert(bookActivityLog)
         .values({
           bookId,
           userId: currentUser.id,
           action: "removed_recipe",
-          targetName: recipe[0].title,
+          targetName: recipe.title,
         });
     }
 

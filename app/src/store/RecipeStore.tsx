@@ -191,6 +191,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       fetchJson(`/api/recipes/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
+      qc.invalidateQueries({ queryKey: ["books"] });
       setSelectedRecipeId(null);
     },
   });

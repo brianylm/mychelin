@@ -7,6 +7,12 @@ import { RecipePickerModal } from "./RecipePickerModal";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { CookingPrinciples } from "./CookingPrinciples";
 import { RecipeForkButton } from "../recipes/RecipeForkButton";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  booksQueryKey,
+  removeBookRecipeMemberships,
+  type BookSummary,
+} from "@/lib/books-client";
 
 interface BookDetail {
   id: number;
@@ -53,7 +59,10 @@ interface BookDetail {
 interface BookDetailViewProps {
   book: { id: number; title: string; coverEmoji: string; coverColor: string };
   onBack: () => void;
-  onBookUpdated: (updatedData: any) => void;
+  onBookUpdated: (updatedData: Pick<
+    BookDetail,
+    "id" | "title" | "description" | "coverEmoji" | "coverColor" | "updatedAt"
+  >) => void;
   onBookDeleted: () => void;
   onNavigateToRecipe?: (recipeId: number) => void;
 }
@@ -72,6 +81,7 @@ const COLORS = [
 export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onNavigateToRecipe }: BookDetailViewProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const [bookDetail, setBookDetail] = useState<BookDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("recipes");
@@ -187,6 +197,14 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
         recipes: bookDetail.recipes.filter(r => r.id !== recipeId)
       });
 
+      if (user?.id) {
+        const queryKey = booksQueryKey(user.id);
+        queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks) =>
+          removeBookRecipeMemberships(currentBooks, new Map([[book.id, [recipeId]]]))
+        );
+        void queryClient.invalidateQueries({ queryKey });
+      }
+
       addToast("Recipe removed from book", "success");
     } catch (error) {
       console.error("Error removing recipe:", error);
@@ -223,7 +241,10 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
     }
   };
 
-  const handleRecipeAdded = (recipe: any) => {
+  const handleRecipeAdded = (recipe: Pick<
+    BookDetail["recipes"][number],
+    "id" | "title" | "description" | "cuisine" | "imageUrl" | "prepTime" | "cookTime"
+  >) => {
     if (!bookDetail) return;
     
     setBookDetail({
@@ -232,6 +253,8 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
         ...bookDetail.recipes,
         {
           ...recipe,
+          yield: null,
+          forkedFrom: null,
           addedAt: new Date().toISOString(),
           addedBy: user?.id || 0,
           sortOrder: bookDetail.recipes.length,
@@ -240,7 +263,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
     });
   };
 
-  const handleMemberAdded = (member: any) => {
+  const handleMemberAdded = (member: BookDetail["members"][number]) => {
     if (!bookDetail) return;
     
     setBookDetail({

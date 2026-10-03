@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { books, bookMembers, bookRecipes, bookActivityLog } from "@/db/schema";
+import { books, bookMembers, bookRecipes, bookActivityLog, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { mergeBookRecipeMemberships } from "@/lib/book-membership";
 import { eq, sql } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -19,30 +20,49 @@ export async function GET() {
       );
     }
 
-    const userBooks = await db
-      .select({
-        id: books.id,
-        title: books.title,
-        description: books.description,
-        coverEmoji: books.coverEmoji,
-        coverColor: books.coverColor,
-        createdBy: books.createdBy,
-        isPublic: books.isPublic,
-        createdAt: books.createdAt,
-        updatedAt: books.updatedAt,
-        memberCount: sql<number>`count(distinct ${bookMembers.userId})`,
-        recipeCount: sql<number>`count(distinct ${bookRecipes.recipeId})`,
-        userRole: bookMembers.role,
-        isOwner: sql<boolean>`${books.createdBy} = ${currentUser.id}`,
-      })
-      .from(books)
-      .innerJoin(bookMembers, eq(books.id, bookMembers.bookId))
-      .leftJoin(bookRecipes, eq(books.id, bookRecipes.bookId))
-      .where(eq(bookMembers.userId, currentUser.id))
-      .groupBy(books.id, bookMembers.role)
-      .orderBy(books.updatedAt);
+    const [userBooks, linkedMemberships, directMemberships] = await Promise.all([
+      db
+        .select({
+          id: books.id,
+          title: books.title,
+          description: books.description,
+          coverEmoji: books.coverEmoji,
+          coverColor: books.coverColor,
+          createdBy: books.createdBy,
+          isPublic: books.isPublic,
+          createdAt: books.createdAt,
+          updatedAt: books.updatedAt,
+          memberCount: sql<number>`count(distinct ${bookMembers.userId})`,
+          userRole: bookMembers.role,
+          isOwner: sql<boolean>`${books.createdBy} = ${currentUser.id}`,
+        })
+        .from(books)
+        .innerJoin(bookMembers, eq(books.id, bookMembers.bookId))
+        .where(eq(bookMembers.userId, currentUser.id))
+        .groupBy(books.id, bookMembers.role)
+        .orderBy(books.updatedAt),
+      db
+        .select({ bookId: bookRecipes.bookId, recipeId: bookRecipes.recipeId })
+        .from(bookRecipes)
+        .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
+        .innerJoin(bookMembers, eq(bookRecipes.bookId, bookMembers.bookId))
+        .where(eq(bookMembers.userId, currentUser.id)),
+      db
+        .select({ bookId: recipes.bookId, recipeId: recipes.id })
+        .from(recipes)
+        .innerJoin(bookMembers, eq(recipes.bookId, bookMembers.bookId))
+        .where(eq(bookMembers.userId, currentUser.id)),
+    ]);
 
-    return NextResponse.json(userBooks);
+    const recipeIdsByBook = mergeBookRecipeMemberships(
+      linkedMemberships,
+      directMemberships.flatMap((row) => row.bookId == null ? [] : [{ ...row, bookId: row.bookId }])
+    );
+
+    return NextResponse.json(userBooks.map((book) => {
+      const recipeIds = recipeIdsByBook.get(book.id) ?? [];
+      return { ...book, recipeIds, recipeCount: recipeIds.length };
+    }));
   } catch (error) {
     console.error("GET /api/books error:", error);
     return NextResponse.json(
@@ -111,6 +131,7 @@ export async function POST(request: NextRequest) {
       ...newBook,
       memberCount: 1,
       recipeCount: 0,
+      recipeIds: [],
       userRole: "owner" as const,
       isOwner: true,
     };

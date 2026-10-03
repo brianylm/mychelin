@@ -10,7 +10,7 @@ import { ShareModal } from "@/components/sharing/ShareModal";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import { booksQueryKey, fetchBooks } from "@/lib/books-client";
+import { bookTitlesForRecipe, booksQueryKey, fetchBooks } from "@/lib/books-client";
 
 interface BookRecipe {
   id: number;
@@ -69,6 +69,10 @@ export function RecipeSidebar({
   });
   const [expandedBooks, setExpandedBooks] = useState<Set<number>>(new Set());
   const [bookRecipes, setBookRecipes] = useState<Record<number, BookRecipe[]>>({});
+  const booksMembershipSignature = books
+    .map((book) => `${book.id}:${book.recipeIds.join(",")}`)
+    .join("|");
+  const previousBooksMembershipSignature = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !window.matchMedia("(max-width: 767px)").matches) return;
@@ -110,26 +114,36 @@ export function RecipeSidebar({
     return () => window.removeEventListener("mychelin:create-recipe", handler);
   }, [handleManualRecipe]);
 
-  const toggleBook = useCallback(async (bookId: number) => {
+  const fetchBookRecipes = useCallback((bookId: number) => {
+    fetch(`/api/books/${bookId}/recipes`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        setBookRecipes((prev) => ({ ...prev, [bookId]: data }));
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleBook = useCallback((bookId: number) => {
+    const isOpening = !expandedBooks.has(bookId);
     setExpandedBooks((prev) => {
       const next = new Set(prev);
-      if (next.has(bookId)) {
-        next.delete(bookId);
-      } else {
-        next.add(bookId);
-        // Fetch recipes for this book if not already loaded
-        if (!bookRecipes[bookId]) {
-          fetch(`/api/books/${bookId}/recipes`)
-            .then((res) => (res.ok ? res.json() : []))
-            .then((data) => {
-              setBookRecipes((prev) => ({ ...prev, [bookId]: data }));
-            })
-            .catch(() => {});
-        }
-      }
+      if (next.has(bookId)) next.delete(bookId);
+      else next.add(bookId);
       return next;
     });
-  }, [bookRecipes]);
+    if (isOpening && !bookRecipes[bookId]) fetchBookRecipes(bookId);
+  }, [bookRecipes, expandedBooks, fetchBookRecipes]);
+
+  // The expanded-book list is fetched lazily. Refresh any open book when the
+  // shared membership summary changes so it cannot stay stale after edits.
+  useEffect(() => {
+    const previous = previousBooksMembershipSignature.current;
+    previousBooksMembershipSignature.current = booksMembershipSignature;
+    if (previous === null || previous === booksMembershipSignature) return;
+
+    setBookRecipes({});
+    for (const bookId of expandedBooks) fetchBookRecipes(bookId);
+  }, [booksMembershipSignature, expandedBooks, fetchBookRecipes]);
 
   // When the user types in the search box we hit /api/recipes/search,
   // which matches against both recipe titles AND ingredient names —
@@ -298,6 +312,7 @@ export function RecipeSidebar({
                       onDelete={deleteRecipe}
                       onCook={onCookRecipe}
                       matchedIngredient={matchedIngredientById.get(recipe.id)}
+                      bookTitles={bookTitlesForRecipe(books, recipe.id)}
                     />
                   ))}
                 </ul>
@@ -327,6 +342,7 @@ export function RecipeSidebar({
                     onDelete={deleteRecipe}
                     onCook={onCookRecipe}
                     matchedIngredient={matchedIngredientById.get(recipe.id)}
+                    bookTitles={bookTitlesForRecipe(books, recipe.id)}
                   />
                 ))}
               </ul>

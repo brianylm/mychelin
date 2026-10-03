@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import {
-  adjustBookRecipeCounts,
+  addBookRecipeMemberships,
   booksQueryKey,
   type BookSummary,
 } from "@/lib/books-client";
@@ -115,8 +115,11 @@ export function RecipePickerModal({
       if (successCount > 0) {
         if (user?.id) {
           const queryKey = booksQueryKey(user.id);
+          const addedRecipeIds = results
+            .filter((result) => result.success)
+            .map((result) => result.recipeId);
           queryClient.setQueryData<BookSummary[]>(queryKey, (currentBooks) =>
-            adjustBookRecipeCounts(currentBooks, new Map([[bookId, successCount]]))
+            addBookRecipeMemberships(currentBooks, new Map([[bookId, addedRecipeIds]]))
           );
           void queryClient.invalidateQueries({ queryKey });
         }

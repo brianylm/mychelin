@@ -14,6 +14,7 @@ interface RecipeListItemProps {
   onDelete?: (id: number) => void;
   onCook?: (id: number) => void;
   matchedIngredient?: string | null;
+  bookTitles?: string[];
 }
 
 export function RecipeListItem({
@@ -24,6 +25,7 @@ export function RecipeListItem({
   onDelete,
   onCook,
   matchedIngredient,
+  bookTitles = [],
 }: RecipeListItemProps) {
   const qc = useQueryClient();
 
@@ -37,6 +39,7 @@ export function RecipeListItem({
   };
 
   const isDraft = recipe.status === "draft";
+  const bookSubtitle = bookTitles.length > 0 ? `In ${bookTitles.join(" · ")}` : null;
 
   return (
     <li
@@ -80,6 +83,11 @@ export function RecipeListItem({
           >
             {recipe.title}
           </span>
+          {bookSubtitle && (
+            <span className="line-clamp-2 break-words text-[11px] leading-4 text-[var(--ui-muted)]" title={bookSubtitle}>
+              {bookSubtitle}
+            </span>
+          )}
           {matchedIngredient ? (
             <span className="truncate text-[11px] text-[var(--ui-accent)]">
               Ingredient: <span className="font-semibold">{matchedIngredient}</span>

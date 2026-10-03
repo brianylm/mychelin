@@ -44,7 +44,7 @@ import { CookingPrinciples } from "@/components/books/CookingPrinciples";
 import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import type { Recipe } from "@/db/schema";
 import { RECIPE_FLAG_OPTIONS, recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
-import { booksQueryKey, fetchBooks } from "@/lib/books-client";
+import { bookTitlesForRecipe, booksQueryKey, fetchBooks } from "@/lib/books-client";
 
 interface RecipeViewProps {
   onOpenSidebar: () => void;
@@ -134,12 +134,15 @@ function RecipeLibraryCard({
   recipe,
   onSelect,
   onCook,
+  bookTitles = [],
 }: {
   recipe: RecipeCard;
   onSelect: () => void;
   onCook?: () => void;
+  bookTitles?: string[];
 }) {
   const isDraft = recipe.status === "draft";
+  const bookSubtitle = bookTitles.length > 0 ? `In ${bookTitles.join(" · ")}` : null;
 
   return (
     <article className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-[0_8px_24px_rgba(60,43,25,0.06)] transition-[border-color,box-shadow] duration-150 hover:border-[var(--ui-border-strong)] hover:shadow-[0_10px_28px_rgba(60,43,25,0.09)]">
@@ -171,6 +174,11 @@ function RecipeLibraryCard({
               </span>
             )}
           </div>
+          {bookSubtitle && (
+            <p className="mt-1 line-clamp-2 text-xs text-[var(--ui-muted)]" title={bookSubtitle}>
+              {bookSubtitle}
+            </p>
+          )}
           {recipe.cuisine && (
             <p className="mt-1 truncate text-xs font-medium text-[var(--ui-accent)]">
               {recipe.cuisine}
@@ -459,6 +467,37 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
 
   // Cache recipes after a book is opened.
   const [bookRecipesCache, setBookRecipesCache] = useState<Record<number, RecipeCard[]>>({});
+  const booksMembershipSignature = books
+    .map((book) => `${book.id}:${book.recipeIds.join(",")}`)
+    .join("|");
+  const previousBooksMembershipSignature = useRef<string | null>(null);
+
+  useEffect(() => {
+    const previous = previousBooksMembershipSignature.current;
+    previousBooksMembershipSignature.current = booksMembershipSignature;
+    if (previous === null || previous === booksMembershipSignature) return;
+
+    setBookRecipesCache({});
+    if (activeBookId === null) return;
+
+    let cancelled = false;
+    setLoadingBookRecipes(true);
+    fetch(`/api/books/${activeBookId}/recipes`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (cancelled) return;
+        setActiveBookRecipes(data);
+        setBookRecipesCache({ [activeBookId]: data });
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingBookRecipes(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBookId, booksMembershipSignature]);
 
   // Listen for create-book events from sidebar/card grid
   useEffect(() => {
@@ -946,8 +985,9 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     async (bookId: number | null) => {
       if (!selectedRecipe) return;
       await updateRecipe(selectedRecipe.id, { bookId });
+      await qc.invalidateQueries({ queryKey: booksQueryKey(user?.id ?? 0) });
     },
-    [selectedRecipe, updateRecipe]
+    [qc, selectedRecipe, updateRecipe, user?.id]
   );
 
   const flushEditableFields = useCallback(async ({
@@ -1244,6 +1284,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                             if (!response.ok) return;
                             const newRecipe = await response.json();
                             qc.invalidateQueries({ queryKey: ["recipes"] });
+                            qc.invalidateQueries({ queryKey: booksQueryKey(user?.id ?? 0) });
                             selectRecipe(newRecipe.id);
                           } catch {}
                         }}
@@ -1429,6 +1470,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                       key={recipe.id}
                       recipe={recipe}
                       onSelect={() => selectRecipe(recipe.id)}
+                      bookTitles={bookTitlesForRecipe(books, recipe.id)}
                       onCook={
                         onCookRecipe && recipe.status !== "draft"
                           ? () => onCookRecipe(recipe.id)

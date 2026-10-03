@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { books, bookMembers, bookRecipes, bookActivityLog, users, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { eq, and, desc } from "drizzle-orm";
+import { mergeBookRecipeRows } from "@/lib/book-membership";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -43,7 +44,7 @@ export async function GET(
     }
 
     // Run all independent queries in parallel to avoid sequential round-trips
-    const [book, bookRecipesList, members, activityLog] = await Promise.all([
+    const [book, linkedRecipeRows, directRecipeRows, members, activityLog] = await Promise.all([
       // Get book details
       db
         .select()
@@ -51,7 +52,7 @@ export async function GET(
         .where(eq(books.id, bookId))
         .limit(1),
 
-      // Get recipes in this book
+      // Get recipes linked through the multi-book junction.
       db
         .select({
           id: recipes.id,
@@ -71,6 +72,27 @@ export async function GET(
         .innerJoin(recipes, eq(bookRecipes.recipeId, recipes.id))
         .where(eq(bookRecipes.bookId, bookId))
         .orderBy(bookRecipes.sortOrder),
+
+      // Keep legacy recipes.book_id memberships visible too. If both paths
+      // exist, the junction row above wins when the results are merged.
+      db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          description: recipes.description,
+          cuisine: recipes.cuisine,
+          imageUrl: recipes.imageUrl,
+          prepTime: recipes.prepTime,
+          cookTime: recipes.cookTime,
+          yield: recipes.yield,
+          forkedFrom: recipes.forkedFrom,
+          addedAt: recipes.createdAt,
+          addedBy: recipes.userId,
+          sortOrder: sql<number>`0`,
+        })
+        .from(recipes)
+        .where(eq(recipes.bookId, bookId))
+        .orderBy(recipes.title),
 
       // Get members
       db
@@ -107,6 +129,8 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    const bookRecipesList = mergeBookRecipeRows(linkedRecipeRows, directRecipeRows);
 
     return NextResponse.json({
       ...book[0],
@@ -170,7 +194,7 @@ export async function PATCH(
       );
     }
 
-    const updateData: any = {
+    const updateData: Partial<typeof books.$inferInsert> = {
       updatedAt: new Date().toISOString(),
     };
 

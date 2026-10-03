@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { adjustBookRecipeCounts, type BookSummary } from "./books-client";
+import {
+  addBookRecipeMemberships,
+  bookTitlesForRecipe,
+  removeBookRecipeMemberships,
+  type BookSummary,
+} from "./books-client";
 
 const books: BookSummary[] = [
   {
@@ -9,6 +14,7 @@ const books: BookSummary[] = [
     coverEmoji: "🍲",
     coverColor: "amber",
     recipeCount: 2,
+    recipeIds: [10, 11],
   },
   {
     id: 2,
@@ -17,23 +23,27 @@ const books: BookSummary[] = [
     coverEmoji: "📚",
     coverColor: "rose",
     recipeCount: 4,
+    recipeIds: [20, 21, 22, 23],
   },
 ];
 
-describe("adjustBookRecipeCounts", () => {
-  it("updates only the affected book counts", () => {
+describe("book membership cache helpers", () => {
+  it("adds memberships idempotently and derives a count from recipe ids", () => {
     expect(
-      adjustBookRecipeCounts(books, new Map([
-        [1, 1],
-        [2, 2],
+      addBookRecipeMemberships(books, new Map([
+        [1, [11, 12]],
+        [2, [24]],
       ]))
     ).toEqual([
-      { ...books[0], recipeCount: 3 },
-      { ...books[1], recipeCount: 6 },
+      { ...books[0], recipeCount: 3, recipeIds: [10, 11, 12] },
+      { ...books[1], recipeCount: 5, recipeIds: [20, 21, 22, 23, 24] },
     ]);
   });
 
-  it("does not allow a count to fall below zero", () => {
-    expect(adjustBookRecipeCounts(books, new Map([[1, -10]]))?.[0].recipeCount).toBe(0);
+  it("removes memberships and updates visible book titles", () => {
+    const updated = removeBookRecipeMemberships(books, new Map([[1, [10]]]));
+    expect(updated?.[0]).toEqual({ ...books[0], recipeCount: 1, recipeIds: [11] });
+    expect(bookTitlesForRecipe(books, 11)).toEqual(["Weeknight dinners"]);
+    expect(bookTitlesForRecipe(books, 999)).toEqual([]);
   });
 });
