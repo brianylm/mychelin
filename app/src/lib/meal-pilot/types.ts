@@ -1,3 +1,5 @@
+import type { DishType } from "@/lib/dish-type";
+
 export type MealSource = "fresh" | "fridge" | "frozen";
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type MealStatus = "planned" | "confirmed" | "skipped";
@@ -52,6 +54,8 @@ export interface FreshMealDish {
   plannedOutput: PlannedPreparedOutput | null;
   cookedAt: string | null;
   stations: StationAssignmentView[];
+  // Meat, veg, egg… for skimming a meal's balance (see lib/dish-type).
+  dishTypes: DishType[];
 }
 
 export interface PreparedMealDish {
@@ -67,6 +71,8 @@ export interface PreparedMealDish {
   reheatNotes: string | null;
   useByDate: string | null;
   stations: StationAssignmentView[];
+  // Meat, veg, egg… for skimming a meal's balance (see lib/dish-type).
+  dishTypes: DishType[];
 }
 
 export type MealDishView = FreshMealDish | PreparedMealDish;

@@ -35,6 +35,7 @@ let notificationsEnsured = false;
 let userOAuthEnsured = false;
 let pilotFeedbackEnsured = false;
 let recipeFlagsEnsured = false;
+let recipeDishTypesEnsured = false;
 let mealPlanBlocksEnsured = false;
 let recipePhotoSourceEnsured = false;
 let householdsEnsured = false;
@@ -562,6 +563,32 @@ export async function ensureRecipeFlagsTable(): Promise<void> {
   ], "ensureRecipeFlagsTable");
 
   recipeFlagsEnsured = true;
+}
+
+export async function ensureRecipeDishTypesTable(): Promise<void> {
+  if (recipeDishTypesEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  try {
+    if ((await existingObjects(client, ["recipe_dish_types"])).has("recipe_dish_types")) {
+      recipeDishTypesEnsured = true;
+      return;
+    }
+  } catch (e: unknown) {
+    console.warn("ensureRecipeDishTypesTable probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  await runDdl(client, [
+    `CREATE TABLE IF NOT EXISTS recipe_dish_types (
+      recipe_id integer PRIMARY KEY NOT NULL REFERENCES recipes(id) ON DELETE cascade,
+      dish_types text NOT NULL,
+      updated_at text NOT NULL
+    )`,
+  ], "ensureRecipeDishTypesTable");
+
+  recipeDishTypesEnsured = true;
 }
 
 // One-time cleanup for the removed "try_soon" recipe flag (2026-08-03).

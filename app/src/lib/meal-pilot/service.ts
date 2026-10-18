@@ -1,4 +1,6 @@
 import { and, desc, eq, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
+import { classifyDish } from "@/lib/dish-type";
+import { dishTypesForRecipes } from "@/lib/dish-type-store";
 import { db } from "@/db";
 import {
   calendarActivities,
@@ -270,6 +272,14 @@ async function buildMealGroupViews(groups: MealGroup[]): Promise<MealGroupView[]
       .where(inArray(calendarActivities.mealGroupId, ids)),
   ]);
 
+  const dishTypeMap = await dishTypesForRecipes([
+    ...freshRows.map((row) => row.recipeId),
+    ...preparedRows.flatMap((row) => (row.recipeId == null ? [] : [row.recipeId])),
+  ]);
+  const dishTypesFor = (recipeId: number | null, title: string) =>
+    (recipeId != null ? dishTypeMap.get(recipeId)?.dishTypes : undefined) ??
+    classifyDish({ title });
+
   const connectionCache = new Map<
     string,
     Awaited<ReturnType<typeof activeConnectionForGroup>> | null
@@ -313,6 +323,7 @@ async function buildMealGroupViews(groups: MealGroup[]): Promise<MealGroupView[]
           stations: stationRows
             .filter((station) => station.mealPlanId === row.id)
             .map((station) => stationView(station, `fresh:${row.id}`)),
+          dishTypes: dishTypesFor(row.recipeId, row.title),
         };
       });
 
@@ -333,6 +344,7 @@ async function buildMealGroupViews(groups: MealGroup[]): Promise<MealGroupView[]
         stations: stationRows
           .filter((station) => station.reservationId === row.id)
           .map((station) => stationView(station, `prepared:${row.id}`)),
+        dishTypes: dishTypesFor(row.recipeId, row.title),
       }));
     const dishes: MealDishView[] = [...fresh, ...prepared];
     const timingResult = getMealCookingDuration(

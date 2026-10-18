@@ -36,6 +36,7 @@ function source(overrides: Partial<CalendarMealSource["mealGroup"]> = {}): Calen
         plannedOutput: null,
         cookedAt: null,
         stations: [],
+        dishTypes: [],
       },
       {
         source: "fresh",
@@ -50,6 +51,7 @@ function source(overrides: Partial<CalendarMealSource["mealGroup"]> = {}): Calen
         plannedOutput: null,
         cookedAt: null,
         stations: [],
+        dishTypes: [],
       },
       {
         source: "frozen",
@@ -64,6 +66,7 @@ function source(overrides: Partial<CalendarMealSource["mealGroup"]> = {}): Calen
         reheatNotes: "Warm gently before serving.",
         useByDate: null,
         stations: [],
+        dishTypes: [],
       },
     ],
   };
