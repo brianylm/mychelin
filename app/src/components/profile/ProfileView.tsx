@@ -7,7 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { EditableField } from "@/components/ui/EditableField";
 import { useToast } from "@/context/ToastContext";
-import { changelogEntries } from "@/lib/changelog";
+import { changelogEntries, changelogVersion } from "@/lib/changelog";
+import { readComfortMode, setComfortMode } from "@/lib/comfort-mode";
 import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { fetchViewJson, viewCacheKey, viewUrls } from "@/lib/view-cache";
@@ -180,6 +181,13 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
   const [isEnablingPush, setIsEnablingPush] = useState(false);
   const [openChangelogId, setOpenChangelogId] = useState<string | null>(null);
   const [showAllChangelog, setShowAllChangelog] = useState(false);
+  const [comfort, setComfort] = useState(false);
+  useEffect(() => setComfort(readComfortMode()), []);
+  const toggleComfort = () => {
+    const next = !comfort;
+    setComfortMode(next);
+    setComfort(next);
+  };
   const [isRhythmOpen, setIsRhythmOpen] = useState(false);
 
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -602,7 +610,9 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           )}
         </div>
 
-        <PilotChecklistPanel />
+        <div data-comfort-hide>
+          <PilotChecklistPanel />
+        </div>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
           <h2 className="mb-4 text-lg font-semibold tracking-tight text-neutral-950">Basic information</h2>
@@ -618,13 +628,41 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
         </div>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Comfort view</h2>
+              <p className="mt-1 text-sm text-ui-muted">
+                Larger text and buttons, stronger contrast, fewer extras. Saved on this device.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={comfort}
+              aria-label="Comfort view"
+              onClick={toggleComfort}
+              className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2 ${
+                comfort ? "bg-ui-action" : "bg-neutral-300"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-block h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  comfort ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+          <div className={`flex items-center justify-between${showPasswordForm ? " mb-4" : ""}`}>
             <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Security</h2>
             {!showPasswordForm && (
               <button
                 type="button"
                 onClick={() => setShowPasswordForm(true)}
-                className="text-sm font-medium text-ui-accent hover:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-ui-accent hover:underline"
               >
                 Change password
               </button>
@@ -704,7 +742,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           )}
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div data-comfort-hide className="rounded-2xl border border-neutral-200 bg-white p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Changelog</h2>
@@ -716,6 +754,11 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           <div className="space-y-2">
             {visibleChangelogEntries.map((entry) => {
               const isOpen = openChangelogId === entry.title;
+              const formattedDate = new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-SG", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              });
               return (
                 <article key={entry.title} className="rounded-xl border border-neutral-100 bg-neutral-50/70">
                   <button
@@ -727,7 +770,8 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-neutral-800">{entry.title}</span>
                       <time className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-ui-muted">
-                        {entry.date} - {entry.items.length} updates
+                        <span className="mr-2 inline-flex items-center rounded-md bg-ui-accent-muted px-1.5 py-0.5 text-[11px] font-semibold normal-case text-ui-accent">{changelogVersion(entry)}</span>
+                        {formattedDate} · {entry.items.length} updates
                       </time>
                     </span>
                     <span className="shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-600">

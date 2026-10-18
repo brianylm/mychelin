@@ -1386,6 +1386,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                       <Menu.Trigger>
                         <button
                           type="button"
+                          data-comfort-hide
                           className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm font-semibold text-[var(--ui-text)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)]"
                         >
                           <Shuffle className="h-4 w-4 shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />

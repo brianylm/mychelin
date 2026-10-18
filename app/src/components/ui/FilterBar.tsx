@@ -55,7 +55,7 @@ export function FilterBar({
       </div>
 
       {(filters.length > 0 || resultCount !== undefined) && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-3">
           {filters.map((filter) => {
             const active = activeFilter === filter.value;
             return (

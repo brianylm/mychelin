@@ -1045,6 +1045,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button
               variant="primary"
+              data-comfort-hide
               disabled={randomizing || recipes.length === 0}
               onClick={() => openRandomizeReview(currentDateRange.dates, `this ${viewType}`)}
             >
@@ -1081,7 +1082,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
           </div>
 
           {lastRandomized && (
-            <div className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-xs text-ui-text">
+            <div data-comfort-hide className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-xs text-ui-text">
               <span>
                 Planned {lastRandomized.planIds.length} meal{lastRandomized.planIds.length === 1 ? "" : "s"} for {lastRandomized.label}
               </span>
@@ -1180,6 +1181,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 <>
                                   <button
                                     type="button"
+                                    data-comfort-hide
                                     onClick={() => randomizeSlot(date, mealType)}
                                     disabled={recipes.length === 0}
                                     className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-ui-accent disabled:opacity-30"
@@ -1485,6 +1487,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                             <>
                               <button
                                 type="button"
+                                data-comfort-hide
                                 onClick={() => randomizeSlot(selectedDayDate, mealType)}
                                 disabled={recipes.length === 0}
                                 className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent disabled:opacity-40"
@@ -1712,6 +1715,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                     <>
                       <button
                         type="button"
+                        data-comfort-hide
                         onClick={() => {
                           const random =
                             filteredRecipes[
@@ -1719,8 +1723,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                             ];
                           if (random) setSelectedRecipeId(random.id);
                         }}
-                        className="flex w-full items-center justify-between gap-3 rounded-lg border border-dashed border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)] px-3 py-2 text-left text-sm font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-accent-muted)]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+                        className="inline-flex min-h-11 max-w-full flex-wrap items-center gap-1 self-start text-left text-xs font-medium text-ui-muted underline-offset-2 transition-colors hover:text-ui-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
                       >
+                        <Dices className="h-3.5 w-3.5" aria-hidden="true" />
                         <span>Surprise me from these results</span>
                         <span className="text-[11px] text-[var(--ui-muted)]">
                           Flags first, then least recent
