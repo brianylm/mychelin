@@ -209,7 +209,7 @@ test.describe("households slice 2", () => {
     // ── UI: shared inventory renders for both members ───────
     await pageA.goto("/app");
     await pageA.getByRole("button", { name: "Inventory" }).first().click();
-    await expect(pageA.getByText("Shared with household")).toBeVisible({
+    await expect(pageA.getByText(/^Shared with /).first()).toBeVisible({
       timeout: 30_000,
     });
     await expect(pageA.getByText("E2E Chicken")).toBeVisible();

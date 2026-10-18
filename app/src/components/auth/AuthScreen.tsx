@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 
 type Mode = "login" | "signup" | "forgot";
 
 const fieldClass =
-  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:bg-white focus:ring-4 focus:ring-[#800020]/10";
+  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-ui-accent/45 focus:bg-white focus:ring-4 focus:ring-ui-accent/10";
 
 export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   const { login, signup } = useAuth();
@@ -120,7 +120,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
             <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
           </div>
           <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
-            <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>
+            <span className="text-ui-accent">my</span><span className="text-ui-text">chelin</span>
           </h1>
           <p className="mt-2 text-sm text-stone-500">
             Cook like home, even in your new home.
@@ -132,7 +132,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
           onSubmit={handleSubmit}
           className="rounded-[2rem] border border-white/70 bg-white/70 p-6 shadow-[0_24px_80px_rgba(60,43,25,0.10)] backdrop-blur-2xl"
         >
-          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">
+          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">
             {mode === "login"
               ? "Welcome back"
               : mode === "signup"
@@ -149,14 +149,14 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
 
           {mode === "forgot" && forgotSent ? (
             <div className="space-y-4">
-              <p className="rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs leading-5 text-[#521224]">
+              <p className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-xs leading-5 text-[#521224]">
                 If an account exists for <strong>{email}</strong>, we&apos;ve sent a
                 password reset link. Check your inbox (and spam folder).
               </p>
               <Button
                 type="button"
-                variant="solid"
-                size="3"
+                variant="primary"
+                size="lg"
                 style={{ width: "100%" }}
                 onClick={() => switchMode("login")}
               >
@@ -233,7 +233,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                         <button
                           type="button"
                           onClick={() => switchMode("forgot")}
-                          className="text-xs font-medium text-[#800020] hover:underline"
+                          className="text-xs font-medium text-ui-accent hover:underline"
                         >
                           Forgot?
                         </button>
@@ -262,9 +262,9 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
 
               <Button
                 type="submit"
-                variant="solid"
-                size="3"
-                className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
+                variant="primary"
+                size="lg"
+                className="!rounded-full !font-semibold"
                 style={{ width: "100%", marginTop: "32px" }}
                 disabled={loading}
               >
@@ -284,7 +284,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                     <button
                       type="button"
                       onClick={() => switchMode("signup")}
-                      className="font-medium text-[#800020] hover:underline"
+                      className="font-medium text-ui-accent hover:underline"
                     >
                       Sign up
                     </button>
@@ -296,7 +296,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                     <button
                       type="button"
                       onClick={() => switchMode("login")}
-                      className="font-medium text-[#800020] hover:underline"
+                      className="font-medium text-ui-accent hover:underline"
                     >
                       Log in
                     </button>
@@ -306,7 +306,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                   <button
                     type="button"
                     onClick={() => switchMode("login")}
-                    className="font-medium text-[#800020] hover:underline"
+                    className="font-medium text-ui-accent hover:underline"
                   >
                     Back to sign in
                   </button>

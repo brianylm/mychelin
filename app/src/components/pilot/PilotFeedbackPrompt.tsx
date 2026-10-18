@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
 import { MessageSquare, X } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 
@@ -71,7 +71,7 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
     <div className="w-full max-w-md rounded-2xl border border-[#e7ded1] bg-white p-5 shadow-[0_28px_90px_rgba(40,26,19,0.18)]">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
             <MessageSquare className="h-5 w-5" />
           </span>
           <div>
@@ -79,7 +79,7 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
             <p className="mt-1 text-sm leading-5 text-neutral-500">{copy.body}</p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="rounded-full p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700" aria-label="Close feedback">
+        <button type="button" onClick={onClose} className="rounded-full p-2 text-ui-muted hover:bg-neutral-100 hover:text-neutral-700" aria-label="Close feedback">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -95,8 +95,8 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
               className={
                 "h-10 rounded-lg border text-sm font-semibold transition " +
                 (rating === value
-                  ? "border-[#800020] bg-[#800020] text-white"
-                  : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-[#800020]/30")
+                  ? "border-ui-accent bg-ui-accent text-white"
+                  : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-ui-accent/30")
               }
             >
               {value}
@@ -112,12 +112,12 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
         rows={3}
         maxLength={600}
         placeholder="Short, privacy-safe note. Avoid family names, full recipe text, or private details."
-        className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10"
+        className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10"
       />
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       <div className="mt-4 flex justify-end gap-2">
-        <Button type="button" variant="outline" size="2" onClick={onClose} disabled={saving}>Skip</Button>
-        <Button type="button" size="2" onClick={submit} disabled={saving} className="!bg-[#17131f] !text-white hover:!bg-[#800020]">
+        <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Skip</Button>
+        <Button type="button" variant="primary" size="md" onClick={submit} disabled={saving}>
           {saving ? "Saving..." : "Send feedback"}
         </Button>
       </div>

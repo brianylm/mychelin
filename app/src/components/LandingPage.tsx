@@ -59,7 +59,7 @@ export function LandingPage() {
 
   return (
     <div
-      className={`landing-content min-h-screen bg-white text-[#1A1A1A] ${brandSerif.variable} ${logoSerif.variable}`}
+      className={`landing-content min-h-screen bg-white text-ui-text ${brandSerif.variable} ${logoSerif.variable}`}
       style={{ fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
     >
       {/* ==================== NAV ==================== */}
@@ -110,7 +110,7 @@ export function LandingPage() {
             </Link>
             <Link
               href="/login?mode=signup"
-              className="relative ml-1 shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
+              className="relative ml-1 shrink-0 rounded-full bg-ui-action px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition hover:-translate-y-0.5 hover:bg-ui-accent hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
             >
               Get started
             </Link>
@@ -119,7 +119,7 @@ export function LandingPage() {
       </header>
 
       {/* ==================== HERO ==================== */}
-      <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-[#fafaf8] sm:min-h-[88vh] sm:items-center lg:min-h-screen">
+      <section className="relative flex min-h-[88vh] items-end overflow-hidden bg-ui-bg sm:min-h-[88vh] sm:items-center lg:min-h-screen">
         {/* Background image — art-directed: portrait crop on mobile so the
             browser never upscales a thin slice of the 16:9 original. */}
         {(() => {
@@ -145,7 +145,7 @@ export function LandingPage() {
             fetchPriority: "high",
           });
           return (
-            <picture>
+            <picture className="landing-hero-frame absolute inset-0">
               <source media="(max-width: 639px)" srcSet={mobileSrcSet} />
               <source media="(min-width: 640px)" srcSet={desktopSrcSet} />
               <img
@@ -179,7 +179,7 @@ export function LandingPage() {
         <div className="relative z-10 w-full max-w-5xl px-6 pb-12 pt-[52vh] sm:py-24 sm:pl-[8%] lg:pl-[12%]">
           <div className="max-w-xl">
             <h1
-              className="landing-serif text-[2.75rem] leading-[1.02] tracking-[-0.045em] text-[#1A1A1A] sm:text-6xl md:text-7xl"
+              className="landing-serif text-[2.75rem] leading-[1.02] tracking-[-0.045em] text-ui-text sm:text-6xl md:text-7xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif", fontWeight: 400 }}
             >
               Cook like home, even in your new home.
@@ -192,7 +192,7 @@ export function LandingPage() {
             <div className="mt-8 flex flex-wrap gap-6">
               <Link
                 href="/login?mode=signup"
-                className="-my-3 inline-flex min-h-11 items-center text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors"
+                className="-my-3 inline-flex min-h-11 items-center text-sm font-semibold text-stone-900 hover:text-ui-accent transition-colors"
               >
                 Try it now →
               </Link>
@@ -214,7 +214,7 @@ export function LandingPage() {
             How it works
           </p>
           <h2
-            className="landing-serif mt-4 text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+            className="landing-serif mt-4 text-4xl leading-[1.05] tracking-[-0.045em] text-ui-text sm:text-5xl lg:text-6xl"
             style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
           >
             Three steps to cook like home again.
@@ -248,11 +248,11 @@ export function LandingPage() {
               key={item.step}
               className="rounded-[2rem] border border-[#ece8df] bg-white p-6 shadow-[0_18px_60px_rgba(60,43,25,0.06)]"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-sm font-semibold text-[#800020]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-sm font-semibold text-ui-accent">
                 {item.step}
               </div>
               <h3
-                className="landing-serif mt-6 text-2xl leading-[1.08] tracking-[-0.04em] text-[#1A1A1A]"
+                className="landing-serif mt-6 text-2xl leading-[1.08] tracking-[-0.04em] text-ui-text"
                 style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
               >
                 {item.title}
@@ -276,7 +276,7 @@ export function LandingPage() {
               Features
             </p>
             <h2
-              className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A] sm:text-5xl lg:text-6xl"
+              className="landing-serif mt-6 max-w-xl text-4xl leading-[1.05] tracking-[-0.045em] text-ui-text sm:text-5xl lg:text-6xl"
               style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
             >
               Everything around the recipe, handled.
@@ -321,11 +321,11 @@ export function LandingPage() {
                   >
                     <div className="flex items-start justify-between gap-6">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#800020]">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ui-accent">
                           0{index + 1}
                         </p>
                         <h3
-                          className="landing-serif mt-4 text-3xl leading-[1.05] tracking-[-0.045em] text-[#1A1A1A]"
+                          className="landing-serif mt-4 text-3xl leading-[1.05] tracking-[-0.045em] text-ui-text"
                           style={{ fontFamily: "var(--font-brand-serif), 'Newsreader', Georgia, serif" }}
                         >
                           {feature.title}
@@ -341,7 +341,7 @@ export function LandingPage() {
                           {featurePages.map((dotFeature, dotIndex) => (
                             <span
                               key={dotFeature.title}
-                              className={`h-1.5 rounded-full transition-[width,background-color] ${dotIndex === index ? "w-5 bg-[#800020]" : "w-1.5 bg-[#d8d8d2]"}`}
+                              className={`h-1.5 rounded-full transition-[width,background-color] ${dotIndex === index ? "w-5 bg-ui-accent" : "w-1.5 bg-[#d8d8d2]"}`}
                             />
                           ))}
                         </div>
@@ -353,10 +353,10 @@ export function LandingPage() {
                     </p>
 
                     <div className="mt-6 flex justify-center">
-                      <div className="flex h-56 w-40 justify-center rounded-[1.8rem] border border-stone-900/10 bg-[#1A1A1A] p-2 shadow-[0_18px_50px_rgba(26,26,26,0.16)]">
+                      <div className="flex h-56 w-40 justify-center rounded-[1.8rem] border border-stone-900/10 bg-ui-text p-2 shadow-[0_18px_50px_rgba(26,26,26,0.16)]">
                         <div className="relative h-full w-full overflow-hidden rounded-[1.35rem] bg-white px-4 py-5">
                           <div className="absolute left-1/2 top-2 h-1.5 w-12 -translate-x-1/2 rounded-full bg-stone-900/15" />
-                          <div className="mt-5 rounded-2xl bg-[#800020]/10 px-3 py-2 text-xs font-semibold text-[#800020]">
+                          <div className="mt-5 rounded-2xl bg-ui-accent/10 px-3 py-2 text-xs font-semibold text-ui-accent">
                             {feature.screenTitle}
                           </div>
                           <div className="mt-4 space-y-2.5">
@@ -379,7 +379,7 @@ export function LandingPage() {
               <button
                 type="button"
                 onClick={showPreviousFeature}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-ui-text shadow-sm transition hover:border-ui-accent/35 hover:text-ui-accent"
                 aria-label="Show previous feature"
               >
                 ←
@@ -395,7 +395,7 @@ export function LandingPage() {
                     aria-current={index === activeFeature ? "true" : undefined}
                   >
                     <span
-                      className={`h-2 rounded-full transition-[width,background-color] ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
+                      className={`h-2 rounded-full transition-[width,background-color] ${index === activeFeature ? "w-8 bg-ui-accent" : "w-2 bg-[#d8d8d2]"}`}
                       aria-hidden="true"
                     />
                   </button>
@@ -404,7 +404,7 @@ export function LandingPage() {
               <button
                 type="button"
                 onClick={showNextFeature}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-[#1A1A1A] shadow-sm transition hover:border-[#800020]/35 hover:text-[#800020]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d8d2] bg-white text-xl leading-none text-ui-text shadow-sm transition hover:border-ui-accent/35 hover:text-ui-accent"
                 aria-label="Show next feature"
               >
                 →
@@ -418,7 +418,7 @@ export function LandingPage() {
       {/* Archived — see MYCHELIN.md */}
 
       {/* ==================== FINAL CTA ==================== */}
-      <section id="final" className="mt-20 bg-[#17131f] px-6 py-16 text-white sm:mt-28 sm:py-20">
+      <section id="final" className="mt-20 bg-ui-action px-6 py-16 text-white sm:mt-28 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#f7c86a]">
@@ -441,7 +441,7 @@ export function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-5">
               <Link
                 href="/login?mode=signup"
-                className="rounded-full bg-[#f7c86a] px-5 py-3 text-sm font-semibold text-[#17131f] transition hover:bg-[#ffd98a]"
+                className="rounded-full bg-[#f7c86a] px-5 py-3 text-sm font-semibold text-ui-action transition hover:bg-[#ffd98a]"
               >
                 Start cooking like home
               </Link>
@@ -455,7 +455,7 @@ export function LandingPage() {
 
       {/* ==================== FOOTER ==================== */}
       <footer className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs text-[#6b625c]">
+        <p className="text-xs text-ui-muted">
           Cook like home, even in your new home.
         </p>
       </footer>

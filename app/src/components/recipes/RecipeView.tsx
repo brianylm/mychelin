@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, DropdownMenu } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
+import { Menu } from "@/components/ui/Menu";
 import { ArrowLeft, BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Plus, Share2, Shuffle, Target, Users, Utensils } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
@@ -45,6 +46,8 @@ import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import type { Recipe } from "@/db/schema";
 import { RECIPE_FLAG_OPTIONS, recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
 import { bookTitlesForRecipe, booksQueryKey, fetchBooks } from "@/lib/books-client";
+import { fetchViewJson, viewCacheKey, viewUrls } from "@/lib/view-cache";
+import { HouseholdSharedRecipes } from "@/components/household/HouseholdSharedRecipes";
 
 interface RecipeViewProps {
   onOpenSidebar: () => void;
@@ -387,6 +390,14 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   } = useRecipeStore();
   const { addToast } = useToast();
   const { user } = useAuth();
+  // Household-shared recipes show in the Library (not the personal list)
+  // while the user is in a household. Reads the warmed tab cache entry.
+  const { data: householdData } = useQuery({
+    queryKey: viewCacheKey(user?.id ?? 0, viewUrls.households),
+    queryFn: () => fetchViewJson(viewUrls.households),
+    enabled: HOUSEHOLDS_ENABLED && Boolean(user?.id),
+  });
+  const inHousehold = Boolean((householdData as { household?: unknown } | undefined)?.household);
   const qc = useQueryClient();
 
   const [title, setTitle] = useState("");
@@ -1099,14 +1110,14 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       footer={
         <div className="flex gap-2">
           <Button
-            variant="soft"
-            color="gray"
+            variant="secondary"
             onClick={() => setSurpriseByOpen(false)}
           >
             Cancel
           </Button>
           <Button
-            className="flex-1 bg-ui-action hover:bg-ui-accent text-white"
+            variant="primary"
+            className="flex-1"
             onClick={async () => {
               const q = surpriseByQuery.trim();
               if (!q) {
@@ -1191,7 +1202,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
   if (!selectedRecipe) {
     if (recipes.length === 0) {
       return (
-        <div className="flex flex-1 items-center justify-center bg-[var(--ui-bg)] px-5 py-10 pb-24 text-[var(--ui-muted)] md:pb-10">
+        <div className="flex flex-1 flex-col items-center justify-center-safe overflow-y-auto bg-[var(--ui-bg)] px-5 py-10 pb-24 text-[var(--ui-muted)] md:pb-10">
           <div className="mx-auto max-w-md text-center">
             <img
               src="/icons/icon-welcome.png"
@@ -1216,6 +1227,11 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               Add your first recipe
             </button>
           </div>
+          {inHousehold && (
+            <div className="mx-auto mt-10 w-full max-w-2xl text-left">
+              <HouseholdSharedRecipes onCookRecipe={onCookRecipe} />
+            </div>
+          )}
           {createBookModalEl}
           {shareModalEl}
         </div>
@@ -1365,8 +1381,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                     </p>
                   </div>
                   <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
-                    <DropdownMenu.Root>
-                      <DropdownMenu.Trigger>
+                    <Menu.Root>
+                      <Menu.Trigger>
                         <button
                           type="button"
                           className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-3 text-sm font-semibold text-[var(--ui-text)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)]"
@@ -1375,9 +1391,9 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                           <span className="sm:hidden">Surprise</span>
                           <span className="hidden sm:inline">Surprise me</span>
                         </button>
-                      </DropdownMenu.Trigger>
-                      <DropdownMenu.Content>
-                        <DropdownMenu.Item
+                      </Menu.Trigger>
+                      <Menu.Content>
+                        <Menu.Item
                           onClick={() => {
                             const random = recipes[Math.floor(Math.random() * recipes.length)];
                             selectRecipe(random.id);
@@ -1385,8 +1401,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                         >
                           <Shuffle className="h-4 w-4" />
                           Just surprise me
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item
+                        </Menu.Item>
+                        <Menu.Item
                           onClick={() => {
                             setSurpriseByQuery("");
                             setSurpriseByOpen(true);
@@ -1394,9 +1410,9 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                         >
                           <Target className="h-4 w-4" />
                           Surprise me by…
-                        </DropdownMenu.Item>
-                      </DropdownMenu.Content>
-                    </DropdownMenu.Root>
+                        </Menu.Item>
+                      </Menu.Content>
+                    </Menu.Root>
                     <button
                       type="button"
                       onClick={() => {
@@ -1451,6 +1467,12 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                       </button>
                     ))}
                   </div>
+                </section>
+              )}
+
+              {inHousehold && (
+                <section className="mb-8">
+                  <HouseholdSharedRecipes onCookRecipe={onCookRecipe} />
                 </section>
               )}
 

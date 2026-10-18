@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { useState } from "react";
+import { X } from "lucide-react";
 import {
   CalendarEvent,
   generateICS,
@@ -20,13 +19,12 @@ interface CalendarExportProps {
 }
 
 export function CalendarExport({ events, onClose, title }: CalendarExportProps) {
-  const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
+  // Only mounted after a user opens the export sheet, so navigator exists.
+  const [platform] = useState<"ios" | "android" | "desktop">(() =>
+    typeof navigator === "undefined" ? "desktop" : detectPlatform()
+  );
   const [exporting, setExporting] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
-
-  useEffect(() => {
-    setPlatform(detectPlatform());
-  }, []);
 
   if (events.length === 0) {
     return null;
@@ -97,8 +95,8 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             <span className="text-lg">📅</span>
             <h3 className="font-semibold text-neutral-800">Send to Calendar</h3>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600">
-            <Cross2Icon className="w-5 h-5" />
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-100 text-ui-muted hover:text-neutral-600">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -120,18 +118,18 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             disabled={exporting !== null}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
               isPrimary("google")
-                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
+                ? "bg-ui-accent/5 text-ui-accent border-2 border-ui-accent/15"
                 : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("google") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("google") ? "bg-ui-action text-white" : "bg-white text-neutral-600"}`}>
               <span className="text-lg">🌐</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Google Calendar</div>
               <div className="text-xs text-neutral-500 truncate">Opens pre-filled event</div>
             </div>
-            {exporting === "google" && <span className="text-xs text-neutral-400">Opening...</span>}
+            {exporting === "google" && <span className="text-xs text-ui-muted">Opening...</span>}
           </button>
 
           <button
@@ -139,18 +137,18 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             disabled={exporting !== null}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
               isPrimary("outlook")
-                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
+                ? "bg-ui-accent/5 text-ui-accent border-2 border-ui-accent/15"
                 : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("outlook") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("outlook") ? "bg-ui-action text-white" : "bg-white text-neutral-600"}`}>
               <span className="text-lg">📧</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Outlook</div>
               <div className="text-xs text-neutral-500 truncate">Opens pre-filled event</div>
             </div>
-            {exporting === "outlook" && <span className="text-xs text-neutral-400">Opening...</span>}
+            {exporting === "outlook" && <span className="text-xs text-ui-muted">Opening...</span>}
           </button>
 
           <button
@@ -158,18 +156,18 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
             disabled={exporting !== null}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
               isPrimary("apple")
-                ? "bg-[#800020]/5 text-[#800020] border-2 border-[#800020]/15"
+                ? "bg-ui-accent/5 text-ui-accent border-2 border-ui-accent/15"
                 : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-2 border-transparent"
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("apple") ? "bg-[#17131f] text-white" : "bg-white text-neutral-600"}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isPrimary("apple") ? "bg-ui-action text-white" : "bg-white text-neutral-600"}`}>
               <span className="text-lg">📲</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm">Apple Calendar</div>
               <div className="text-xs text-neutral-500 truncate">Share or download .ics file</div>
             </div>
-            {exporting === "apple" && <span className="text-xs text-neutral-400">Sharing...</span>}
+            {exporting === "apple" && <span className="text-xs text-ui-muted">Sharing...</span>}
           </button>
 
           <button
@@ -184,7 +182,7 @@ export function CalendarExport({ events, onClose, title }: CalendarExportProps) 
               <div className="font-semibold text-sm">Download .ics</div>
               <div className="text-xs text-neutral-500 truncate">For any other calendar app</div>
             </div>
-            {exporting === "ics" && <span className="text-xs text-neutral-400">Downloading...</span>}
+            {exporting === "ics" && <span className="text-xs text-ui-muted">Downloading...</span>}
           </button>
         </div>
 

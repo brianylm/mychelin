@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef } from "react";
-import { Button } from "@radix-ui/themes";
-import { PlusIcon } from "@radix-ui/react-icons";
-import { ClipboardList, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui";
+import { ClipboardList, Plus, Trash2 } from "lucide-react";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import { IngredientTypeahead } from "@/components/ui/IngredientTypeahead";
 import type { Ingredient } from "@/db/schema";
@@ -56,13 +55,13 @@ interface IngredientListProps {
 }
 
 const fieldBase =
-  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
+  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
 const editNameFieldBase =
-  "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 sm:h-10 sm:text-sm";
+  "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 sm:h-10 sm:text-sm";
 const editAmountFieldBase =
-  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
+  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10";
 const editDetailFieldBase =
-  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10";
+  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10";
 
 type IngredientDraft = {
   name: string;
@@ -417,14 +416,14 @@ export function IngredientList({
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
               {ingredients.length}
             </span>
           </div>
         </div>
 
         {ingredients.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-neutral-400">
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-ui-muted">
             No ingredients yet
           </p>
         ) : (
@@ -433,7 +432,7 @@ export function IngredientList({
               const amount = formatReadOnlyIngredientAmount(ing, scale);
               return (
                 <li key={ing.id} className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-2.5">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#800020]/45" />
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-ui-accent/45" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span className="font-medium text-neutral-800">{ing.name}</span>
@@ -455,7 +454,7 @@ export function IngredientList({
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
             {ingredients.length}
           </span>
         </div>
@@ -466,7 +465,7 @@ export function IngredientList({
               setIsAdding(false);
               setIsBulkAdding(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 transition hover:border-[#800020]/30 hover:text-[#800020]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 transition hover:border-ui-accent/30 hover:text-ui-accent"
           >
             <ClipboardList className="h-3.5 w-3.5" />
             Paste list
@@ -485,8 +484,8 @@ export function IngredientList({
                   type="button"
                   className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold transition ${
                     ing.approximate
-                      ? "border-[#800020]/25 bg-[#800020]/10 text-[#800020]"
-                      : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/20 hover:text-[#800020]"
+                      ? "border-ui-accent/25 bg-ui-accent/10 text-ui-accent"
+                      : "border-neutral-200 bg-white text-neutral-500 hover:border-ui-accent/20 hover:text-ui-accent"
                   }`}
                   onClick={() => toggleApproximate(ing)}
                   aria-label={
@@ -558,7 +557,7 @@ export function IngredientList({
                     {nameInput}
                     <div className="grid grid-cols-[64px_minmax(82px,1fr)_auto] items-center gap-2 sm:contents">
                       {scale !== 1 && ing.quantity ? (
-                        <span className="flex h-10 w-full items-center justify-center rounded-lg border border-[#800020]/10 bg-white px-2 text-center text-sm font-medium tabular-nums text-[#800020]">
+                        <span className="flex h-10 w-full items-center justify-center rounded-lg border border-ui-accent/10 bg-white px-2 text-center text-sm font-medium tabular-nums text-ui-accent">
                           {formatScaledQuantity(ing.quantity, scale)}
                         </span>
                       ) : (
@@ -598,7 +597,7 @@ export function IngredientList({
                 <div className={`mt-2 grid gap-2 ${!ing.approximate && ing.quantityText ? "sm:grid-cols-2" : ""}`}>
                   {!ing.approximate && ing.quantityText && (
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted">
                         Amount text
                       </span>
                       <input
@@ -616,7 +615,7 @@ export function IngredientList({
                     </label>
                   )}
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted">
                       Prep note
                     </span>
                     <input
@@ -640,7 +639,7 @@ export function IngredientList({
       )}
 
       {isBulkAdding && (
-        <div className="mb-3 rounded-lg border border-[#800020]/15 bg-[#800020]/5 p-3">
+        <div className="mb-3 rounded-lg border border-ui-accent/15 bg-ui-accent/5 p-3">
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
@@ -648,25 +647,24 @@ export function IngredientList({
 2 tbsp light soy sauce, 300 g yellow noodles
 a handful coriander`}
             rows={5}
-            className="w-full resize-y rounded-lg border border-[#800020]/15 bg-white px-3 py-2 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+            className="w-full resize-y rounded-lg border border-ui-accent/15 bg-white px-3 py-2 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 placeholder:text-neutral-400"
             autoFocus
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Button
-              size="1"
-              variant="solid"
+              size="sm"
+              variant="primary"
               onClick={handleBulkAdd}
               disabled={parsedBulkIngredients.length === 0 || bulkSaving}
             >
-              <PlusIcon className="h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {bulkSaving
                 ? "Adding..."
                 : `Add ${parsedBulkIngredients.length || ""} ingredient${parsedBulkIngredients.length === 1 ? "" : "s"}`.trim()}
             </Button>
             <Button
-              size="1"
-              variant="soft"
-              color="gray"
+              size="sm"
+              variant="secondary"
               onClick={() => {
                 setBulkText("");
                 setIsBulkAdding(false);
@@ -746,7 +744,7 @@ a handful coriander`}
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, unit: e.target.value }))
                 }
-                className={`flex-1 ${fieldBase} ${!draft.unit ? "text-neutral-400" : "text-neutral-900"}`}
+                className={`flex-1 ${fieldBase} ${!draft.unit ? "text-ui-muted" : "text-neutral-900"}`}
               >
                 <option value="">Select unit...</option>
                 {UNIT_OPTIONS.filter(Boolean).map((u) => (
@@ -766,8 +764,8 @@ a handful coriander`}
             }
             className={`mb-3 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${
               draft.approximate
-                ? "border-[#800020]/30 bg-[#800020]/5 text-[#800020]"
-                : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300 hover:text-neutral-500"
+                ? "border-ui-accent/30 bg-ui-accent/5 text-ui-accent"
+                : "border-neutral-200 bg-white text-ui-muted hover:border-neutral-300 hover:text-neutral-500"
             }`}
           >
             <span className="text-xs leading-none">≈</span>
@@ -775,13 +773,12 @@ a handful coriander`}
           </button>
 
           <div className="flex gap-2">
-            <Button size="1" variant="solid" onClick={handleAdd}>
+            <Button size="sm" variant="primary" onClick={handleAdd}>
               Add
             </Button>
             <Button
-              size="1"
-              variant="soft"
-              color="gray"
+              size="sm"
+              variant="secondary"
               onClick={async () => {
                 if (draft.name.trim()) {
                   await handleAdd();
@@ -795,15 +792,15 @@ a handful coriander`}
         </div>
       ) : (
         <Button
-          size="2"
-          variant="soft"
+          size="md"
+          variant="secondary"
           className="w-full"
           onClick={() => {
             setIsBulkAdding(false);
             setIsAdding(true);
           }}
         >
-          <PlusIcon className="mr-1 h-4 w-4" />
+          <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
           {ingredients.length === 0 ? "Add ingredients" : "Add ingredient"}
         </Button>
       )}

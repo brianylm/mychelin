@@ -140,7 +140,7 @@ export function FirstCookMissionFlow({
         hideCloseButton
       >
         <div className="flex flex-col items-center px-2 pb-4 pt-2 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
             <Check className="h-7 w-7" aria-hidden="true" />
           </span>
           <p className="logo-serif mt-5 text-2xl font-bold leading-tight text-[var(--ui-text)]">
@@ -285,10 +285,10 @@ export function FirstCookMissionFlow({
       onClose={onClose}
       title={
         <span className="flex items-center gap-2">
-          {step === 0 && <ChefHat className="h-5 w-5 text-[#800020]" aria-hidden="true" />}
-          {step === 1 && <CalendarClock className="h-5 w-5 text-[#800020]" aria-hidden="true" />}
-          {step === 2 && <ShoppingCart className="h-5 w-5 text-[#800020]" aria-hidden="true" />}
-          {step === 3 && <Play className="h-5 w-5 text-[#800020]" aria-hidden="true" />}
+          {step === 0 && <ChefHat className="h-5 w-5 text-ui-accent" aria-hidden="true" />}
+          {step === 1 && <CalendarClock className="h-5 w-5 text-ui-accent" aria-hidden="true" />}
+          {step === 2 && <ShoppingCart className="h-5 w-5 text-ui-accent" aria-hidden="true" />}
+          {step === 3 && <Play className="h-5 w-5 text-ui-accent" aria-hidden="true" />}
           {STEP_LABELS[step]}
         </span>
       }
@@ -310,7 +310,7 @@ export function FirstCookMissionFlow({
             key={index}
             className={
               "h-1.5 flex-1 rounded-full transition " +
-              (index <= step ? "bg-[#800020]" : "bg-[var(--ui-border)]")
+              (index <= step ? "bg-ui-accent" : "bg-[var(--ui-border)]")
             }
           />
         ))}
@@ -350,8 +350,8 @@ export function FirstCookMissionFlow({
                     className={
                       "flex min-h-12 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition " +
                       (isSelected
-                        ? "border-[#800020]/40 bg-[#800020]/5 shadow-sm"
-                        : "border-[var(--ui-border)] bg-white hover:border-[#800020]/20")
+                        ? "border-ui-accent/40 bg-ui-accent/5 shadow-sm"
+                        : "border-[var(--ui-border)] bg-white hover:border-ui-accent/20")
                     }
                   >
                     <span className="min-w-0">
@@ -368,7 +368,7 @@ export function FirstCookMissionFlow({
                       className={
                         "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] " +
                         (isSelected
-                          ? "border-[#800020] bg-[#800020] text-white"
+                          ? "border-ui-accent bg-ui-accent text-white"
                           : "border-[var(--ui-border-strong)] text-transparent")
                       }
                     >
@@ -410,7 +410,7 @@ export function FirstCookMissionFlow({
       {step === 3 && (
         <div className="min-h-[16rem]">
           <div className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">
               Tonight&rsquo;s dish
             </p>
             <p className="logo-serif mt-2 text-2xl font-bold leading-tight text-[var(--ui-text)]">

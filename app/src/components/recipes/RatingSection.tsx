@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { IconButton, Tooltip } from "@radix-ui/themes";
-import { StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
+import { Star } from "lucide-react";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 
 interface RatingSectionProps {
@@ -35,27 +34,27 @@ function StarRating({
       </span>
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
-          <Tooltip key={star} content={`${star} star${star !== 1 ? "s" : ""}`}>
-            <IconButton
-              variant="ghost"
-              size="1"
-              className={`!h-auto !p-1 transition-colors ${
-                star <= (hovered ?? value ?? 0)
-                  ? "text-[#800020]/70 hover:text-[#800020]"
-                  : "text-neutral-300 hover:text-[#800020]/50"
-              }`}
-              onMouseEnter={() => setHovered(star)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => onChange(value === star ? null : star)}
-              aria-label={`${star} star${star !== 1 ? "s" : ""}`}
-            >
-              {star <= (hovered ?? value ?? 0) ? (
-                <StarFilledIcon className="h-5 w-5" />
-              ) : (
-                <StarIcon className="h-5 w-5" />
-              )}
-            </IconButton>
-          </Tooltip>
+          <button
+            key={star}
+            type="button"
+            title={`${star} star${star !== 1 ? "s" : ""}`}
+            className={`rounded-md p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus ${
+              star <= (hovered ?? value ?? 0)
+                ? "text-ui-accent/70 hover:text-ui-accent"
+                : "text-neutral-300 hover:text-ui-accent/50"
+            }`}
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onChange(value === star ? null : star)}
+            aria-label={`${star} star${star !== 1 ? "s" : ""}`}
+            aria-pressed={star <= (value ?? 0)}
+          >
+            <Star
+              className="h-5 w-5"
+              fill={star <= (hovered ?? value ?? 0) ? "currentColor" : "none"}
+              aria-hidden="true"
+            />
+          </button>
         ))}
       </div>
       {value && (

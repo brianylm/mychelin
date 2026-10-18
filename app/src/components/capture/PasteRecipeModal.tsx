@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MagicWandIcon, Link2Icon } from "@radix-ui/react-icons";
+import { Link, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui";
 import { WorkflowDialog, WorkflowProcessing, WorkflowError } from "@/components/ui/WorkflowDialog";
 import { RecipeCaptureReview } from "./RecipeCaptureReview";
@@ -391,7 +391,7 @@ export function PasteRecipeModal({
             {!isUrl && <span>{text.length.toLocaleString()} characters</span>}
             {hasValidUrl && (
               <span className="inline-flex items-center gap-1.5 text-ui-success">
-                <Link2Icon className="h-3 w-3" />
+                <Link className="h-3 w-3" aria-hidden="true" />
                 URL detected — will fetch and extract the recipe
               </span>
             )}
@@ -458,7 +458,7 @@ export function PasteRecipeModal({
               </Button>
             </>
           )}
-          <Button onClick={handleExtract} iconStart={<MagicWandIcon />}>
+          <Button onClick={handleExtract} iconStart={<WandSparkles className="h-[15px] w-[15px]" aria-hidden="true" />}>
             Retry
           </Button>
         </WorkflowError>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Button, IconButton } from "@radix-ui/themes";
-import { Cross2Icon, PlayIcon } from "@radix-ui/react-icons";
+import { Button, IconButton } from "@/components/ui";
+import { Play, X } from "lucide-react";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
 interface VoiceRecordingProps {
@@ -142,20 +142,19 @@ export function VoiceRecording({
                 className="group flex items-center gap-3 rounded-lg border border-neutral-100 bg-neutral-50/50 px-3 py-2"
               >
                 <IconButton
-                  variant="soft"
-                  size="2"
-                  radius="full"
+                  variant="secondary"
+                  aria-label={playingId === clip.id ? "Pause voice recording" : "Play voice recording"}
                   onClick={() => playClip(clip)}
                   className={
                     playingId === clip.id
-                      ? "bg-[#800020]/10 text-[#800020]"
+                      ? "bg-ui-accent/10 text-ui-accent"
                       : ""
                   }
                 >
                   {playingId === clip.id ? (
                     <span className="text-xs font-bold">⏸</span>
                   ) : (
-                    <PlayIcon />
+                    <Play className="h-[15px] w-[15px]" />
                   )}
                 </IconButton>
 
@@ -190,13 +189,12 @@ export function VoiceRecording({
                 </div>
 
                 <IconButton
-                  variant="ghost"
-                  size="1"
-                  color="red"
+                  variant="quiet"
+                  aria-label={`Delete ${clip.label || "voice recording"}`}
                   className="opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={() => onDeleteRecording(clip.id)}
                 >
-                  <Cross2Icon />
+                  <X className="h-[15px] w-[15px]" />
                 </IconButton>
               </li>
             ))}
@@ -217,9 +215,7 @@ export function VoiceRecording({
               </p>
             </div>
             <Button
-              variant="solid"
-              color="red"
-              size="2"
+              variant="danger"
               onClick={stopRecording}
             >
               Stop
@@ -227,8 +223,7 @@ export function VoiceRecording({
           </div>
         ) : (
           <Button
-            variant="soft"
-            size="2"
+            variant="secondary"
             className="w-full"
             onClick={startRecording}
           >
@@ -243,7 +238,7 @@ export function VoiceRecording({
           </p>
         )}
 
-        <p className="text-[10px] text-neutral-400">
+        <p className="text-[10px] text-ui-muted">
           Record grandma explaining the recipe in her own words and dialect.
           These recordings are stored locally until you upload.
         </p>

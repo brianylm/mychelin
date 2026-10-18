@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Button } from "@radix-ui/themes";
-import { StopIcon, MagicWandIcon, ChevronDownIcon } from "@radix-ui/react-icons";
-import { AlertCircle, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower, X } from "lucide-react";
+import { Button } from "@/components/ui";
+import { AlertCircle, ChevronDown, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower, Square, WandSparkles, X } from "lucide-react";
 import { ChatBubble } from "./ChatBubble";
 import { RecipeCaptureReview } from "./RecipeCaptureReview";
 import { WorkflowDialog } from "@/components/ui/WorkflowDialog";
@@ -129,13 +128,13 @@ function isSetupError(message: string): boolean {
 function ErrorBanner({ message }: { message: string }) {
   if (isSetupError(message)) {
     return (
-      <div className="border-t border-[#800020]/15 bg-[#800020]/5 px-4 py-3 text-xs text-[#241017]">
+      <div className="border-t border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-xs text-[#241017]">
         <div className="mb-1 flex items-center gap-1.5 font-semibold">
           <span>AI capture needs speech and text keys</span>
         </div>
         <p className="leading-relaxed text-[#521224]">
-          Add <code className="rounded bg-[#800020]/10 px-1">OPENAI_API_KEY</code>{" "}
-          for speech-to-text and <code className="rounded bg-[#800020]/10 px-1">DEEPSEEK_API_KEY</code>{" "}
+          Add <code className="rounded bg-ui-accent/10 px-1">OPENAI_API_KEY</code>{" "}
+          for speech-to-text and <code className="rounded bg-ui-accent/10 px-1">DEEPSEEK_API_KEY</code>{" "}
           for conversation gist, prompts, and recipe extraction.
         </p>
       </div>
@@ -200,16 +199,16 @@ function ConversationAssistPanel({
 
   return (
     <div
-      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[#eadfd0] bg-[#fffaf4]/95 px-4 py-3 shadow-[0_12px_32px_rgba(60,43,25,0.08)] backdrop-blur"
+      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[#eadfd0] bg-ui-action-text/95 px-4 py-3 shadow-[0_12px_32px_rgba(60,43,25,0.08)] backdrop-blur"
       aria-live="polite"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ui-accent/10 text-ui-accent">
             <Languages className="h-4 w-4" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#800020]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ui-accent">
               Live helper
             </p>
             <p className="truncate text-xs text-stone-500">
@@ -223,11 +222,11 @@ function ConversationAssistPanel({
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-stone-600 ring-1 ring-[#eadfd0]">
-            <RadioTower className="h-3 w-3 text-[#800020]" aria-hidden="true" />
+            <RadioTower className="h-3 w-3 text-ui-accent" aria-hidden="true" />
             {statusLabel}
           </span>
           {copiedQuestion && (
-            <span className="flex items-center gap-1 rounded-full bg-[#17131f] px-2.5 py-1 text-[10px] font-semibold text-white">
+            <span className="flex items-center gap-1 rounded-full bg-ui-action px-2.5 py-1 text-[10px] font-semibold text-white">
               <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
               Copied
             </span>
@@ -270,7 +269,7 @@ function ConversationAssistPanel({
             {visibleQuestions.map((question) => (
               <div
                 key={question}
-                className="relative min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2"
+                className="relative min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2"
               >
                 <button
                   type="button"
@@ -295,10 +294,10 @@ function ConversationAssistPanel({
             <button
               type="button"
               onClick={() => setShowOverflow((v) => !v)}
-              className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 transition hover:text-[#800020]"
+              className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 transition hover:text-ui-accent"
               aria-expanded={showOverflow}
             >
-              <ChevronDownIcon className={showOverflow ? "rotate-180" : ""} />
+              <ChevronDown className={`h-[15px] w-[15px] ${showOverflow ? "rotate-180" : ""}`} aria-hidden="true" />
               {showOverflow ? "Show fewer" : `Show more (${overflowCount})`}
             </button>
           )}
@@ -1316,10 +1315,10 @@ export function ConversationCapture({
 
               {connecting && (
                 <div className="flex justify-center py-2">
-                  <div className="flex items-center gap-2 rounded-full bg-[#800020]/5 px-3 py-1 text-[11px] text-[#800020] ring-1 ring-[#800020]/10">
+                  <div className="flex items-center gap-2 rounded-full bg-ui-accent/5 px-3 py-1 text-[11px] text-ui-accent ring-1 ring-ui-accent/10">
                     <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#800020]/40 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#800020]" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-accent/40 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-ui-accent" />
                     </span>
                     Opening microphone...
                   </div>
@@ -1329,8 +1328,8 @@ export function ConversationCapture({
               {messages.length === 0 && !isRecording && !connecting && (
                 <div className="flex h-full items-center justify-center">
                   {showConsent && !consentAcked ? (
-                    <div className="max-w-xs rounded-2xl border border-[#800020]/15 bg-white p-4 text-center shadow-sm">
-                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#800020]/10 text-[#800020]">
+                    <div className="max-w-xs rounded-2xl border border-ui-accent/15 bg-white p-4 text-center shadow-sm">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent">
                         <Mic2 className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <p className="text-sm font-semibold text-neutral-800">
@@ -1352,7 +1351,7 @@ export function ConversationCapture({
                             setShowConsent(false);
                             void startRecording();
                           }}
-                          className="rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#800020]"
+                          className="rounded-full bg-ui-action px-4 py-2 text-sm font-semibold text-white transition hover:bg-ui-accent"
                         >
                           Got it — start recording
                         </button>
@@ -1367,7 +1366,7 @@ export function ConversationCapture({
                     </div>
                   ) : (
                     <div className="max-w-xs text-center">
-                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#800020]/10 text-[#800020]">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent">
                         <Mic2 className="h-6 w-6" aria-hidden="true" />
                       </div>
                       <p className="text-sm leading-6 text-neutral-600">
@@ -1423,7 +1422,7 @@ export function ConversationCapture({
                   />
                   {m.isPartial && (
                     <div className="-mt-3 mb-3 flex justify-start pl-2">
-                      <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#800020]">
+                      <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-accent">
                         updating
                       </span>
                     </div>
@@ -1445,10 +1444,10 @@ export function ConversationCapture({
 
               {isRecording && processingChunks > 0 && (
                 <div className="flex justify-center py-2">
-                  <div className="flex items-center gap-2 rounded-full bg-[#800020]/5 px-3 py-1 text-[11px] text-[#800020]">
+                  <div className="flex items-center gap-2 rounded-full bg-ui-accent/5 px-3 py-1 text-[11px] text-ui-accent">
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#800020]/50" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-ui-accent/50" />
                     </span>
                     Transcribing the last few seconds...
                   </div>
@@ -1467,7 +1466,7 @@ export function ConversationCapture({
                     onClick={stopRecording}
                     className="flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-red-600 active:scale-95"
                   >
-                    <StopIcon className="h-4 w-4" />
+                    <Square className="h-4 w-4" aria-hidden="true" />
                     Stop
                   </button>
                 ) : (
@@ -1477,7 +1476,7 @@ export function ConversationCapture({
                       else void startRecording();
                     }}
                     disabled={connecting}
-                    className="flex items-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#800020] active:scale-95 disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-full bg-ui-action px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-ui-accent active:scale-95 disabled:opacity-60"
                   >
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
@@ -1492,10 +1491,10 @@ export function ConversationCapture({
                 )}
                 {messages.length > 0 && !isRecording && (
                   <Button
+                    variant="primary"
                     onClick={goToNaming}
-                    className="bg-[#17131f] hover:bg-[#800020] text-white"
                   >
-                    <MagicWandIcon />
+                    <WandSparkles className="h-[15px] w-[15px]" aria-hidden="true" />
                     Done
                   </Button>
                 )}
@@ -1531,11 +1530,11 @@ export function ConversationCapture({
                       className="rounded-xl border border-neutral-200 bg-white p-3"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-ui-muted">
                           {label}
                           {side === "right" ? " · right side" : " · left side"}
                         </span>
-                        <span className="text-[10px] text-neutral-400">
+                        <span className="text-[10px] text-ui-muted">
                           {messages.filter((m) => m.speakerLabel === label).length}{" "}
                           turns
                         </span>
@@ -1550,7 +1549,7 @@ export function ConversationCapture({
                           }))
                         }
                         placeholder="e.g. Ah Ma, Me, Grandpa"
-                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white"
+                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white"
                       />
                       {preview && (
                         <p className="mt-2 line-clamp-2 text-xs text-neutral-500 italic">
@@ -1566,17 +1565,18 @@ export function ConversationCapture({
             {errorMessage && <ErrorBanner message={errorMessage} />}
 
             <div className="flex items-center gap-2 border-t border-neutral-200 bg-white px-4 py-3">
-              <Button variant="soft" color="gray" onClick={() => setStep("recording")}>
+              <Button variant="secondary" onClick={() => setStep("recording")}>
                 Back
               </Button>
               <Button
+                variant="primary"
                 onClick={extractConversationForReview}
-                className="flex-1 bg-[#17131f] hover:bg-[#800020] text-white"
+                className="flex-1"
                 disabled={uniqueSpeakerLabels.some(
                   (l) => !speakerNameMap[l]?.trim()
                 )}
               >
-                <MagicWandIcon />
+                <WandSparkles className="h-[15px] w-[15px]" aria-hidden="true" />
                 Review extracted recipe
               </Button>
             </div>
@@ -1612,11 +1612,11 @@ export function ConversationCapture({
 
         {step === "processing" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#800020]/15 border-t-[#800020]" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-ui-accent/15 border-t-ui-accent" />
             <p className="text-center text-sm text-neutral-700">
               {reviewRecipe ? "Saving the reviewed recipe..." : "Extracting the recipe from your conversation..."}
             </p>
-            <p className="text-center text-xs text-neutral-400">
+            <p className="text-center text-xs text-ui-muted">
               This usually takes 5-15 seconds.
             </p>
           </div>

@@ -39,7 +39,7 @@ export function ForkedFromBadge({ forkedFrom, onNavigate }: ForkedFromBadgeProps
   const displayTitle = embeddedTitle || fetchedTitle || `Recipe #${originalId}`;
 
   return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-[#800020]/15 bg-[#800020]/5 px-3 py-2 text-sm text-[#800020]">
+    <div className="flex items-center gap-1.5 rounded-lg border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-sm text-ui-accent">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="18" r="3"/>
         <circle cx="6" cy="6" r="3"/>

@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
-import { Bell, BellOff, CalendarClock, CheckCircle2, ChevronDown, Flame, Target } from "lucide-react";
+import { Button } from "@/components/ui";
+import { Bell, BellOff, CalendarClock, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, Flame, House, Target } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { EditableField } from "@/components/ui/EditableField";
 import { useToast } from "@/context/ToastContext";
 import { changelogEntries } from "@/lib/changelog";
 import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
+import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
+import { fetchViewJson, viewCacheKey, viewUrls } from "@/lib/view-cache";
 
 const GOAL_OPTIONS = [1, 2, 3, 4, 5, 6];
 
@@ -115,8 +118,51 @@ function ProfileSkeleton() {
   );
 }
 
-export function ProfileView() {
+function ProfileLinkRow({
+  icon,
+  title,
+  detail,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  detail: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 border-b border-neutral-100 px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-neutral-50"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-neutral-900">{title}</span>
+        <span className="mt-0.5 block truncate text-xs text-neutral-500">{detail}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
+    </button>
+  );
+}
+
+interface ProfileViewProps {
+  // Household settings and the cooking log moved here from the main nav.
+  onOpenHousehold?: () => void;
+  onOpenActivity?: () => void;
+}
+
+export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProps = {}) {
   const { user, logout } = useAuth();
+  // Shares the tab cache entry that the workspace warm-up fills.
+  const { data: householdData } = useQuery({
+    queryKey: viewCacheKey(user?.id ?? 0, viewUrls.households),
+    queryFn: () => fetchViewJson(viewUrls.households),
+    enabled: HOUSEHOLDS_ENABLED && Boolean(user?.id && onOpenHousehold),
+  });
+  const householdName =
+    (householdData as { household?: { name?: string } | null } | undefined)?.household?.name ?? null;
   const { addToast } = useToast();
 
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -389,6 +435,31 @@ export function ProfileView() {
           </div>
         </div>
 
+        {(onOpenActivity || (HOUSEHOLDS_ENABLED && onOpenHousehold)) && (
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+            {HOUSEHOLDS_ENABLED && onOpenHousehold && (
+              <ProfileLinkRow
+                icon={<House className="h-4 w-4" aria-hidden="true" />}
+                title="Household"
+                detail={
+                  householdName
+                    ? `${householdName} · shared plan, inventory and shopping`
+                    : "Plan, shop and stock together with the people you cook with"
+                }
+                onClick={onOpenHousehold}
+              />
+            )}
+            {onOpenActivity && (
+              <ProfileLinkRow
+                icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
+                title="Cooking log"
+                detail="Every dish you've cooked, with ratings and notes"
+                onClick={onOpenActivity}
+              />
+            )}
+          </div>
+        )}
+
         <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] shadow-sm">
           <div className="flex items-start justify-between gap-3 p-5">
             <button
@@ -398,13 +469,13 @@ export function ProfileView() {
               aria-expanded={isRhythmOpen}
             >
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">Cooking rhythm</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">Cooking rhythm</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-950">Your weekly dish goal</h2>
                 <p className="mt-1 text-sm leading-6 text-neutral-600">{rhythmMessage(rhythm)}</p>
               </div>
-              <ChevronDown className={"mt-1 h-5 w-5 shrink-0 text-neutral-400 transition group-hover:text-[#800020] " + (isRhythmOpen ? "rotate-180" : "")} />
+              <ChevronDown className={"mt-1 h-5 w-5 shrink-0 text-ui-muted transition group-hover:text-ui-accent " + (isRhythmOpen ? "rotate-180" : "")} />
             </button>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#800020] text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ui-accent text-white">
               <Flame className="h-5 w-5" />
             </div>
           </div>
@@ -414,19 +485,19 @@ export function ProfileView() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-[#eadfce] bg-white p-3">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <CheckCircle2 className="h-4 w-4 text-[#800020]" /> Dishes cooked
+                    <CheckCircle2 className="h-4 w-4 text-ui-accent" /> Dishes cooked
                   </div>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.cookedThisWeek ?? 0}</p>
                 </div>
                 <div className="rounded-xl border border-[#eadfce] bg-white p-3">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <CalendarClock className="h-4 w-4 text-[#800020]" /> Meals planned
+                    <CalendarClock className="h-4 w-4 text-ui-accent" /> Meals planned
                   </div>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.plannedThisWeek ?? 0}</p>
                 </div>
                 <div className="rounded-xl border border-[#eadfce] bg-white p-3">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    <Target className="h-4 w-4 text-[#800020]" /> Dish goal
+                    <Target className="h-4 w-4 text-ui-accent" /> Dish goal
                   </div>
                   <p className="mt-2 text-2xl font-semibold text-neutral-900">{notificationPrefs.weeklyCookingGoal}</p>
                 </div>
@@ -438,7 +509,7 @@ export function ProfileView() {
                   <span>{rhythm?.progress ?? 0}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-[#eadfce]">
-                  <div className="h-full rounded-full bg-[#800020] transition-[width]" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
+                  <div className="h-full rounded-full bg-ui-accent transition-[width]" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
                 </div>
               </div>
 
@@ -454,8 +525,8 @@ export function ProfileView() {
                       className={
                         "h-10 rounded-lg border text-sm font-semibold transition " +
                         (notificationPrefs.weeklyCookingGoal === goal
-                          ? "border-[#800020] bg-[#800020] text-white"
-                          : "border-[#eadfce] bg-white text-neutral-700 hover:border-[#800020]/35")
+                          ? "border-ui-accent bg-ui-accent text-white"
+                          : "border-[#eadfce] bg-white text-neutral-700 hover:border-ui-accent/35")
                       }
                     >
                       {goal}
@@ -477,7 +548,7 @@ export function ProfileView() {
                       type="checkbox"
                       checked={Boolean(notificationPrefs[key as keyof NotificationPreferences])}
                       onChange={(e) => setNotificationToggle(key as keyof NotificationPreferences, e.target.checked)}
-                      className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-[#800020]/30"
+                      className="h-4 w-4 rounded border-neutral-300 text-ui-accent focus:ring-ui-accent/30"
                     />
                     <span>{label}</span>
                   </label>
@@ -491,17 +562,17 @@ export function ProfileView() {
                     type="time"
                     value={notificationPrefs.reminderTime}
                     onChange={(e) => setNotificationToggle("reminderTime", e.target.value)}
-                    className="mt-2 w-full rounded-lg border border-[#eadfce] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10"
+                    className="mt-2 w-full rounded-lg border border-[#eadfce] bg-white px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
                   />
                 </div>
-                <Button type="button" size="3" onClick={saveNotificationPrefs} disabled={isSavingNotifications} className="!rounded-full !bg-[#17131f] !text-white hover:!bg-[#800020]">
+                <Button type="button" size="lg" onClick={saveNotificationPrefs} disabled={isSavingNotifications} className="!rounded-full">
                   {isSavingNotifications ? "Saving..." : "Save rhythm"}
                 </Button>
               </div>
 
               <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#eadfce] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  {pushState === "subscribed" ? <Bell className="mt-0.5 h-5 w-5 text-[#800020]" /> : <BellOff className="mt-0.5 h-5 w-5 text-neutral-400" />}
+                  {pushState === "subscribed" ? <Bell className="mt-0.5 h-5 w-5 text-ui-accent" /> : <BellOff className="mt-0.5 h-5 w-5 text-ui-muted" />}
                   <div>
                     <p className="text-sm font-semibold text-neutral-800">Browser reminders</p>
                     <p className="mt-1 text-xs leading-5 text-neutral-500">
@@ -518,11 +589,11 @@ export function ProfileView() {
                   </div>
                 </div>
                 {pushState === "subscribed" ? (
-                  <Button type="button" variant="outline" size="2" onClick={disablePush} disabled={isEnablingPush}>
+                  <Button type="button" variant="secondary" size="md" onClick={disablePush} disabled={isEnablingPush}>
                     Pause
                   </Button>
                 ) : (
-                  <Button type="button" size="2" onClick={enablePush} disabled={isEnablingPush || pushState === "unsupported"}>
+                  <Button type="button" variant="primary" size="md" onClick={enablePush} disabled={isEnablingPush || pushState === "unsupported"}>
                     {isEnablingPush ? "Enabling..." : "Enable"}
                   </Button>
                 )}
@@ -553,7 +624,7 @@ export function ProfileView() {
               <button
                 type="button"
                 onClick={() => setShowPasswordForm(true)}
-                className="text-sm font-medium text-[#800020] hover:underline"
+                className="text-sm font-medium text-ui-accent hover:underline"
               >
                 Change password
               </button>
@@ -571,7 +642,7 @@ export function ProfileView() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Your current password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
                   required
                   autoFocus
                 />
@@ -585,7 +656,7 @@ export function ProfileView() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
                   required
                   minLength={6}
                 />
@@ -599,7 +670,7 @@ export function ProfileView() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your new password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:bg-white focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
                   required
                   minLength={6}
                 />
@@ -612,13 +683,13 @@ export function ProfileView() {
               )}
 
               <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Button type="submit" disabled={isChangingPassword} size="3" style={{ marginTop: "8px" }}>
+                <Button type="submit" variant="primary" disabled={isChangingPassword} size="lg" style={{ marginTop: "8px" }}>
                   {isChangingPassword ? "Updating..." : "Update password"}
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
-                  size="3"
+                  variant="secondary"
+                  size="lg"
                   onClick={() => {
                     resetPasswordForm();
                     setShowPasswordForm(false);
@@ -655,7 +726,7 @@ export function ProfileView() {
                   >
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-neutral-800">{entry.title}</span>
-                      <time className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+                      <time className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-ui-muted">
                         {entry.date} - {entry.items.length} updates
                       </time>
                     </span>
@@ -667,7 +738,7 @@ export function ProfileView() {
                     <ul className="space-y-1.5 border-t border-neutral-100 px-4 py-3 text-xs leading-5 text-neutral-600">
                       {entry.items.map((item) => (
                         <li key={item} className="flex gap-2">
-                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#800020]" />
+                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ui-accent" />
                           <span>{item}</span>
                         </li>
                       ))}
@@ -681,7 +752,7 @@ export function ProfileView() {
             <button
               type="button"
               onClick={() => setShowAllChangelog((current) => !current)}
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-[#800020]/30 hover:text-[#800020]"
+              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-ui-accent/30 hover:text-ui-accent"
             >
               {showAllChangelog ? "Show latest 3" : "View more updates (" + hiddenChangelogCount + ")"}
             </button>
@@ -691,15 +762,15 @@ export function ProfileView() {
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row">
             <Button
+              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
-              size="3"
-              className="bg-[#17131f] hover:bg-[#800020]"
+              size="lg"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
 
-            <Button onClick={logout} variant="outline" size="3" color="red">
+            <Button onClick={logout} variant="secondary" size="lg">
               Logout
             </Button>
           </div>

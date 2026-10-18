@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChefHat, Clock3, Star, Utensils } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState, Panel } from "@/components/ui";
 import { HalfStarRating } from "@/components/recipes/HalfStarRating";
+import { useAuth } from "@/context/AuthContext";
+import { readViewCache, useViewCacheMirror, viewUrls } from "@/lib/view-cache";
 
 interface ActivityAttempt {
   id: number;
@@ -72,16 +75,25 @@ function RatingPill({
 }
 
 export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
-  const [attempts, setAttempts] = useState<ActivityAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const userId = useAuth().user?.id;
+  // Seed from the tab cache so a return visit paints at once.
+  const [attempts, setAttempts] = useState<ActivityAttempt[]>(
+    () => readViewCache<ActivityAttempt[]>(qc, userId, viewUrls.activity) ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => readViewCache(qc, userId, viewUrls.activity) === undefined
+  );
   const [savingId, setSavingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadActivity = useCallback(async () => {
-    setLoading(true);
+    if (readViewCache(qc, userId, viewUrls.activity) === undefined) {
+      setLoading(true);
+    }
     setError(null);
     try {
-      const response = await fetch("/api/activity");
+      const response = await fetch(viewUrls.activity);
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error || "Failed to load activity");
@@ -93,11 +105,13 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [qc, userId]);
 
   useEffect(() => {
     void loadActivity();
   }, [loadActivity]);
+
+  useViewCacheMirror(userId, viewUrls.activity, attempts, !loading && !error);
 
   const groups = useMemo(() => {
     const byDate = new Map<string, ActivityAttempt[]>();
@@ -142,10 +156,10 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
     <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
       <div className="mx-auto max-w-4xl px-5 py-6">
         <div className="mb-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">
             Activity
           </p>
-          <h1 className="app-editorial-title mt-2 text-4xl leading-none text-[#1A1A1A]">
+          <h1 className="app-editorial-title mt-2 text-4xl leading-none text-ui-text">
             Cooking log
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
@@ -184,7 +198,7 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
                     <h2 className="text-lg font-semibold text-neutral-900">
                       {formatDay(date)}
                     </h2>
-                    <span className="text-xs font-medium text-neutral-400">
+                    <span className="text-xs font-medium text-ui-muted">
                       {dayAttempts.length} dish{dayAttempts.length === 1 ? "" : "es"}
                     </span>
                   </div>
@@ -192,20 +206,20 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
                   {Array.from(byMeal.entries()).map(([meal, mealAttempts]) => (
                     <Panel key={meal} raised className="p-4">
                       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ui-muted)]">
-                        <Utensils className="h-4 w-4 text-[#800020]" />
+                        <Utensils className="h-4 w-4 text-ui-accent" />
                         {meal}
                       </div>
                       <div className="space-y-3">
                         {mealAttempts.map((attempt) => (
                           <article
                             key={attempt.id}
-                            className="rounded-xl border border-[#eadfce] bg-[#fffdfb] p-3"
+                            className="rounded-xl border border-[#eadfce] bg-ui-surface p-3"
                           >
                             <div className="flex gap-3">
                               <button
                                 type="button"
                                 onClick={() => onNavigateToRecipe(attempt.recipeId)}
-                                className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#800020]/7 text-[#800020]"
+                                className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-ui-accent/7 text-ui-accent"
                                 aria-label={"Open " + attempt.recipeTitle}
                               >
                                 {attempt.recipeImageUrl ? (
@@ -222,7 +236,7 @@ export function ActivityView({ onNavigateToRecipe }: ActivityViewProps) {
                                 <button
                                   type="button"
                                   onClick={() => onNavigateToRecipe(attempt.recipeId)}
-                                  className="block truncate text-left text-base font-semibold text-neutral-900 hover:text-[#800020]"
+                                  className="block truncate text-left text-base font-semibold text-neutral-900 hover:text-ui-accent"
                                 >
                                   {attempt.recipeTitle}
                                 </button>

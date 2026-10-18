@@ -3,7 +3,6 @@ import { db } from "@/db";
 import { bookTips, bookMembers, books, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -97,7 +96,7 @@ export async function POST(
     }
 
     const newTip = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       bookId: id,
       content: content.trim(),
       addedBy: String(currentUser.id),

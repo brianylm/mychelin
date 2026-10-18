@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@radix-ui/themes/styles.css";
 
 :root {
   color-scheme: light;
@@ -139,12 +138,23 @@
   }
 }
 
-*,
-*::before,
-*::after {
-  border-width: 0;
-  border-style: solid;
-  border-color: rgba(var(--foreground), 0.08);
+/* Base rules live in the base layer: unlayered CSS outranks every Tailwind
+   utility, which silently disabled `border` and button `text-*` classes. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: rgba(var(--foreground), 0.08);
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
 }
 
 html {
@@ -153,10 +163,12 @@ html {
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 16% 4%, rgba(128, 0, 32, 0.08), transparent 26rem),
-    linear-gradient(180deg, #fafaf8 0%, #f6f2eb 100%);
+  background: var(--ui-bg);
   color: rgb(var(--foreground));
+  font-family: var(--font-sans);
+  overflow-wrap: break-word;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-feature-settings:
     "rlig" 1,
     "calt" 1;
@@ -167,13 +179,7 @@ h2,
 h3,
 h4,
 h5,
-h6,
-.radix-themes h1,
-.radix-themes h2,
-.radix-themes h3,
-.radix-themes h4,
-.radix-themes h5,
-.radix-themes h6 {
+h6 {
   font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif !important;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -225,15 +231,23 @@ h6,
   font-weight: 700 !important;
 }
 
+.landing-hero-frame {
+  /* The absolute frame supplies the hero dimensions for container units. */
+  container-type: size;
+}
+
 .landing-hero-image {
   inset: 0;
   height: 100%;
   object-fit: cover;
-  /* Mobile uses the pre-cropped portrait hero. Phones are narrower than
-     the crop, so ~35% of the width is cut — anchor left-of-centre to
-     keep BOTH subjects' faces in frame (centre cuts the younger woman
-     off at the left edge). */
-  object-position: 15% 44%;
+  /* The faces' midpoint is 37.5% across the 1100x1536 mobile source.
+     Shift the covered image right to centre that point, stopping at the
+     source edge when a wide frame leaves too little room to shift. */
+  --hero-focus-shift: min(
+    max(12.5cqw, calc(12.5cqh * 1100 / 1536)),
+    max(0px, calc((100cqh * 1100 / 1536 - 100cqw) / 2))
+  );
+  object-position: calc(50% + var(--hero-focus-shift)) 44%;
 }
 
 .landing-hero-readable-scrim {
@@ -250,6 +264,10 @@ h6,
 }
 
 @media (min-width: 640px) {
+  .landing-hero-frame {
+    container-type: normal;
+  }
+
   .landing-hero-image {
     inset: 0;
     height: 100%;
@@ -261,13 +279,6 @@ h6,
     inset: 0;
     height: 100%;
   }
-}
-
-input,
-textarea,
-select,
-button {
-  font: inherit;
 }
 
 .safe-bottom {
@@ -301,49 +312,4 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Radix theme overrides for Mychelin burgundy accent */
-.radix-themes {
-  --cursor-button: pointer;
-  --accent-1: #fffafb;
-  --accent-2: #f9eef1;
-  --accent-3: #f1dce2;
-  --accent-4: #e4bdc8;
-  --accent-5: #d89caf;
-  --accent-6: #c6758f;
-  --accent-7: #ad4d70;
-  --accent-8: #963557;
-  --accent-9: #800020;
-  --accent-10: #6d001b;
-  --accent-11: #800020;
-  --accent-12: #241017;
-  --accent-a1: rgba(128, 0, 32, 0.04);
-  --accent-a2: rgba(128, 0, 32, 0.08);
-  --accent-a3: rgba(128, 0, 32, 0.13);
-  --accent-a4: rgba(128, 0, 32, 0.2);
-  --accent-a5: rgba(128, 0, 32, 0.3);
-  --accent-a6: rgba(128, 0, 32, 0.42);
-  --accent-a7: rgba(128, 0, 32, 0.55);
-  --accent-a8: rgba(128, 0, 32, 0.66);
-  --accent-a9: rgba(128, 0, 32, 0.78);
-  --accent-a10: rgba(128, 0, 32, 0.86);
-  --accent-a11: rgba(128, 0, 32, 0.92);
-  --accent-a12: rgba(128, 0, 32, 0.96);
-  --accent-contrast: #fffaf4;
-  --accent-surface: #fff7f8;
-  --accent-indicator: #800020;
-  --accent-track: #d89caf;
-}
-
-.radix-themes :where(.rt-Button, .rt-IconButton):where(.rt-variant-solid) {
-  color: var(--accent-contrast) !important;
-}
-
-.radix-themes :where(.rt-Button, .rt-IconButton):where(.rt-variant-solid) :where(svg, span),
-.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.bg-\[\#17131f\], .bg-\[\#800020\], .bg-\[\#800020\]\/50),
-.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.bg-\[\#17131f\], .bg-\[\#800020\], .bg-\[\#800020\]\/50) :where(svg, span),
-.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.hover\:bg-\[\#800020\]):hover,
-.radix-themes :where(button, a, .rt-Button, .rt-IconButton):where(.hover\:bg-\[\#800020\]):hover :where(svg, span) {
-  color: var(--accent-contrast) !important;
 }

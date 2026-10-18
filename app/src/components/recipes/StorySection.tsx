@@ -48,9 +48,9 @@ export function StorySection({ story, onSave }: StorySectionProps) {
           onBlur={handleBlur}
           placeholder="Who taught this recipe, what occasion it belongs to, or what makes it feel like home?"
           rows={5}
-          className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400"
+          className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400"
         />
-        <p className="text-[10px] text-neutral-400">
+        <p className="text-[10px] text-ui-muted">
           This is for memory and provenance, not the short recipe-card summary.
         </p>
       </div>

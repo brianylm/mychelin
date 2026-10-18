@@ -155,3 +155,10 @@ export async function cleanupHouseholds(namePrefix: string): Promise<void> {
     await db.execute({ sql: "DELETE FROM households WHERE id = ?", args: [id] });
   }
 }
+
+// Household settings live under Profile (header avatar → Household row)
+// since the 4-tab nav (Library, Plan, Shopping, Inventory).
+export async function openHousehold(page: Page): Promise<void> {
+  await page.getByRole("button", { name: /^Open profile for / }).first().click();
+  await page.getByRole("button", { name: /^Household/ }).first().click();
+}

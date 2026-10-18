@@ -19,6 +19,27 @@ interface CookingPrinciplesProps {
   onTipCountChange?: (count: number) => void;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+async function responseError(response: Response, fallback: string): Promise<string> {
+  try {
+    const data: unknown = await response.json();
+    return isRecord(data) && typeof data.error === "string" ? data.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }: CookingPrinciplesProps) {
   const { user } = useAuth();
   const { addToast } = useToast();
@@ -37,7 +58,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
     try {
       const res = await fetch(`/api/books/${bookId}/tips`);
       if (!res.ok) throw new Error("Failed to fetch tips");
-      const data = await res.json();
+      const data = (await res.json()) as Tip[];
       setTips(data);
       onTipCountChange?.(data.length);
     } catch {
@@ -61,17 +82,16 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
         body: JSON.stringify({ content: newContent.trim() }),
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to add tip");
+        throw new Error(await responseError(res, "Failed to add tip"));
       }
-      const tip = await res.json();
+      const tip = (await res.json()) as Tip;
       const updated = [tip, ...tips];
       setTips(updated);
       setNewContent("");
       onTipCountChange?.(updated.length);
       addToast("Cooking principle added!", "success");
     } catch (error) {
-      addToast((error instanceof Error && error.message) || "Failed to add principle", "error");
+      addToast(errorMessage(error, "Failed to add principle"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -112,11 +132,13 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
         method: "POST",
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Analysis failed");
+        throw new Error(await responseError(res, "Analysis failed"));
       }
-      const data = (await res.json()) as { principles?: string[] };
-      const list = data.principles ?? [];
+      const data: unknown = await res.json();
+      if (!isRecord(data) || !isStringArray(data.principles)) {
+        throw new Error("Analysis failed");
+      }
+      const list = data.principles;
       setSuggestions(list);
       if (list.length === 0) {
         addToast(
@@ -125,7 +147,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
         );
       }
     } catch (err) {
-      addToast((err instanceof Error && err.message) || "Failed to analyze recipes", "error");
+      addToast(errorMessage(err, "Failed to analyze recipes"), "error");
     } finally {
       setAnalyzing(false);
     }
@@ -142,14 +164,14 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
         body: JSON.stringify({ content }),
       });
       if (!res.ok) throw new Error("Failed to save principle");
-      const tip = await res.json();
+      const tip = (await res.json()) as Tip;
       const updated = [tip, ...tips];
       setTips(updated);
       onTipCountChange?.(updated.length);
       setSuggestions((prev) => prev.filter((_, i) => i !== idx));
       addToast("Principle saved", "success");
     } catch (err) {
-      addToast((err instanceof Error && err.message) || "Failed to save", "error");
+      addToast(errorMessage(err, "Failed to save"), "error");
     } finally {
       setSavingIdx(null);
     }
@@ -162,11 +184,11 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
         <button
           onClick={handleAnalyze}
           disabled={analyzing}
-          className="flex items-center gap-1.5 rounded-lg border border-[#800020]/30 bg-[#800020]/5 px-3 py-1.5 text-xs font-semibold text-[#521224] transition-colors hover:bg-[#800020]/10 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-lg border border-ui-accent/30 bg-ui-accent/5 px-3 py-1.5 text-xs font-semibold text-[#521224] transition-colors hover:bg-ui-accent/10 disabled:opacity-60"
         >
           {analyzing ? (
             <>
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
               Analyzing…
             </>
           ) : (
@@ -180,12 +202,12 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           click, which adds it to the tips list and removes it from the
           suggestions. */}
       {suggestions.length > 0 && (
-        <div className="mb-6 space-y-2 rounded-xl border border-[#800020]/30 bg-gradient-to-br from-[#800020]/5 to-white p-4">
+        <div className="mb-6 space-y-2 rounded-xl border border-ui-accent/30 bg-gradient-to-br from-ui-accent/5 to-white p-4">
           <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-[#241017]">
             <span>✨</span>
             <span>AI-spotted patterns in this book</span>
           </div>
-          <p className="mb-2 text-[11px] text-[#800020]">
+          <p className="mb-2 text-[11px] text-ui-accent">
             Click a card to save it as a principle. Anything you don&apos;t
             want is just discarded.
           </p>
@@ -194,13 +216,13 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
               key={i}
               onClick={() => handleSaveSuggestion(i)}
               disabled={savingIdx !== null}
-              className="flex w-full items-start gap-3 rounded-lg border border-[#800020]/15 bg-white p-3 text-left transition hover:border-[#800020]/45 hover:shadow-sm disabled:opacity-60"
+              className="flex w-full items-start gap-3 rounded-lg border border-ui-accent/15 bg-white p-3 text-left transition hover:border-ui-accent/45 hover:shadow-sm disabled:opacity-60"
             >
               <span className="mt-0.5 text-base">💡</span>
               <p className="flex-1 text-sm leading-relaxed text-neutral-800">
                 {s}
               </p>
-              <span className="shrink-0 rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold text-[#800020]">
+              <span className="shrink-0 rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold text-ui-accent">
                 {savingIdx === i ? "Saving…" : "+ Save"}
               </span>
             </button>
@@ -210,7 +232,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
 
       {/* Add new tip form */}
       {canEdit && (
-        <div className="mb-6 rounded-xl border border-[#800020]/15 bg-[#800020]/5 p-4">
+        <div className="mb-6 rounded-xl border border-ui-accent/15 bg-ui-accent/5 p-4">
           <label className="mb-2 block text-sm font-medium text-[#521224]">
             Add a cooking principle or tip
           </label>
@@ -219,7 +241,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="e.g. Always toast your spices before adding liquid, use cast iron for searing..."
             rows={3}
-            className="w-full resize-none rounded-lg border border-[#800020]/15 bg-white px-3 py-2 text-sm placeholder-neutral-400 focus:border-[#800020]/45 focus:outline-none"
+            className="w-full resize-none rounded-lg border border-ui-accent/15 bg-white px-3 py-2 text-sm placeholder-neutral-400 focus:border-ui-accent/45 focus:outline-none"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                 handleAdd();
@@ -227,11 +249,11 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
             }}
           />
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs text-[#800020]">⌘↵ to submit</span>
+            <span className="text-xs text-ui-accent">⌘↵ to submit</span>
             <button
               onClick={handleAdd}
               disabled={submitting || !newContent.trim()}
-              className="rounded-lg bg-[#17131f] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#800020] disabled:opacity-50"
+              className="rounded-lg bg-ui-action px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-50"
             >
               {submitting ? "Adding…" : "Add Principle"}
             </button>
@@ -242,14 +264,14 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
       {/* Tips list */}
       {loading ? (
         <div className="flex items-center justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
         </div>
       ) : tips.length === 0 ? (
         <div className="py-8 text-center">
           <div className="mb-2 text-4xl">💡</div>
           <p className="text-neutral-600">No cooking principles yet</p>
           {canEdit && (
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-ui-muted">
               Add tips and principles that guide this book&apos;s cooking style
             </p>
           )}
@@ -259,12 +281,12 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           {tips.map((tip) => (
             <div
               key={tip.id}
-              className="group flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-[#800020]/15 hover:shadow-sm"
+              className="group flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-ui-accent/15 hover:shadow-sm"
             >
               <div className="mt-0.5 text-lg">💡</div>
               <div className="flex-1">
                 <p className="text-sm text-neutral-800 leading-relaxed">{tip.content}</p>
-                <div className="mt-2 flex items-center gap-2 text-xs text-neutral-400">
+                <div className="mt-2 flex items-center gap-2 text-xs text-ui-muted">
                   {tip.authorName && <span>by {tip.authorName}</span>}
                   <span>·</span>
                   <span>{formatDate(tip.createdAt)}</span>

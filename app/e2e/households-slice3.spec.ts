@@ -187,9 +187,10 @@ test.describe("households slice 3", () => {
       data: { shared: true },
     });
 
+    // Shared household recipes live in Library under "From your household".
     await pageB.goto("/app");
-    await pageB.getByRole("button", { name: "Household" }).first().click();
-    await expect(pageB.getByText("Shared recipes")).toBeVisible({ timeout: 30_000 });
+    await pageB.getByRole("button", { name: "Library" }).first().click();
+    await expect(pageB.getByText("From your household")).toBeVisible({ timeout: 30_000 });
     await expect(pageB.getByText("E2E HH3 Curry UI", { exact: true })).toBeVisible();
     // A non-owner shared recipe offers the member actions.
     await expect(pageB.getByRole("button", { name: "Import" }).first()).toBeVisible();

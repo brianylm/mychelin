@@ -242,9 +242,9 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
   const activeTimers = activeTimerRows.length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#17131f] text-white">
+    <div className="fixed inset-0 z-50 bg-ui-action text-white">
       <div className="flex h-full flex-col">
-        <header className="flex items-center justify-between border-b border-white/10 bg-[#17131f]/95 px-4 py-3 backdrop-blur">
+        <header className="flex items-center justify-between border-b border-white/10 bg-ui-action/95 px-4 py-3 backdrop-blur">
           <button
             type="button"
             onClick={requestClose}
@@ -257,7 +257,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">Cook with me</p>
             <h2 className="truncate text-sm font-semibold text-white">{meals.length} dishes together</h2>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020] text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent text-white">
             <ChefHat className="h-5 w-5" />
           </div>
         </header>
@@ -292,7 +292,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
               <span>{activeTimers} timer{activeTimers === 1 ? "" : "s"} running</span>
             </div>
             {activeTimerRows.length > 0 && (
-              <div className="sticky top-0 z-10 mb-4 rounded-2xl border border-[#f7c86a]/25 bg-[#17131f]/95 p-3 shadow-xl backdrop-blur">
+              <div className="sticky top-0 z-10 mb-4 rounded-2xl border border-[#f7c86a]/25 bg-ui-action/95 p-3 shadow-xl backdrop-blur">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#f7c86a]">
                   Live timers
                 </p>
@@ -328,17 +328,17 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                 const defaultTimer = detectStepTimerSeconds(currentInstruction?.content ?? "");
 
                 return (
-                  <section key={recipe.id} className="rounded-2xl border border-white/10 bg-[#fffdfb] p-4 text-[#17131f] shadow-2xl">
+                  <section key={recipe.id} className="rounded-2xl border border-white/10 bg-ui-surface p-4 text-ui-action shadow-2xl">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#800020]">Dish</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ui-accent">Dish</p>
                         <h3 className="truncate text-lg font-semibold">{recipe.title}</h3>
                       </div>
                       {isDone && <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Done</span>}
                     </div>
 
                     {instructions.length === 0 ? (
-                      <p className="mt-5 rounded-xl bg-[#800020]/5 px-3 py-3 text-sm text-[#521224]">This recipe needs steps before it can be cooked here.</p>
+                      <p className="mt-5 rounded-xl bg-ui-accent/5 px-3 py-3 text-sm text-[#521224]">This recipe needs steps before it can be cooked here.</p>
                     ) : (
                       <>
                         <div className="mt-4 flex items-center justify-between text-xs text-neutral-500">
@@ -352,8 +352,8 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                         )}
                         <p className="mt-3 min-h-[5rem] text-2xl font-semibold leading-snug">{currentInstruction?.content}</p>
                         {stepIngredientHints.length > 0 && (
-                          <div className="mt-3 rounded-xl border border-[#800020]/10 bg-[#800020]/5 px-3 py-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#800020]">Amounts in this step</p>
+                          <div className="mt-3 rounded-xl border border-ui-accent/10 bg-ui-accent/5 px-3 py-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ui-accent">Amounts in this step</p>
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               {stepIngredientHints.map((hint) => (
                                 <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs text-neutral-700 shadow-sm">
@@ -364,21 +364,21 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                             </div>
                           </div>
                         )}
-                        {currentStepMeta.cleanTip && <p className="mt-3 rounded-xl bg-[#800020]/5 px-3 py-2 text-sm text-[#521224]">{currentStepMeta.cleanTip}</p>}
+                        {currentStepMeta.cleanTip && <p className="mt-3 rounded-xl bg-ui-accent/5 px-3 py-2 text-sm text-[#521224]">{currentStepMeta.cleanTip}</p>}
 
-                        <div className="mt-4 rounded-xl border border-[#800020]/10 bg-[#800020]/5 p-3">
+                        <div className="mt-4 rounded-xl border border-ui-accent/10 bg-ui-accent/5 p-3">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <Clock3 className="h-5 w-5 text-[#800020]" />
+                              <Clock3 className="h-5 w-5 text-ui-accent" />
                               <div>
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]">Timer</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-accent">Timer</p>
                                 <p className="font-mono text-2xl font-semibold">{formatTime(currentTimer?.remaining ?? defaultTimer)}</p>
                               </div>
                             </div>
                             <button
                               type="button"
                               onClick={() => { ensureTimer(recipe); toggleTimer(recipe); }}
-                              className="rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#800020]"
+                              className="rounded-full bg-ui-action px-4 py-2 text-sm font-semibold text-white transition hover:bg-ui-accent"
                             >
                               {currentTimer?.running ? "Pause" : "Start"}
                             </button>
@@ -392,7 +392,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
 
                         <div className="mt-4 flex gap-2">
                           <button type="button" onClick={() => moveStep(recipe, -1)} disabled={stepIndex === 0} className="flex min-h-10 items-center gap-1 rounded-full bg-neutral-100 px-4 text-sm font-semibold text-neutral-700 disabled:opacity-40"><ArrowLeft className="h-4 w-4" />Back</button>
-                          <button type="button" onClick={() => moveStep(recipe, 1)} className="flex min-h-10 flex-1 items-center justify-center gap-1 rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020]">{stepIndex >= instructions.length - 1 ? "Finish dish" : "Next"}<ArrowRight className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => moveStep(recipe, 1)} className="flex min-h-10 flex-1 items-center justify-center gap-1 rounded-full bg-ui-action px-4 text-sm font-semibold text-white transition hover:bg-ui-accent">{stepIndex >= instructions.length - 1 ? "Finish dish" : "Next"}<ArrowRight className="h-4 w-4" /></button>
                         </div>
                       </>
                     )}
@@ -406,7 +406,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
 
         {confirmingExit && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#fffdfb] p-5 text-[#17131f] shadow-2xl">
+            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-ui-surface p-5 text-ui-action shadow-2xl">
               <h3 className="text-lg font-semibold">Exit batch cooking?</h3>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
                 These dishes have not been saved as attempts yet. Exit anyway?
@@ -422,7 +422,7 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
                 <button
                   type="button"
                   onClick={confirmExit}
-                  className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#800020] px-4 text-sm font-semibold text-white"
+                  className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-ui-accent px-4 text-sm font-semibold text-white"
                 >
                   Exit session
                 </button>
@@ -431,19 +431,19 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
           </div>
         )}
 
-        <footer className="border-t border-white/10 bg-[#17131f]/95 px-4 py-3 backdrop-blur">
+        <footer className="border-t border-white/10 bg-ui-action/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
             <button type="button" onClick={reviewing ? () => setReviewing(false) : requestClose} className="flex min-h-12 items-center gap-2 rounded-full bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15">
               <ArrowLeft className="h-4 w-4" />
               {reviewing ? "Back" : "Close"}
             </button>
             {reviewing ? (
-              <button type="button" onClick={saveAttempts} disabled={saving} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-[#17131f] transition hover:bg-[#ffd98a] disabled:opacity-60 sm:flex-none">
+              <button type="button" onClick={saveAttempts} disabled={saving} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-ui-action transition hover:bg-[#ffd98a] disabled:opacity-60 sm:flex-none">
                 {saving ? "Saving..." : "Save all attempts"}
                 <Check className="h-4 w-4" />
               </button>
             ) : (
-              <button type="button" onClick={() => setReviewing(true)} disabled={!allComplete} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-[#17131f] transition hover:bg-[#ffd98a] disabled:opacity-45 sm:flex-none">
+              <button type="button" onClick={() => setReviewing(true)} disabled={!allComplete} className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-ui-action transition hover:bg-[#ffd98a] disabled:opacity-45 sm:flex-none">
                 Review dishes
                 <Check className="h-4 w-4" />
               </button>

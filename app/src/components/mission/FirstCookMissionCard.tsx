@@ -16,7 +16,7 @@ export function FirstCookMissionCard({ onStart, onDismiss }: FirstCookMissionCar
     <div className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-3 sm:px-6">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
             <ChefHat className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">

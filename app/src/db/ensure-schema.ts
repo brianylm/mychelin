@@ -15,6 +15,11 @@
 // is genuinely missing. Caveat: probes check tables/columns, not
 // indexes — indexes are created together with their table, so a table
 // that exists is assumed to have its indexes.
+//
+// All probes on an isolate share one schema snapshot (object names plus
+// every table's columns, fetched in a single batch), so a cold route with
+// several ensures pays one probe round trip instead of one per ensure.
+// The snapshot is dropped after any DDL so later probes see the change.
 
 import { createClient, type Client } from "@libsql/client/web";
 
@@ -45,8 +50,48 @@ function getClient(): Client | null {
   return _client;
 }
 
-// One round trip: which of these tables/indexes already exist?
+interface SchemaSnapshot {
+  objects: Set<string>;
+  columns: Map<string, Set<string>>;
+}
+
+let _snapshot: Promise<SchemaSnapshot | null> | null = null;
+
+// One round trip for the whole schema. Resolves null when the batch fails
+// (callers then fall back to their own targeted probe queries).
+function schemaSnapshot(client: Client): Promise<SchemaSnapshot | null> {
+  if (!_snapshot) {
+    _snapshot = client
+      .batch(
+        [
+          "SELECT name FROM sqlite_master",
+          "SELECT m.name AS tbl, p.name AS col FROM sqlite_master m JOIN pragma_table_info(m.name) p WHERE m.type = 'table'",
+        ],
+        "read"
+      )
+      .then(([objectRes, columnRes]) => {
+        const objects = new Set(objectRes.rows.map((row) => String(row.name)));
+        const columns = new Map<string, Set<string>>();
+        for (const row of columnRes.rows) {
+          const table = String(row.tbl);
+          let cols = columns.get(table);
+          if (!cols) columns.set(table, (cols = new Set()));
+          cols.add(String(row.col));
+        }
+        return { objects, columns };
+      })
+      .catch((e: unknown) => {
+        console.warn("schemaSnapshot:", e instanceof Error ? e.message : String(e));
+        return null;
+      });
+  }
+  return _snapshot;
+}
+
+// Which of these tables/indexes already exist?
 async function existingObjects(client: Client, names: string[]): Promise<Set<string>> {
+  const snapshot = await schemaSnapshot(client);
+  if (snapshot) return new Set(names.filter((name) => snapshot.objects.has(name)));
   const placeholders = names.map(() => "?").join(",");
   const res = await client.execute({
     sql: `SELECT name FROM sqlite_master WHERE name IN (${placeholders})`,
@@ -55,9 +100,11 @@ async function existingObjects(client: Client, names: string[]): Promise<Set<str
   return new Set(res.rows.map((row) => String(row.name)));
 }
 
-// One round trip: column names of a table. Table names are code
+// Column names of a table. Table names are code
 // constants, never user input, so identifier interpolation is safe.
 async function tableColumns(client: Client, table: string): Promise<Set<string>> {
+  const snapshot = await schemaSnapshot(client);
+  if (snapshot) return new Set(snapshot.columns.get(table) ?? []);
   const res = await client.execute(`PRAGMA table_info(${table})`);
   return new Set(res.rows.map((row) => String(row.name)));
 }
@@ -80,6 +127,7 @@ async function runDdl(client: Client, statements: string[], label: string): Prom
       }
     }
   }
+  if (statements.length > 0) _snapshot = null;
 }
 
 export async function ensureVersionLabelColumn(): Promise<void> {

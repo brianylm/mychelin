@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Cross2Icon, CopyIcon, LinkBreak2Icon, CheckIcon } from "@radix-ui/react-icons";
+import { Check, Copy, Unlink, X } from "lucide-react";
 
 interface ShareLink {
   id: number;
@@ -86,7 +86,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-[#fffdfb] p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-ui-surface p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
           {/* Header */}
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -95,20 +95,20 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
             </div>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
             >
-              <Cross2Icon className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
             </div>
           ) : (
             <div className="space-y-4">
               {/* View-only link */}
-              <div className="rounded-2xl border border-[#800020]/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
+              <div className="rounded-2xl border border-ui-accent/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold text-neutral-800">👁 View only</span>
@@ -122,27 +122,27 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                     </div>
                     <button
                       onClick={() => copyLink(viewLink.token)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-colors hover:bg-[#800020]/15"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent transition-colors hover:bg-ui-accent/15"
                       title="Copy link"
                     >
                       {copiedToken === viewLink.token ? (
-                        <CheckIcon className="h-4 w-4" />
+                        <Check className="h-4 w-4" />
                       ) : (
-                        <CopyIcon className="h-4 w-4" />
+                        <Copy className="h-4 w-4" />
                       )}
                     </button>
                     <button
                       onClick={() => deleteLink(viewLink.id)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors hover:bg-red-50 hover:text-red-500"
                       title="Remove link"
                     >
-                      <LinkBreak2Icon className="h-4 w-4" />
+                      <Unlink className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => createLink("view")}
-                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 hover:text-[#800020]"
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 hover:text-ui-accent"
                   >
                     Create view-only link
                   </button>
@@ -150,7 +150,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
               </div>
 
               {/* Collaborator link */}
-              <div className="rounded-2xl border border-[#800020]/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
+              <div className="rounded-2xl border border-ui-accent/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold text-neutral-800">✏️ Collaborator</span>
@@ -164,27 +164,27 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                     </div>
                     <button
                       onClick={() => copyLink(editLink.token)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#800020]/10 text-[#800020] transition-colors hover:bg-[#800020]/15"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent transition-colors hover:bg-ui-accent/15"
                       title="Copy link"
                     >
                       {copiedToken === editLink.token ? (
-                        <CheckIcon className="h-4 w-4" />
+                        <Check className="h-4 w-4" />
                       ) : (
-                        <CopyIcon className="h-4 w-4" />
+                        <Copy className="h-4 w-4" />
                       )}
                     </button>
                     <button
                       onClick={() => deleteLink(editLink.id)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors hover:bg-red-50 hover:text-red-500"
                       title="Remove link"
                     >
-                      <LinkBreak2Icon className="h-4 w-4" />
+                      <Unlink className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => createLink("edit")}
-                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 hover:text-[#800020]"
+                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 hover:text-ui-accent"
                   >
                     Create collaborator link
                   </button>

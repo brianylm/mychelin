@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
 import { useRecipeStore } from "@/store/RecipeStore";
 import type { Recipe } from "@/db/schema";
 
@@ -109,7 +109,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
         </div>
 
         {/* Narrow-by filter */}
-        <div className="rounded-2xl border border-[#800020]/15 bg-[#800020]/5 p-4">
+        <div className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 p-4">
           <label
             htmlFor="surprise-filter"
             className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#521224]"
@@ -122,9 +122,9 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
             placeholder="chicken, Italian, soup… (leave blank for all recipes)"
-            className="w-full rounded-xl border border-[#800020]/15 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 placeholder:text-neutral-400"
+            className="w-full rounded-xl border border-ui-accent/15 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
           />
-          <p className="mt-2 text-[11px] leading-relaxed text-[#800020]">
+          <p className="mt-2 text-[11px] leading-relaxed text-ui-accent">
             Narrow the randomiser by an ingredient, cuisine, or keyword.
             Matches recipe titles AND ingredient lists. e.g.{" "}
             <button
@@ -165,10 +165,11 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
         {/* Random Recipe Button */}
         <div className="text-center">
           <Button
+            variant="primary"
             onClick={pickRandomRecipe}
             disabled={!canRoll}
-            size="4"
-            className="bg-[#17131f] hover:bg-[#800020] text-lg px-8 py-4"
+            size="lg"
+            className="!px-8 !py-4 !text-lg"
           >
             {isRolling
               ? "🎲 Rolling..."
@@ -188,7 +189,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
                 {randomRecipe.title}
               </h3>
               {randomRecipe.cuisine && (
-                <span className="inline-block bg-[#800020]/10 text-[#521224] text-sm px-3 py-1 rounded-full">
+                <span className="inline-block bg-ui-accent/10 text-[#521224] text-sm px-3 py-1 rounded-full">
                   {randomRecipe.cuisine}
                 </span>
               )}
@@ -214,13 +215,13 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
+                variant="primary"
                 onClick={handleCookThis}
-                size="3"
-                className="bg-green-600 hover:bg-green-700"
+                size="lg"
               >
                 🍳 Cook this!
               </Button>
-              <Button onClick={pickRandomRecipe} variant="outline" size="3">
+              <Button onClick={pickRandomRecipe} variant="secondary" size="lg">
                 🔄 Try another
               </Button>
             </div>
