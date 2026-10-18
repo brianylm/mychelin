@@ -210,7 +210,7 @@ test.describe("households slice 1", () => {
     await openHousehold(pageA);
     await pageA.getByLabel("Household name").fill("UI Test Home");
     await pageA.getByRole("button", { name: "Create" }).click();
-    await expect(pageA.getByText("Join code", { exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(pageA.getByRole("button", { name: "Share invite link" })).toBeVisible({ timeout: 30_000 });
     await expect(pageA.getByText("Admin", { exact: true })).toBeVisible();
 
     const joinCode = (
