@@ -57,6 +57,8 @@ import { MealComposerDialog, type MealComposerRecipe } from "./MealComposerDialo
 import { MealGroupCard } from "./MealGroupCard";
 import { useMealPilotPlanner } from "./useMealPilotPlanner";
 import type { MealGroupView, MealType } from "@/lib/meal-pilot/types";
+import type { DishType } from "@/lib/dish-type";
+import { DishTypeBadges } from "@/components/recipes/DishTypeBadges";
 
 interface MealPlan {
   id: number;
@@ -117,6 +119,7 @@ interface Recipe {
   yield?: string | null;
   prepTime?: number | null;
   cookTime?: number | null;
+  dishTypes?: DishType[];
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -322,6 +325,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
   const [lastRandomized, setLastRandomized] = useState<{ planIds: number[]; label: string } | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>(
     () => readViewCache<Recipe[]>(qc, userId, viewUrls.plannerRecipes) ?? []
+  );
+  const recipesById = useMemo(
+    () => new Map(recipes.map((recipe) => [recipe.id, recipe])),
+    [recipes],
   );
   const [loading, setLoading] = useState(!initialPlan);
   // Bumped when a meal-group change alters the plan rows (fresh dishes are
@@ -1240,6 +1247,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                     <span className={`block truncate text-neutral-800 ${plan.cookedAt ? "line-through decoration-neutral-300" : ""}`}>
                                       {planTitle(plan)}
                                     </span>
+                                    {recipesById.get(plan.recipeId)?.dishTypes?.length ? (
+                                      <DishTypeBadges types={recipesById.get(plan.recipeId)!.dishTypes!} />
+                                    ) : null}
                                     {plan.cookedAt && (
                                       <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
                                         <CheckCircle2 className="h-3 w-3" />
@@ -1588,6 +1598,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 >
                                   {planTitle(plan)}
                                 </span>
+                                {recipesById.get(plan.recipeId)?.dishTypes?.length ? (
+                                  <DishTypeBadges variant="icon" types={recipesById.get(plan.recipeId)!.dishTypes!} />
+                                ) : null}
                                 {plan.cookedAt && (
                                   <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
                                     <CheckCircle2 className="h-3 w-3" />

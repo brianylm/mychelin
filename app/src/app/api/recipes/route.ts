@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dishTypesForRecipes } from "@/lib/dish-type-store";
 import { db } from "@/db";
 import {
   recipes,
@@ -178,6 +179,7 @@ export async function GET(request: NextRequest) {
       if (row.lastCookedAt) attemptCookedByRecipe.set(row.recipeId, row.lastCookedAt);
     }
 
+    const dishTypeMap = await dishTypesForRecipes(orderedRecipesWithFlags.map((recipe) => recipe.id));
     const plannerRecipes = orderedRecipesWithFlags.map((recipe) => {
       const versionCookedAt = versionCookedByRecipe.get(recipe.id) ?? null;
       const plannedCookedAt = plannedCookedByRecipe.get(recipe.id) ?? null;
@@ -191,6 +193,7 @@ export async function GET(request: NextRequest) {
         ...recipe,
         ingredients: ingredientsByRecipe.get(recipe.id) ?? [],
         lastCookedAt,
+        dishTypes: dishTypeMap.get(recipe.id)?.dishTypes ?? [],
       };
     });
 

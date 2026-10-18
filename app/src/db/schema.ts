@@ -206,6 +206,20 @@ export const recipeFlags = sqliteTable("recipe_flags", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Recipe dish types ─────────────────────────────────────
+// Owner's override of the automatic dish type (meat, veg, egg…). Separate
+// table rather than a recipes column so existing full-row recipe queries
+// never depend on it. dish_types is a JSON array; "[]" means "none".
+export const recipeDishTypes = sqliteTable("recipe_dish_types", {
+  recipeId: integer("recipe_id")
+    .primaryKey()
+    .references(() => recipes.id, { onDelete: "cascade" }),
+  dishTypes: text("dish_types").notNull(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 // ─── Voice Recordings ──────────────────────────────────────
 export const voiceRecordings = sqliteTable("voice_recordings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
