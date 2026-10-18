@@ -17,6 +17,7 @@ import { FIRST_COOK_MISSION_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-fl
 import { prefetchViewData } from "@/lib/view-cache";
 import { MealReviewController } from "@/components/planner/MealReviewController";
 import { LeftoversPrompt } from "@/components/planner/LeftoversPrompt";
+import { NextMealCard, loadNextMeal } from "@/components/planner/NextMealCard";
 import { ChevronLeft, Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
 
 // Household settings and the cooking log open from Profile rather than
@@ -274,6 +275,7 @@ function RecipeWorkspaceContent({
     recipe: RecipeWithRelations;
     mealPlanId?: number;
   }> | null>(null);
+  const nextMealShortcutHandledRef = useRef(false);
   const [pilotFeedbackStage, setPilotFeedbackStage] = useState<PilotFeedbackStage | null>(null);
 
   // ── First Recipe Guided Mission ──────────────────────────
@@ -415,6 +417,23 @@ function RecipeWorkspaceContent({
     },
     [addToast]
   );
+
+  useEffect(() => {
+    if (nextMealShortcutHandledRef.current) return;
+    nextMealShortcutHandledRef.current = true;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("start") !== "next-meal") return;
+
+    url.searchParams.delete("start");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    void loadNextMeal().then((meal) => {
+      if (meal?.toCook.length) {
+        void handleCookMealBatch(meal.toCook);
+      } else {
+        setCurrentView("plan");
+      }
+    });
+  }, [handleCookMealBatch, setCurrentView]);
 
   const handleCookRecipe = useCallback(
     (recipeId: number) => {
@@ -817,6 +836,7 @@ function RecipeWorkspaceContent({
               onManualRecipe={handleFromScratch}
             />
             <div className="flex min-w-0 flex-1 flex-col">
+              <NextMealCard onStartPrep={(dishes) => void handleCookMealBatch(dishes)} />
               {showMissionCard && (
                 <FirstCookMissionCard
                   onStart={openMission}
@@ -840,15 +860,18 @@ function RecipeWorkspaceContent({
           <ShoppingListView initialDateRange={shoppingDateRange} onOpenHousehold={openHousehold} />
         )}
         {currentView === "plan" && (
-          <MealPlanView
-            onCookMeal={handleCookMealPlan}
-            onCookMeals={handleCookMealBatch}
-            onOpenShoppingList={(range) => {
-              setShoppingDateRange(range);
-              setCurrentView("shopping");
-            }}
-            onOpenHousehold={openHousehold}
-          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <NextMealCard onStartPrep={(dishes) => void handleCookMealBatch(dishes)} />
+            <MealPlanView
+              onCookMeal={handleCookMealPlan}
+              onCookMeals={handleCookMealBatch}
+              onOpenShoppingList={(range) => {
+                setShoppingDateRange(range);
+                setCurrentView("shopping");
+              }}
+              onOpenHousehold={openHousehold}
+            />
+          </div>
         )}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "household" && HouseholdView && (

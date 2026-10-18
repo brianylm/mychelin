@@ -10,6 +10,15 @@
   "theme_color": "#d97706",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Start tonight's prep",
+      "short_name": "Start prep",
+      "description": "Open the next planned meal and start cooking",
+      "url": "/app?start=next-meal",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-48.png",
