@@ -70,8 +70,8 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
       setNewContent("");
       onTipCountChange?.(updated.length);
       addToast("Cooking principle added!", "success");
-    } catch (error: any) {
-      addToast(error.message || "Failed to add principle", "error");
+    } catch (error) {
+      addToast((error instanceof Error && error.message) || "Failed to add principle", "error");
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +124,8 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           "error"
         );
       }
-    } catch (err: any) {
-      addToast(err?.message || "Failed to analyze recipes", "error");
+    } catch (err) {
+      addToast((err instanceof Error && err.message) || "Failed to analyze recipes", "error");
     } finally {
       setAnalyzing(false);
     }
@@ -148,8 +148,8 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
       onTipCountChange?.(updated.length);
       setSuggestions((prev) => prev.filter((_, i) => i !== idx));
       addToast("Principle saved", "success");
-    } catch (err: any) {
-      addToast(err?.message || "Failed to save", "error");
+    } catch (err) {
+      addToast((err instanceof Error && err.message) || "Failed to save", "error");
     } finally {
       setSavingIdx(null);
     }
@@ -250,7 +250,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           <p className="text-neutral-600">No cooking principles yet</p>
           {canEdit && (
             <p className="mt-1 text-sm text-neutral-400">
-              Add tips and principles that guide this book's cooking style
+              Add tips and principles that guide this book&apos;s cooking style
             </p>
           )}
         </div>

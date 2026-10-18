@@ -26,8 +26,8 @@ export function RecipeForkButton({ recipeId, recipeTitle, onForked, variant = "d
       const forked = await res.json();
       addToast(`"${forked.title}" forked successfully!`, "success");
       onForked?.(forked.id);
-    } catch (error: any) {
-      addToast(error.message || "Failed to fork recipe", "error");
+    } catch (error) {
+      addToast((error instanceof Error && error.message) || "Failed to fork recipe", "error");
     } finally {
       setForking(false);
     }

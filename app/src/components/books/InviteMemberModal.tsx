@@ -61,13 +61,14 @@ export function InviteMemberModal({ bookId, bookTitle, onClose, onMemberAdded }:
 
       addToast(`Invited ${memberData.user.name} to ${bookTitle}!`, "success");
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error inviting member:", error);
+      const message = error instanceof Error ? error.message : "";
       
       let errorMessage = "Failed to invite member";
-      if (error.message === "User not found") {
+      if (message === "User not found") {
         errorMessage = "No user found with that email address";
-      } else if (error.message === "User is already a member of this book") {
+      } else if (message === "User is already a member of this book") {
         errorMessage = "This user is already a member of this book";
       }
       
@@ -83,7 +84,7 @@ export function InviteMemberModal({ bookId, bookTitle, onClose, onMemberAdded }:
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-neutral-900">Invite Member</h2>
-            <p className="text-sm text-neutral-600">Add a collaborator to "{bookTitle}"</p>
+            <p className="text-sm text-neutral-600">Add a collaborator to &ldquo;{bookTitle}&rdquo;</p>
           </div>
           <button
             onClick={onClose}
