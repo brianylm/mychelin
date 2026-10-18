@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
-interface AuthUser {
+export interface AuthUser {
   id: number;
   name: string;
   email: string;
@@ -25,12 +25,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue>(null!);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: ReactNode;
+  initialUser?: AuthUser;
+}) {
+  const [user, setUser] = useState<AuthUser | null>(initialUser ?? null);
+  const [loading, setLoading] = useState(!initialUser);
 
   // Check current session on mount (with timeout to avoid infinite loading)
   useEffect(() => {
+    // Authenticated app routes receive a server-verified user. Keep that
+    // session available immediately instead of making the UI depend on a
+    // second /api/auth/me request that can time out on a slow connection.
+    if (initialUser) return;
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
 
@@ -47,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, []);
+  }, [initialUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch("/api/auth/login", {

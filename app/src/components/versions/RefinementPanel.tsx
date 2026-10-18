@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import {
-  Cross2Icon,
-  StarIcon,
-  StarFilledIcon,
-  CheckIcon,
-  ReloadIcon,
-  ChevronRightIcon,
-} from "@radix-ui/react-icons";
+  Check,
+  ChevronRight,
+  RotateCw,
+  Star,
+  X,
+} from "lucide-react";
 
 interface RefinementIngredient {
   name: string;
@@ -163,28 +162,28 @@ Return ONLY the JSON array, no other text.`,
             <span>✨</span>
             <h3 className="text-sm font-semibold text-neutral-800">AI Refinement</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100">
-            <Cross2Icon className="h-4 w-4" />
+          <button onClick={onClose} className="rounded-lg p-1 text-ui-muted hover:bg-neutral-100">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Context */}
         <div className="border-b border-neutral-100 px-4 py-3">
-          <div className="rounded-xl bg-[#800020]/5 p-3">
-            <div className="flex items-center gap-2 text-xs text-[#800020]">
+          <div className="rounded-xl bg-ui-accent/5 p-3">
+            <div className="flex items-center gap-2 text-xs text-ui-accent">
               <span>Based on v{labelOf(version)} cook-along</span>
               {version.closenessRating && (
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) =>
                     s <= version.closenessRating!
-                      ? <StarFilledIcon key={s} className="h-2.5 w-2.5 text-amber-500" />
-                      : <StarIcon key={s} className="h-2.5 w-2.5 text-amber-300" />
+                      ? <Star key={s} className="h-2.5 w-2.5 text-amber-500" fill="currentColor" aria-hidden="true" />
+                      : <Star key={s} className="h-2.5 w-2.5 text-amber-300" aria-hidden="true" />
                   )}
                 </div>
               )}
             </div>
             {version.closenessNotes && (
-              <p className="mt-1 text-xs text-[#800020] italic">&quot;{version.closenessNotes}&quot;</p>
+              <p className="mt-1 text-xs text-ui-accent italic">&quot;{version.closenessNotes}&quot;</p>
             )}
           </div>
         </div>
@@ -193,13 +192,13 @@ Return ONLY the JSON array, no other text.`,
         <div className="px-4 py-3">
           {loading ? (
             <div className="flex flex-col items-center gap-2 py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#800020] border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
               <p className="text-xs text-neutral-500">Generating suggestions…</p>
             </div>
           ) : suggestions.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-neutral-500">No specific suggestions could be generated.</p>
-              <p className="mt-1 text-xs text-neutral-400">Try adding more detailed notes about what was different.</p>
+              <p className="mt-1 text-xs text-ui-muted">Try adding more detailed notes about what was different.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -207,19 +206,19 @@ Return ONLY the JSON array, no other text.`,
               {suggestions.map((suggestion, i) => (
                 <button key={i} onClick={() => toggleSuggestion(i)}
                   className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
-                    selectedSuggestions.has(i) ? "border-[#800020]/45 bg-[#800020]/5" : "border-neutral-200 hover:border-neutral-300"
+                    selectedSuggestions.has(i) ? "border-ui-accent/45 bg-ui-accent/5" : "border-neutral-200 hover:border-neutral-300"
                   }`}>
                   <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-                    selectedSuggestions.has(i) ? "border-amber-500 bg-[#800020]/50" : "border-neutral-300"
+                    selectedSuggestions.has(i) ? "border-amber-500 bg-ui-accent/50" : "border-neutral-300"
                   }`}>
-                    {selectedSuggestions.has(i) && <CheckIcon className="h-3 w-3 text-white" />}
+                    {selectedSuggestions.has(i) && <Check className="h-3 w-3 text-white" aria-hidden="true" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-neutral-800">{suggestion.ingredient}</div>
                     <div className="mt-0.5 flex items-center gap-1 text-xs">
-                      <span className="text-neutral-400">{suggestion.currentAmount}</span>
-                      <ChevronRightIcon className="h-2.5 w-2.5 text-neutral-300" />
-                      <span className="font-medium text-[#800020]">{suggestion.suggestedAmount}</span>
+                      <span className="text-ui-muted">{suggestion.currentAmount}</span>
+                      <ChevronRight className="h-2.5 w-2.5 text-neutral-300" aria-hidden="true" />
+                      <span className="font-medium text-ui-accent">{suggestion.suggestedAmount}</span>
                     </div>
                     <p className="mt-0.5 text-[11px] text-neutral-500">{suggestion.reason}</p>
                   </div>
@@ -234,10 +233,10 @@ Return ONLY the JSON array, no other text.`,
           <div className="sticky bottom-0 flex items-center justify-between border-t border-neutral-100 bg-white px-4 py-3">
             <button onClick={generateSuggestions} disabled={loading}
               className="flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100">
-              <ReloadIcon className="h-3 w-3" /> Regenerate
+              <RotateCw className="h-3 w-3" aria-hidden="true" /> Regenerate
             </button>
             <button onClick={handleApply} disabled={saving || selectedSuggestions.size === 0}
-              className="flex items-center gap-1 rounded-xl bg-[#800020]/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#17131f] disabled:opacity-50">
+              className="flex items-center gap-1 rounded-xl bg-ui-accent/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-ui-action disabled:opacity-50">
               {saving ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <span>✨</span>}
               Apply {selectedSuggestions.size} Suggestion{selectedSuggestions.size !== 1 ? "s" : ""}
             </button>

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
+import { SharedHouseholdChip } from "@/components/household/SharedHouseholdChip";
+import { readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
 
 interface ShoppingItem {
   key: string;
@@ -44,8 +48,17 @@ interface DateRange {
   end: string;
 }
 
+// GET /api/shopping-list response, as kept in the tab cache.
+interface ShoppingListResponse {
+  items?: ShoppingItem[];
+  movedItems?: MovedItem[];
+  household?: { name?: string } | null;
+  summary?: ShoppingSummary | null;
+}
+
 interface ShoppingListViewProps {
   initialDateRange?: DateRange;
+  onOpenHousehold?: () => void;
 }
 
 function toDateKey(date: Date): string {
@@ -67,15 +80,35 @@ function getWeekRange(): DateRange {
   };
 }
 
-export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
+export function ShoppingListView({ initialDateRange, onOpenHousehold }: ShoppingListViewProps) {
   const { addToast } = useToast();
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [movedItems, setMovedItems] = useState<MovedItem[]>([]);
-  const [householdName, setHouseholdName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const qc = useQueryClient();
+  const userId = useAuth().user?.id;
   const [dateRange, setDateRange] = useState<DateRange>(() => initialDateRange || getWeekRange());
-  const [summary, setSummary] = useState<ShoppingSummary | null>(null);
+  // Seed from the tab cache so a return visit paints at once; fetchList
+  // still refreshes.
+  const [initial] = useState(() =>
+    readViewCache<ShoppingListResponse>(
+      qc,
+      userId,
+      viewUrls.shoppingList(dateRange.start, dateRange.end)
+    )
+  );
+  const [items, setItems] = useState<ShoppingItem[]>(initial?.items ?? []);
+  const [movedItems, setMovedItems] = useState<MovedItem[]>(initial?.movedItems ?? []);
+  const [householdName, setHouseholdName] = useState<string | null>(initial?.household?.name ?? null);
+  const [loading, setLoading] = useState(false);
+  // Which range the on-screen list belongs to; only that range's state is
+  // mirrored into the cache.
+  const [dataUrl, setDataUrl] = useState<string | null>(() =>
+    initial ? viewUrls.shoppingList(dateRange.start, dateRange.end) : null
+  );
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(() =>
+    initial?.household
+      ? new Set((initial.items ?? []).filter((i) => i.ticked).map((i) => i.key))
+      : new Set()
+  );
+  const [summary, setSummary] = useState<ShoppingSummary | null>(initial?.summary ?? null);
   const [error, setError] = useState<string | null>(null);
   // Household: move-to-inventory confirm sheet (step 2 of the 2-step
   // flow), with editable quantities before confirming.
@@ -91,24 +124,34 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
     setCheckedItems(new Set());
   }, [initialDateRange]);
 
+  const listUrl = viewUrls.shoppingList(dateRange.start, dateRange.end);
+
+  const applyList = useCallback((url: string, data: ShoppingListResponse) => {
+    const list: ShoppingItem[] = data.items || [];
+    setItems(list);
+    setMovedItems(Array.isArray(data.movedItems) ? data.movedItems : []);
+    setHouseholdName(data.household?.name ?? null);
+    setSummary(data.summary || null);
+    if (data.household) {
+      // Shared list: ticks are server state, not local taps.
+      setCheckedItems(new Set(list.filter((i) => i.ticked).map((i) => i.key)));
+    }
+    setDataUrl(url);
+  }, []);
+
   const fetchList = useCallback(async () => {
-    setLoading(true);
+    // A cached copy of this range paints at once and the refresh below
+    // stays silent; only an uncached range shows the spinner.
+    const cached = readViewCache<ShoppingListResponse>(qc, userId, listUrl);
+    if (cached) applyList(listUrl, cached);
+    else setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/shopping-list?startDate=${dateRange.start}&endDate=${dateRange.end}`
-      );
+      const res = await fetch(listUrl);
       const data = await res.json();
       if (res.ok) {
-        const list: ShoppingItem[] = data.items || [];
-        setItems(list);
-        setMovedItems(Array.isArray(data.movedItems) ? data.movedItems : []);
-        setHouseholdName(data.household?.name ?? null);
-        setSummary(data.summary || null);
-        if (data.household) {
-          // Shared list: ticks are server state, not local taps.
-          setCheckedItems(new Set(list.filter((i) => i.ticked).map((i) => i.key)));
-        }
+        writeViewCache(qc, userId, listUrl, data);
+        applyList(listUrl, data);
       } else {
         setError(data.error || "Failed to generate list");
       }
@@ -117,11 +160,26 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [qc, userId, listUrl, applyList]);
 
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  // Keep the cache in step with local edits (shared ticks) so a return
+  // visit does not flash pre-edit state.
+  const cachedList = useMemo<ShoppingListResponse>(
+    () => ({
+      items: householdName
+        ? items.map((i) => ({ ...i, ticked: checkedItems.has(i.key) }))
+        : items,
+      movedItems,
+      household: householdName ? { name: householdName } : null,
+      summary,
+    }),
+    [items, movedItems, householdName, summary, checkedItems]
+  );
+  useViewCacheMirror(userId, listUrl, cachedList, dataUrl === listUrl && !loading && !error);
 
   const toggleCheck = (item: ShoppingItem) => {
     const willCheck = !checkedItems.has(item.key);
@@ -264,9 +322,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
           <p className="text-xs text-neutral-500">
             Based on your meal plan, grouped by ingredient and adjusted for matching inventory.
             {householdName && (
-              <span className="ml-2 rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold text-[#800020]">
-                Shared with {householdName}
-              </span>
+              <SharedHouseholdChip name={householdName} onOpen={onOpenHousehold} />
             )}
           </p>
         </div>
@@ -297,7 +353,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
               />
             </label>
           </div>
-          <Button size="1" variant="soft" onClick={fetchList}>
+          <Button size="sm" variant="secondary" onClick={fetchList}>
             Refresh
           </Button>
         </div>
@@ -306,15 +362,15 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
         {summary && (
           <div className="mb-4 grid gap-2 sm:grid-cols-3">
             <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Meals</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-muted">Meals</p>
               <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.mealCount}</p>
             </div>
             <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">Recipes</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-muted">Recipes</p>
               <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.recipeCount}</p>
             </div>
             <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">To buy</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-muted">To buy</p>
               <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.itemCount}</p>
             </div>
           </div>
@@ -333,7 +389,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
               <div
-                className="h-full rounded-full bg-[#800020]/50 transition-all duration-300"
+                className="h-full rounded-full bg-ui-accent/50 transition-all duration-300"
                 style={{
                   width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%`,
                 }}
@@ -348,7 +404,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
             <button
               type="button"
               onClick={openMoveSheet}
-              className="w-full rounded-2xl bg-[#800020] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#6b001b]"
+              className="w-full rounded-2xl bg-ui-accent px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#6b001b]"
             >
               Move {checkedCount} ticked item{checkedCount === 1 ? "" : "s"} to inventory
             </button>
@@ -367,7 +423,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                     onChange={(e) => setAddDraft((d) => ({ ...d, name: e.target.value }))}
                     placeholder="Item name"
                     aria-label="Item name"
-                    className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45"
+                    className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
                     autoFocus
                   />
                   <input
@@ -376,21 +432,21 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                     placeholder="Qty"
                     type="number"
                     aria-label="Quantity"
-                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45"
+                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
                   />
                   <input
                     value={addDraft.unit}
                     onChange={(e) => setAddDraft((d) => ({ ...d, unit: e.target.value }))}
                     placeholder="Unit"
                     aria-label="Unit"
-                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45"
+                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
                   />
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <Button size="2" variant="solid" onClick={addManualItem} disabled={!addDraft.name.trim()}>
+                  <Button size="md" variant="primary" onClick={addManualItem} disabled={!addDraft.name.trim()}>
                     Add
                   </Button>
-                  <Button size="2" variant="soft" color="gray" onClick={() => setIsAdding(false)}>
+                  <Button size="md" variant="secondary" onClick={() => setIsAdding(false)}>
                     Cancel
                   </Button>
                 </div>
@@ -399,7 +455,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
               <button
                 type="button"
                 onClick={() => setIsAdding(true)}
-                className="w-full rounded-2xl border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-500 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                className="w-full rounded-2xl border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent"
               >
                 + Add an item manually
               </button>
@@ -477,14 +533,14 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                           <p
                             className={`text-sm ${
                               checked
-                                ? "text-neutral-400 line-through"
+                                ? "text-ui-muted line-through"
                                 : "text-neutral-800"
                             }`}
                           >
                             {item.name}
                           </p>
                           {checked && householdName && item.tickedByName && (
-                            <p className="text-[10px] text-neutral-400">
+                            <p className="text-[10px] text-ui-muted">
                               Bought by {item.tickedByName}
                             </p>
                           )}
@@ -494,18 +550,18 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                         <div className="text-right">
                           <p
                             className={`text-sm font-medium tabular-nums ${
-                              checked ? "text-neutral-400" : "text-neutral-800"
+                              checked ? "text-ui-muted" : "text-neutral-800"
                             }`}
                           >
                             {item.quantityLabel}
                           </p>
                           {item.quantityOnHand > 0 && item.quantityToBuy != null && (
-                            <p className="text-[10px] text-neutral-400">
+                            <p className="text-[10px] text-ui-muted">
                               {item.quantityOnHand} {item.unit} on hand
                             </p>
                           )}
                           {item.approximate && (
-                            <p className="text-[10px] text-neutral-400">
+                            <p className="text-[10px] text-ui-muted">
                               Check amount while shopping
                             </p>
                           )}
@@ -522,7 +578,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
         {/* Already moved to inventory — shown as such, never re-pushed */}
         {movedItems.length > 0 && (
           <div className="mt-6">
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-ui-muted">
               Moved to inventory
             </h3>
             <div className="space-y-1">
@@ -532,7 +588,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                   className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-2.5"
                 >
                   <span className="text-green-600">✓</span>
-                  <p className="min-w-0 flex-1 truncate text-sm text-neutral-400">
+                  <p className="min-w-0 flex-1 truncate text-sm text-ui-muted">
                     {item.name}
                     {item.quantity != null && (
                       <span className="ml-1 tabular-nums">
@@ -541,7 +597,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                     )}
                   </p>
                   {item.movedByName && (
-                    <p className="text-[10px] text-neutral-400">by {item.movedByName}</p>
+                    <p className="text-[10px] text-ui-muted">by {item.movedByName}</p>
                   )}
                 </div>
               ))}
@@ -574,7 +630,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                     }
                     placeholder="Qty"
                     aria-label={`Quantity for ${item.name}`}
-                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45"
+                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
                   />
                   <span className="w-12 text-xs text-neutral-500">{item.unit}</span>
                 </div>
@@ -585,7 +641,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                 type="button"
                 onClick={confirmMove}
                 disabled={moving}
-                className="flex-1 rounded-xl bg-[#800020] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-40"
+                className="flex-1 rounded-xl bg-ui-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-40"
               >
                 {moving ? "Moving..." : "Confirm move"}
               </button>

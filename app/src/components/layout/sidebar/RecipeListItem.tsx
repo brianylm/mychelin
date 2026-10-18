@@ -1,6 +1,6 @@
 "use client";
 
-import { DropdownMenu } from "@radix-ui/themes";
+import { Menu } from "@/components/ui/Menu";
 import { ChefHat, MoreVertical, PencilLine, Share2, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -112,8 +112,8 @@ export function RecipeListItem({
             <ChefHat className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
+        <Menu.Root>
+          <Menu.Trigger>
             <button
               type="button"
               className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
@@ -122,22 +122,22 @@ export function RecipeListItem({
             >
               <MoreVertical className="h-4 w-4" aria-hidden="true" />
             </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content>
+          </Menu.Trigger>
+          <Menu.Content align="end">
             {onShare && !isDraft && (
-              <DropdownMenu.Item onClick={() => onShare(recipe)}>
+              <Menu.Item onClick={() => onShare(recipe)}>
                 <Share2 className="h-4 w-4" />
                 Share
-              </DropdownMenu.Item>
+              </Menu.Item>
             )}
             {onDelete && (
-              <DropdownMenu.Item color="red" onClick={() => onDelete(recipe.id)}>
+              <Menu.Item tone="danger" onClick={() => onDelete(recipe.id)}>
                 <Trash2 className="h-4 w-4" />
                 Delete
-              </DropdownMenu.Item>
+              </Menu.Item>
             )}
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+          </Menu.Content>
+        </Menu.Root>
       </div>
     </li>
   );

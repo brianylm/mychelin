@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CollapsibleSectionProps {
@@ -33,11 +33,12 @@ export function CollapsibleSection({
         className="flex w-full items-center justify-between p-4 text-left transition hover:bg-ui-surface-subtle"
       >
         <div className="flex items-center gap-3">
-          <ChevronRightIcon
+          <ChevronRight
             className={cn(
               "h-4 w-4 transition-transform",
               isOpen ? "rotate-90" : "rotate-0"
             )}
+            aria-hidden="true"
           />
           <div>
             <h3 className="text-sm font-semibold text-ui-text">{title}</h3>

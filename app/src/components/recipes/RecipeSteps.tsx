@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Button } from "@radix-ui/themes";
-import { PlusIcon } from "@radix-ui/react-icons";
-import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui";
+import { Plus, Trash2 } from "lucide-react";
 import type { Ingredient, Instruction } from "@/db/schema";
 import {
   encodeHeatInTip,
@@ -31,7 +30,7 @@ interface RecipeStepsProps {
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-[#800020]/45 focus:ring-2 focus:ring-[#800020]/10 focus:bg-white placeholder:text-neutral-400";
+  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
 
 
 function capitalize(s: string): string {
@@ -229,13 +228,13 @@ export function RecipeSteps({
       <section className="rounded-2xl border border-neutral-200 bg-white p-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
             {sorted.length}
           </span>
         </div>
 
         {sorted.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-neutral-400">
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-ui-muted">
             No steps yet
           </p>
         ) : (
@@ -246,7 +245,7 @@ export function RecipeSteps({
               return (
                 <li key={step.id} className="rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-3">
                   <div className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-xs font-semibold text-ui-accent">
                       {step.stepNumber}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -258,7 +257,7 @@ export function RecipeSteps({
                           </span>
                         )}
                         {amountHints.map((hint) => (
-                          <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#800020]/10 bg-white px-2 py-1 text-[11px] text-neutral-600">
+                          <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full border border-ui-accent/10 bg-white px-2 py-1 text-[11px] text-neutral-600">
                             <span className="font-semibold text-[#521224]">{hint.amount}</span>
                             <span className="truncate">{hint.name}</span>
                           </span>
@@ -280,7 +279,7 @@ export function RecipeSteps({
     <section className="rounded-2xl border border-neutral-200 bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#800020]/10 px-1.5 text-xs font-medium text-[#800020]">
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
           {sorted.length}
         </span>
       </div>
@@ -306,7 +305,7 @@ export function RecipeSteps({
                 }}
                 className={`group flex gap-2 rounded-xl border px-3 py-2.5 transition-all ${
                   isDragging
-                    ? "relative z-10 scale-[1.02] select-none border-[#800020]/35 bg-[#800020]/5 shadow-md ring-2 ring-[#800020]/10"
+                    ? "relative z-10 scale-[1.02] select-none border-ui-accent/35 bg-ui-accent/5 shadow-md ring-2 ring-ui-accent/10"
                     : "border-neutral-100 bg-neutral-50/50"
                 }`}
               >
@@ -325,15 +324,15 @@ export function RecipeSteps({
                     onPointerCancel={handlePointerUp}
                     className={`flex h-10 w-10 cursor-grab touch-none select-none items-center justify-center rounded-full border transition active:cursor-grabbing ${
                       isDragging
-                        ? "border-[#800020]/30 bg-[#800020] text-white"
-                        : "border-neutral-200 bg-white text-neutral-500 hover:border-[#800020]/25 hover:text-[#800020]"
+                        ? "border-ui-accent/30 bg-ui-accent text-white"
+                        : "border-neutral-200 bg-white text-neutral-500 hover:border-ui-accent/25 hover:text-ui-accent"
                     }`}
                     title="Drag to reorder"
                     aria-label="Drag step to reorder"
                   >
                     <GripIcon className="h-4 w-4" />
                   </button>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#800020]/10 text-xs font-semibold text-[#800020]">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ui-accent/10 text-xs font-semibold text-ui-accent">
                     {displayIdx + 1}
                   </span>
                 </div>
@@ -351,14 +350,14 @@ export function RecipeSteps({
                       }
                       onUpdate(recipeId, step.id, { content: capitalized });
                     }}
-                    className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10"
+                    className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10"
                   />
                   {amountHints.length > 0 && (
                     <div className="mt-2 ml-2 flex flex-wrap gap-1.5" aria-label="Ingredient amounts mentioned in this step">
                       {amountHints.map((hint) => (
                         <span
                           key={hint.name}
-                          className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#800020]/10 bg-white px-2 py-1 text-[11px] text-neutral-600"
+                          className="inline-flex max-w-full items-center gap-1 rounded-full border border-ui-accent/10 bg-white px-2 py-1 text-[11px] text-neutral-600"
                         >
                           <span className="font-semibold text-[#521224]">{hint.amount}</span>
                           <span className="truncate">{hint.name}</span>
@@ -373,7 +372,7 @@ export function RecipeSteps({
                     className={`mt-1 ml-2 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition ${
                       heat && HEAT_CONFIG[heat]
                         ? HEAT_CONFIG[heat].className
-                        : "border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300"
+                        : "border-neutral-200 bg-white text-ui-muted hover:border-neutral-300"
                     }`}
                     title="Cycle heat: off to low to medium to high"
                   >
@@ -419,12 +418,12 @@ export function RecipeSteps({
           className={fieldBase}
         />
         <Button
-          size="2"
-          variant="solid"
+          size="md"
+          variant="primary"
           onClick={handleAddStep}
           disabled={!newStep.trim()}
         >
-          <PlusIcon className="h-4 w-4" />
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
     </section>

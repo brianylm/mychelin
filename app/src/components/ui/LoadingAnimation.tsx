@@ -111,7 +111,7 @@ function WokIgnition({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Wok heating over a flame"
     >
@@ -184,7 +184,7 @@ function HeiBurstWok({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Wok tossing ingredients over a flame"
     >
@@ -269,7 +269,7 @@ function SteamerStack({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Bamboo steamer with rising steam"
     >
@@ -328,7 +328,7 @@ function RollingDough({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Rolling pin flattening dough"
     >
@@ -382,7 +382,7 @@ function SimmeringPot({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Pot simmering with rising bubbles"
     >
@@ -445,7 +445,7 @@ function ChoppingBoard({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Knife chopping vegetables on a board"
     >
@@ -507,7 +507,7 @@ function TehTarikPull({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Teh tarik poured between two cups"
     >
@@ -569,7 +569,7 @@ function FanningSatay({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Satay skewers over charcoal being fanned"
     >
@@ -644,7 +644,7 @@ function PoundingRempah({ size }: { size: number }) {
       viewBox="0 0 200 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="text-[#17131f]"
+      className="text-ui-action"
       role="img"
       aria-label="Pestle pounding spices in a mortar"
     >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { Check, RotateCw } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 interface RecipeSaveStatusProps {
@@ -41,16 +41,16 @@ export function RecipeSaveStatus({ isSaving, updatedAt, compact = false }: Recip
       <div className="flex min-w-0 items-center gap-2 text-[11px]">
         {isSaving ? (
           <>
-            <ReloadIcon className="h-3 w-3 animate-spin text-[#800020]" />
-            <span className="font-medium text-[#800020]">Saving</span>
+            <RotateCw className="h-3 w-3 animate-spin text-ui-accent" aria-hidden="true" />
+            <span className="font-medium text-ui-accent">Saving</span>
           </>
         ) : (
           <>
-            <CheckIcon className={`h-3 w-3 ${justSaved ? "text-emerald-500" : "text-neutral-400"}`} />
+            <Check className={`h-3 w-3 ${justSaved ? "text-emerald-500" : "text-ui-muted"}`} aria-hidden="true" />
             <span className="hidden font-medium text-neutral-500 sm:inline">
               {justSaved ? "Saved" : "Autosaved"}
             </span>
-            <span className="hidden text-neutral-400 md:inline">{formatDateTime(updatedAt)}</span>
+            <span className="hidden text-ui-muted md:inline">{formatDateTime(updatedAt)}</span>
           </>
         )}
       </div>
@@ -61,8 +61,8 @@ export function RecipeSaveStatus({ isSaving, updatedAt, compact = false }: Recip
     <div className="-mx-1 mb-2 flex items-center gap-3 px-1 text-xs">
       {isSaving ? (
         <>
-          <ReloadIcon className="h-3 w-3 animate-spin text-[#800020]" />
-          <span className="font-medium text-[#800020]">Saving...</span>
+          <RotateCw className="h-3 w-3 animate-spin text-ui-accent" aria-hidden="true" />
+          <span className="font-medium text-ui-accent">Saving...</span>
         </>
       ) : (
         <>
@@ -71,16 +71,17 @@ export function RecipeSaveStatus({ isSaving, updatedAt, compact = false }: Recip
               justSaved ? "bg-emerald-500" : "bg-emerald-100"
             }`}
           >
-            <CheckIcon
+            <Check
               className={`h-3 w-3 ${
                 justSaved ? "text-white" : "text-emerald-600"
               }`}
+              aria-hidden="true"
             />
           </div>
           <span className="font-medium text-neutral-700">
             {justSaved ? "Saved" : "Autosaved"}
           </span>
-          <span className="text-neutral-400">· {formatDateTime(updatedAt)}</span>
+          <span className="text-ui-muted">· {formatDateTime(updatedAt)}</span>
         </>
       )}
     </div>

@@ -8,6 +8,21 @@ export const preferredRegion = "hnd1";
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
 const FETCH_TIMEOUT_MS = 10_000;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isRecipeNode(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+
+  const type = value["@type"];
+  return (
+    type === "Recipe" ||
+    (typeof type === "string" && type.includes("Recipe")) ||
+    (Array.isArray(type) && type.includes("Recipe"))
+  );
+}
+
 // Many recipe blogs embed structured data in JSON-LD <script> tags
 // (schema.org/Recipe). This is the richest, most reliable source —
 // no HTML parsing ambiguity, no JS-rendering issues.
@@ -20,17 +35,18 @@ function extractJsonLdRecipe(html: string): string | null {
   for (const match of ldMatches) {
     const inner = match.replace(/<script[^>]*>|<\/script>/gi, "").trim();
     try {
-      const parsed = JSON.parse(inner);
+      const parsed: unknown = JSON.parse(inner);
       const items = Array.isArray(parsed) ? parsed : [parsed];
       for (const item of items) {
-        if (item["@type"] === "Recipe" || item["@type"]?.includes?.("Recipe")) {
+        if (isRecipeNode(item)) {
           return JSON.stringify(item, null, 2);
         }
-        if (item["@graph"]) {
-          const recipe = item["@graph"].find(
-            (g: any) => g["@type"] === "Recipe" || g["@type"]?.includes?.("Recipe")
-          );
-          if (recipe) return JSON.stringify(recipe, null, 2);
+        if (isRecord(item)) {
+          const graph = item["@graph"];
+          if (Array.isArray(graph)) {
+            const recipe = graph.find(isRecipeNode);
+            if (recipe) return JSON.stringify(recipe, null, 2);
+          }
         }
       }
     } catch {
@@ -116,8 +132,11 @@ export async function POST(request: NextRequest) {
         redirect: "follow",
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
-    } catch (err: any) {
-      if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        (err.name === "TimeoutError" || err.name === "AbortError")
+      ) {
         return NextResponse.json(
           { error: "The page took too long to respond" },
           { status: 504 }

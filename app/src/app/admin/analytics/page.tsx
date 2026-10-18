@@ -198,7 +198,7 @@ function UsageChip({ label, value }: { label: string; value: number }) {
     <span
       className={
         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium " +
-        (value > 0 ? "border-[#e4d9ca] bg-[#fffdf9] text-neutral-800" : "border-neutral-200 bg-neutral-50 text-neutral-400")
+        (value > 0 ? "border-[#e4d9ca] bg-[#fffdf9] text-neutral-800" : "border-neutral-200 bg-neutral-50 text-ui-muted")
       }
     >
       {label} <span className="tabular-nums">{value}</span>

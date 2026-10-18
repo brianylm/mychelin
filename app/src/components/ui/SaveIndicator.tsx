@@ -1,37 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Spinner } from "@radix-ui/themes";
+import { Spinner } from "./Spinner";
 
 interface SaveIndicatorProps {
   isSaving: boolean;
 }
 
 export function SaveIndicator({ isSaving }: SaveIndicatorProps) {
-  const [showCheckmark, setShowCheckmark] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [phase, setPhase] = useState<"hidden" | "saving" | "saved">(
+    isSaving ? "saving" : "hidden"
+  );
+  const [wasSaving, setWasSaving] = useState(isSaving);
+
+  // Derive the phase from the saving→saved transition during render rather
+  // than in an effect; only the timed fade-out needs an effect.
+  if (isSaving !== wasSaving) {
+    setWasSaving(isSaving);
+    setPhase(isSaving ? "saving" : "saved");
+  }
 
   useEffect(() => {
-    if (isSaving) {
-      setIsVisible(true);
-      setShowCheckmark(false);
-    } else if (isVisible && !isSaving) {
-      setShowCheckmark(true);
-      const timer = setTimeout(() => setIsVisible(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isSaving, isVisible]);
+    if (phase !== "saved") return;
+    const timer = setTimeout(() => setPhase("hidden"), 2000);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
-  if (!isVisible) return null;
+  if (phase === "hidden") return null;
 
   return (
     <div className="inline-flex items-center">
-      {!showCheckmark ? (
-        <Spinner size="1" />
+      {phase === "saving" ? (
+        <Spinner label="Saving" className="text-ui-muted" />
       ) : (
         <div className="animate-fade-out">
           <svg
-            className="h-4 w-4 text-green-500"
+            className="h-4 w-4 text-ui-success"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
