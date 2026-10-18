@@ -42,6 +42,7 @@ import {
   parseYieldServings,
   scaleServingsForEaters,
 } from "@/lib/household-portions";
+import { mondayOfWeek } from "@/lib/household-blocking";
 import { RandomizeReviewDialog } from "./RandomizeReviewDialog";
 
 interface MealPlan {
@@ -132,9 +133,9 @@ function dateFromKey(dateKey: string): Date {
 }
 
 function getWeekDates(offset: number, anchorDateKey = getLocalTodayKey()): string[] {
-  const now = dateFromKey(anchorDateKey);
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - now.getDay() + 1 + offset * 7);
+  // Sunday belongs to the week that started the Monday before, not the next one.
+  const monday = dateFromKey(mondayOfWeek(anchorDateKey));
+  monday.setDate(monday.getDate() + offset * 7);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
@@ -148,8 +149,7 @@ function getMonthDates(offset: number, anchorDateKey = getLocalTodayKey()): stri
   const firstDay = new Date(targetMonth);
 
   // Start from the Monday of the week containing the first day
-  const startDate = new Date(firstDay);
-  startDate.setDate(firstDay.getDate() - firstDay.getDay() + 1);
+  const startDate = dateFromKey(mondayOfWeek(toDateKey(firstDay)));
 
   const weeks: string[][] = [];
   const currentDate = new Date(startDate);
