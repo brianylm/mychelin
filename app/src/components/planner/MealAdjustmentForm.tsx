@@ -69,11 +69,11 @@ export function MealAdjustmentForm({
     (dish): dish is FreshMealDish => dish.source === "fresh"
   );
 
-  const [diners, setDiners] = useState(() => String(meal.dinerCount));
+  const [diners, setDiners] = useState("");
   const [consumed, setConsumed] = useState<Record<number, string>>(() => {
     const next: Record<number, string> = {};
     for (const dish of preparedDishes) {
-      next[dish.reservationId] = String(dish.plannedPortions);
+      next[dish.reservationId] = "";
     }
     return next;
   });
@@ -82,8 +82,8 @@ export function MealAdjustmentForm({
     for (const dish of freshDishes) {
       next[dish.mealPlanId] = {
         cooked: true,
-        fridge: String(dish.plannedOutput?.fridge ?? 0),
-        freezer: String(dish.plannedOutput?.freezer ?? 0),
+        fridge: "",
+        freezer: "",
       };
     }
     return next;
@@ -104,14 +104,15 @@ export function MealAdjustmentForm({
     if (busy) return;
 
     const nextErrors: Record<string, string> = {};
-    const actualDiners = positiveInteger(diners);
+    const actualDiners = diners.trim() === "" ? meal.dinerCount : positiveInteger(diners);
     if (actualDiners === null) {
       nextErrors.diners = "Enter a whole number of diners, 1 or more.";
     }
 
     const preparedInput: ConfirmPreparedDishInput[] = [];
     for (const dish of preparedDishes) {
-      const parsed = nonNegativeNumber(consumed[dish.reservationId] ?? "");
+      const value = consumed[dish.reservationId] ?? "";
+      const parsed = value.trim() === "" ? dish.plannedPortions : nonNegativeNumber(value);
       if (parsed === null) {
         nextErrors[`consumed-${dish.reservationId}`] = "Enter 0 or more portions.";
         continue;
@@ -136,8 +137,8 @@ export function MealAdjustmentForm({
         continue;
       }
 
-      const fridge = nonNegativeNumber(draft.fridge);
-      const freezer = nonNegativeNumber(draft.freezer);
+      const fridge = draft.fridge.trim() === "" ? (dish.plannedOutput?.fridge ?? 0) : nonNegativeNumber(draft.fridge);
+      const freezer = draft.freezer.trim() === "" ? (dish.plannedOutput?.freezer ?? 0) : nonNegativeNumber(draft.freezer);
       if (fridge === null) {
         nextErrors[`fridge-${dish.mealPlanId}`] = "Enter 0 or more portions.";
       }
@@ -198,8 +199,8 @@ export function MealAdjustmentForm({
           inputMode="numeric"
           min={1}
           step={1}
-          required
           value={diners}
+          placeholder={String(meal.dinerCount)}
           disabled={busy}
           aria-invalid={Boolean(errors.diners) || undefined}
           aria-describedby={fieldDescriptionIds(
@@ -250,8 +251,8 @@ export function MealAdjustmentForm({
                       inputMode="decimal"
                       min={0}
                       step={0.5}
-                      required
                       value={consumed[dish.reservationId] ?? ""}
+                      placeholder={String(dish.plannedPortions)}
                       disabled={busy}
                       aria-invalid={Boolean(fieldError) || undefined}
                       aria-describedby={fieldDescriptionIds(
@@ -343,8 +344,8 @@ export function MealAdjustmentForm({
                           inputMode="decimal"
                           min={0}
                           step={0.5}
-                          required
                           value={draft?.fridge ?? "0"}
+                          placeholder={String(dish.plannedOutput?.fridge ?? 0)}
                           disabled={busy}
                           aria-invalid={Boolean(fridgeError) || undefined}
                           aria-describedby={fieldDescriptionIds(
@@ -380,8 +381,8 @@ export function MealAdjustmentForm({
                           inputMode="decimal"
                           min={0}
                           step={0.5}
-                          required
                           value={draft?.freezer ?? "0"}
+                          placeholder={String(dish.plannedOutput?.freezer ?? 0)}
                           disabled={busy}
                           aria-invalid={Boolean(freezerError) || undefined}
                           aria-describedby={fieldDescriptionIds(

@@ -5,6 +5,7 @@ import { Field, fieldDescriptionIds } from "@/components/ui";
 export interface MealPlanningFieldsProps {
   idPrefix: string;
   diners: string;
+  dinersSuggestion?: number;
   serveTime: string;
   durationMinutes: string;
   disabled?: boolean;
@@ -21,6 +22,7 @@ const inputClass =
 export function MealPlanningFields({
   idPrefix,
   diners,
+  dinersSuggestion = 2,
   serveTime,
   durationMinutes,
   disabled,
@@ -40,8 +42,8 @@ export function MealPlanningFields({
           min={1}
           max={100}
           step={1}
-          required
           value={diners}
+          placeholder={String(dinersSuggestion)}
           disabled={disabled}
           onChange={(event) => onChange("diners", event.target.value)}
           className={inputClass}

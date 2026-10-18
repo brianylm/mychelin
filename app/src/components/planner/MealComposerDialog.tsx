@@ -10,6 +10,7 @@ import type {
   PreparedBatchView,
 } from "@/lib/meal-pilot/types";
 import { MealPlanningFields } from "./MealPlanningFields";
+import { effectivePortions } from "./PortionStepper";
 
 export interface MealComposerRecipe {
   id: number;
@@ -131,8 +132,8 @@ export function MealComposerDialog({
   const [dishSource, setDishSource] = useState<"fresh" | "prepared">("fresh");
   const [recipeId, setRecipeId] = useState("");
   const [targetPortions, setTargetPortions] = useState("");
-  const [fridgeOutput, setFridgeOutput] = useState("0");
-  const [freezerOutput, setFreezerOutput] = useState("0");
+  const [fridgeOutput, setFridgeOutput] = useState("");
+  const [freezerOutput, setFreezerOutput] = useState("");
   const [lotId, setLotId] = useState("");
   const [preparedPortions, setPreparedPortions] = useState("");
   const [reheatNotes, setReheatNotes] = useState("");
@@ -149,8 +150,8 @@ export function MealComposerDialog({
     setDishSource("fresh");
     setRecipeId("");
     setTargetPortions("");
-    setFridgeOutput("0");
-    setFreezerOutput("0");
+    setFridgeOutput("");
+    setFreezerOutput("");
     setLotId("");
     setPreparedPortions("");
     setReheatNotes("");
@@ -199,9 +200,13 @@ export function MealComposerDialog({
     event.preventDefault();
     setValidationError(null);
 
-    const dinerCount = Number(diners);
+    const dinerCount = effectivePortions(diners, 2);
     const override = durationMinutes === "" ? null : Number(durationMinutes);
-    if (!Number.isInteger(dinerCount) || dinerCount < 1) {
+    if (
+      (diners.trim() !== "" && (!Number.isInteger(Number(diners)) || Number(diners) < 1)) ||
+      !Number.isInteger(dinerCount) ||
+      dinerCount < 1
+    ) {
       setValidationError("Enter how many people are eating.");
       return;
     }
@@ -227,14 +232,24 @@ export function MealComposerDialog({
     let dish: MealComposerSubmission["dish"];
     if (purpose !== "edit") {
       if (dishSource === "fresh") {
-        const portions = Number(targetPortions);
-        const fridge = Number(fridgeOutput || 0);
-        const freezer = Number(freezerOutput || 0);
-        if (!selectedRecipe || !Number.isFinite(portions) || portions <= 0) {
+        const portions = effectivePortions(targetPortions, dinerCount);
+        const fridge = effectivePortions(fridgeOutput, 0);
+        const freezer = effectivePortions(freezerOutput, 0);
+        if (
+          !selectedRecipe ||
+          (targetPortions.trim() !== "" && (!Number.isFinite(Number(targetPortions)) || Number(targetPortions) <= 0)) ||
+          !Number.isFinite(portions) ||
+          portions <= 0
+        ) {
           setValidationError("Choose a fresh recipe and enter the portions to eat.");
           return;
         }
-        if (![fridge, freezer].every((value) => Number.isFinite(value) && value >= 0)) {
+        if (
+          [fridge, freezer].some((value, index) => {
+            const raw = index === 0 ? fridgeOutput : freezerOutput;
+            return !Number.isFinite(value) || value < 0 || (raw.trim() !== "" && !Number.isFinite(Number(raw)));
+          })
+        ) {
           setValidationError("Saved portions cannot be negative.");
           return;
         }
@@ -245,8 +260,13 @@ export function MealComposerDialog({
           plannedOutput: fridge || freezer ? { fridge, freezer } : null,
         };
       } else {
-        const portions = Number(preparedPortions);
-        if (!selectedLot || !Number.isFinite(portions) || portions <= 0) {
+        const portions = effectivePortions(preparedPortions, dinerCount);
+        if (
+          !selectedLot ||
+          (preparedPortions.trim() !== "" && (!Number.isFinite(Number(preparedPortions)) || Number(preparedPortions) <= 0)) ||
+          !Number.isFinite(portions) ||
+          portions <= 0
+        ) {
           setValidationError("Choose a prepared batch and enter the portions to serve.");
           return;
         }
@@ -303,6 +323,7 @@ export function MealComposerDialog({
           <MealPlanningFields
             idPrefix="meal-composer"
             diners={diners}
+            dinersSuggestion={purpose === "edit" ? undefined : 2}
             serveTime={serveTime}
             durationMinutes={durationMinutes}
             disabled={busy}
@@ -383,8 +404,8 @@ export function MealComposerDialog({
                     type="number"
                     min="0.25"
                     step="0.25"
-                    required
                     value={targetPortions}
+                    placeholder={String(effectivePortions(diners, 2))}
                     disabled={busy}
                     onChange={(event) => setTargetPortions(event.target.value)}
                     className={inputClass}
@@ -398,6 +419,7 @@ export function MealComposerDialog({
                       min="0"
                       step="0.25"
                       value={fridgeOutput}
+                      placeholder="0"
                       disabled={busy}
                       onChange={(event) => setFridgeOutput(event.target.value)}
                       className={inputClass}
@@ -410,6 +432,7 @@ export function MealComposerDialog({
                       min="0"
                       step="0.25"
                       value={freezerOutput}
+                      placeholder="0"
                       disabled={busy}
                       onChange={(event) => setFreezerOutput(event.target.value)}
                       className={inputClass}
@@ -445,8 +468,8 @@ export function MealComposerDialog({
                     min="0.25"
                     step="0.25"
                     max={selectedLot?.lot.unallocatedPortions}
-                    required
                     value={preparedPortions}
+                    placeholder={String(effectivePortions(diners, 2))}
                     disabled={busy}
                     onChange={(event) => setPreparedPortions(event.target.value)}
                     className={inputClass}

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { MealCalendarStatus } from "./MealCalendarStatus";
 import { MealPlanningFields } from "./MealPlanningFields";
+import { MealComposerDialog } from "./MealComposerDialog";
 import { MealSourceBadge } from "./MealSourceBadge";
 import { StationAssignmentFields } from "./StationAssignmentFields";
 
@@ -104,6 +105,25 @@ describe("MealPlanningFields", () => {
     expect(html).toContain(
       "Leave blank to use the longest fresh recipe plus 15 minutes.",
     );
+  });
+
+  it("shows the composer's suggested diners as a placeholder while the value is empty", () => {
+    const html = renderToStaticMarkup(
+      <MealComposerDialog
+        open
+        purpose="create"
+        date="2026-10-18"
+        mealType="dinner"
+        recipes={[]}
+        batches={[]}
+        onClose={() => {}}
+        onSubmit={() => {}}
+      />,
+    );
+
+    const input = tagWithId(html, "input", "meal-composer-diners");
+    expect(input).toContain('placeholder="2"');
+    expect(input).toContain('value=""');
   });
 });
 
