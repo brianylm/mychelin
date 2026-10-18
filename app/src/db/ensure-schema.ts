@@ -39,6 +39,7 @@ let mealPlanBlocksEnsured = false;
 let recipePhotoSourceEnsured = false;
 let householdsEnsured = false;
 let householdsSlice3Ensured = false;
+let mealPilotEnsured = false;
 
 let _client: Client | null = null;
 
@@ -826,4 +827,313 @@ export async function ensureHouseholdSlice3Columns(): Promise<void> {
 
   await runDdl(client, statements, "ensureHouseholdSlice3Columns");
   householdsSlice3Ensured = true;
+}
+
+// Multi-dish meals and prepared batches. This mirrors migration 0032. Keep
+// it on every route that lets Drizzle select complete meal_plans rows because
+// those selects include the new nullable columns even for legacy behavior.
+export async function ensureMealPilotTables(): Promise<void> {
+  if (mealPilotEnsured) return;
+  const client = getClient();
+  if (!client) return;
+
+  await Promise.all([ensureHouseholdTables(), ensureRecipeAttemptsTable()]);
+
+  const objectNames = [
+    "meal_groups",
+    "prepared_batches",
+    "prepared_lots",
+    "prepared_reservations",
+    "meal_confirmation_commands",
+    "meal_fresh_effects",
+    "meal_station_assignments",
+    "meal_conflicts",
+    "calendar_connections",
+    "calendar_activities",
+    "calendar_shares",
+    "calendar_sync_jobs",
+  ];
+  let existing: Set<string>;
+  let mealPlanCols: Set<string>;
+  let calendarJobCols: Set<string>;
+  try {
+    [existing, mealPlanCols, calendarJobCols] = await Promise.all([
+      existingObjects(client, objectNames),
+      tableColumns(client, "meal_plans"),
+      tableColumns(client, "calendar_sync_jobs"),
+    ]);
+  } catch (e: unknown) {
+    console.warn("ensureMealPilotTables probe:", e instanceof Error ? e.message : String(e));
+    return;
+  }
+
+  const statements: string[] = [];
+  if (!existing.has("meal_groups")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS meal_groups (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        household_id integer REFERENCES households(id) ON DELETE cascade,
+        date text NOT NULL,
+        meal_type text NOT NULL,
+        serve_at text NOT NULL,
+        timezone text NOT NULL,
+        diner_count integer NOT NULL,
+        duration_override_minutes integer,
+        defrost_at_override text,
+        status text NOT NULL DEFAULT 'planned',
+        confirmed_at text,
+        confirmed_by integer REFERENCES users(id) ON DELETE set null,
+        revision integer NOT NULL DEFAULT 1,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS meal_groups_user_date_idx ON meal_groups(user_id, date)`,
+      `CREATE INDEX IF NOT EXISTS meal_groups_household_date_idx ON meal_groups(household_id, date)`
+    );
+  }
+  if (!mealPlanCols.has("meal_group_id")) {
+    statements.push(
+      `ALTER TABLE meal_plans ADD COLUMN meal_group_id integer REFERENCES meal_groups(id) ON DELETE set null`
+    );
+  }
+  if (!mealPlanCols.has("target_portions")) {
+    statements.push(`ALTER TABLE meal_plans ADD COLUMN target_portions real`);
+  }
+  if (!mealPlanCols.has("planned_output_fridge")) {
+    statements.push(`ALTER TABLE meal_plans ADD COLUMN planned_output_fridge real`);
+  }
+  if (!mealPlanCols.has("planned_output_freezer")) {
+    statements.push(`ALTER TABLE meal_plans ADD COLUMN planned_output_freezer real`);
+  }
+  if (!existing.has("prepared_batches")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS prepared_batches (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        household_id integer REFERENCES households(id) ON DELETE cascade,
+        recipe_id integer REFERENCES recipes(id) ON DELETE set null,
+        title text NOT NULL,
+        cooked_at text,
+        notes text,
+        revision integer NOT NULL DEFAULT 1,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS prepared_batches_user_idx ON prepared_batches(user_id)`,
+      `CREATE INDEX IF NOT EXISTS prepared_batches_household_idx ON prepared_batches(household_id)`
+    );
+  }
+  if (!existing.has("prepared_lots")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS prepared_lots (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        batch_id integer NOT NULL REFERENCES prepared_batches(id) ON DELETE cascade,
+        storage text NOT NULL,
+        physical_portions real NOT NULL,
+        use_by_date text,
+        revision integer NOT NULL DEFAULT 1,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS prepared_lots_batch_idx ON prepared_lots(batch_id)`
+    );
+  }
+  if (!existing.has("prepared_reservations")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS prepared_reservations (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        meal_group_id integer NOT NULL REFERENCES meal_groups(id) ON DELETE cascade,
+        lot_id integer NOT NULL REFERENCES prepared_lots(id) ON DELETE restrict,
+        source_storage text NOT NULL,
+        planned_portions real NOT NULL,
+        consumed_portions real NOT NULL DEFAULT 0,
+        status text NOT NULL DEFAULT 'reserved',
+        reheat_notes text,
+        idempotency_key text NOT NULL UNIQUE,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS prepared_reservations_meal_lot_idx ON prepared_reservations(meal_group_id, lot_id)`,
+      `CREATE INDEX IF NOT EXISTS prepared_reservations_lot_idx ON prepared_reservations(lot_id, status)`
+    );
+  }
+  if (!existing.has("meal_confirmation_commands")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS meal_confirmation_commands (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        meal_group_id integer NOT NULL REFERENCES meal_groups(id) ON DELETE cascade,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        idempotency_key text NOT NULL UNIQUE,
+        kind text NOT NULL,
+        payload text NOT NULL,
+        reverses_command_id integer,
+        applied_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS meal_confirmation_commands_meal_idx ON meal_confirmation_commands(meal_group_id)`
+    );
+  }
+  if (!existing.has("meal_fresh_effects")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS meal_fresh_effects (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        meal_group_id integer NOT NULL REFERENCES meal_groups(id) ON DELETE cascade,
+        meal_plan_id integer NOT NULL UNIQUE REFERENCES meal_plans(id) ON DELETE cascade,
+        recipe_attempt_id integer REFERENCES recipe_attempts(id) ON DELETE set null,
+        prepared_batch_id integer REFERENCES prepared_batches(id) ON DELETE set null,
+        effect_snapshot text NOT NULL,
+        applied_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS meal_fresh_effects_group_idx ON meal_fresh_effects(meal_group_id)`
+    );
+  }
+  if (!existing.has("meal_station_assignments")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS meal_station_assignments (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        meal_group_id integer NOT NULL REFERENCES meal_groups(id) ON DELETE cascade,
+        meal_plan_id integer REFERENCES meal_plans(id) ON DELETE cascade,
+        reservation_id integer REFERENCES prepared_reservations(id) ON DELETE cascade,
+        instruction_id integer REFERENCES instructions(id) ON DELETE set null,
+        station_name text NOT NULL,
+        start_offset_minutes integer,
+        duration_minutes integer,
+        created_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS meal_station_assignments_group_idx ON meal_station_assignments(meal_group_id)`
+    );
+  }
+  if (!existing.has("meal_conflicts")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS meal_conflicts (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        meal_group_id integer NOT NULL REFERENCES meal_groups(id) ON DELETE cascade,
+        kind text NOT NULL,
+        message text NOT NULL,
+        details text,
+        resolved_at text,
+        detected_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS meal_conflicts_open_idx ON meal_conflicts(meal_group_id, resolved_at)`
+    );
+  }
+  if (!existing.has("calendar_connections")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS calendar_connections (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        household_id integer REFERENCES households(id) ON DELETE cascade,
+        google_account_email text NOT NULL,
+        granted_scopes text NOT NULL,
+        calendar_id text NOT NULL,
+        calendar_name text NOT NULL,
+        calendar_timezone text NOT NULL,
+        status text NOT NULL DEFAULT 'connected',
+        access_token_ciphertext text,
+        access_token_iv text,
+        refresh_token_ciphertext text NOT NULL,
+        refresh_token_iv text NOT NULL,
+        access_token_expires_at text,
+        token_invalidated_at text,
+        sync_token text,
+        watch_channel_id text,
+        watch_resource_id text,
+        watch_token_hash text,
+        watch_expires_at text,
+        last_synced_at text,
+        last_error text,
+        disconnected_at text,
+        revision integer NOT NULL DEFAULT 1,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS calendar_connections_active_household_idx ON calendar_connections(household_id) WHERE household_id IS NOT NULL AND disconnected_at IS NULL`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS calendar_connections_active_solo_idx ON calendar_connections(user_id) WHERE household_id IS NULL AND disconnected_at IS NULL`
+    );
+  }
+  if (!existing.has("calendar_activities")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS calendar_activities (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        connection_id integer NOT NULL REFERENCES calendar_connections(id) ON DELETE cascade,
+        meal_group_id integer NOT NULL REFERENCES meal_groups(id) ON DELETE cascade,
+        kind text NOT NULL,
+        google_event_id text,
+        google_etag text,
+        start_at text,
+        end_at text,
+        explicit_duration_minutes integer,
+        state text NOT NULL DEFAULT 'pending',
+        desired_revision integer NOT NULL DEFAULT 0,
+        synced_revision integer NOT NULL DEFAULT 0,
+        source_meal_revision integer NOT NULL DEFAULT 0,
+        deleted_externally_at text,
+        last_error text,
+        updated_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS calendar_activities_connection_meal_kind_idx ON calendar_activities(connection_id, meal_group_id, kind)`,
+      `CREATE INDEX IF NOT EXISTS calendar_activities_meal_idx ON calendar_activities(meal_group_id)`
+    );
+  }
+  if (!existing.has("calendar_shares")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS calendar_shares (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        connection_id integer NOT NULL REFERENCES calendar_connections(id) ON DELETE cascade,
+        user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+        email text NOT NULL,
+        google_acl_rule_id text,
+        status text NOT NULL DEFAULT 'pending',
+        last_error text,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS calendar_shares_connection_user_idx ON calendar_shares(connection_id, user_id)`,
+      `CREATE INDEX IF NOT EXISTS calendar_shares_connection_status_idx ON calendar_shares(connection_id, status)`
+    );
+  }
+  if (!existing.has("calendar_sync_jobs")) {
+    statements.push(
+      `CREATE TABLE IF NOT EXISTS calendar_sync_jobs (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        connection_id integer NOT NULL REFERENCES calendar_connections(id) ON DELETE cascade,
+        meal_group_id integer REFERENCES meal_groups(id) ON DELETE cascade,
+        share_id integer REFERENCES calendar_shares(id) ON DELETE cascade,
+        kind text,
+        action text NOT NULL,
+        dedupe_key text NOT NULL UNIQUE,
+        status text NOT NULL DEFAULT 'pending',
+        attempts integer NOT NULL DEFAULT 0,
+        not_before text NOT NULL,
+        leased_at text,
+        lease_token text,
+        last_error text,
+        created_at text NOT NULL,
+        updated_at text NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS calendar_sync_jobs_due_idx ON calendar_sync_jobs(status, not_before)`,
+      `CREATE INDEX IF NOT EXISTS calendar_sync_jobs_share_idx ON calendar_sync_jobs(share_id)`
+    );
+  } else if (!calendarJobCols.has("share_id")) {
+    statements.push(
+      `ALTER TABLE calendar_sync_jobs ADD COLUMN share_id integer REFERENCES calendar_shares(id) ON DELETE cascade`,
+      `CREATE INDEX IF NOT EXISTS calendar_sync_jobs_share_idx ON calendar_sync_jobs(share_id)`
+    );
+  }
+
+  // Production gets these tables only through the reviewed 0032 rollout
+  // (docs/work-packets/meal-calendar-operator-setup.md), never as a side
+  // effect of someone opening Plan or Shopping. Previews/staging are free.
+  if (
+    statements.length > 0 &&
+    process.env.VERCEL_ENV === "production" &&
+    process.env.MEAL_PILOT_SCHEMA_APPROVED !== "true"
+  ) {
+    throw new Error(
+      "Meal pilot schema changes are not approved for production: apply migration 0032 or set MEAL_PILOT_SCHEMA_APPROVED=true."
+    );
+  }
+
+  await runDdl(client, statements, "ensureMealPilotTables");
+  mealPilotEnsured = true;
 }

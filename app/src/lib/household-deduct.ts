@@ -29,6 +29,7 @@ import {
   matchInventoryRow,
   type DeductionSource,
 } from "@/lib/household-inventory";
+import { ensureMealPilotTables } from "@/db/ensure-schema";
 
 export interface DeductionProposalItem {
   name: string;
@@ -52,6 +53,7 @@ export async function buildDeductionProposal(
   sessionIngredients: DeductionSource[] | null
 ): Promise<DeductionProposal | null> {
   if (!HOUSEHOLDS_ENABLED) return null;
+  await ensureMealPilotTables();
   const membership = await getUserHousehold(userId);
   if (!membership) return null;
   const householdId = membership.household.id;
@@ -118,7 +120,12 @@ export async function buildDeductionProposal(
     plan.date,
     plan.mealType
   ).length;
-  const scale = blockingScaleFactor(memberCount, blockedCount);
+  // Explicit grouped targets already encode the intended portions in the
+  // recipe multiplier. Legacy rows keep the old blocking ratio until the
+  // user explicitly changes diners/targets.
+  const scale = plan.targetPortions == null
+    ? blockingScaleFactor(memberCount, blockedCount)
+    : 1;
 
   const source: DeductionSource[] =
     sessionIngredients && sessionIngredients.length > 0

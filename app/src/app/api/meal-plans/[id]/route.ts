@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { mealPlans, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureHouseholdTables, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
+import { ensureHouseholdTables, ensureMealPilotTables, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { isHouseholdMember, logHouseholdActivity } from "@/lib/households";
 
@@ -39,9 +39,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
-    await ensureMealPlanCookedAtColumn();
-    await ensureHouseholdTables();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureMealPlanCookedAtColumn(),
+      ensureHouseholdTables(),
+      ensureMealPilotTables(),
+    ]);
 
     const { id } = await context.params;
     const planId = Number(id);
@@ -81,9 +84,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
-    await ensureMealPlanCookedAtColumn();
-    await ensureHouseholdTables();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureMealPlanCookedAtColumn(),
+      ensureHouseholdTables(),
+      ensureMealPilotTables(),
+    ]);
 
     const { id } = await context.params;
     const planId = Number(id);
@@ -179,9 +185,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await ensurePlanningOwnershipColumns();
-    await ensureMealPlanCookedAtColumn();
-    await ensureHouseholdTables();
+    await Promise.all([
+      ensurePlanningOwnershipColumns(),
+      ensureMealPlanCookedAtColumn(),
+      ensureHouseholdTables(),
+      ensureMealPilotTables(),
+    ]);
 
     const { id } = await context.params;
     const planId = Number(id);

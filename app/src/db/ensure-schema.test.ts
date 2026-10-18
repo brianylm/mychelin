@@ -78,3 +78,36 @@ describe("ensure-schema probes", () => {
     expect(fake.batch).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("meal pilot production guard", () => {
+  const ddl = () =>
+    fake.execute.mock.calls.filter(([stmt]) => {
+      const sql = typeof stmt === "string" ? stmt : stmt.sql;
+      return /^(CREATE|ALTER)/.test(sql) && /meal_group|prepared_|meal_(confirmation|fresh|station|conflicts)|calendar_/.test(sql);
+    });
+
+  it("refuses to create meal pilot tables on a production deployment", async () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    const schema = await import("./ensure-schema");
+
+    await expect(schema.ensureMealPilotTables()).rejects.toThrow(/not approved for production/);
+    expect(ddl()).toHaveLength(0);
+  });
+
+  it("creates them on previews", async () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    const schema = await import("./ensure-schema");
+
+    await schema.ensureMealPilotTables();
+    expect(ddl().length).toBeGreaterThan(0);
+  });
+
+  it("creates them on production once the rollout is approved", async () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("MEAL_PILOT_SCHEMA_APPROVED", "true");
+    const schema = await import("./ensure-schema");
+
+    await schema.ensureMealPilotTables();
+    expect(ddl().length).toBeGreaterThan(0);
+  });
+});
