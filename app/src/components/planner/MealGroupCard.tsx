@@ -10,6 +10,8 @@ import {
   Users,
 } from "lucide-react";
 import { MealSourceBadge } from "./MealSourceBadge";
+import { DishTypeBadges } from "@/components/recipes/DishTypeBadges";
+import { DISH_TYPES, type DishType } from "@/lib/dish-type";
 import type { FreshMealDish, MealGroupView } from "@/lib/meal-pilot/types";
 
 interface MealGroupCardProps {
@@ -48,6 +50,9 @@ export function MealGroupCard({
   const freshDishes = meal.dishes.filter(
     (dish): dish is FreshMealDish => dish.source === "fresh" && !dish.cookedAt
   );
+  const mealDishTypes = DISH_TYPES.filter((type) =>
+    meal.dishes.some((dish) => dish.dishTypes.includes(type)),
+  );
 
   return (
     <article className="rounded-xl border border-ui-accent/15 bg-ui-surface-raised shadow-sm">
@@ -81,6 +86,12 @@ export function MealGroupCard({
         </div>
 
         <div className="mt-3 space-y-2">
+          {meal.dishes.length >= 2 && mealDishTypes.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs text-ui-muted">In this meal</p>
+              <DishTypeBadges types={mealDishTypes as DishType[]} />
+            </div>
+          )}
           {meal.dishes.length === 0 ? (
             <p className="rounded-lg border border-dashed border-ui-border px-3 py-3 text-xs text-ui-muted">
               No dishes yet. Add fresh cooking or allocate a prepared portion.
@@ -97,6 +108,7 @@ export function MealGroupCard({
                   </span>
                   <MealSourceBadge source={dish.source} className="shrink-0" />
                 </div>
+                <DishTypeBadges types={dish.dishTypes} />
                 <p className="mt-1 text-[11px] text-ui-muted">
                   {dish.source === "fresh"
                     ? `${portionsLabel(dish.targetPortions)} to eat${

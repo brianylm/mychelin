@@ -10,6 +10,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { RecipeTitleCard } from "./RecipeTitleCard";
 import { RecipeDetailsCard } from "./RecipeDetailsCard";
+import { DishTypeEditor } from "./DishTypeEditor";
 import { BookSelector } from "./BookSelector";
 import { IngredientList } from "./IngredientList";
 import { RecipeSteps } from "./RecipeSteps";
@@ -1913,6 +1914,9 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               savingCookTime={savingCookTime}
               savingYield={savingYield}
             />
+            {selectedRecipe && (
+              <DishTypeEditor recipeId={selectedRecipe.id} editable={recipeEditMode} />
+            )}
             <BookSelector
               currentBookId={selectedRecipe.bookId ?? null}
               onSave={handleBookChange}
