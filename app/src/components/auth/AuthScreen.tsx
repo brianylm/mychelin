@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { safeReturnTo } from "@/lib/return-to";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 
@@ -53,9 +54,8 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
     const params = new URLSearchParams(window.location.search);
     const returnTo = params.get("returnTo");
     const url = new URL("/api/auth/google/start", window.location.origin);
-    if (returnTo && returnTo.startsWith("/shared/")) {
-      url.searchParams.set("returnTo", returnTo);
-    }
+    const safe = safeReturnTo(returnTo);
+    if (safe) url.searchParams.set("returnTo", safe);
     window.location.href = url.toString();
   };
 
@@ -103,9 +103,8 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
       // Login/signup succeeded — check for returnTo param (e.g. from shared page)
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get("returnTo");
-      if (returnTo && returnTo.startsWith("/shared/")) {
-        window.location.href = returnTo;
-      }
+      const safe = safeReturnTo(returnTo);
+      if (safe) window.location.href = safe;
     }
     setLoading(false);
   };

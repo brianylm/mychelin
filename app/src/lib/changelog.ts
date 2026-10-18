@@ -367,3 +367,8 @@ export const changelogEntries: ChangelogEntry[] = [
     ],
   },
 ];
+
+export function changelogVersion(entry: ChangelogEntry): string {
+  const index = changelogEntries.indexOf(entry);
+  return `v1.${changelogEntries.length - index}`;
+}

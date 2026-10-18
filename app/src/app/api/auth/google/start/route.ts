@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { safeReturnTo } from "@/lib/return-to";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -26,8 +27,8 @@ export async function GET(request: NextRequest) {
 
   const state = randomState();
   const returnTo = request.nextUrl.searchParams.get("returnTo");
-  const safeReturnTo = returnTo && returnTo.startsWith("/shared/") ? returnTo : "/";
-  const statePayload = JSON.stringify({ state, returnTo: safeReturnTo });
+  const safeReturn = safeReturnTo(returnTo) ?? "/";
+  const statePayload = JSON.stringify({ state, returnTo: safeReturn });
   const redirectUri = baseUrl(request) + "/api/auth/google/callback";
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);

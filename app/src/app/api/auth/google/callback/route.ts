@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { safeReturnTo } from "@/lib/return-to";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -47,7 +48,7 @@ function parseStateCookie(value: string | undefined): { state: string; returnTo:
     if (typeof parsed.state !== "string") return null;
     return {
       state: parsed.state,
-      returnTo: typeof parsed.returnTo === "string" && parsed.returnTo.startsWith("/shared/") ? parsed.returnTo : "/",
+      returnTo: (typeof parsed.returnTo === "string" && safeReturnTo(parsed.returnTo)) || "/",
     };
   } catch {
     return null;

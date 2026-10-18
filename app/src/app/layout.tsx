@@ -3,6 +3,7 @@ import { DM_Sans, Libre_Baskerville, Newsreader } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { PWARegister } from "@/components/PWARegister";
+import { COMFORT_BOOT_SCRIPT } from "@/lib/comfort-mode";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -69,7 +70,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${brandSerif.variable} ${logoSerif.variable}`}>
+    <html
+      lang="en"
+      className={`${dmSans.variable} ${brandSerif.variable} ${logoSerif.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: COMFORT_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-screen bg-surface text-foreground antialiased">
         <AppProviders>
           <PWARegister />

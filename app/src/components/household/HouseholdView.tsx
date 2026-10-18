@@ -7,6 +7,7 @@ import {
   Crown,
   House,
   LogOut,
+  Share2,
   Trash2,
   UserMinus,
   UserPlus,
@@ -124,6 +125,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
   const [activity, setActivity] = useState<HouseholdActivityRow[]>([]);
   const [newName, setNewName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [showJoin, setShowJoin] = useState(false);
   const [busy, setBusy] = useState(false);
   // Which form is waiting on the server, for its button label.
   const [pendingAction, setPendingAction] = useState<"create" | "join" | null>(null);
@@ -300,6 +302,43 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
     }
   };
 
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const shareInviteLink = async () => {
+    if (!household) return;
+    const url = `${window.location.origin}/join/${household.joinCode}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join our household on Mychelin",
+          text: `Join ${household.name} on Mychelin`,
+          url,
+        });
+      } catch (err) {
+        if ((err as Error)?.name !== "AbortError") {
+          if (await copyText(url)) {
+            addToast("Invite link copied", "success");
+          } else {
+            addToast("Couldn't copy — the link is " + url, "error");
+          }
+        }
+      }
+      return;
+    }
+    if (await copyText(url)) {
+      addToast("Invite link copied", "success");
+    } else {
+      addToast("Couldn't copy — the link is " + url, "error");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center bg-surface">
@@ -327,7 +366,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
           <div className="space-y-4">
             <div className="rounded-2xl border border-neutral-200 bg-white p-5">
               <h2 className="mb-1 text-sm font-semibold text-neutral-900">
-                Create a household
+                Start a household
               </h2>
               <p className="mb-3 text-xs text-neutral-500">
                 You get a join code to share with the people you cook with.
@@ -343,7 +382,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Tiong Bahru flat"
+                  placeholder="e.g. Tan Family"
                   maxLength={80}
                   aria-label="Household name"
                   className="min-w-0 flex-1 rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
@@ -357,41 +396,49 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                   {pendingAction === "create" ? "Creating…" : "Create"}
                 </button>
               </form>
-            </div>
-
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-              <h2 className="mb-1 text-sm font-semibold text-neutral-900">
-                Join with a code
-              </h2>
-              <p className="mb-3 text-xs text-neutral-500">
-                Ask a household member for their 6-character join code.
-              </p>
-              <form
-                className="flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void handleJoin();
-                }}
-              >
-                <input
-                  type="text"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="ABC123"
-                  maxLength={6}
-                  aria-label="Join code"
-                  className="min-w-0 flex-1 rounded-xl border border-neutral-200 px-3 py-2.5 font-mono text-sm uppercase tracking-widest outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
-                />
+              <div className="mt-4 border-t border-neutral-100 pt-3">
                 <button
-                  type="submit"
-                  disabled={joinCode.trim().length === 0 || busy}
-                  aria-busy={pendingAction === "join"}
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl bg-ui-action px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-40"
+                  type="button"
+                  onClick={() => setShowJoin((open) => !open)}
+                  aria-expanded={showJoin}
+                  className="inline-flex min-h-11 items-center text-sm font-medium text-ui-accent"
                 >
-                  <UserPlus className="h-4 w-4" />
-                  {pendingAction === "join" ? "Joining…" : "Join"}
+                  Have an invite code?
                 </button>
-              </form>
+                {showJoin && (
+                  <div className="mt-2">
+                    <p className="mb-2 text-xs text-neutral-500">
+                      Or open the invite link someone sent you.
+                    </p>
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void handleJoin();
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                        placeholder="ABC123"
+                        maxLength={6}
+                        aria-label="Join code"
+                        className="min-w-0 flex-1 rounded-xl border border-neutral-200 px-3 py-2.5 font-mono text-sm uppercase tracking-widest outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
+                      />
+                      <button
+                        type="submit"
+                        disabled={joinCode.trim().length === 0 || busy}
+                        aria-busy={pendingAction === "join"}
+                        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-ui-action px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-40"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        {pendingAction === "join" ? "Joining…" : "Join"}
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -417,36 +464,41 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                   Leave
                 </button>
               </div>
-              {household.myRole === "admin" && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={busy}
-                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-40"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete household
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={copyJoinCode}
-                className="mt-4 flex w-full items-center justify-between rounded-xl bg-ui-accent/5 px-4 py-3 text-left transition hover:bg-ui-accent/10"
-              >
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-ui-accent">
-                    Join code
-                  </p>
-                  <p className="font-mono text-lg font-semibold tracking-[0.3em] text-neutral-900">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+                <p className="text-xs text-ui-muted">
+                  Invite code{" "}
+                  <span className="font-mono text-sm font-semibold tracking-widest text-neutral-900">
                     {household.joinCode}
-                  </p>
+                  </span>
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void shareInviteLink()}
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-ui-action px-3 text-sm font-semibold text-ui-action-text hover:bg-ui-action-hover"
+                  >
+                    <Share2 className="h-4 w-4" aria-hidden />
+                    Share invite link
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyJoinCode}
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-ui-muted hover:text-neutral-900"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" aria-hidden />
+                        Copy code
+                      </>
+                    )}
+                  </button>
                 </div>
-                {copied ? (
-                  <Check className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <Copy className="h-4 w-4 text-ui-muted" />
-                )}
-              </button>
+              </div>
             </div>
 
             {/* Members */}
@@ -540,6 +592,18 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                 </ul>
               )}
             </div>
+
+            {household.myRole === "admin" && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={busy}
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-red-700 hover:underline disabled:opacity-40"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Delete household…
+              </button>
+            )}
           </div>
         )}
       </div>

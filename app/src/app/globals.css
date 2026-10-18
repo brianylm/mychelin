@@ -161,6 +161,22 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Comfort view (Profile → Comfort view): larger text and targets, stronger
+   contrast, fewer extras. Nearly all sizing is rem-based, so raising the
+   root size scales text, spacing and tap areas together; fixed tiny px text
+   is lifted to a readable floor. */
+html[data-comfort="on"] {
+  font-size: 118.75%;
+  --ui-muted: #4a433e;
+}
+html[data-comfort="on"] :is(.text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+html[data-comfort="on"] [data-comfort-hide] {
+  display: none !important;
+}
+
 body {
   min-height: 100vh;
   background: var(--ui-bg);
