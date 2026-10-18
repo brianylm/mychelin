@@ -38,7 +38,7 @@ jobs:
 
       - run: npm test
 
-      # E2E against the dedicated mychelin-e2e Turso DB, never prod (the
+      # E2E against the dedicated mychelin-staging Turso DB, never prod (the
       # TURSO_* secrets are production, used by db-migrate.yml).
       # playwright.config.ts refuses to start without these or on prod.
       # Playwright boots its own dev server on :3100.

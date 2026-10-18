@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // E2E regression tests. Runs the app locally against the dedicated
-// `mychelin-e2e` Turso database with synthetic users that are cleaned up
+// `mychelin-staging` Turso database with synthetic users that are cleaned up
 // afterwards. See e2e/helpers.ts.
 //
 // The database comes only from E2E_TURSO_DATABASE_URL / E2E_TURSO_AUTH_TOKEN,
@@ -11,7 +11,7 @@ const e2eDatabaseUrl = process.env.E2E_TURSO_DATABASE_URL;
 const e2eAuthToken = process.env.E2E_TURSO_AUTH_TOKEN;
 if (!e2eDatabaseUrl || !e2eAuthToken) {
   throw new Error(
-    "Set E2E_TURSO_DATABASE_URL and E2E_TURSO_AUTH_TOKEN (the mychelin-e2e database) to run e2e tests."
+    "Set E2E_TURSO_DATABASE_URL and E2E_TURSO_AUTH_TOKEN (the mychelin-staging database) to run e2e tests."
   );
 }
 if (PRODUCTION_DB.test(e2eDatabaseUrl)) {
