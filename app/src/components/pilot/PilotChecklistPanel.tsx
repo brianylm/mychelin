@@ -128,7 +128,7 @@ export function PilotChecklistPanel() {
       {isOpen && (
         <div className="border-t border-[#eadfce] px-5 pb-5 pt-4">
           <div className="h-2 rounded-full bg-[#eadfce]" aria-hidden="true">
-            <div className="h-full rounded-full bg-ui-accent transition-all" style={{ width: progress + "%" }} />
+            <div className="h-full rounded-full bg-ui-accent transition-[width]" style={{ width: progress + "%" }} />
           </div>
 
           {!loading && nextItem && (

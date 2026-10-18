@@ -303,7 +303,7 @@ export function RecipeSteps({
                 ref={(el) => {
                   if (el) itemRefs.current.set(displayIdx, el);
                 }}
-                className={`group flex gap-2 rounded-xl border px-3 py-2.5 transition-all ${
+                className={`group flex gap-2 rounded-xl border px-3 py-2.5 transition ${
                   isDragging
                     ? "relative z-10 scale-[1.02] select-none border-ui-accent/35 bg-ui-accent/5 shadow-md ring-2 ring-ui-accent/10"
                     : "border-neutral-100 bg-neutral-50/50"

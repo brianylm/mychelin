@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
-import { signup, createRecipe, cleanupUsers, uniqueEmail } from "./helpers";
+import { openHousehold, signup, createRecipe, cleanupUsers, uniqueEmail } from "./helpers";
 
 const PREFIX = "e2e-households";
 const PASSWORD = "E2eHouseholds123!";
@@ -207,7 +207,7 @@ test.describe("households slice 1", () => {
     // A creates a household through the UI. First-hit route compiles in
     // the dev server can be slow, so the wait is generous.
     await pageA.goto("/app");
-    await pageA.getByRole("button", { name: "Household" }).first().click();
+    await openHousehold(pageA);
     await pageA.getByLabel("Household name").fill("UI Test Home");
     await pageA.getByRole("button", { name: "Create" }).click();
     await expect(pageA.getByText("Join code", { exact: true })).toBeVisible({ timeout: 30_000 });
@@ -248,7 +248,7 @@ test.describe("households slice 1", () => {
     await expect(pageA.getByText("E2E Shared Noodles").first()).toBeVisible();
 
     // A's activity feed shows the join + block attribution.
-    await pageA.getByRole("button", { name: "Household" }).first().click();
+    await openHousehold(pageA);
     await expect(pageA.getByText("Eve E joined")).toBeVisible();
     await expect(
       pageA.getByText(`Eve E is out for dinner on ${date}`)

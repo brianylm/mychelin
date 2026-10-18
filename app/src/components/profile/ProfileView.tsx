@@ -509,7 +509,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                   <span>{rhythm?.progress ?? 0}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-[#eadfce]">
-                  <div className="h-full rounded-full bg-ui-accent transition-all" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
+                  <div className="h-full rounded-full bg-ui-accent transition-[width]" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
                 </div>
               </div>
 

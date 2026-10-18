@@ -301,10 +301,12 @@ h6 {
   outline-offset: 2px;
 }
 
+/* Site-wide, not just the app shell: the landing page, login, shared recipe
+   pages and portalled dialogs must honour reduced motion too. */
 @media (prefers-reduced-motion: reduce) {
-  .mychelin-app-shell *,
-  .mychelin-app-shell *::before,
-  .mychelin-app-shell *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

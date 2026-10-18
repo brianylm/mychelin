@@ -207,7 +207,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
               key={loc.id}
               onClick={() => setFilter(loc.id)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-all",
+                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition",
                 filter === loc.id
                   ? "bg-ui-action text-white shadow-sm"
                   : "text-neutral-600 hover:bg-neutral-100"

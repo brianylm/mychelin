@@ -48,11 +48,26 @@ Local regression tooling:
 ```bash
 cd /home/cluser/projects/mychelin/app
 npm test                # unit tests (vitest)
-npm run test:e2e        # Playwright e2e (dev server on :3100, dev Turso DB)
+E2E_TURSO_DATABASE_URL=$(turso db show mychelin-staging --url) \
+E2E_TURSO_AUTH_TOKEN=$(turso db tokens create mychelin-staging --expiration 1d) \
+npm run test:e2e        # Playwright e2e (dev server on :3100, mychelin-staging Turso DB)
 npm run smoke:regression   # post-deploy HTTP smoke, MYCHELIN_BASE_URL=... to target non-prod
 ```
 
-CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + Playwright e2e + build on every push and PR. The e2e step needs `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` GitHub secrets pointing at the **dev** database (never prod).
+CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + Playwright e2e + build on every push and PR. The e2e step uses the `E2E_TURSO_DATABASE_URL` and `E2E_TURSO_AUTH_TOKEN` GitHub secrets, which point at the `mychelin-staging` Turso database. Vercel **Preview** deployments use the same database (Preview-scoped `TURSO_*` env vars); Production keeps its own.
+
+`mychelin-staging` = production's exact schema plus ONE account's data (account #1: recipes, books, plans, attempts, shopping, fridge), rebuilt by `app/scripts/seed-staging.mjs`. Other users' data, share links, push subscriptions, notification jobs, reset tokens and analytics are never copied. Staging login: `owner@staging.mychelin.test` (password set via `STAGING_PASSWORD`, otherwise printed by the script). Re-run the script to reset staging or after a production schema change:
+
+```bash
+cd /home/cluser/projects/mychelin/app
+SOURCE_TURSO_DATABASE_URL=$(turso db show mychelin --url) \
+SOURCE_TURSO_AUTH_TOKEN=$(turso db tokens create mychelin --read-only --expiration 1d) \
+STAGING_TURSO_DATABASE_URL=$(turso db show mychelin-staging --url) \
+STAGING_TURSO_AUTH_TOKEN=$(turso db tokens create mychelin-staging --expiration 1d) \
+STAGING_PASSWORD='<choose one>' node scripts/seed-staging.mjs
+```
+
+CI e2e users (`*@example.com`) appear in previews briefly while a run is going and are cleaned up afterwards. A preview branch that runs schema-changing code (`ensure-schema`) changes staging for CI too; reset staging if that causes trouble. `app/.env.local` and the `TURSO_*` secrets are **production** — `playwright.config.ts` refuses to run without the E2E variables or against the production URL.
 
 Verify Vercel root directory:
 

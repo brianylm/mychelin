@@ -3,7 +3,7 @@ import { createClient } from "@libsql/client";
 import type { Page } from "@playwright/test";
 
 // Shared helpers for E2E specs: synthetic users, API-level fixtures,
-// and cleanup against the DEV Turso database.
+// and cleanup against the e2e Turso database (set by playwright.config.ts).
 
 export function loadDevEnv(): void {
   for (const file of [".env.local", ".env"]) {
@@ -20,6 +20,9 @@ export function loadDevEnv(): void {
 
 function turso() {
   loadDevEnv();
+  if (/\/\/mychelin-brianylm\./.test(process.env.TURSO_DATABASE_URL ?? "")) {
+    throw new Error("Refusing to seed or clean up test data in the production database.");
+  }
   return createClient({
     url: process.env.TURSO_DATABASE_URL!,
     authToken: process.env.TURSO_AUTH_TOKEN!,
@@ -151,4 +154,11 @@ export async function cleanupHouseholds(namePrefix: string): Promise<void> {
     }
     await db.execute({ sql: "DELETE FROM households WHERE id = ?", args: [id] });
   }
+}
+
+// Household settings live under Profile (header avatar → Household row)
+// since the 4-tab nav (Library, Plan, Shopping, Inventory).
+export async function openHousehold(page: Page): Promise<void> {
+  await page.getByRole("button", { name: /^Open profile for / }).first().click();
+  await page.getByRole("button", { name: /^Household/ }).first().click();
 }

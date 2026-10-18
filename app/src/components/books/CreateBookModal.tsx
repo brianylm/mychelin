@@ -128,7 +128,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   key={emoji}
                   type="button"
                   onClick={() => setCoverEmoji(emoji)}
-                  className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl transition-all ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl transition ${
                     coverEmoji === emoji
                       ? "bg-ui-accent/10 ring-2 ring-ui-accent/35"
                       : "hover:bg-neutral-100"
@@ -151,7 +151,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   key={color.name}
                   type="button"
                   onClick={() => setCoverColor(color.name)}
-                  className={`flex items-center gap-2 rounded-lg border-2 p-3 transition-all ${
+                  className={`flex items-center gap-2 rounded-lg border-2 p-3 transition ${
                     coverColor === color.name
                       ? "ring-2 ring-ui-accent/35"
                       : "border-neutral-200 hover:border-neutral-300"

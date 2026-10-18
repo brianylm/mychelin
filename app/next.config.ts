@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Lets /_next/image resize recipe photos for link previews.
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
+  },
   async redirects() {
     return [
       { source: "/recipes", destination: "/app/recipes", permanent: true },
