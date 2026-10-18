@@ -22,10 +22,26 @@ const logoSerif = Libre_Baskerville({
   weight: ["700"],
 });
 
+const siteDescription =
+  "Capture family recipes through live conversation help, then plan, shop, and cook like home.";
+
 export const metadata: Metadata = {
+  // Absolute base for og:image and other metadata URLs.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://mychelin-sg.vercel.app"
+  ),
   title: "Mychelin",
-  description:
-    "Capture family recipes through live conversation help, then plan, shop, and cook like home.",
+  description: siteDescription,
+  openGraph: {
+    type: "website",
+    siteName: "Mychelin",
+    title: "Mychelin",
+    description: siteDescription,
+    images: [{ url: "/images/hero-family-table-mobile.jpg", alt: "Two generations cooking together" }],
+  },
+  twitter: { card: "summary_large_image" },
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/favicon.ico" }],
