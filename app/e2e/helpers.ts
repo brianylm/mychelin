@@ -3,7 +3,7 @@ import { createClient } from "@libsql/client";
 import type { Page } from "@playwright/test";
 
 // Shared helpers for E2E specs: synthetic users, API-level fixtures,
-// and cleanup against the DEV Turso database.
+// and cleanup against the e2e Turso database (set by playwright.config.ts).
 
 export function loadDevEnv(): void {
   for (const file of [".env.local", ".env"]) {
@@ -20,6 +20,9 @@ export function loadDevEnv(): void {
 
 function turso() {
   loadDevEnv();
+  if (/\/\/mychelin-brianylm\./.test(process.env.TURSO_DATABASE_URL ?? "")) {
+    throw new Error("Refusing to seed or clean up test data in the production database.");
+  }
   return createClient({
     url: process.env.TURSO_DATABASE_URL!,
     authToken: process.env.TURSO_AUTH_TOKEN!,

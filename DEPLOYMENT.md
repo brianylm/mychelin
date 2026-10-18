@@ -48,11 +48,13 @@ Local regression tooling:
 ```bash
 cd /home/cluser/projects/mychelin/app
 npm test                # unit tests (vitest)
-npm run test:e2e        # Playwright e2e (dev server on :3100, dev Turso DB)
+E2E_TURSO_DATABASE_URL=$(turso db show mychelin-e2e --url) \
+E2E_TURSO_AUTH_TOKEN=$(turso db tokens create mychelin-e2e --expiration 1d) \
+npm run test:e2e        # Playwright e2e (dev server on :3100, mychelin-e2e Turso DB)
 npm run smoke:regression   # post-deploy HTTP smoke, MYCHELIN_BASE_URL=... to target non-prod
 ```
 
-CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + Playwright e2e + build on every push and PR. The e2e step needs `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` GitHub secrets pointing at the **dev** database (never prod).
+CI: `.github/workflows/test.yml` runs typecheck + lint + unit tests + Playwright e2e + build on every push and PR. The e2e step uses the `E2E_TURSO_DATABASE_URL` and `E2E_TURSO_AUTH_TOKEN` GitHub secrets, which point at the dedicated `mychelin-e2e` Turso database (schema from `db:push` plus the ingredient catalog seed; no real user data). `app/.env.local` and the `TURSO_*` secrets are **production** — `playwright.config.ts` refuses to run without the E2E variables or against the production URL. After a schema change, run `npx drizzle-kit push` against `mychelin-e2e` too.
 
 Verify Vercel root directory:
 
