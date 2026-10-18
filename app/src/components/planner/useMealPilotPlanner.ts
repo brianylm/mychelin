@@ -76,10 +76,8 @@ export function useMealPilotPlanner({
 
   const refresh = useCallback(async () => {
     onPlansChanged();
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ["meal-pilot", "groups"] }),
-      qc.invalidateQueries({ queryKey: mealPilotKeys.preparedBatches }),
-    ]);
+    // Everything meal-pilot: groups, ready meals and the next-meal card.
+    await qc.invalidateQueries({ queryKey: ["meal-pilot"] });
   }, [qc, onPlansChanged]);
 
   const groupsForSlot = useCallback(
