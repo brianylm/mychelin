@@ -121,7 +121,7 @@ export function InviteMemberModal({ bookId, bookTitle, onClose, onMemberAdded }:
               {ROLES.map((roleOption) => (
                 <label
                   key={roleOption.id}
-                  className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-transparent p-3 transition-all hover:bg-neutral-50"
+                  className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-transparent p-3 transition hover:bg-neutral-50"
                 >
                   <input
                     type="radio"

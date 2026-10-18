@@ -174,7 +174,7 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
               {books.map((book) => (
                 <label
                   key={book.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-transparent p-3 transition-all hover:bg-neutral-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-transparent p-3 transition hover:bg-neutral-50"
                 >
                   <input
                     type="checkbox"

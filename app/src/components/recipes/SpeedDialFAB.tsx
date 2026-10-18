@@ -109,7 +109,7 @@ export function SpeedDialFAB({ onDuplicate, onDelete, onAddToBook }: SpeedDialFA
                     variant="solid"
                     size="3"
                     radius="full"
-                    className="group flex h-12 w-12 items-center justify-center shadow-lg transition-all hover:scale-110"
+                    className="group flex h-12 w-12 items-center justify-center shadow-lg transition hover:scale-110"
                     style={{
                       backgroundColor: "#262626",
                       color: action.color ?? "#ffffff",
@@ -130,7 +130,7 @@ export function SpeedDialFAB({ onDuplicate, onDelete, onAddToBook }: SpeedDialFA
             variant="solid"
             size="4"
             radius="full"
-            className="group flex h-14 w-14 items-center justify-center shadow-lg transition-all hover:scale-105"
+            className="group flex h-14 w-14 items-center justify-center shadow-lg transition hover:scale-105"
             style={{
               backgroundColor: "#d97706",
               color: "#ffffff",

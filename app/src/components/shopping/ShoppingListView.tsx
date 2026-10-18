@@ -333,7 +333,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
               <div
-                className="h-full rounded-full bg-[#800020]/50 transition-all duration-300"
+                className="h-full rounded-full bg-[#800020]/50 transition-[width] duration-300"
                 style={{
                   width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%`,
                 }}
@@ -441,7 +441,7 @@ export function ShoppingListView({ initialDateRange }: ShoppingListViewProps) {
                       <button
                         key={item.key}
                         onClick={() => toggleCheck(item)}
-                        className={`flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition-all ${
+                        className={`flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition ${
                           checked
                             ? "border-green-200 bg-green-50/50"
                             : "border-neutral-200 hover:border-neutral-300"

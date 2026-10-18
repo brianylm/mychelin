@@ -194,7 +194,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
               key={i}
               onClick={() => handleSaveSuggestion(i)}
               disabled={savingIdx !== null}
-              className="flex w-full items-start gap-3 rounded-lg border border-[#800020]/15 bg-white p-3 text-left transition-all hover:border-[#800020]/45 hover:shadow-sm disabled:opacity-60"
+              className="flex w-full items-start gap-3 rounded-lg border border-[#800020]/15 bg-white p-3 text-left transition hover:border-[#800020]/45 hover:shadow-sm disabled:opacity-60"
             >
               <span className="mt-0.5 text-base">💡</span>
               <p className="flex-1 text-sm leading-relaxed text-neutral-800">
@@ -259,7 +259,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           {tips.map((tip) => (
             <div
               key={tip.id}
-              className="group flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition-all hover:border-[#800020]/15 hover:shadow-sm"
+              className="group flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-[#800020]/15 hover:shadow-sm"
             >
               <div className="mt-0.5 text-lg">💡</div>
               <div className="flex-1">

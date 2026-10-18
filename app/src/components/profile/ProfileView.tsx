@@ -438,7 +438,7 @@ export function ProfileView() {
                   <span>{rhythm?.progress ?? 0}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-[#eadfce]">
-                  <div className="h-full rounded-full bg-[#800020] transition-all" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
+                  <div className="h-full rounded-full bg-[#800020] transition-[width]" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
                 </div>
               </div>
 

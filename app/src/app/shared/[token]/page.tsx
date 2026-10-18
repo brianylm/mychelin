@@ -404,7 +404,7 @@ export default function SharedPage() {
               <button
                 key={recipe.id}
                 onClick={() => openRecipe(recipe.id)}
-                className="flex flex-col rounded-2xl border border-neutral-200 bg-white overflow-hidden text-left transition-all hover:border-[#800020]/30 hover:shadow-md active:scale-[0.98]"
+                className="flex flex-col rounded-2xl border border-neutral-200 bg-white overflow-hidden text-left transition hover:border-[#800020]/30 hover:shadow-md active:scale-[0.98]"
               >
                 <div className="flex h-32 items-center justify-center bg-gradient-to-br from-[#800020]/5 to-stone-50">
                   {recipe.imageUrl ? (

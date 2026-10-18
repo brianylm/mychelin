@@ -201,7 +201,7 @@ export function BooksView({ onNavigateToRecipe }: BooksViewProps = {}) {
               <button
                 key={book.id}
                 onClick={() => setSelectedBook(book)}
-                className="group rounded-2xl border border-neutral-200 bg-white p-5 text-left transition-all hover:border-[#800020]/15 hover:shadow-lg"
+                className="group rounded-2xl border border-neutral-200 bg-white p-5 text-left transition hover:border-[#800020]/15 hover:shadow-lg"
               >
                 <div
                   className={`mb-3 flex h-16 w-16 items-center justify-center rounded-xl text-2xl ${getColorClass(book.coverColor)}`}

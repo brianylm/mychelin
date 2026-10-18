@@ -1465,7 +1465,7 @@ export function ConversationCapture({
                 {isRecording ? (
                   <button
                     onClick={stopRecording}
-                    className="flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
+                    className="flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-red-600 active:scale-95"
                   >
                     <StopIcon className="h-4 w-4" />
                     Stop
@@ -1477,7 +1477,7 @@ export function ConversationCapture({
                       else void startRecording();
                     }}
                     disabled={connecting}
-                    className="flex items-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#800020] active:scale-95 disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-full bg-[#17131f] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#800020] active:scale-95 disabled:opacity-60"
                   >
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />

@@ -92,25 +92,25 @@ export function LandingPage() {
           <div className="flex flex-1 items-center justify-end gap-1">
             <a
               href="#how-it-works"
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition hover:bg-white/30 hover:text-stone-950 md:block"
             >
               How it works
             </a>
             <a
               href="#features"
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 md:block"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition hover:bg-white/30 hover:text-stone-950 md:block"
             >
               Features
             </a>
             <Link
               href="/login"
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition-all hover:bg-white/30 hover:text-stone-950 sm:block"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700/75 transition hover:bg-white/30 hover:text-stone-950 sm:block"
             >
               Log in
             </Link>
             <Link
               href="/login?mode=signup"
-              className="relative ml-1 shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
+              className="relative ml-1 shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_22px_rgba(23,19,31,0.22)] transition hover:-translate-y-0.5 hover:bg-[#800020] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_28px_rgba(128,0,32,0.24)] sm:px-5"
             >
               Get started
             </Link>
@@ -192,7 +192,7 @@ export function LandingPage() {
             <div className="mt-8 flex flex-wrap gap-6">
               <Link
                 href="/login?mode=signup"
-                className="text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors"
+                className="-my-3 inline-flex min-h-11 items-center text-sm font-semibold text-stone-900 hover:text-[#800020] transition-colors"
               >
                 Try it now →
               </Link>
@@ -309,7 +309,7 @@ export function LandingPage() {
                     key={feature.title}
                     type="button"
                     onClick={() => showFeature(index)}
-                    className="absolute left-1/2 top-0 w-[min(100%,25rem)] origin-bottom rounded-[2rem] border border-[#d8d8d2] bg-white p-5 text-left shadow-[0_22px_70px_rgba(26,26,26,0.10)] transition-all duration-500 ease-out"
+                    className="absolute left-1/2 top-0 w-[min(100%,25rem)] origin-bottom rounded-[2rem] border border-[#d8d8d2] bg-white p-5 text-left shadow-[0_22px_70px_rgba(26,26,26,0.10)] transition-[transform,opacity] duration-300 ease-out"
                     style={{
                       transform: `translateX(calc(-50% + ${offset * 2.2}rem)) translateY(${Math.abs(offset) * 1.15}rem) rotate(${offset * 4}deg) scale(${isActive ? 1 : 0.92})`,
                       zIndex: 10 - Math.abs(offset),
@@ -341,7 +341,7 @@ export function LandingPage() {
                           {featurePages.map((dotFeature, dotIndex) => (
                             <span
                               key={dotFeature.title}
-                              className={`h-1.5 rounded-full transition-all ${dotIndex === index ? "w-5 bg-[#800020]" : "w-1.5 bg-[#d8d8d2]"}`}
+                              className={`h-1.5 rounded-full transition-[width,background-color] ${dotIndex === index ? "w-5 bg-[#800020]" : "w-1.5 bg-[#d8d8d2]"}`}
                             />
                           ))}
                         </div>
@@ -395,7 +395,7 @@ export function LandingPage() {
                     aria-current={index === activeFeature ? "true" : undefined}
                   >
                     <span
-                      className={`h-2 rounded-full transition-all ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
+                      className={`h-2 rounded-full transition-[width,background-color] ${index === activeFeature ? "w-8 bg-[#800020]" : "w-2 bg-[#d8d8d2]"}`}
                       aria-hidden="true"
                     />
                   </button>

@@ -486,7 +486,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition ${
                 activeTab === tab.id
                   ? "bg-white text-[#800020] shadow-sm"
                   : "text-neutral-600 hover:text-neutral-900"
@@ -522,7 +522,7 @@ export function BookDetailView({ book, onBack, onBookUpdated, onBookDeleted, onN
                   {bookDetail.recipes.map((recipe) => (
                     <div
                       key={recipe.id}
-                      className="group rounded-xl border border-neutral-200 p-4 hover:border-[#800020]/15 hover:shadow-sm transition-all"
+                      className="group rounded-xl border border-neutral-200 p-4 hover:border-[#800020]/15 hover:shadow-sm transition"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h3

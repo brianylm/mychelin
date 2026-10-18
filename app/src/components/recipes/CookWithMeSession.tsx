@@ -494,7 +494,7 @@ export function CookWithMeSession({
 
         <div className="h-1 bg-white/10">
           <div
-            className="h-full bg-[#f7c86a] transition-all duration-300"
+            className="h-full bg-[#f7c86a] transition-[width] duration-300"
             style={{ width: completed ? "100%" : `${progress}%` }}
           />
         </div>

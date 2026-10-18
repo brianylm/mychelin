@@ -21,7 +21,7 @@ export function LanguageToggle({
         <button
           key={lang}
           onClick={() => onToggle(lang)}
-          className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+          className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
             currentLang === lang
               ? "bg-[#17131f] text-white shadow-sm"
               : "text-neutral-600 hover:bg-neutral-100"
