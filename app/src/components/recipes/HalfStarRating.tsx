@@ -1,6 +1,6 @@
 "use client";
 
-import { StarFilledIcon, StarIcon } from "@radix-ui/react-icons";
+import { Star } from "lucide-react";
 
 interface HalfStarRatingProps {
   value: number | null;
@@ -39,20 +39,20 @@ export function HalfStarRating({
       <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={ariaLabel}>
         {[1, 2, 3, 4, 5].map((star) => (
           <div key={star} className={`relative ${classes.button}`}>
-            <StarIcon className={`absolute inset-0 ${classes.icon} text-[#d7c7ad]`} />
+            <Star className={`absolute inset-0 ${classes.icon} text-[#d7c7ad]`} />
             {(value ?? 0) >= star && (
-              <StarFilledIcon className={`absolute inset-0 ${classes.icon} text-[#f7c86a]`} />
+              <Star className={`absolute inset-0 ${classes.icon} text-[#f7c86a]`} fill="currentColor" />
             )}
             {(value ?? 0) >= star - 0.5 && (value ?? 0) < star && (
               <div className="absolute inset-0 w-1/2 overflow-hidden">
-                <StarFilledIcon className={`${classes.icon} text-[#f7c86a]`} />
+                <Star className={`${classes.icon} text-[#f7c86a]`} fill="currentColor" />
               </div>
             )}
             <button
               type="button"
               aria-label={`${star - 0.5} stars`}
               aria-checked={value === star - 0.5}
-              className="absolute inset-y-0 left-0 w-1/2 rounded-l-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/35 disabled:cursor-not-allowed"
+              className="absolute inset-y-0 left-0 w-1/2 rounded-l-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/35 disabled:cursor-not-allowed"
               disabled={disabled}
               role="radio"
               onClick={() => onChange(star - 0.5)}
@@ -61,7 +61,7 @@ export function HalfStarRating({
               type="button"
               aria-label={`${star} stars`}
               aria-checked={value === star}
-              className="absolute inset-y-0 right-0 w-1/2 rounded-r-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#800020]/35 disabled:cursor-not-allowed"
+              className="absolute inset-y-0 right-0 w-1/2 rounded-r-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/35 disabled:cursor-not-allowed"
               disabled={disabled}
               role="radio"
               onClick={() => onChange(star)}

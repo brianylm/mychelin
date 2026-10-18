@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Button, IconButton } from "@radix-ui/themes";
-import { Cross2Icon, PlusIcon, Pencil1Icon } from "@radix-ui/react-icons";
+import { Button, IconButton } from "@/components/ui";
+import { Pencil, Plus, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { SharedHouseholdChip } from "@/components/household/SharedHouseholdChip";
+import { readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
 
 interface InventoryItem {
   id: number;
@@ -37,10 +41,18 @@ function isExpired(expiryDate: string | null): boolean {
   return new Date(expiryDate).getTime() < Date.now();
 }
 
-export function FridgeView() {
+export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }) {
   const { addToast } = useToast();
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const userId = useAuth().user?.id;
+  // Seed from the tab cache so a return visit paints at once; the effect
+  // below still refetches.
+  const [items, setItems] = useState<InventoryItem[]>(
+    () => readViewCache<InventoryItem[]>(qc, userId, viewUrls.inventory) ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => readViewCache(qc, userId, viewUrls.inventory) === undefined
+  );
   const [filter, setFilter] = useState<LocationFilter>("all");
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -48,7 +60,12 @@ export function FridgeView() {
   // Whether the inventory is the household's shared one. Loaded
   // best-effort: solo users and HOUSEHOLDS_ENABLED=off both leave this
   // false and the view behaves exactly as before.
-  const [isShared, setIsShared] = useState(false);
+  const [householdName, setHouseholdName] = useState<string | null>(
+    () =>
+      readViewCache<{ household?: { name?: string } | null }>(qc, userId, viewUrls.households)
+        ?.household?.name ?? null
+  );
+  const isShared = householdName !== null;
   const [draft, setDraft] = useState({
     name: "",
     quantity: "",
@@ -58,16 +75,21 @@ export function FridgeView() {
   });
 
   useEffect(() => {
-    fetch("/api/inventory")
+    fetch(viewUrls.inventory)
       .then((r) => r.json())
       .then((data) => setItems(Array.isArray(data) ? data : []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-    fetch("/api/households")
+    fetch(viewUrls.households)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setIsShared(Boolean(data?.household)))
-      .catch(() => setIsShared(false));
-  }, []);
+      .then((data) => {
+        if (data) writeViewCache(qc, userId, viewUrls.households, data);
+        setHouseholdName(data?.household?.name ?? null);
+      })
+      .catch(() => setHouseholdName(null));
+  }, [qc, userId]);
+
+  useViewCacheMirror(userId, viewUrls.inventory, items, !loading);
 
   const filteredItems =
     filter === "all"
@@ -160,11 +182,7 @@ export function FridgeView() {
             <h2 className="text-base font-semibold">Inventory</h2>
             <p className="text-xs text-neutral-500">
               {items.length} items
-              {isShared && (
-                <span className="ml-2 rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-semibold text-[#800020]">
-                  Shared with household
-                </span>
-              )}
+              {isShared && <SharedHouseholdChip name={householdName} onOpen={onOpenHousehold} />}
               {expiringCount > 0 && (
                 <span className="ml-2 text-red-500">
                   ⚠️ {expiringCount} expiring
@@ -173,11 +191,11 @@ export function FridgeView() {
             </p>
           </div>
           <Button
-            size="2"
-            variant="solid"
+            size="md"
+            variant="primary"
             onClick={() => setIsAdding(true)}
           >
-            <PlusIcon className="mr-1 h-4 w-4" />
+            <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
             Add item
           </Button>
         </div>
@@ -191,7 +209,7 @@ export function FridgeView() {
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-all",
                 filter === loc.id
-                  ? "bg-[#17131f] text-white shadow-sm"
+                  ? "bg-ui-action text-white shadow-sm"
                   : "text-neutral-600 hover:bg-neutral-100"
               )}
             >
@@ -210,7 +228,7 @@ export function FridgeView() {
                 value={draft.name}
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                 placeholder="Item name"
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
                 autoFocus
               />
               <div className="flex gap-2">
@@ -221,13 +239,13 @@ export function FridgeView() {
                   }
                   placeholder="Qty"
                   type="number"
-                  className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
+                  className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
                 />
                 <input
                   value={draft.unit}
                   onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
                   placeholder="Unit (g, ml, pcs)"
-                  className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
+                  className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
                 />
               </div>
               <select
@@ -235,7 +253,7 @@ export function FridgeView() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, location: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
               >
                 <option value="fridge">🧊 Fridge</option>
                 <option value="freezer">❄️ Freezer</option>
@@ -247,18 +265,17 @@ export function FridgeView() {
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, expiryDate: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#800020]/45 focus:ring-1 focus:ring-[#800020]/10 focus:bg-white"
+                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
                 placeholder="Expiry date"
               />
             </div>
             <div className="mt-3 flex gap-2">
-              <Button size="2" variant="solid" onClick={addItem}>
+              <Button size="md" variant="primary" onClick={addItem}>
                 Add
               </Button>
               <Button
-                size="2"
-                variant="soft"
-                color="gray"
+                size="md"
+                variant="secondary"
                 onClick={() => setIsAdding(false)}
               >
                 Cancel
@@ -296,7 +313,7 @@ export function FridgeView() {
                     expired
                       ? "border-red-200 bg-red-50/50"
                       : expiring
-                        ? "border-[#800020]/15 bg-[#800020]/5"
+                        ? "border-ui-accent/15 bg-ui-accent/5"
                         : "border-neutral-200"
                   )}
                 >
@@ -323,7 +340,7 @@ export function FridgeView() {
                           }
                           type="number"
                           aria-label="Quantity"
-                          className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs outline-none focus:border-[#800020]/45"
+                          className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs outline-none focus:border-ui-accent/45"
                         />
                         <input
                           type="date"
@@ -332,12 +349,12 @@ export function FridgeView() {
                             setEditDraft((d) => ({ ...d, expiryDate: e.target.value }))
                           }
                           aria-label="Expiry date"
-                          className="rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs outline-none focus:border-[#800020]/45"
+                          className="rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs outline-none focus:border-ui-accent/45"
                         />
                         <button
                           type="button"
                           onClick={() => saveEdit(item.id)}
-                          className="rounded-lg bg-[#17131f] px-2.5 py-1 text-xs font-medium text-white"
+                          className="rounded-lg bg-ui-action px-2.5 py-1 text-xs font-medium text-white"
                         >
                           Save
                         </button>
@@ -364,7 +381,7 @@ export function FridgeView() {
                               expired
                                 ? "font-medium text-red-600"
                                 : expiring
-                                  ? "font-medium text-[#800020]"
+                                  ? "font-medium text-ui-accent"
                                   : ""
                             )}
                           >
@@ -382,25 +399,23 @@ export function FridgeView() {
                   {/* Edit (manual reconcile) */}
                   {editingId !== item.id && (
                     <IconButton
-                      variant="ghost"
-                      size="1"
+                      variant="quiet"
                       aria-label={`Edit ${item.name}`}
                       className="opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                       onClick={() => startEdit(item)}
                     >
-                      <Pencil1Icon />
+                      <Pencil className="h-[15px] w-[15px]" />
                     </IconButton>
                   )}
 
                   {/* Remove */}
                   <IconButton
-                    variant="ghost"
-                    size="1"
-                    color="red"
+                    variant="quiet"
+                    aria-label={`Remove ${item.name}`}
                     className="opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                     onClick={() => removeItem(item.id)}
                   >
-                    <Cross2Icon />
+                    <X className="h-[15px] w-[15px]" />
                   </IconButton>
                 </div>
               );

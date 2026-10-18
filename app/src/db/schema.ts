@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ─── Users ─────────────────────────────────────────────────
 export const users = sqliteTable("users", {
@@ -270,6 +270,45 @@ export const ingredients = sqliteTable("ingredients", {
   sortOrder: integer("sort_order").default(0),
 });
 
+// ─── Meal Groups ───────────────────────────────────────────
+// A meal group is the whole eating occasion. Legacy meal_plans remain one
+// fresh recipe per row and can be attached lazily through meal_group_id.
+export const mealGroups = sqliteTable(
+  "meal_groups",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    householdId: integer("household_id").references(() => households.id, {
+      onDelete: "cascade",
+    }),
+    date: text("date").notNull(),
+    mealType: text("meal_type").notNull(),
+    serveAt: text("serve_at").notNull(),
+    timezone: text("timezone").notNull(),
+    dinerCount: integer("diner_count").notNull(),
+    durationOverrideMinutes: integer("duration_override_minutes"),
+    defrostAtOverride: text("defrost_at_override"),
+    status: text("status").notNull().default("planned"),
+    confirmedAt: text("confirmed_at"),
+    confirmedBy: integer("confirmed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    revision: integer("revision").notNull().default(1),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    index("meal_groups_user_date_idx").on(t.userId, t.date),
+    index("meal_groups_household_date_idx").on(t.householdId, t.date),
+  ]
+);
+
 // ─── Meal Plans ────────────────────────────────────────────
 export const mealPlans = sqliteTable("meal_plans", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -284,7 +323,16 @@ export const mealPlans = sqliteTable("meal_plans", {
   recipeId: integer("recipe_id")
     .notNull()
     .references(() => recipes.id, { onDelete: "cascade" }),
+  mealGroupId: integer("meal_group_id").references(() => mealGroups.id, {
+    onDelete: "set null",
+  }),
   servings: real("servings").notNull().default(1), // multiplier against recipe's base yield
+  // NULL means legacy household ratio scaling still applies. Once a user
+  // explicitly chooses diners/portions this is an absolute portion target
+  // and servings stores the already-converted recipe multiplier.
+  targetPortions: real("target_portions"),
+  plannedOutputFridge: real("planned_output_fridge"),
+  plannedOutputFreezer: real("planned_output_freezer"),
   notes: text("notes"), // optional
   cookedAt: text("cooked_at"), // ISO string, null until cooked
   // Ghost snapshot (Slice 2): minimal display data captured when the
@@ -412,6 +460,329 @@ export const householdMemberBlocks = sqliteTable(
       t.date,
       t.mealType
     ),
+  ]
+);
+
+// ─── Prepared meals ────────────────────────────────────────
+// Batches snapshot the food's title so later recipe edits/deletion do not
+// rewrite stock. Storage lives on lots so one cook can be split fridge/freezer.
+export const preparedBatches = sqliteTable(
+  "prepared_batches",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    householdId: integer("household_id").references(() => households.id, {
+      onDelete: "cascade",
+    }),
+    recipeId: integer("recipe_id").references(() => recipes.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    cookedAt: text("cooked_at"),
+    notes: text("notes"),
+    revision: integer("revision").notNull().default(1),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    index("prepared_batches_user_idx").on(t.userId),
+    index("prepared_batches_household_idx").on(t.householdId),
+  ]
+);
+
+export const preparedLots = sqliteTable(
+  "prepared_lots",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    batchId: integer("batch_id")
+      .notNull()
+      .references(() => preparedBatches.id, { onDelete: "cascade" }),
+    storage: text("storage").notNull(), // "fridge" | "freezer"
+    physicalPortions: real("physical_portions").notNull(),
+    useByDate: text("use_by_date"),
+    revision: integer("revision").notNull().default(1),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [index("prepared_lots_batch_idx").on(t.batchId)]
+);
+
+export const preparedReservations = sqliteTable(
+  "prepared_reservations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    mealGroupId: integer("meal_group_id")
+      .notNull()
+      .references(() => mealGroups.id, { onDelete: "cascade" }),
+    lotId: integer("lot_id")
+      .notNull()
+      .references(() => preparedLots.id, { onDelete: "restrict" }),
+    // Snapshot the planning choice. Moving a lot later can be flagged without
+    // silently relabelling the already-planned dish.
+    sourceStorage: text("source_storage").notNull(),
+    plannedPortions: real("planned_portions").notNull(),
+    consumedPortions: real("consumed_portions").notNull().default(0),
+    status: text("status").notNull().default("reserved"),
+    reheatNotes: text("reheat_notes"),
+    idempotencyKey: text("idempotency_key").notNull().unique(),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    uniqueIndex("prepared_reservations_meal_lot_idx").on(t.mealGroupId, t.lotId),
+    index("prepared_reservations_lot_idx").on(t.lotId, t.status),
+  ]
+);
+
+export const mealConfirmationCommands = sqliteTable(
+  "meal_confirmation_commands",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    mealGroupId: integer("meal_group_id")
+      .notNull()
+      .references(() => mealGroups.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    idempotencyKey: text("idempotency_key").notNull().unique(),
+    kind: text("kind").notNull(), // "confirm" | "undo"
+    payload: text("payload").notNull(),
+    reversesCommandId: integer("reverses_command_id"),
+    appliedAt: text("applied_at").notNull(),
+  },
+  (t) => [index("meal_confirmation_commands_meal_idx").on(t.mealGroupId)]
+);
+
+// Records that raw-ingredient/cooked-output effects for one fresh dish have
+// been applied. The unique meal_plan_id is the double-deduction guard shared
+// by Cook With Me and next-visit confirmation.
+export const mealFreshEffects = sqliteTable(
+  "meal_fresh_effects",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    mealGroupId: integer("meal_group_id")
+      .notNull()
+      .references(() => mealGroups.id, { onDelete: "cascade" }),
+    mealPlanId: integer("meal_plan_id")
+      .notNull()
+      .references(() => mealPlans.id, { onDelete: "cascade" })
+      .unique(),
+    recipeAttemptId: integer("recipe_attempt_id").references(() => recipeAttempts.id, {
+      onDelete: "set null",
+    }),
+    preparedBatchId: integer("prepared_batch_id").references(() => preparedBatches.id, {
+      onDelete: "set null",
+    }),
+    effectSnapshot: text("effect_snapshot").notNull(),
+    appliedAt: text("applied_at").notNull(),
+  },
+  (t) => [index("meal_fresh_effects_group_idx").on(t.mealGroupId)]
+);
+
+export const mealStationAssignments = sqliteTable(
+  "meal_station_assignments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    mealGroupId: integer("meal_group_id")
+      .notNull()
+      .references(() => mealGroups.id, { onDelete: "cascade" }),
+    mealPlanId: integer("meal_plan_id").references(() => mealPlans.id, {
+      onDelete: "cascade",
+    }),
+    reservationId: integer("reservation_id").references(() => preparedReservations.id, {
+      onDelete: "cascade",
+    }),
+    instructionId: integer("instruction_id").references(() => instructions.id, {
+      onDelete: "set null",
+    }),
+    stationName: text("station_name").notNull(),
+    startOffsetMinutes: integer("start_offset_minutes"),
+    durationMinutes: integer("duration_minutes"),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [index("meal_station_assignments_group_idx").on(t.mealGroupId)]
+);
+
+export const mealConflicts = sqliteTable(
+  "meal_conflicts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    mealGroupId: integer("meal_group_id")
+      .notNull()
+      .references(() => mealGroups.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    message: text("message").notNull(),
+    details: text("details"),
+    resolvedAt: text("resolved_at"),
+    detectedAt: text("detected_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [index("meal_conflicts_open_idx").on(t.mealGroupId, t.resolvedAt)]
+);
+
+// ─── Managed Google Calendar integration ──────────────────
+// Tokens are encrypted before storage. userId is always the connecting
+// credential owner; householdId selects shared-calendar scope when present.
+export const calendarConnections = sqliteTable(
+  "calendar_connections",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    householdId: integer("household_id").references(() => households.id, {
+      onDelete: "cascade",
+    }),
+    googleAccountEmail: text("google_account_email").notNull(),
+    grantedScopes: text("granted_scopes").notNull(),
+    calendarId: text("calendar_id").notNull(),
+    calendarName: text("calendar_name").notNull(),
+    calendarTimezone: text("calendar_timezone").notNull(),
+    status: text("status").notNull().default("connected"),
+    accessTokenCiphertext: text("access_token_ciphertext"),
+    accessTokenIv: text("access_token_iv"),
+    refreshTokenCiphertext: text("refresh_token_ciphertext").notNull(),
+    refreshTokenIv: text("refresh_token_iv").notNull(),
+    accessTokenExpiresAt: text("access_token_expires_at"),
+    tokenInvalidatedAt: text("token_invalidated_at"),
+    syncToken: text("sync_token"),
+    watchChannelId: text("watch_channel_id"),
+    watchResourceId: text("watch_resource_id"),
+    watchTokenHash: text("watch_token_hash"),
+    watchExpiresAt: text("watch_expires_at"),
+    lastSyncedAt: text("last_synced_at"),
+    lastError: text("last_error"),
+    disconnectedAt: text("disconnected_at"),
+    revision: integer("revision").notNull().default(1),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    uniqueIndex("calendar_connections_active_household_idx")
+      .on(t.householdId)
+      .where(sql`${t.householdId} is not null and ${t.disconnectedAt} is null`),
+    uniqueIndex("calendar_connections_active_solo_idx")
+      .on(t.userId)
+      .where(sql`${t.householdId} is null and ${t.disconnectedAt} is null`),
+  ]
+);
+
+export const calendarActivities = sqliteTable(
+  "calendar_activities",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    connectionId: integer("connection_id")
+      .notNull()
+      .references(() => calendarConnections.id, { onDelete: "cascade" }),
+    mealGroupId: integer("meal_group_id")
+      .notNull()
+      .references(() => mealGroups.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // "cooking" | "defrost"
+    googleEventId: text("google_event_id"),
+    googleEtag: text("google_etag"),
+    startAt: text("start_at"),
+    endAt: text("end_at"),
+    explicitDurationMinutes: integer("explicit_duration_minutes"),
+    state: text("state").notNull().default("pending"),
+    desiredRevision: integer("desired_revision").notNull().default(0),
+    syncedRevision: integer("synced_revision").notNull().default(0),
+    sourceMealRevision: integer("source_meal_revision").notNull().default(0),
+    deletedExternallyAt: text("deleted_externally_at"),
+    lastError: text("last_error"),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    uniqueIndex("calendar_activities_connection_meal_kind_idx").on(
+      t.connectionId,
+      t.mealGroupId,
+      t.kind
+    ),
+    index("calendar_activities_meal_idx").on(t.mealGroupId),
+  ]
+);
+
+export const calendarShares = sqliteTable(
+  "calendar_shares",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    connectionId: integer("connection_id")
+      .notNull()
+      .references(() => calendarConnections.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    googleAclRuleId: text("google_acl_rule_id"),
+    status: text("status").notNull().default("pending"),
+    lastError: text("last_error"),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    uniqueIndex("calendar_shares_connection_user_idx").on(t.connectionId, t.userId),
+    index("calendar_shares_connection_status_idx").on(t.connectionId, t.status),
+  ]
+);
+
+export const calendarSyncJobs = sqliteTable(
+  "calendar_sync_jobs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    connectionId: integer("connection_id")
+      .notNull()
+      .references(() => calendarConnections.id, { onDelete: "cascade" }),
+    mealGroupId: integer("meal_group_id").references(() => mealGroups.id, {
+      onDelete: "cascade",
+    }),
+    shareId: integer("share_id").references(() => calendarShares.id, {
+      onDelete: "cascade",
+    }),
+    kind: text("kind"), // "cooking" | "defrost" | null
+    action: text("action").notNull(),
+    dedupeKey: text("dedupe_key").notNull().unique(),
+    status: text("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    notBefore: text("not_before").notNull(),
+    leasedAt: text("leased_at"),
+    leaseToken: text("lease_token"),
+    lastError: text("last_error"),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (t) => [
+    index("calendar_sync_jobs_due_idx").on(t.status, t.notBefore),
+    index("calendar_sync_jobs_share_idx").on(t.shareId),
   ]
 );
 
@@ -815,6 +1186,86 @@ export const mealPlansRelations = relations(mealPlans, ({ one }) => ({
     fields: [mealPlans.recipeId],
     references: [recipes.id],
   }),
+  mealGroup: one(mealGroups, {
+    fields: [mealPlans.mealGroupId],
+    references: [mealGroups.id],
+  }),
+}));
+
+export const mealGroupsRelations = relations(mealGroups, ({ one, many }) => ({
+  user: one(users, {
+    fields: [mealGroups.userId],
+    references: [users.id],
+  }),
+  household: one(households, {
+    fields: [mealGroups.householdId],
+    references: [households.id],
+  }),
+  plans: many(mealPlans),
+  reservations: many(preparedReservations),
+  conflicts: many(mealConflicts),
+  stations: many(mealStationAssignments),
+  calendarActivities: many(calendarActivities),
+}));
+
+export const preparedBatchesRelations = relations(preparedBatches, ({ one, many }) => ({
+  user: one(users, {
+    fields: [preparedBatches.userId],
+    references: [users.id],
+  }),
+  household: one(households, {
+    fields: [preparedBatches.householdId],
+    references: [households.id],
+  }),
+  recipe: one(recipes, {
+    fields: [preparedBatches.recipeId],
+    references: [recipes.id],
+  }),
+  lots: many(preparedLots),
+}));
+
+export const preparedLotsRelations = relations(preparedLots, ({ one, many }) => ({
+  batch: one(preparedBatches, {
+    fields: [preparedLots.batchId],
+    references: [preparedBatches.id],
+  }),
+  reservations: many(preparedReservations),
+}));
+
+export const preparedReservationsRelations = relations(preparedReservations, ({ one }) => ({
+  mealGroup: one(mealGroups, {
+    fields: [preparedReservations.mealGroupId],
+    references: [mealGroups.id],
+  }),
+  lot: one(preparedLots, {
+    fields: [preparedReservations.lotId],
+    references: [preparedLots.id],
+  }),
+}));
+
+export const calendarConnectionsRelations = relations(calendarConnections, ({ one, many }) => ({
+  user: one(users, {
+    fields: [calendarConnections.userId],
+    references: [users.id],
+  }),
+  household: one(households, {
+    fields: [calendarConnections.householdId],
+    references: [households.id],
+  }),
+  activities: many(calendarActivities),
+  shares: many(calendarShares),
+  jobs: many(calendarSyncJobs),
+}));
+
+export const calendarActivitiesRelations = relations(calendarActivities, ({ one }) => ({
+  connection: one(calendarConnections, {
+    fields: [calendarActivities.connectionId],
+    references: [calendarConnections.id],
+  }),
+  mealGroup: one(mealGroups, {
+    fields: [calendarActivities.mealGroupId],
+    references: [mealGroups.id],
+  }),
 }));
 
 export const householdsRelations = relations(households, ({ one, many }) => ({
@@ -988,6 +1439,26 @@ export type Ingredient = typeof ingredients.$inferSelect;
 export type NewIngredient = typeof ingredients.$inferInsert;
 export type MealPlan = typeof mealPlans.$inferSelect;
 export type NewMealPlan = typeof mealPlans.$inferInsert;
+export type MealGroup = typeof mealGroups.$inferSelect;
+export type NewMealGroup = typeof mealGroups.$inferInsert;
+export type PreparedBatch = typeof preparedBatches.$inferSelect;
+export type NewPreparedBatch = typeof preparedBatches.$inferInsert;
+export type PreparedLot = typeof preparedLots.$inferSelect;
+export type NewPreparedLot = typeof preparedLots.$inferInsert;
+export type PreparedReservation = typeof preparedReservations.$inferSelect;
+export type NewPreparedReservation = typeof preparedReservations.$inferInsert;
+export type MealConflict = typeof mealConflicts.$inferSelect;
+export type NewMealConflict = typeof mealConflicts.$inferInsert;
+export type MealStationAssignment = typeof mealStationAssignments.$inferSelect;
+export type NewMealStationAssignment = typeof mealStationAssignments.$inferInsert;
+export type CalendarConnection = typeof calendarConnections.$inferSelect;
+export type NewCalendarConnection = typeof calendarConnections.$inferInsert;
+export type CalendarActivity = typeof calendarActivities.$inferSelect;
+export type NewCalendarActivity = typeof calendarActivities.$inferInsert;
+export type CalendarShare = typeof calendarShares.$inferSelect;
+export type NewCalendarShare = typeof calendarShares.$inferInsert;
+export type CalendarSyncJob = typeof calendarSyncJobs.$inferSelect;
+export type NewCalendarSyncJob = typeof calendarSyncJobs.$inferInsert;
 export type Inventory = typeof inventory.$inferSelect;
 export type NewInventory = typeof inventory.$inferInsert;
 export type Instruction = typeof instructions.$inferSelect;

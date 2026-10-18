@@ -11,7 +11,7 @@ import {
   users,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureHouseholdTables, ensureMealPlanBlocksTable, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
+import { ensureHouseholdTables, ensureMealPilotTables, ensureMealPlanBlocksTable, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
 import { getUserHousehold, logHouseholdActivity } from "@/lib/households";
 import { shiftDateKey } from "@/lib/planner-logged-meals";
@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
       ensureRecipeAttemptsTable(),
       ensureMealPlanBlocksTable(),
       ensureHouseholdTables(),
+      ensureMealPilotTables(),
     ]);
 
     const { searchParams } = new URL(request.url);
@@ -206,6 +207,7 @@ export async function POST(request: NextRequest) {
       ensureMealPlanCookedAtColumn(),
       ensureMealPlanBlocksTable(),
       ensureHouseholdTables(),
+      ensureMealPilotTables(),
     ]);
 
     const body = await request.json();

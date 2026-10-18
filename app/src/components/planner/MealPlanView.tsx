@@ -1,21 +1,29 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { Button, IconButton } from "@radix-ui/themes";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PlusIcon,
-  Cross2Icon,
-} from "@radix-ui/react-icons";
-import { CheckCircle2, ChefHat, ShoppingBasket, Dices, Ban, Undo2 } from "lucide-react";
+  CheckCircle2,
+  ChefHat,
+  ShoppingBasket,
+  ChevronLeft,
+  ChevronRight,
+  Dices,
+  Ban,
+  Plus,
+  Undo2,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { currentWeekRange, readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
 import { useToast } from "@/context/ToastContext";
 import { CalendarExport } from "@/components/CalendarExport";
+import { SharedHouseholdChip } from "@/components/household/SharedHouseholdChip";
 import {
-  Button as UiButton,
+  Button,
   EmptyState,
   FilterBar,
+  IconButton,
   RecipeResultRow,
   type FilterOption,
 } from "@/components/ui";
@@ -238,31 +246,73 @@ function getRecipeMatchEvidence(recipe: Recipe, query: string): string | null {
   return null;
 }
 
+interface PlanData {
+  plans: MealPlan[];
+  attempts: LoggedAttempt[];
+  blocks: MealPlanBlock[];
+  household: PlanHousehold | null;
+  memberBlocks: HouseholdMemberBlockView[];
+}
+
+// GET /api/meal-plans body (or a cached copy of it) as view state.
+// Tolerates the legacy bare-array response shape.
+function parsePlanData(data: unknown): PlanData {
+  if (Array.isArray(data)) {
+    return { plans: data, attempts: [], blocks: [], household: null, memberBlocks: [] };
+  }
+  const body = (data ?? {}) as Partial<Record<keyof PlanData, unknown>>;
+  return {
+    plans: Array.isArray(body.plans) ? body.plans : [],
+    attempts: Array.isArray(body.attempts) ? body.attempts : [],
+    blocks: Array.isArray(body.blocks) ? body.blocks : [],
+    household: (body.household as PlanHousehold | null | undefined) ?? null,
+    memberBlocks: Array.isArray(body.memberBlocks) ? body.memberBlocks : [],
+  };
+}
+
 interface MealPlanViewProps {
   onCookMeal?: (recipeId: number, mealPlanId: number) => void;
   onCookMeals?: (meals: Array<{ recipeId: number; mealPlanId: number }>) => void;
   onOpenShoppingList?: (range: { start: string; end: string }) => void;
+  onOpenHousehold?: () => void;
 }
 
-export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: MealPlanViewProps) {
+export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOpenHousehold }: MealPlanViewProps) {
   const { addToast } = useToast();
   const { user } = useAuth();
+  const qc = useQueryClient();
+  const userId = user?.id;
   const [viewType, setViewType] = useState<ViewType>("week");
   const [offset, setOffset] = useState(0);
-  const [plans, setPlans] = useState<MealPlan[]>([]);
-  const [attempts, setAttempts] = useState<LoggedAttempt[]>([]);
-  const [blocks, setBlocks] = useState<MealPlanBlock[]>([]);
+  // Seed from the tab cache (this week, the default view) so a return
+  // visit paints at once; the load effect below still refreshes.
+  const [initialPlanUrl] = useState(() => {
+    const week = currentWeekRange();
+    return viewUrls.mealPlans(week.start, week.end);
+  });
+  const [initialPlan] = useState(() => {
+    const cached = readViewCache<unknown>(qc, userId, initialPlanUrl);
+    return cached === undefined ? null : parsePlanData(cached);
+  });
+  const [planDataUrl, setPlanDataUrl] = useState<string | null>(initialPlan ? initialPlanUrl : null);
+  const [plans, setPlans] = useState<MealPlan[]>(initialPlan?.plans ?? []);
+  const [attempts, setAttempts] = useState<LoggedAttempt[]>(initialPlan?.attempts ?? []);
+  const [blocks, setBlocks] = useState<MealPlanBlock[]>(initialPlan?.blocks ?? []);
   // Household shared-plan state: present only when the user is in a
   // household. memberBlocks are per-member "I'm out" blocks visible to
   // everyone with attribution.
-  const [household, setHousehold] = useState<PlanHousehold | null>(null);
-  const [memberBlocks, setMemberBlocks] = useState<HouseholdMemberBlockView[]>([]);
+  const [household, setHousehold] = useState<PlanHousehold | null>(initialPlan?.household ?? null);
+  const [memberBlocks, setMemberBlocks] = useState<HouseholdMemberBlockView[]>(
+    initialPlan?.memberBlocks ?? []
+  );
   const [blockMenuSlot, setBlockMenuSlot] = useState<{ date: string; mealType: string } | null>(null);
   const [randomizing, setRandomizing] = useState(false);
   const [review, setReview] = useState<{ slots: SlotRef[]; label: string } | null>(null);
   const [lastRandomized, setLastRandomized] = useState<{ planIds: number[]; label: string } | null>(null);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recipes, setRecipes] = useState<Recipe[]>(
+    () => readViewCache<Recipe[]>(qc, userId, viewUrls.plannerRecipes) ?? []
+  );
+  const [loading, setLoading] = useState(!initialPlan);
   const [addingSlot, setAddingSlot] = useState<{
     date: string;
     mealType: string;
@@ -323,33 +373,36 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
 
   const currentDateRange = getCurrentDates();
 
-  // Fetch meal plans and logged cook attempts
+  const planUrl = viewUrls.mealPlans(currentDateRange.startDate, currentDateRange.endDate);
+
+  const applyPlanData = useCallback((url: string, data: PlanData) => {
+    setPlans(data.plans);
+    setAttempts(data.attempts);
+    setBlocks(data.blocks);
+    setHousehold(data.household);
+    setMemberBlocks(data.memberBlocks);
+    setPlanDataUrl(url);
+  }, []);
+
+  // Fetch meal plans and logged cook attempts. A cached copy of the range
+  // paints at once and the refresh stays silent; only an uncached range
+  // shows the spinner.
   useEffect(() => {
     let cancelled = false;
 
     async function loadMealPlans() {
-      setLoading(true);
+      const cached = readViewCache<unknown>(qc, userId, planUrl);
+      if (cached !== undefined) applyPlanData(planUrl, parsePlanData(cached));
+      else setLoading(true);
       try {
-        const response = await fetch(
-          `/api/meal-plans?startDate=${currentDateRange.startDate}&endDate=${currentDateRange.endDate}`
-        );
+        const response = await fetch(planUrl);
         const data = await response.json();
         if (!cancelled) {
-          // Tolerate the legacy bare-array response shape.
-          if (Array.isArray(data)) {
-            setPlans(data);
-            setAttempts([]);
-            setBlocks([]);
-          } else {
-            setPlans(Array.isArray(data?.plans) ? data.plans : []);
-            setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
-            setBlocks(Array.isArray(data?.blocks) ? data.blocks : []);
-            setHousehold(data?.household ?? null);
-            setMemberBlocks(Array.isArray(data?.memberBlocks) ? data.memberBlocks : []);
-          }
+          if (response.ok) writeViewCache(qc, userId, planUrl, data);
+          applyPlanData(planUrl, parsePlanData(data));
         }
       } catch {
-        if (!cancelled) {
+        if (!cancelled && cached === undefined) {
           setPlans([]);
           setAttempts([]);
           setBlocks([]);
@@ -366,15 +419,27 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
     return () => {
       cancelled = true;
     };
-  }, [currentDateRange.startDate, currentDateRange.endDate]);
+  }, [qc, userId, planUrl, applyPlanData]);
+
+  // Keep the cache in step with local edits (add/remove/block) so a
+  // return visit does not flash pre-edit state.
+  const cachedPlanData = useMemo<PlanData>(
+    () => ({ plans, attempts, blocks, household, memberBlocks }),
+    [plans, attempts, blocks, household, memberBlocks]
+  );
+  useViewCacheMirror(userId, planUrl, cachedPlanData, planDataUrl === planUrl && !loading);
 
   // Fetch recipes for the add dialog
   useEffect(() => {
-    fetch("/api/recipes?planner=1")
+    fetch(viewUrls.plannerRecipes)
       .then((r) => r.json())
-      .then((data) => setRecipes(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        writeViewCache(qc, userId, viewUrls.plannerRecipes, list);
+        setRecipes(list);
+      })
       .catch(() => setRecipes([]));
-  }, []);
+  }, [qc, userId]);
 
   const cuisineOptions = useMemo(() => {
     return Array.from(
@@ -833,7 +898,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   viewType === "week"
-                    ? "bg-[#17131f] text-white shadow-sm"
+                    ? "bg-ui-action text-white shadow-sm"
                     : "text-neutral-600 hover:text-neutral-800"
                 }`}
               >
@@ -846,7 +911,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   viewType === "month"
-                    ? "bg-[#17131f] text-white shadow-sm"
+                    ? "bg-ui-action text-white shadow-sm"
                     : "text-neutral-600 hover:text-neutral-800"
                 }`}
               >
@@ -858,21 +923,24 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
           {/* Navigation */}
           <div className="flex items-center justify-center gap-4">
             <IconButton
-              variant="ghost"
-              size="2"
+              variant="quiet"
+              aria-label="Previous period"
               onClick={() => setOffset((o) => o - 1)}
             >
-              <ChevronLeftIcon />
+              <ChevronLeft className="h-[15px] w-[15px]" />
             </IconButton>
 
             <div className="min-w-[200px] text-center">
               <h2 className="text-base font-semibold">
                 {currentDateRange.title}
               </h2>
+              {household && (
+                <SharedHouseholdChip name={household.name} onOpen={onOpenHousehold} />
+              )}
               {offset !== 0 && (
                 <button
                   onClick={() => setOffset(0)}
-                  className="mt-1 text-xs text-[#800020] hover:underline"
+                  className="mt-1 text-xs text-ui-accent hover:underline"
                 >
                   Back to {viewType === "week" ? "this week" : "this month"}
                 </button>
@@ -880,18 +948,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             </div>
 
             <IconButton
-              variant="ghost"
-              size="2"
+              variant="quiet"
+              aria-label="Next period"
               onClick={() => setOffset((o) => o + 1)}
             >
-              <ChevronRightIcon />
+              <ChevronRight className="h-[15px] w-[15px]" />
             </IconButton>
           </div>
 
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button
-              variant="solid"
-              color="gray"
+              variant="primary"
               disabled={randomizing || recipes.length === 0}
               onClick={() => openRandomizeReview(currentDateRange.dates, `this ${viewType}`)}
             >
@@ -900,8 +967,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             </Button>
             {plans.length > 0 && onOpenShoppingList && (
               <Button
-                variant="solid"
-                color="gray"
+                variant="primary"
                 onClick={() =>
                   onOpenShoppingList({
                     start: currentDateRange.startDate,
@@ -915,8 +981,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
             )}
             {plans.length > 0 && (
               <Button
-                variant="soft"
-                color="amber"
+                variant="secondary"
                 onClick={() => {
                   setExportEvents(buildCalendarEvents(plans));
                   setExportTitle(currentDateRange.title);
@@ -937,7 +1002,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
               <button
                 type="button"
                 onClick={undoRandomize}
-                className="inline-flex items-center gap-1 font-semibold text-[#800020] hover:underline"
+                className="inline-flex items-center gap-1 font-semibold text-ui-accent hover:underline"
               >
                 <Undo2 className="h-3.5 w-3.5" />
                 Undo
@@ -948,7 +1013,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 className="text-neutral-400 hover:text-neutral-600"
                 aria-label="Dismiss undo banner"
               >
-                <Cross2Icon className="h-3 w-3" />
+                <X className="h-3 w-3" />
               </button>
             </div>
           )}
@@ -968,7 +1033,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                   key={date}
                   className={`rounded-2xl border bg-white p-4 ${
                     isToday
-                      ? "border-[#800020]/30 ring-1 ring-amber-200"
+                      ? "border-ui-accent/30 ring-1 ring-amber-200"
                       : "border-neutral-200"
                   }`}
                 >
@@ -977,7 +1042,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
                         isToday
-                          ? "bg-[#17131f] text-white"
+                          ? "bg-ui-action text-white"
                           : "bg-neutral-100 text-neutral-700"
                       }`}
                     >
@@ -987,7 +1052,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                       {day}
                     </span>
                     {isToday && (
-                      <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-[10px] font-medium text-[#800020]">
+                      <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-medium text-ui-accent">
                         Today
                       </span>
                     )}
@@ -1019,7 +1084,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                         .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
                                     )
                                   }
-                                  className="inline-flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white transition hover:bg-[#800020]"
+                                  className="inline-flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-white transition hover:bg-ui-accent"
                                 >
                                   <ChefHat className="h-3 w-3" />
                                   Cook together
@@ -1031,7 +1096,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                     type="button"
                                     onClick={() => randomizeSlot(date, mealType)}
                                     disabled={recipes.length === 0}
-                                    className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-[#800020] disabled:opacity-30"
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-ui-accent disabled:opacity-30"
                                     aria-label={`Randomize ${mealType}`}
                                     title={`Randomize ${mealType}`}
                                   >
@@ -1118,7 +1183,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                     <button
                                       type="button"
                                       onClick={() => onCookMeal(plan.recipeId, plan.id)}
-                                      className="flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white opacity-100 transition hover:bg-[#800020] sm:opacity-0 sm:group-hover:opacity-100"
+                                      className="flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-white opacity-100 transition hover:bg-ui-accent sm:opacity-0 sm:group-hover:opacity-100"
                                       aria-label={`Cook ${plan.recipe?.title || "planned meal"}`}
                                     >
                                       <ChefHat className="h-3 w-3" />
@@ -1127,13 +1192,12 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                   )}
                                   {!plan.loggedAttempt && (
                                     <IconButton
-                                      variant="ghost"
-                                      size="1"
-                                      color="red"
-                                      className="h-4 w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                      variant="quiet"
+                                      aria-label={`Remove ${plan.recipe?.title || "planned meal"}`}
+                                      className="!h-4 !w-4 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                                       onClick={() => removePlan(plan.id)}
                                     >
-                                      <Cross2Icon className="h-3 w-3" />
+                                      <X className="h-3 w-3" />
                                     </IconButton>
                                   )}
                                 </div>
@@ -1141,9 +1205,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                               </div>
                               <button
                                 onClick={() => openAddDialog(date, mealType)}
-                                className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-[#800020]/30 hover:text-[#800020]"
+                                className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
                               >
-                                <PlusIcon className="h-3 w-3" />
+                                <Plus className="h-3 w-3" />
                               </button>
                             </>
                           )}
@@ -1191,7 +1255,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                       onClick={() => setSelectedDayDate(date)}
                       className={`min-h-[80px] p-2 text-left transition-colors hover:bg-neutral-50 ${
                         isToday
-                          ? "bg-[#800020]/5"
+                          ? "bg-ui-accent/5"
                           : !isCurrentMonth
                             ? "bg-neutral-50/50 text-neutral-400"
                             : ""
@@ -1201,7 +1265,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                         <span
                           className={`mb-1 text-sm font-medium ${
                             isToday
-                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-[#17131f] text-white"
+                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-ui-action text-white"
                               : isCurrentMonth
                                 ? "text-neutral-900"
                                 : "text-neutral-400"
@@ -1266,19 +1330,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                       )
                     }
                     disabled={recipes.length === 0}
-                    className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-[#800020]/40 hover:text-[#800020] disabled:opacity-40"
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent disabled:opacity-40"
                   >
                     <Dices className="h-3 w-3" />
                     Randomize day
                   </button>
                   <IconButton
-                    variant="ghost"
-                    size="1"
-                    color="gray"
+                    variant="quiet"
                     onClick={() => setSelectedDayDate(null)}
                     aria-label="Close day planner"
                   >
-                    <Cross2Icon />
+                    <X className="h-[15px] w-[15px]" />
                   </IconButton>
                 </div>
               </div>
@@ -1308,7 +1370,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                     .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
                                 )
                               }
-                              className="inline-flex h-7 items-center gap-1 rounded-md bg-[#17131f] px-2.5 text-[11px] font-semibold text-white transition hover:bg-[#800020]"
+                              className="inline-flex h-7 items-center gap-1 rounded-md bg-ui-action px-2.5 text-[11px] font-semibold text-white transition hover:bg-ui-accent"
                             >
                               <ChefHat className="h-3 w-3" />
                               Cook together
@@ -1320,7 +1382,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                 type="button"
                                 onClick={() => randomizeSlot(selectedDayDate, mealType)}
                                 disabled={recipes.length === 0}
-                                className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-[#800020]/40 hover:text-[#800020] disabled:opacity-40"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent disabled:opacity-40"
                               >
                                 <Dices className="h-3 w-3" />
                                 Random
@@ -1328,9 +1390,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                               <button
                                 type="button"
                                 onClick={() => openAddDialog(selectedDayDate, mealType)}
-                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent"
                               >
-                                <PlusIcon className="h-3 w-3" />
+                                <Plus className="h-3 w-3" aria-hidden="true" />
                                 Add meal
                               </button>
                               <button
@@ -1444,7 +1506,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                                 <button
                                   type="button"
                                   onClick={() => onCookMeal(plan.recipeId, plan.id)}
-                                  className="flex h-7 items-center gap-1 rounded-full bg-[#17131f] px-2.5 text-[10px] font-semibold text-white transition hover:bg-[#800020]"
+                                  className="flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-white transition hover:bg-ui-accent"
                                   aria-label={
                                     "Cook " + (plan.recipe?.title || "planned meal")
                                   }
@@ -1455,13 +1517,12 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                               )}
                               {!plan.loggedAttempt && (
                                 <IconButton
-                                  variant="ghost"
-                                  size="1"
-                                  color="red"
-                                  className="h-4 w-4"
+                                  variant="quiet"
+                                  aria-label={`Remove ${plan.recipe?.title || "planned meal"}`}
+                                  className="!h-4 !w-4"
                                   onClick={() => removePlan(plan.id)}
                                 >
-                                  <Cross2Icon className="h-3 w-3" />
+                                  <X className="h-3 w-3" />
                                 </IconButton>
                               )}
                             </div>
@@ -1508,7 +1569,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                 />
 
                 {selectedRecipe && (
-                  <div className="rounded-lg border border-[#800020]/15 bg-[#800020]/5 px-3 py-2">
+                  <div className="rounded-lg border border-ui-accent/15 bg-ui-accent/5 px-3 py-2">
                     <p className="text-xs font-semibold text-[#521224]">
                       {selectedRecipe.title}
                     </p>
@@ -1567,19 +1628,19 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
               </div>
 
               <div className="flex gap-2 border-t border-[var(--ui-border)] p-5 pt-4">
-                <UiButton
+                <Button
                   disabled={!selectedRecipeId}
                   onClick={addPlan}
                   className="flex-1"
                 >
                   Add meal
-                </UiButton>
-                <UiButton
+                </Button>
+                <Button
                   variant="secondary"
                   onClick={closeAddDialog}
                 >
                   Cancel
-                </UiButton>
+                </Button>
               </div>
             </div>
           </>
@@ -1621,7 +1682,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList }: Me
                       void blockForMe(blockMenuSlot.date, blockMenuSlot.mealType, scope);
                       setBlockMenuSlot(null);
                     }}
-                    className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:border-[#800020]/40 hover:text-[#800020]"
+                    className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:border-ui-accent/40 hover:text-ui-accent"
                   >
                     {label}
                     <Ban className="h-3.5 w-3.5 text-neutral-300" />

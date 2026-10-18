@@ -1,9 +1,11 @@
-// Mychelin Service Worker — v1
+// Mychelin Service Worker
 //
 // Strategy:
-//  - App shell (HTML, JS, CSS, fonts, icons): cache-first with network
-//    fallback. Cache is keyed by CACHE_VERSION so every deploy busts
-//    stale assets.
+//  - Static JS, CSS, fonts, icons, and images: cache-first with network
+//    fallback. Cache is keyed by CACHE_VERSION so every deploy busts stale
+//    assets.
+//  - HTML navigations and React Server Component payloads: network-only.
+//    They can vary by auth cookie and must never be shared through Cache API.
 //  - /api/* routes: network-only. NEVER cache API responses — these are
 //    dynamic + authed. Caching them caused the login hang that forced
 //    us to kill the previous SW.
@@ -12,14 +14,22 @@
 //
 // On activate, old versioned caches are pruned.
 
-const CACHE_VERSION = "mychelin-v13";
+const CACHE_VERSION = "mychelin-v14";
 const APP_SHELL_CACHE = CACHE_VERSION + "-shell";
 const DYNAMIC_CACHE = CACHE_VERSION + "-dynamic";
+
+function isSessionDependentResponse(response) {
+  var contentType = response.headers.get("Content-Type") || "";
+  return (
+    contentType.includes("text/html") ||
+    contentType.includes("text/x-component")
+  );
+}
 
 // Pre-cached on install for instant offline loads. Keep minimal —
 // Next.js chunk URLs are hashed and cached on first fetch at runtime.
 var PRECACHE_URLS = [
-  "/",
+  "/offline.html",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -76,24 +86,26 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  // Same-origin navigation (HTML pages) → network first so deploys
-  // are picked up immediately, fall back to cache for offline.
+  // Same-origin navigation (HTML pages) → network only. The response can
+  // depend on the auth cookie, so caching it can replay a signed-out page to
+  // a signed-in user (or vice versa). Use one static neutral offline page.
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
-        .then(function (response) {
-          var clone = response.clone();
-          caches.open(APP_SHELL_CACHE).then(function (cache) {
-            cache.put(event.request, clone);
-          });
-          return response;
-        })
         .catch(function () {
-          return caches.match(event.request).then(function (cached) {
-            return cached || caches.match("/");
-          });
+          return caches.match("/offline.html");
         })
     );
+    return;
+  }
+
+  // Next client transitions request React Server Component payloads. These
+  // are route/session-dependent even though they are not browser navigations.
+  if (
+    event.request.headers.get("RSC") === "1" ||
+    url.searchParams.has("_rsc") ||
+    (event.request.headers.get("Accept") || "").includes("text/html")
+  ) {
     return;
   }
 
@@ -101,7 +113,7 @@ self.addEventListener("fetch", function (event) {
   // fallback. Next.js hashes chunk filenames so once cached they're
   // immutable until the next deploy bumps CACHE_VERSION.
   if (
-    url.pathname.startsWith("/_next/") ||
+    url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
     url.pathname.endsWith(".js") ||
     url.pathname.endsWith(".css") ||
@@ -114,7 +126,7 @@ self.addEventListener("fetch", function (event) {
       caches.match(event.request).then(function (cached) {
         if (cached) return cached;
         return fetch(event.request).then(function (response) {
-          if (response.ok) {
+          if (response.ok && !isSessionDependentResponse(response)) {
             var clone = response.clone();
             caches.open(APP_SHELL_CACHE).then(function (cache) {
               cache.put(event.request, clone);
@@ -131,7 +143,7 @@ self.addEventListener("fetch", function (event) {
   event.respondWith(
     fetch(event.request)
       .then(function (response) {
-        if (response.ok) {
+        if (response.ok && !isSessionDependentResponse(response)) {
           var clone = response.clone();
           caches.open(DYNAMIC_CACHE).then(function (cache) {
             cache.put(event.request, clone);

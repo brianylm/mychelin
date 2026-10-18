@@ -7,3 +7,5 @@ export { FilterBar, type FilterOption } from "./FilterBar";
 export { IconButton } from "./IconButton";
 export { Panel } from "./Panel";
 export { RecipeResultRow } from "./RecipeResultRow";
+export { Menu } from "./Menu";
+export { Spinner } from "./Spinner";

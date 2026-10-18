@@ -80,15 +80,15 @@ export function RecipeTitleCard({
   }
 
   return (
-    <section className="rounded-2xl border border-[#800020]/10 bg-[#fff8f4] px-4 py-4 shadow-sm ring-1 ring-white/70 sm:px-5">
+    <section className="rounded-2xl border border-ui-accent/10 bg-[#fff8f4] px-4 py-4 shadow-sm ring-1 ring-white/70 sm:px-5">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#800020]/70">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ui-accent/70">
           Recipe name
         </span>
         <SaveIndicator isSaving={isSaving} />
       </div>
       {readOnly ? (
-        <div className="w-full rounded-xl border border-transparent bg-white/45 px-3 py-2 text-2xl font-semibold leading-tight text-[#1A1A1A] sm:text-3xl">
+        <div className="w-full rounded-xl border border-transparent bg-white/45 px-3 py-2 text-2xl font-semibold leading-tight text-ui-text sm:text-3xl">
           {title || UNTITLED_RECIPE}
         </div>
       ) : (
@@ -107,10 +107,10 @@ export function RecipeTitleCard({
             onBlur();
           }}
           placeholder={UNTITLED_RECIPE}
-          className="w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-2xl font-semibold leading-tight text-[#1A1A1A] outline-none transition placeholder:text-[#800020]/35 hover:border-[#800020]/15 focus:border-[#800020]/35 focus:bg-white focus:ring-4 focus:ring-[#800020]/10 sm:text-3xl"
+          className="w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-2xl font-semibold leading-tight text-ui-text outline-none transition placeholder:text-ui-accent/35 hover:border-ui-accent/15 focus:border-ui-accent/35 focus:bg-white focus:ring-4 focus:ring-ui-accent/10 sm:text-3xl"
         />
       )}
-      <span className="mt-2 block text-xs text-neutral-400">
+      <span className="mt-2 block text-xs text-ui-muted">
         Last updated {formatDateTime(recipe.updatedAt)}
       </span>
     </section>

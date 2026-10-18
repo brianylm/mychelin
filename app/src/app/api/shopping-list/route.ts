@@ -12,6 +12,7 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import {
   ensureHouseholdSlice2Tables,
+  ensureMealPilotTables,
   ensurePlanningOwnershipColumns,
 } from "@/db/ensure-schema";
 import { getUserHousehold } from "@/lib/households";
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest) {
     await Promise.all([
       ensurePlanningOwnershipColumns(),
       ensureHouseholdSlice2Tables(),
+      ensureMealPilotTables(),
     ]);
 
     const { searchParams } = new URL(request.url);
@@ -146,6 +148,9 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        mealGroup: {
+          columns: { status: true },
+        },
       },
     });
 
@@ -185,11 +190,14 @@ export async function GET(request: NextRequest) {
     const neededIngredients = new Map<string, NeededIngredient>();
 
     for (const mealPlan of mealPlansInRange) {
+      if (mealPlan.mealGroup?.status === "confirmed" || mealPlan.mealGroup?.status === "skipped") {
+        continue;
+      }
       const servingsMultiplier = mealPlan.servings || 1;
       // Blocking-aware scaling (packet decision 3/6): quantities scale
       // by the share of members still eating; a fully blocked slot
       // contributes nothing.
-      const eaterScale = membership
+      const eaterScale = membership && mealPlan.targetPortions == null
         ? blockingScaleFactor(
             memberCount,
             blockedMembersForSlot(memberBlocks, mealPlan.date, mealPlan.mealType).length

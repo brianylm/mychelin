@@ -1,6 +1,6 @@
 "use client";
 
-import { Cross2Icon, StarIcon, StarFilledIcon } from "@radix-ui/react-icons";
+import { Star, X } from "lucide-react";
 
 interface Ingredient {
   name: string;
@@ -68,7 +68,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
             <span>{method.icon}</span>
             <div>
               <h3 className="text-sm font-semibold text-neutral-800">Version v{label}</h3>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-[11px] text-ui-muted">
                 {method.label} ·{" "}
                 {new Date(version.createdAt).toLocaleDateString("en-SG", {
                   day: "numeric",
@@ -80,16 +80,16 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100"
+            className="rounded-lg p-1 text-ui-muted hover:bg-neutral-100"
           >
-            <Cross2Icon className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="space-y-5 px-4 py-4">
           {/* Meta */}
           {(version.changeNote || version.closenessRating !== null) && (
-            <div className="rounded-xl bg-[#800020]/5 p-3 text-xs text-[#521224]">
+            <div className="rounded-xl bg-ui-accent/5 p-3 text-xs text-[#521224]">
               {version.changeNote && (
                 <p className="font-medium">{version.changeNote}</p>
               )}
@@ -99,12 +99,14 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
                   <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) =>
                       star <= (version.closenessRating ?? 0) ? (
-                        <StarFilledIcon
+                        <Star
                           key={star}
                           className="h-3 w-3 text-amber-500"
+                          fill="currentColor"
+                          aria-hidden="true"
                         />
                       ) : (
-                        <StarIcon key={star} className="h-3 w-3 text-amber-300" />
+                        <Star key={star} className="h-3 w-3 text-amber-300" aria-hidden="true" />
                       )
                     )}
                   </div>
@@ -118,11 +120,11 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
 
           {/* Ingredients */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-muted">
               Ingredients
             </h4>
             {version.ingredients.length === 0 ? (
-              <p className="text-xs italic text-neutral-400">No ingredients recorded</p>
+              <p className="text-xs italic text-ui-muted">No ingredients recorded</p>
             ) : (
               <ul className="space-y-1">
                 {version.ingredients.map((ing, i) => (
@@ -137,7 +139,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
                         </span>
                       )}
                       {ing.notes && (
-                        <span className="block text-xs text-neutral-400">{ing.notes}</span>
+                        <span className="block text-xs text-ui-muted">{ing.notes}</span>
                       )}
                     </span>
                   </li>
@@ -148,21 +150,21 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
 
           {/* Instructions */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-muted">
               Instructions
             </h4>
             {version.instructions.length === 0 ? (
-              <p className="text-xs italic text-neutral-400">No instructions recorded</p>
+              <p className="text-xs italic text-ui-muted">No instructions recorded</p>
             ) : (
               <ol className="space-y-2">
                 {version.instructions.map((inst, i) => (
                   <li key={i} className="text-sm leading-relaxed text-neutral-700">
-                    <span className="mr-1.5 font-semibold text-[#800020]">
+                    <span className="mr-1.5 font-semibold text-ui-accent">
                       {inst.step ?? i + 1}.
                     </span>
                     {inst.content ?? inst.text}
                     {inst.tip && (
-                      <div className="mt-1 rounded-lg bg-[#800020]/5 px-2 py-1 text-xs text-[#800020]">
+                      <div className="mt-1 rounded-lg bg-ui-accent/5 px-2 py-1 text-xs text-ui-accent">
                         💡 {inst.tip}
                       </div>
                     )}
@@ -175,7 +177,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           {/* Notes */}
           {version.notes && (
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-muted">
                 Notes
               </h4>
               <p className="text-sm leading-relaxed text-neutral-600">{version.notes}</p>
@@ -186,7 +188,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           {canRefine && onRefine && (
             <button
               onClick={onRefine}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#17131f] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#800020]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-ui-action px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-ui-accent"
             >
               ✨ Refine with AI
             </button>

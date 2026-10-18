@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
 import { starterRecipes } from "@/lib/starter-recipes";
 
 type Goal = "learn" | "regular" | "family" | "plan" | "waste";
@@ -147,14 +147,14 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
   };
 
   return (
-    <main className="min-h-screen bg-[#fafaf8] px-4 py-5 text-[#1A1A1A] sm:px-6 sm:py-8">
-      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-3xl flex-col rounded-[2rem] border border-[#ebe5dc] bg-[#fffdfb] shadow-[0_24px_80px_rgba(60,43,25,0.08)]">
-        <div className="flex items-center justify-between gap-4 border-b border-[#ebe5dc] px-5 py-4 sm:px-7">
+    <main className="min-h-screen bg-ui-bg px-4 py-5 text-ui-text sm:px-6 sm:py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-3xl flex-col rounded-[2rem] border border-ui-border bg-ui-surface shadow-[0_24px_80px_rgba(60,43,25,0.08)]">
+        <div className="flex items-center justify-between gap-4 border-b border-ui-border px-5 py-4 sm:px-7">
           <div className="flex items-center gap-3">
             <img src="/images/mychelin-icon-96.webp" alt="" className="h-9 w-9 object-contain" />
             <div>
               <p className="logo-serif text-lg font-bold leading-none">
-                <span className="text-[#800020]">my</span><span>chelin</span>
+                <span className="text-ui-accent">my</span><span>chelin</span>
               </p>
               <p className="mt-1 text-xs text-stone-500">Set your home-cooking path</p>
             </div>
@@ -171,7 +171,7 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
 
         <section className="flex flex-1 flex-col px-5 py-6 sm:px-7 sm:py-8">
           <div className="mb-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#800020]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ui-accent">
               Welcome{userName ? ", " + userName.split(" ")[0] : ""}
             </p>
             <div className="mt-5 flex gap-2">
@@ -180,13 +180,13 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   key={item}
                   className={
                     "h-1.5 flex-1 rounded-full transition " +
-                    (index <= stepIndex ? "bg-[#800020]" : "bg-[#ece4d8]")
+                    (index <= stepIndex ? "bg-ui-accent" : "bg-[#ece4d8]")
                   }
                 />
               ))}
             </div>
             <p className="mt-3 text-xs font-medium text-stone-500">Step {stepIndex + 1} of {steps.length}</p>
-            <h1 className="app-editorial-title mt-4 max-w-2xl text-4xl leading-[1.02] text-[#1A1A1A] sm:text-5xl">
+            <h1 className="app-editorial-title mt-4 max-w-2xl text-4xl leading-[1.02] text-ui-text sm:text-5xl">
               {stepTitle}
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-stone-600">{stepBody}</p>
@@ -202,13 +202,13 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   className={
                     "rounded-2xl border px-4 py-3 text-left transition " +
                     (selectedGoals.includes(item.value)
-                      ? "border-[#800020]/40 bg-[#800020]/5 shadow-sm"
-                      : "border-[#ebe5dc] bg-white hover:border-[#800020]/20")
+                      ? "border-ui-accent/40 bg-ui-accent/5 shadow-sm"
+                      : "border-ui-border bg-white hover:border-ui-accent/20")
                   }
                 >
                   <span className="flex items-start justify-between gap-3">
                     <span className="block text-sm font-semibold text-stone-900">{item.title}</span>
-                    <span className={"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] " + (selectedGoals.includes(item.value) ? "border-[#800020] bg-[#800020] text-white" : "border-[#d8d8d2] text-transparent")}>✓</span>
+                    <span className={"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] " + (selectedGoals.includes(item.value) ? "border-ui-accent bg-ui-accent text-white" : "border-[#d8d8d2] text-transparent")}>✓</span>
                   </span>
                   <span className="mt-1 block text-xs leading-5 text-stone-500">{item.body}</span>
                 </button>
@@ -226,8 +226,8 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   className={
                     "rounded-2xl border px-4 py-4 text-left transition " +
                     (frequency === item.value
-                      ? "border-[#17131f] bg-[#17131f] text-white shadow-sm"
-                      : "border-[#ebe5dc] bg-white text-stone-700 hover:border-[#800020]/25")
+                      ? "border-ui-action bg-ui-action text-white shadow-sm"
+                      : "border-ui-border bg-white text-stone-700 hover:border-ui-accent/25")
                   }
                 >
                   <span className="block text-sm font-semibold">{item.label}</span>
@@ -247,8 +247,8 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   className={
                     "rounded-2xl border px-4 py-4 text-left transition " +
                     (firstCaptureMode === item.value
-                      ? "border-[#800020]/40 bg-[#800020]/5 shadow-sm"
-                      : "border-[#ebe5dc] bg-white hover:border-[#800020]/20")
+                      ? "border-ui-accent/40 bg-ui-accent/5 shadow-sm"
+                      : "border-ui-border bg-white hover:border-ui-accent/20")
                   }
                 >
                   <span className="block text-sm font-semibold text-stone-900">{item.title}</span>
@@ -269,8 +269,8 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                         className={
                           "rounded-2xl border px-4 py-4 text-left transition " +
                           (selectedStarterSlug === recipe.slug
-                            ? "border-[#17131f] bg-[#17131f] text-white shadow-sm"
-                            : "border-[#ebe5dc] bg-white text-stone-700 hover:border-[#800020]/25")
+                            ? "border-ui-action bg-ui-action text-white shadow-sm"
+                            : "border-ui-border bg-white text-stone-700 hover:border-ui-accent/25")
                         }
                       >
                         <span className="block text-sm font-semibold">{recipe.title}</span>
@@ -307,10 +307,11 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
             </button>
             <Button
               type="button"
-              size="3"
+              variant="primary"
+              size="lg"
               onClick={continueFlow}
               disabled={saving}
-              className="!rounded-full !bg-[#17131f] !px-5 !font-semibold !text-white hover:!bg-[#800020]"
+              className="!rounded-full !px-5 !font-semibold"
             >
               {saving ? "Saving..." : isLastStep ? "Start Mychelin" : "Continue"}
             </Button>

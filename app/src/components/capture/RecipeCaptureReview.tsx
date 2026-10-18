@@ -71,11 +71,11 @@ export function RecipeCaptureReview({
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-5">
         <div className="rounded-2xl border border-[#eadfce] bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#800020]/10 text-[#800020]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-ui-accent/10 text-ui-accent">
               <ListChecks className="h-4 w-4" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-accent">
                 Review before saving
               </p>
               <h3 className="mt-1 text-lg font-semibold leading-snug text-stone-950">
@@ -112,10 +112,10 @@ export function RecipeCaptureReview({
           <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-                <Soup className="h-4 w-4 text-[#800020]" aria-hidden="true" />
+                <Soup className="h-4 w-4 text-ui-accent" aria-hidden="true" />
                 Ingredients
               </div>
-              <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-xs font-semibold text-[#800020]">
+              <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-xs font-semibold text-ui-accent">
                 {ingredients.length}
               </span>
             </div>
@@ -141,10 +141,10 @@ export function RecipeCaptureReview({
           <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-stone-900">
-                <Clock3 className="h-4 w-4 text-[#800020]" aria-hidden="true" />
+                <Clock3 className="h-4 w-4 text-ui-accent" aria-hidden="true" />
                 Steps
               </div>
-              <span className="rounded-full bg-[#800020]/10 px-2 py-0.5 text-xs font-semibold text-[#800020]">
+              <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-xs font-semibold text-ui-accent">
                 {instructions.length}
               </span>
             </div>
@@ -156,7 +156,7 @@ export function RecipeCaptureReview({
               <ol className="space-y-2">
                 {instructions.map((instruction, index) => (
                   <li key={index} className="rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm leading-6 text-stone-800">
-                    <span className="mr-1 font-semibold text-[#800020]">
+                    <span className="mr-1 font-semibold text-ui-accent">
                       {instruction.stepNumber ?? index + 1}.
                     </span>
                     {instruction.content}
@@ -185,7 +185,7 @@ export function RecipeCaptureReview({
           type="button"
           onClick={onSave}
           disabled={saving || instructions.length === 0}
-          className="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#17131f] px-4 text-sm font-semibold text-white transition hover:bg-[#800020] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-ui-action px-4 text-sm font-semibold text-white transition hover:bg-ui-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving..." : saveLabel}
         </button>

@@ -1,40 +1,29 @@
-"use client";
+import { redirect } from "next/navigation";
+import { LoginPageClient } from "@/components/auth/LoginPageClient";
+import { getAuthenticatedEntryPath } from "@/lib/auth-entry";
+import { getCurrentUser } from "@/lib/auth";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { AuthScreen } from "@/components/auth/AuthScreen";
-import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
+interface LoginPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-export default function LoginPage() {
-  const { user, loading } = useAuth();
-  const [mode] = useState<"login" | "signup">(() => {
-    if (typeof window === "undefined") return "login";
-    return new URLSearchParams(window.location.search).get("mode") === "signup"
-      ? "signup"
-      : "login";
-  });
+function firstValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
 
-  useEffect(() => {
-    if (user) {
-      window.location.href = "/app";
-    }
-  }, [user]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
-        <LoadingAnimation />
-      </div>
-    );
-  }
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
+  const destination = getAuthenticatedEntryPath(firstValue(params.returnTo));
 
   if (user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
-        <LoadingAnimation />
-      </div>
-    );
+    redirect(destination);
   }
 
-  return <AuthScreen defaultMode={mode} />;
+  const mode = firstValue(params.mode) === "signup" ? "signup" : "login";
+  return (
+    <LoginPageClient
+      authenticatedDestination={destination}
+      defaultMode={mode}
+    />
+  );
 }

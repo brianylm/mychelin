@@ -19,6 +19,11 @@ import {
 } from "@/db/schema";
 import { and, eq, isNull, lt, sql } from "drizzle-orm";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
+import { ensureMealPilotTables } from "@/db/ensure-schema";
+import {
+  queueCalendarHouseholdDeletion,
+  queueCalendarMemberDeparture,
+} from "@/lib/meal-calendar/store";
 import {
   HOUSEHOLD_RECOVERY_DAYS,
   isPastRecoveryWindow,
@@ -187,6 +192,7 @@ export async function handleMemberDeparture(
   userId: number
 ): Promise<boolean> {
   await snapshotGhostSlots(householdId, userId);
+  await queueCalendarDeparture(householdId, userId);
 
   await db
     .delete(householdMemberBlocks)
@@ -207,9 +213,31 @@ export async function handleMemberDeparture(
       .update(households)
       .set({ deletedAt: new Date().toISOString() })
       .where(and(eq(households.id, householdId), isNull(households.deletedAt)));
+    await queueCalendarHouseholdRemoval(householdId);
     return true;
   }
   return false;
+}
+
+// Membership changes have already committed when these run, so a calendar
+// failure is logged rather than failing the request. The runner separately
+// pauses a connection whose owner is no longer a member.
+async function queueCalendarDeparture(householdId: number, userId: number): Promise<void> {
+  try {
+    await ensureMealPilotTables();
+    await queueCalendarMemberDeparture({ householdId, userId });
+  } catch (error) {
+    console.error("Calendar access revocation could not be queued", { householdId, userId, error });
+  }
+}
+
+export async function queueCalendarHouseholdRemoval(householdId: number): Promise<void> {
+  try {
+    await ensureMealPilotTables();
+    await queueCalendarHouseholdDeletion(householdId);
+  } catch (error) {
+    console.error("Calendar teardown could not be queued", { householdId, error });
+  }
 }
 
 // Permanent deletion of a household and every household-scoped row.

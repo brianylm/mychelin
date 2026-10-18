@@ -2,14 +2,14 @@
 
 import { useState, useRef, useCallback } from "react";
 import {
-  Cross2Icon,
-  PlusIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  TrashIcon,
-  RotateCounterClockwiseIcon,
-  MagicWandIcon,
-} from "@radix-ui/react-icons";
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  RotateCcw,
+  Trash2,
+  WandSparkles,
+  X,
+} from "lucide-react";
 
 export interface RecipePhoto {
   id: string;
@@ -55,14 +55,14 @@ function PhotoUploadProgress({ status }: { status: UploadStatus }) {
     : "Uploading photo";
 
   return (
-    <div className="rounded-xl border border-[#800020]/15 bg-[#800020]/5 px-3 py-2" role="status" aria-live="polite">
+    <div className="rounded-xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2" role="status" aria-live="polite">
       <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] font-semibold text-[#4a1824]">
         <span className="min-w-0 truncate">{label}</span>
         <span className="shrink-0 tabular-nums">{progress === null ? "Working" : `${progress}%`}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-white/90">
         <div
-          className={`h-full rounded-full bg-[#800020] transition-[width] duration-200 ${progress === null ? "animate-pulse" : ""}`}
+          className={`h-full rounded-full bg-ui-accent transition-[width] duration-200 ${progress === null ? "animate-pulse" : ""}`}
           style={{ width: `${visibleProgress}%` }}
           role="progressbar"
           aria-valuemin={0}
@@ -212,7 +212,7 @@ export function PhotoUploadSection({
                 <img src={coverUrl} alt="Recipe cover" className="h-full w-full object-cover" />
               </button>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center bg-[#f4eee7] text-neutral-400">
+              <div className="flex h-full flex-col items-center justify-center bg-[#f4eee7] text-ui-muted">
                 <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
                   <circle cx="9" cy="9" r="2"/>
@@ -255,14 +255,14 @@ export function PhotoUploadSection({
                     key={photo.id}
                     type="button"
                     onClick={() => openGallery(index)}
-                    className={`relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors hover:border-[#800020]/45 ${photo.url === coverUrl ? "border-[#800020]/45" : "border-neutral-200"}`}
+                    className={`relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors hover:border-ui-accent/45 ${photo.url === coverUrl ? "border-ui-accent/45" : "border-neutral-200"}`}
                   >
                     <img src={photo.url} alt={`Recipe photo ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
                   </button>
                 ))}
                 </div>
                 {canAddMore && (
-                  <label className={`flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#800020]/20 bg-[#800020]/5 px-3 text-xs font-semibold text-[#800020] transition hover:bg-[#800020]/10 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                  <label className={`flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-ui-accent/20 bg-ui-accent/5 px-3 text-xs font-semibold text-ui-accent transition hover:bg-ui-accent/10 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                     {uploadInProgress ? "Uploading" : "Add photos"}
                     <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={uploadInProgress} />
                   </label>
@@ -293,44 +293,44 @@ export function PhotoUploadSection({
             {photos.length > 1 && (
               <>
                 <button onClick={goPrev} className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex">
-                  <ChevronLeftIcon className="h-6 w-6 text-white" />
+                  <ChevronLeft className="h-6 w-6 text-white" />
                 </button>
                 <button onClick={goNext} className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex">
-                  <ChevronRightIcon className="h-6 w-6 text-white" />
+                  <ChevronRight className="h-6 w-6 text-white" />
                 </button>
               </>
             )}
             <div className="absolute right-4 top-4 z-20 flex flex-wrap gap-2">
               {!readOnly && onSetCover && photos[galleryIndex].url !== coverUrl && (
-                <button onClick={() => onSetCover(photos[galleryIndex].url)} className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f]">
+                <button onClick={() => onSetCover(photos[galleryIndex].url)} className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action">
                   Set as cover
                 </button>
               )}
               {photos[galleryIndex].url === coverUrl && (
-                <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-medium text-white">Current cover</span>
+                <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action px-3 text-xs font-medium text-white">Current cover</span>
               )}
               {!readOnly && onBeautify && photos[galleryIndex].source !== "generated" && (
                 <button
                   onClick={() => void onBeautify(photos[galleryIndex])}
                   disabled={beautifyingId !== null}
-                  className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f] disabled:opacity-60"
+                  className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action disabled:opacity-60"
                   title="Beautify — repaint as an illustration"
                 >
                   {beautifyingId === photos[galleryIndex].id ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   ) : (
-                    <MagicWandIcon className="h-3.5 w-3.5" />
+                    <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
                   {beautifyingId === photos[galleryIndex].id ? "Painting…" : "Beautify"}
                 </button>
               )}
               {photos[galleryIndex].source === "generated" && (
-                <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#800020]/80 px-3 text-xs font-medium text-white">
+                <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-accent/80 px-3 text-xs font-medium text-white">
                   AI illustration
                 </span>
               )}
               <button onClick={rotatePhoto} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Rotate">
-                <RotateCounterClockwiseIcon className="h-4 w-4 text-white" />
+                <RotateCcw className="h-4 w-4 text-white" />
               </button>
               {!readOnly && (
                 <button
@@ -343,11 +343,11 @@ export function PhotoUploadSection({
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
                   title="Delete photo"
                 >
-                  <TrashIcon className="h-4 w-4 text-white" />
+                  <Trash2 className="h-4 w-4 text-white" />
                 </button>
               )}
               <button onClick={closeGallery} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Close">
-                <Cross2Icon className="h-4 w-4 text-white" />
+                <X className="h-4 w-4 text-white" />
               </button>
             </div>
             {photos.length > 1 && (
@@ -436,16 +436,16 @@ export function PhotoUploadSection({
               <circle cx="9" cy="9" r="2"/>
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
             </svg>
-            <span className="text-xs font-medium text-neutral-400">No cover photo</span>
+            <span className="text-xs font-medium text-ui-muted">No cover photo</span>
           </div>
         ) : (
-          <label className={`flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-[#800020]/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+          <label className={`flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-ui-accent/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
               <circle cx="9" cy="9" r="2"/>
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
             </svg>
-            <span className="text-xs font-medium text-neutral-400">
+            <span className="text-xs font-medium text-ui-muted">
               Add cover photo
             </span>
             <input
@@ -474,8 +474,8 @@ export function PhotoUploadSection({
                   key={photo.id}
                   type="button"
                   onClick={() => openGallery(index)}
-                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-[#800020]/45 focus:outline-none focus:ring-2 focus:ring-[#800020]/40 ${
-                    photo.url === coverUrl ? "border-[#800020]/45" : "border-neutral-200"
+                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-ui-accent/45 focus:outline-none focus:ring-2 focus:ring-ui-accent/40 ${
+                    photo.url === coverUrl ? "border-ui-accent/45" : "border-neutral-200"
                   }`}
                 >
                   <img
@@ -485,7 +485,7 @@ export function PhotoUploadSection({
                     loading="lazy"
                   />
                   {photo.url === coverUrl && (
-                    <span className="absolute bottom-0 right-0 rounded-tl bg-[#800020]/50 px-1 py-0.5 text-[8px] font-bold text-white">
+                    <span className="absolute bottom-0 right-0 rounded-tl bg-ui-accent/50 px-1 py-0.5 text-[8px] font-bold text-white">
                       COVER
                     </span>
                   )}
@@ -494,12 +494,12 @@ export function PhotoUploadSection({
 
               {/* Camera (mobile) */}
               {canAddMore && (
-                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 md:hidden ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 md:hidden ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                   {uploadInProgress ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#800020]/45 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent/45 border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-ui-muted">
                         <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                         <circle cx="12" cy="13" r="3"/>
                       </svg>
@@ -520,12 +520,12 @@ export function PhotoUploadSection({
 
               {/* Gallery */}
               {canAddMore && (
-                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-[#800020]/45 hover:bg-[#800020]/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                   {uploadInProgress ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#800020]/45 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent/45 border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
-                      <PlusIcon className="h-4 w-4 text-neutral-400" />
+                      <Plus className="h-4 w-4 text-ui-muted" aria-hidden="true" />
                       <span className="text-[9px] text-neutral-500">Gallery</span>
                     </div>
                   )}
@@ -578,13 +578,13 @@ export function PhotoUploadSection({
                 onClick={goPrev}
                 className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex"
               >
-                <ChevronLeftIcon className="h-6 w-6 text-white" />
+                <ChevronLeft className="h-6 w-6 text-white" />
               </button>
               <button
                 onClick={goNext}
                 className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex"
               >
-                <ChevronRightIcon className="h-6 w-6 text-white" />
+                <ChevronRight className="h-6 w-6 text-white" />
               </button>
             </>
           )}
@@ -594,14 +594,14 @@ export function PhotoUploadSection({
             {!readOnly && onSetCover && photos[galleryIndex].url !== coverUrl && (
               <button
                 onClick={() => onSetCover(photos[galleryIndex].url)}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f]"
+                className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action"
                 title="Set as cover"
               >
                 Set as cover
               </button>
             )}
             {photos[galleryIndex].url === coverUrl && (
-              <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f] px-3 text-xs font-medium text-white">
+              <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action px-3 text-xs font-medium text-white">
                 Current cover
               </span>
             )}
@@ -609,19 +609,19 @@ export function PhotoUploadSection({
               <button
                 onClick={() => void onBeautify(photos[galleryIndex])}
                 disabled={beautifyingId !== null}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-[#17131f]/90 px-3 text-xs font-medium text-white transition-colors hover:bg-[#17131f] disabled:opacity-60"
+                className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action disabled:opacity-60"
                 title="Beautify — repaint as an illustration"
               >
                 {beautifyingId === photos[galleryIndex].id ? (
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                 ) : (
-                  <MagicWandIcon className="h-3.5 w-3.5" />
+                  <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
                 )}
                 {beautifyingId === photos[galleryIndex].id ? "Painting…" : "Beautify"}
               </button>
             )}
             {photos[galleryIndex].source === "generated" && (
-              <span className="flex h-9 items-center gap-1.5 rounded-full bg-[#800020]/80 px-3 text-xs font-medium text-white">
+              <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-accent/80 px-3 text-xs font-medium text-white">
                 AI illustration
               </span>
             )}
@@ -630,7 +630,7 @@ export function PhotoUploadSection({
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
               title="Rotate"
             >
-              <RotateCounterClockwiseIcon className="h-4 w-4 text-white" />
+              <RotateCcw className="h-4 w-4 text-white" />
             </button>
             {!readOnly && (
               <button
@@ -644,7 +644,7 @@ export function PhotoUploadSection({
               className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
               title="Delete photo"
             >
-                <TrashIcon className="h-4 w-4 text-white" />
+                <Trash2 className="h-4 w-4 text-white" />
               </button>
             )}
             <button
@@ -652,7 +652,7 @@ export function PhotoUploadSection({
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
               title="Close"
             >
-              <Cross2Icon className="h-4 w-4 text-white" />
+              <X className="h-4 w-4 text-white" />
             </button>
           </div>
 

@@ -82,7 +82,7 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   return (
     <>
       {/* Sticky bottom banner */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#800020]/15 bg-gradient-to-br from-[#800020]/5 to-white px-4 py-3 shadow-lg">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ui-accent/15 bg-gradient-to-br from-ui-accent/5 to-white px-4 py-3 shadow-lg">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <span className="hidden text-2xl sm:inline">📖</span>
           <div className="flex-1 min-w-0">
@@ -95,14 +95,14 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
           </div>
           <button
             onClick={() => setExpanded(true)}
-            className="shrink-0 rounded-full bg-[#17131f] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#800020]"
+            className="shrink-0 rounded-full bg-ui-action px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-ui-accent"
           >
             Sign up
           </button>
           <button
             onClick={persistDismiss}
             aria-label="Dismiss"
-            className="shrink-0 rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            className="shrink-0 rounded-lg p-1 text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -146,34 +146,34 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
             </p>
             <ul className="mt-5 space-y-2 text-sm text-neutral-700">
               <li className="flex items-center gap-2">
-                <span className="text-[#800020]">✓</span>
+                <span className="text-ui-accent">✓</span>
                 Save shared recipes to your own collection
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-[#800020]">✓</span>
+                <span className="text-ui-accent">✓</span>
                 Get live gist translation and question prompts during family recipe talks
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-[#800020]">✓</span>
+                <span className="text-ui-accent">✓</span>
                 Collaborate on cookbooks with your family
               </li>
             </ul>
             <div className="mt-6 flex flex-col gap-2">
               <a
                 href={signupHref}
-                className="w-full rounded-xl bg-[#17131f] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#800020]"
+                className="w-full rounded-xl bg-ui-action px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-ui-accent"
               >
                 Create a free account
               </a>
               <a
                 href={loginHref}
-                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-sm font-medium text-neutral-700 transition-colors hover:border-[#800020]/30 hover:bg-[#800020]/5"
+                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-sm font-medium text-neutral-700 transition-colors hover:border-ui-accent/30 hover:bg-ui-accent/5"
               >
                 I already have an account
               </a>
               <button
                 onClick={() => setExpanded(false)}
-                className="mt-1 text-center text-xs text-neutral-400 hover:text-neutral-600"
+                className="mt-1 text-center text-xs text-ui-muted hover:text-neutral-600"
               >
                 Keep reading as a guest
               </button>

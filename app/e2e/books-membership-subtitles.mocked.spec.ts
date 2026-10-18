@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { SignJWT } from "jose";
 
 const recipes = [
   {
@@ -130,7 +131,28 @@ async function installApiMocks(page: Page) {
   return { getBookContentsRequests: () => bookContentsRequests };
 }
 
+async function installSignedSession(page: Page) {
+  const token = await new SignJWT({
+    id: 7,
+    name: "Mock Cook",
+    email: "mock@example.com",
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode("playwright-test-secret"));
+
+  await page.context().addCookies([
+    {
+      name: "mychelin_token",
+      value: token,
+      url: "http://localhost:3100",
+    },
+  ]);
+}
+
 test("shows visible book subtitles and initial counts without eager book-content requests", async ({ page }) => {
+  await installSignedSession(page);
   const requests = await installApiMocks(page);
   await page.goto("/app");
 

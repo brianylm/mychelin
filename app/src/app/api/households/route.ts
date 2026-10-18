@@ -13,6 +13,7 @@ import {
   generateJoinCode,
   getUserHousehold,
   logHouseholdActivity,
+  queueCalendarHouseholdRemoval,
   snapshotGhostSlots,
 } from "@/lib/households";
 import { and, desc, eq, isNull } from "drizzle-orm";
@@ -236,6 +237,7 @@ export async function DELETE() {
       .update(households)
       .set({ deletedAt: new Date().toISOString() })
       .where(and(eq(households.id, householdId), isNull(households.deletedAt)));
+    await queueCalendarHouseholdRemoval(householdId);
 
     return NextResponse.json({ success: true, deletedAt: new Date().toISOString() });
   } catch (error) {

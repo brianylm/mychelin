@@ -8,7 +8,8 @@
  *   - recipe detail returns ingredients/instructions/yield
  *   - logged cooks appear in the meal-plans payload
  *   - versions endpoint (fork-lineage CTE) returns versions
- *   - landing page renders and references the hero image
+ *   - public landing page renders and references the hero image
+ *   - authenticated root/login entry redirects to the app
  *
  * Creates a synthetic user and recipe, then cleans both up afterwards
  * (recipe via the API, user via Turso when credentials are present).
@@ -64,9 +65,13 @@ function assert(condition, message, detail) {
   else fail(message, detail);
 }
 
-function authCookieFrom(response) {
+function setCookieValues(response) {
   const getSetCookie = response.headers.getSetCookie?.bind(response.headers);
-  const values = getSetCookie ? getSetCookie() : [response.headers.get("set-cookie")].filter(Boolean);
+  return getSetCookie ? getSetCookie() : [response.headers.get("set-cookie")].filter(Boolean);
+}
+
+function authCookieFrom(response) {
+  const values = setCookieValues(response);
   const tokenCookie = values.find((value) => value.startsWith("mychelin_token="));
   return tokenCookie ? tokenCookie.split(";")[0] : "";
 }
@@ -112,12 +117,16 @@ async function seedSyntheticUser() {
   const authToken = process.env.TURSO_AUTH_TOKEN;
   if (!url || !authToken) return false;
   const client = createClient({ url, authToken });
-  const passwordHash = await bcrypt.hash(PASSWORD, 12);
-  await client.execute({
-    sql: "insert or ignore into users (name, email, password_hash, auth_provider, email_verified, created_at) values (?, ?, ?, 'password', 1, ?)",
-    args: ["Regression Smoke", USER_EMAIL, passwordHash, new Date().toISOString()],
-  });
-  return true;
+  try {
+    const passwordHash = await bcrypt.hash(PASSWORD, 12);
+    await client.execute({
+      sql: "insert or ignore into users (name, email, password_hash, auth_provider, email_verified, created_at) values (?, ?, ?, 'password', 1, ?)",
+      args: ["Regression Smoke", USER_EMAIL, passwordHash, new Date().toISOString()],
+    });
+    return true;
+  } finally {
+    client.close();
+  }
 }
 
 async function cleanupUser() {
@@ -128,70 +137,122 @@ async function cleanupUser() {
     return;
   }
   const client = createClient({ url, authToken });
-  await client.execute({
-    sql: "delete from users where email = ?",
-    args: [USER_EMAIL],
-  });
+  try {
+    await client.execute({
+      sql: "delete from users where email = ?",
+      args: [USER_EMAIL],
+    });
+  } finally {
+    client.close();
+  }
+}
+
+function redirectPath(response) {
+  const location = response.headers.get("location");
+  return location ? new URL(location, BASE_URL).pathname : null;
+}
+
+async function cleanupSyntheticData(session, recipeId) {
+  if (recipeId) {
+    try {
+      const del = await session.json(`/api/recipes/${recipeId}`, { method: "DELETE" });
+      if (del.response.status !== 200) {
+        console.warn("WARN recipe cleanup failed:", del.response.status);
+      }
+    } catch (error) {
+      console.warn("WARN recipe cleanup failed:", error instanceof Error ? error.message : error);
+    }
+  }
+
+  try {
+    await cleanupUser();
+  } catch (error) {
+    fail("synthetic user cleanup", error instanceof Error ? error.message : String(error));
+  }
 }
 
 async function main() {
   const session = new Session();
-
-  // 1. Sign up (or seed + log in if rate-limited)
-  const signup = await session.json("/api/auth/signup", {
-    method: "POST",
-    json: { email: USER_EMAIL, password: PASSWORD, name: "Regression Smoke" },
-  });
-  if (signup.response.status === 429 || signup.response.status === 409) {
-    assert(await seedSyntheticUser(), "synthetic user seeded via Turso fallback");
-    const login = await session.json("/api/auth/login", {
-      method: "POST",
-      json: { email: USER_EMAIL, password: PASSWORD },
-    });
-    assert(login.response.status === 200, "synthetic user can log in", JSON.stringify(login.body));
-  } else {
-    assert(signup.response.status === 201, "synthetic user signs up", `got ${signup.response.status}`);
-  }
-  assert(Boolean(session.cookie), "auth cookie received");
-  if (failures) throw new Error("auth failed — aborting");
-
-  // 2. Create a recipe with yield, ingredients, and steps
-  const created = await session.json("/api/recipes", {
-    method: "POST",
-    json: {
-      title: `Regression smoke ${RUN_ID}`,
-      yield: "8 servings",
-      status: "active",
-      ingredients: [
-        { name: "smoke garlic", quantity: 2, unit: "cloves" },
-        { name: "smoke rice", quantity: 200, unit: "g" },
-      ],
-      instructions: [
-        { content: "Smoke step one" },
-        { content: "Smoke step two" },
-      ],
-    },
-  });
-  assert(created.response.status === 201, "create recipe returns 201", `got ${created.response.status} ${JSON.stringify(created.body).slice(0, 200)}`);
-  const recipeId = created.body?.id;
-  if (!recipeId) throw new Error("recipe creation failed — aborting");
+  let cleanupCookie = "";
+  let recipeId = null;
 
   try {
-    // 3. Recipe detail returns relations and yield
+    // 1. Public landing remains available without an auth cookie
+    const landing = await fetch(BASE_URL + "/", { redirect: "manual" });
+    const landingHtml = await landing.text();
+    assert(landing.status === 200, "public landing page returns 200");
+    assert(landingHtml.includes("hero-family-table"), "public landing references hero image");
+
+    // 2. Sign up (or seed + log in if rate-limited)
+    const signup = await session.json("/api/auth/signup", {
+      method: "POST",
+      json: { email: USER_EMAIL, password: PASSWORD, name: "Regression Smoke" },
+    });
+    if (signup.response.status === 429 || signup.response.status === 409) {
+      assert(await seedSyntheticUser(), "synthetic user seeded via Turso fallback");
+      const login = await session.json("/api/auth/login", {
+        method: "POST",
+        json: { email: USER_EMAIL, password: PASSWORD },
+      });
+      assert(login.response.status === 200, "synthetic user can log in", JSON.stringify(login.body));
+    } else {
+      assert(signup.response.status === 201, "synthetic user signs up", `got ${signup.response.status}`);
+    }
+    assert(Boolean(session.cookie), "auth cookie received");
+
+    const me = await session.json("/api/auth/me");
+    assert(me.response.status === 200, "authenticated /api/auth/me returns 200", `got ${me.response.status}`);
+    assert(me.body?.user?.email === USER_EMAIL, "authenticated identity matches synthetic user", `got ${JSON.stringify(me.body?.user?.email)}`);
+    cleanupCookie = session.cookie;
+
+    const rootEntry = await session.request("/", { redirect: "manual" });
+    assert(rootEntry.status === 307, "authenticated root redirects", `got ${rootEntry.status}`);
+    assert(redirectPath(rootEntry) === "/app", "authenticated root redirects to /app", `got ${rootEntry.headers.get("location")}`);
+
+    const loginEntry = await session.request("/login", { redirect: "manual" });
+    assert(loginEntry.status === 307, "authenticated login redirects", `got ${loginEntry.status}`);
+    assert(redirectPath(loginEntry) === "/app", "authenticated login redirects to /app", `got ${loginEntry.headers.get("location")}`);
+
+    if (!session.cookie || me.response.status !== 200) {
+      throw new Error("auth failed — aborting");
+    }
+
+    // 3. Create a recipe with yield, ingredients, and steps
+    const created = await session.json("/api/recipes", {
+      method: "POST",
+      json: {
+        title: `Regression smoke ${RUN_ID}`,
+        yield: "8 servings",
+        status: "active",
+        ingredients: [
+          { name: "smoke garlic", quantity: 2, unit: "cloves" },
+          { name: "smoke rice", quantity: 200, unit: "g" },
+        ],
+        instructions: [
+          { content: "Smoke step one" },
+          { content: "Smoke step two" },
+        ],
+      },
+    });
+    assert(created.response.status === 201, "create recipe returns 201", `got ${created.response.status} ${JSON.stringify(created.body).slice(0, 200)}`);
+    recipeId = created.body?.id ?? null;
+    if (!recipeId) throw new Error("recipe creation failed — aborting");
+
+    // 4. Recipe detail returns relations and yield
     const detail = await session.json(`/api/recipes/${recipeId}`);
     assert(detail.response.status === 200, "GET /api/recipes/:id returns 200");
     assert(detail.body?.yield === "8 servings", "detail carries yield '8 servings'", `got ${JSON.stringify(detail.body?.yield)}`);
     assert(Array.isArray(detail.body?.ingredients) && detail.body.ingredients.length === 2, "detail includes 2 ingredients", `got ${detail.body?.ingredients?.length}`);
     assert(Array.isArray(detail.body?.instructions) && detail.body.instructions.length === 2, "detail includes 2 instructions", `got ${detail.body?.instructions?.length}`);
 
-    // 4. Log a cook attempt
+    // 5. Log a cook attempt
     const attempt = await session.json(`/api/recipes/${recipeId}/attempts`, {
       method: "POST",
       json: { notes: "regression smoke attempt" },
     });
     assert(attempt.response.status === 201, "POST attempt returns 201", `got ${attempt.response.status} ${JSON.stringify(attempt.body).slice(0, 200)}`);
 
-    // 5. Meal plans payload includes the logged attempt
+    // 6. Meal plans payload includes the logged attempt
     const today = new Date().toISOString().slice(0, 10);
     const plans = await session.json(`/api/meal-plans?startDate=${today}&endDate=${today}`);
     assert(plans.response.status === 200, "GET /api/meal-plans returns 200");
@@ -207,7 +268,7 @@ async function main() {
     assert(Boolean(logged), "logged cook appears in meal-plans attempts");
     assert(logged?.recipeTitle?.includes("Regression smoke"), "logged attempt carries recipe title", `got ${JSON.stringify(logged?.recipeTitle)}`);
 
-    // 5b. Block a meal slot: clears its plans, shows up in payload, unblocks cleanly
+    // 6b. Block a meal slot: clears its plans, shows up in payload, unblocks cleanly
     const plan = await session.json("/api/meal-plans", {
       method: "POST",
       json: { date: today, mealType: "lunch", recipeId, servings: 1 },
@@ -240,7 +301,7 @@ async function main() {
       "blocks empty after unblock"
     );
 
-    // 6. Versions: create one, then the lineage query returns it
+    // 7. Versions: create one, then the lineage query returns it
     const version = await session.json(`/api/recipes/${recipeId}/versions`, {
       method: "POST",
       json: { captureMethod: "manual", setActive: true },
@@ -251,18 +312,26 @@ async function main() {
     assert(Array.isArray(versions.body?.versions) && versions.body.versions.length >= 1, "versions list is non-empty", `got ${JSON.stringify(versions.body).slice(0, 200)}`);
     assert(versions.body?.activeVersionId != null, "activeVersionId is set", `got ${JSON.stringify(versions.body?.activeVersionId)}`);
 
-    // 7. Landing page renders and references the hero image
-    const landing = await session.request("/");
-    const landingHtml = await landing.text();
-    assert(landing.status === 200, "landing page returns 200");
-    assert(landingHtml.includes("hero-family-table"), "landing references hero image");
+    // 8. Logout expires the browser cookie and invalidates this session jar
+    const logout = await session.request("/api/auth/logout", { method: "POST" });
+    const logoutCookies = setCookieValues(logout);
+    assert(logout.status === 200, "logout returns 200", `got ${logout.status}`);
+    assert(
+      logoutCookies.some(
+        (value) =>
+          value.startsWith("mychelin_token=") &&
+          (value.includes("Max-Age=0") || value.includes("Expires=Thu, 01 Jan 1970"))
+      ),
+      "logout expires the auth cookie",
+      `got ${JSON.stringify(logoutCookies)}`
+    );
+    const afterLogout = await session.json("/api/auth/me");
+    assert(afterLogout.response.status === 401, "logged-out /api/auth/me returns 401", `got ${afterLogout.response.status}`);
   } finally {
-    // 8. Cleanup: recipe via API (cascades), user via Turso
-    const del = await session.json(`/api/recipes/${recipeId}`, { method: "DELETE" });
-    if (del.response.status !== 200) {
-      console.warn("WARN recipe cleanup failed:", del.response.status);
-    }
-    await cleanupUser();
+    // 9. Cleanup always runs, including auth and recipe-create failures. The
+    // saved synthetic cookie is used only to delete its recipe after logout.
+    if (cleanupCookie) session.cookie = cleanupCookie;
+    await cleanupSyntheticData(session, recipeId);
   }
 
   if (failures) {

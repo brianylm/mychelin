@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
 import {
   ArrowLeft,
   ArrowRight,
@@ -470,9 +470,9 @@ export function CookWithMeSession({
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#17131f] text-white">
+    <div className="fixed inset-0 z-50 bg-ui-action text-white">
       <div className="flex h-full flex-col">
-        <header className="flex items-center justify-between border-b border-white/10 bg-[#17131f]/95 px-4 py-3 backdrop-blur">
+        <header className="flex items-center justify-between border-b border-white/10 bg-ui-action/95 px-4 py-3 backdrop-blur">
           <button
             type="button"
             onClick={requestClose}
@@ -487,7 +487,7 @@ export function CookWithMeSession({
             </p>
             <h2 className="truncate text-sm font-semibold text-white">{recipe.title}</h2>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020] text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent text-white">
             <ChefHat className="h-5 w-5" />
           </div>
         </header>
@@ -535,7 +535,7 @@ export function CookWithMeSession({
               <p className="mt-3 text-sm leading-6 text-white/65">
                 Cook-with-me needs recipe steps so it can guide you through the dish.
               </p>
-              <Button className="mt-6" onClick={requestClose}>Back to recipe</Button>
+              <Button variant="primary" className="mt-6" onClick={requestClose}>Back to recipe</Button>
             </div>
           </main>
         ) : completed ? (
@@ -623,7 +623,7 @@ export function CookWithMeSession({
                                 className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
                               >
                                 {SNAPSHOT_UNITS.map((unit) => (
-                                  <option key={unit || "none"} value={unit} className="text-[#17131f]">{unit || "unit"}</option>
+                                  <option key={unit || "none"} value={unit} className="text-ui-action">{unit || "unit"}</option>
                                 ))}
                               </select>
                             </div>
@@ -649,7 +649,7 @@ export function CookWithMeSession({
                                     className="rounded-lg border border-white/10 bg-white/10 px-2 py-1 text-xs text-white outline-none"
                                   >
                                     {HEAT_LEVELS.map((level) => (
-                                      <option key={level ?? "none"} value={level ?? ""} className="text-[#17131f]">
+                                      <option key={level ?? "none"} value={level ?? ""} className="text-ui-action">
                                         {level && HEAT_CONFIG[level] ? HEAT_CONFIG[level].shortLabel : "No heat"}
                                       </option>
                                     ))}
@@ -700,9 +700,9 @@ export function CookWithMeSession({
                 <span>{changeNotes.length} change{changeNotes.length === 1 ? "" : "s"} noted</span>
               </div>
 
-              <section className="rounded-[2rem] border border-white/10 bg-[#fffdfb] p-5 text-[#17131f] shadow-2xl sm:p-7">
-                <div className="flex items-center gap-3 text-[#800020]">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#800020]/10 text-sm font-bold">
+              <section className="rounded-[2rem] border border-white/10 bg-ui-surface p-5 text-ui-action shadow-2xl sm:p-7">
+                <div className="flex items-center gap-3 text-ui-accent">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-sm font-bold">
                     {currentInstruction?.stepNumber ?? stepIndex + 1}
                   </span>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em]">
@@ -721,8 +721,8 @@ export function CookWithMeSession({
                 </p>
 
                 {currentStepIngredients.length > 0 && (
-                  <div className="mt-5 rounded-2xl border border-[#800020]/10 bg-[#800020]/5 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#800020]">Amounts in this step</p>
+                  <div className="mt-5 rounded-2xl border border-ui-accent/10 bg-ui-accent/5 px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-accent">Amounts in this step</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {currentStepIngredients.map((hint) => (
                         <span key={hint.name} className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm">
@@ -735,20 +735,20 @@ export function CookWithMeSession({
                 )}
 
                 {currentStepMeta.cleanTip && (
-                  <p className="mt-5 rounded-2xl bg-[#800020]/5 px-4 py-3 text-base leading-7 text-[#521224]">
+                  <p className="mt-5 rounded-2xl bg-ui-accent/5 px-4 py-3 text-base leading-7 text-[#521224]">
                     {currentStepMeta.cleanTip}
                   </p>
                 )}
 
-                <div className="mt-6 rounded-2xl border border-[#800020]/10 bg-[#800020]/5 p-4">
+                <div className="mt-6 rounded-2xl border border-ui-accent/10 bg-ui-accent/5 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <Clock3 className="h-5 w-5 text-[#800020]" />
+                      <Clock3 className="h-5 w-5 text-ui-accent" />
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#800020]">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">
                           Timer
                         </p>
-                        <p className="font-mono text-3xl font-semibold text-[#17131f]">
+                        <p className="font-mono text-3xl font-semibold text-ui-action">
                           {formatTime(currentTimer?.remaining ?? detectStepTimerSeconds(currentInstruction?.content ?? ""))}
                         </p>
                       </div>
@@ -759,7 +759,7 @@ export function CookWithMeSession({
                         ensureTimer();
                         toggleTimer();
                       }}
-                      className="rounded-full bg-[#17131f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#800020]"
+                      className="rounded-full bg-ui-action px-5 py-3 text-sm font-semibold text-white transition hover:bg-ui-accent"
                     >
                       {currentTimer?.running ? "Pause" : "Start"}
                     </button>
@@ -815,7 +815,7 @@ export function CookWithMeSession({
                           className="mt-1 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
                         >
                           {HEAT_LEVELS.map((heat) => (
-                            <option key={heat ?? "none"} value={heat ?? ""} className="text-[#17131f]">
+                            <option key={heat ?? "none"} value={heat ?? ""} className="text-ui-action">
                               {heat && HEAT_CONFIG[heat] ? HEAT_CONFIG[heat].label : "No heat"}
                             </option>
                           ))}
@@ -853,7 +853,7 @@ export function CookWithMeSession({
                                 className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
                               >
                                 {SNAPSHOT_UNITS.map((unit) => (
-                                  <option key={unit || "none"} value={unit} className="text-[#17131f]">{unit || "unit"}</option>
+                                  <option key={unit || "none"} value={unit} className="text-ui-action">{unit || "unit"}</option>
                                 ))}
                               </select>
                             </div>
@@ -874,7 +874,7 @@ export function CookWithMeSession({
                       <button
                         type="button"
                         onClick={saveChangeNote}
-                        className="rounded-full bg-[#f7c86a] px-4 py-2 text-sm font-semibold text-[#17131f]"
+                        className="rounded-full bg-[#f7c86a] px-4 py-2 text-sm font-semibold text-ui-action"
                       >
                         Save structured change
                       </button>
@@ -905,7 +905,7 @@ export function CookWithMeSession({
 
         {confirmingExit && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#fffdfb] p-5 text-[#17131f] shadow-2xl">
+            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-ui-surface p-5 text-ui-action shadow-2xl">
               <h3 className="text-lg font-semibold">Exit cook-with-me?</h3>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
                 {ephemeral
@@ -923,7 +923,7 @@ export function CookWithMeSession({
                 <button
                   type="button"
                   onClick={confirmExit}
-                  className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#800020] px-4 text-sm font-semibold text-white"
+                  className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-ui-accent px-4 text-sm font-semibold text-white"
                 >
                   Exit session
                 </button>
@@ -934,8 +934,8 @@ export function CookWithMeSession({
 
         {deduction && (
           <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center">
-            <div className="w-full max-w-md rounded-t-3xl bg-[#fffdfb] p-5 text-[#17131f] sm:rounded-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#800020]">
+            <div className="w-full max-w-md rounded-t-3xl bg-ui-surface p-5 text-ui-action sm:rounded-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ui-accent">
                 Shared inventory
               </p>
               <h3 className="mt-2 text-xl font-semibold">Update the household inventory?</h3>
@@ -951,7 +951,7 @@ export function CookWithMeSession({
                     <div key={`${item.name}-${index}`} className="flex items-center gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-neutral-800">{item.name}</p>
-                        <p className="text-[10px] text-neutral-400">
+                        <p className="text-[10px] text-ui-muted">
                           {item.onHand != null
                             ? `${item.onHand} ${item.unit} on hand`
                             : "not tracked in inventory"}
@@ -970,7 +970,7 @@ export function CookWithMeSession({
                         }
                         inputMode="decimal"
                         aria-label={`Amount used of ${item.name}`}
-                        className="w-24 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#800020]/45"
+                        className="w-24 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-ui-accent/45"
                       />
                       <span className="w-10 text-xs text-neutral-500">{item.unit}</span>
                     </div>
@@ -978,7 +978,7 @@ export function CookWithMeSession({
                 })}
               </div>
               {deduction.notTracked.length > 0 && (
-                <p className="mt-3 text-[11px] leading-4 text-neutral-400">
+                <p className="mt-3 text-[11px] leading-4 text-ui-muted">
                   Not tracked: {deduction.notTracked.join(", ")}
                 </p>
               )}
@@ -987,7 +987,7 @@ export function CookWithMeSession({
                   type="button"
                   onClick={() => finishDeduction(true)}
                   disabled={deducting}
-                  className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#800020] px-4 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-50"
+                  className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-ui-accent px-4 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-50"
                 >
                   {deducting ? "Updating..." : "Deduct from inventory"}
                 </button>
@@ -1004,7 +1004,7 @@ export function CookWithMeSession({
           </div>
         )}
 
-        <footer className="border-t border-white/10 bg-[#17131f]/95 px-4 py-3 backdrop-blur">
+        <footer className="border-t border-white/10 bg-ui-action/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <button
               type="button"
@@ -1021,7 +1021,7 @@ export function CookWithMeSession({
                 type="button"
                 onClick={saveSession}
                 disabled={saving}
-                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-[#17131f] transition hover:bg-[#ffd98a] disabled:opacity-60 sm:flex-none"
+                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-ui-action transition hover:bg-[#ffd98a] disabled:opacity-60 sm:flex-none"
               >
                 {saving ? "Saving..." : "Save session"}
                 <Check className="h-4 w-4" />
@@ -1030,7 +1030,7 @@ export function CookWithMeSession({
               <button
                 type="button"
                 onClick={goNext}
-                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-[#17131f] transition hover:bg-[#ffd98a] sm:flex-none"
+                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-ui-action transition hover:bg-[#ffd98a] sm:flex-none"
               >
                 {stepIndex >= totalSteps - 1 ? "Finish" : "Next step"}
                 <ArrowRight className="h-4 w-4" />

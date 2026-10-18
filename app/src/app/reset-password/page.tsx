@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@radix-ui/themes";
+import { Button } from "@/components/ui";
 
 type Status =
   | { kind: "checking" }
@@ -12,7 +12,7 @@ type Status =
   | { kind: "success" };
 
 const fieldClass =
-  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-[#800020]/45 focus:bg-white focus:ring-4 focus:ring-[#800020]/10";
+  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-ui-accent/45 focus:bg-white focus:ring-4 focus:ring-ui-accent/10";
 
 function ResetPasswordShell({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +24,7 @@ function ResetPasswordShell({ children }: { children: React.ReactNode }) {
             <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
           </div>
           <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
-            <span className="text-[#800020]">my</span><span className="text-[#1A1A1A]">chelin</span>
+            <span className="text-ui-accent">my</span><span className="text-ui-text">chelin</span>
           </h1>
           <p className="mt-2 text-sm text-stone-500">
             Cook like home, even in your new home.
@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <ResetPasswordShell>
-          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">Checking your link…</h2>
+          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Checking your link…</h2>
           <p className="text-sm leading-6 text-stone-500">One moment.</p>
         </ResetPasswordShell>
       }
@@ -137,21 +137,21 @@ function ResetPasswordInner() {
     <ResetPasswordShell>
       {status.kind === "checking" && (
             <>
-              <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">Checking your link…</h2>
+              <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Checking your link…</h2>
               <p className="text-sm leading-6 text-stone-500">One moment.</p>
             </>
           )}
 
           {status.kind === "invalid" && (
             <>
-              <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">Can&apos;t reset password</h2>
+              <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Can&apos;t reset password</h2>
               <p className="mb-4 text-sm leading-6 text-stone-500">{status.message}</p>
               <Button
                 type="button"
-                variant="solid"
-                size="3"
+                variant="primary"
+                size="lg"
                 style={{ width: "100%" }}
-                className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
+                className="!rounded-full !font-semibold"
                 onClick={() => router.replace("/login")}
               >
                 Back to sign in
@@ -161,7 +161,7 @@ function ResetPasswordInner() {
 
           {(status.kind === "ready" || status.kind === "submitting") && (
             <form onSubmit={handleSubmit}>
-              <h2 className="app-editorial-title mb-4 text-3xl leading-tight text-[#1A1A1A]">Choose a new password</h2>
+              <h2 className="app-editorial-title mb-4 text-3xl leading-tight text-ui-text">Choose a new password</h2>
 
               <div className="space-y-3">
                 <div>
@@ -203,10 +203,10 @@ function ResetPasswordInner() {
 
               <Button
                 type="submit"
-                variant="solid"
-                size="3"
+                variant="primary"
+                size="lg"
                 style={{ width: "100%", marginTop: "32px" }}
-                className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
+                className="!rounded-full !font-semibold"
                 disabled={status.kind === "submitting"}
               >
                 {status.kind === "submitting" ? "Updating…" : "Reset password"}
@@ -216,16 +216,16 @@ function ResetPasswordInner() {
 
       {status.kind === "success" && (
         <>
-          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-[#1A1A1A]">Password updated</h2>
+          <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Password updated</h2>
           <p className="mb-4 text-sm leading-6 text-stone-500">
             Your password has been reset. Sign in with your new password.
           </p>
           <Button
             type="button"
-            variant="solid"
-            size="3"
+            variant="primary"
+            size="lg"
             style={{ width: "100%" }}
-            className="!rounded-full !bg-[#17131f] !font-semibold !text-white hover:!bg-[#800020]"
+            className="!rounded-full !font-semibold"
             onClick={() => router.replace("/login")}
           >
             Sign in

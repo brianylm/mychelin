@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +14,28 @@ import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
 import { FIRST_COOK_MISSION_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
-import { Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
+import { prefetchViewData } from "@/lib/view-cache";
+import { ChevronLeft, Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
+
+// Household settings and the cooking log open from Profile rather than
+// the main nav, so they carry a way back.
+function ProfileSubpage({ onBack, children }: { onBack: () => void; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col">
+      <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          Profile
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 const LazyPanelFallback = () => (
   <div className="flex flex-1 items-center justify-center bg-surface">
@@ -22,34 +43,58 @@ const LazyPanelFallback = () => (
   </div>
 );
 
-const MealPlanView = dynamic(
-  () => import("@/components/planner/MealPlanView").then((mod) => mod.MealPlanView),
-  { loading: LazyPanelFallback }
+// Main tab views load as separate chunks, warmed in the background after
+// the library renders (see the warm-up effect below). next/dynamic always
+// suspends on first mount, even for a chunk that is already loaded, and
+// React then holds the fallback for up to ~300ms; this wrapper renders
+// synchronously once its chunk has loaded and falls back only before.
+function preloadableView<P extends object>(loader: () => Promise<ComponentType<P>>) {
+  let Loaded: ComponentType<P> | null = null;
+  let pending: Promise<ComponentType<P>> | null = null;
+  const preload = () => {
+    pending ??= loader().then((component) => (Loaded = component));
+    return pending;
+  };
+  function PreloadableView(props: P) {
+    const [Component, setComponent] = useState<ComponentType<P> | null>(() => Loaded);
+    useEffect(() => {
+      if (Component) return;
+      let active = true;
+      preload().then((component) => {
+        if (active) setComponent(() => component);
+      });
+      return () => {
+        active = false;
+      };
+    }, [Component]);
+    return Component ? <Component {...props} /> : <LazyPanelFallback />;
+  }
+  return Object.assign(PreloadableView, { preload });
+}
+
+const MealPlanView = preloadableView(() =>
+  import("@/components/planner/MealPlanView").then((mod) => mod.MealPlanView)
 );
 const ProfileView = dynamic(
   () => import("@/components/profile/ProfileView").then((mod) => mod.ProfileView),
   { loading: LazyPanelFallback }
 );
-const ActivityView = dynamic(
-  () => import("@/components/activity/ActivityView").then((mod) => mod.ActivityView),
-  { loading: LazyPanelFallback }
+const ActivityView = preloadableView(() =>
+  import("@/components/activity/ActivityView").then((mod) => mod.ActivityView)
 );
 const DiscoverView = dynamic(
   () => import("@/components/discover/DiscoverView").then((mod) => mod.DiscoverView),
   { loading: LazyPanelFallback }
 );
-const FridgeView = dynamic(
-  () => import("@/components/fridge/FridgeView").then((mod) => mod.FridgeView),
-  { loading: LazyPanelFallback }
+const FridgeView = preloadableView(() =>
+  import("@/components/fridge/FridgeView").then((mod) => mod.FridgeView)
 );
-const ShoppingListView = dynamic(
-  () => import("@/components/shopping/ShoppingListView").then((mod) => mod.ShoppingListView),
-  { loading: LazyPanelFallback }
+const ShoppingListView = preloadableView(() =>
+  import("@/components/shopping/ShoppingListView").then((mod) => mod.ShoppingListView)
 );
 const HouseholdView = HOUSEHOLDS_ENABLED
-  ? dynamic(
-      () => import("@/components/household/HouseholdView").then((mod) => mod.HouseholdView),
-      { loading: LazyPanelFallback }
+  ? preloadableView(() =>
+      import("@/components/household/HouseholdView").then((mod) => mod.HouseholdView)
     )
   : null;
 const RecipeSearchModal = dynamic(
@@ -196,6 +241,24 @@ function RecipeWorkspaceContent({
       setCurrentView("recipes");
     }
   }, [selectedRecipeId, currentView, setCurrentView]);
+
+  // Once the library has had a moment to render, warm the other tabs:
+  // their code chunks (otherwise fetched on first click behind a loading
+  // animation) and their data, so switching tabs paints immediately.
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    const timer = window.setTimeout(() => {
+      void MealPlanView.preload();
+      void ShoppingListView.preload();
+      void FridgeView.preload();
+      void ActivityView.preload();
+      void HouseholdView?.preload();
+      prefetchViewData(qc, userId, HOUSEHOLDS_ENABLED);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [qc, userId]);
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [shoppingDateRange, setShoppingDateRange] = useState<{ start: string; end: string } | undefined>();
   const [manualScratchpadOpen, setManualScratchpadOpen] = useState(false);
@@ -280,6 +343,9 @@ function RecipeWorkspaceContent({
     setSidebarOpen(false);
     setCurrentView(view);
   }, [selectRecipe, setCurrentView, setSidebarOpen]);
+
+  const openProfile = useCallback(() => handleViewChange("profile"), [handleViewChange]);
+  const openHousehold = useCallback(() => handleViewChange("household"), [handleViewChange]);
 
   const startCookSession = useCallback(
     async (recipeId: number, mealPlanId?: number, keepCurrentView = false) => {
@@ -704,7 +770,9 @@ function RecipeWorkspaceContent({
         onProfileClick={() => handleViewChange("profile")}
         onLogoClick={() => handleViewChange("recipes")}
         onSearchClick={() => setSearchOpen(true)}
-        profileActive={currentView === "profile"}
+        profileActive={
+          currentView === "profile" || currentView === "household" || currentView === "activity"
+        }
       >
         <DesktopNav current={currentView} onChange={handleViewChange} />
       </Header>
@@ -756,10 +824,14 @@ function RecipeWorkspaceContent({
             </div>
           </>
         )}
-        {currentView === "activity" && <ActivityView onNavigateToRecipe={handleNavigateToRecipe} />}
-        {currentView === "fridge" && <FridgeView />}
+        {currentView === "activity" && (
+          <ProfileSubpage onBack={openProfile}>
+            <ActivityView onNavigateToRecipe={handleNavigateToRecipe} />
+          </ProfileSubpage>
+        )}
+        {currentView === "fridge" && <FridgeView onOpenHousehold={openHousehold} />}
         {currentView === "shopping" && (
-          <ShoppingListView initialDateRange={shoppingDateRange} />
+          <ShoppingListView initialDateRange={shoppingDateRange} onOpenHousehold={openHousehold} />
         )}
         {currentView === "plan" && (
           <MealPlanView
@@ -769,13 +841,21 @@ function RecipeWorkspaceContent({
               setShoppingDateRange(range);
               setCurrentView("shopping");
             }}
+            onOpenHousehold={openHousehold}
           />
         )}
         {currentView === "discover" && <DiscoverView onNavigateToRecipe={handleNavigateToRecipe} />}
         {currentView === "household" && HouseholdView && (
-          <HouseholdView onCookRecipe={handleCookRecipe} />
+          <ProfileSubpage onBack={openProfile}>
+            <HouseholdView onOpenLibrary={() => handleViewChange("recipes")} />
+          </ProfileSubpage>
         )}
-        {currentView === "profile" && <ProfileView />}
+        {currentView === "profile" && (
+          <ProfileView
+            onOpenHousehold={HOUSEHOLDS_ENABLED ? openHousehold : undefined}
+            onOpenActivity={() => handleViewChange("activity")}
+          />
+        )}
       </div>
 
       {/* ── Mobile FAB speed-dial ─────────────────────────────
@@ -810,7 +890,7 @@ function RecipeWorkspaceContent({
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Import from link
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
                     <Link className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -823,7 +903,7 @@ function RecipeWorkspaceContent({
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Write or paste recipe
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
                     <PencilLine className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -836,7 +916,7 @@ function RecipeWorkspaceContent({
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Live conversation
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
                     <Mic2 className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -852,7 +932,7 @@ function RecipeWorkspaceContent({
                   <span className="flex-1 text-sm font-medium text-neutral-800">
                     Ask Mychelin
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#800020]/10 text-[#800020]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
                     <Sparkles className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -865,7 +945,7 @@ function RecipeWorkspaceContent({
               onClick={() => setFabOpen((v) => !v)}
               aria-label={fabOpen ? "Close menu" : "New recipe"}
               aria-expanded={fabOpen}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-[#17131f] text-white shadow-[0_18px_40px_rgba(23,19,31,0.24)] ring-1 ring-white/20 transition-transform hover:bg-[#800020] active:scale-95"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-ui-action text-white shadow-[0_18px_40px_rgba(23,19,31,0.24)] ring-1 ring-white/20 transition-transform hover:bg-ui-accent active:scale-95"
             >
               <Plus
                 className={`h-6 w-6 transition-transform duration-150 ${fabOpen ? "rotate-45" : ""}`}

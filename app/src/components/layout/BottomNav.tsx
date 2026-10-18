@@ -4,13 +4,10 @@ import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
   CalendarDays,
-  ClipboardList,
-  House,
   Refrigerator,
   ShoppingBasket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 
 export type AppView =
   | "recipes"
@@ -27,18 +24,14 @@ interface BottomNavProps {
   onChange: (view: AppView) => void;
 }
 
-const baseTabs: { id: AppView; label: string; icon: LucideIcon }[] = [
+// Daily loop only: plan → shop → stock. Activity (cooking log) and the
+// household settings live in Profile; shared household recipes in Library.
+const tabs: { id: AppView; label: string; icon: LucideIcon }[] = [
   { id: "recipes", label: "Library", icon: BookOpen },
-  { id: "activity", label: "Activity", icon: ClipboardList },
-  { id: "fridge", label: "Inventory", icon: Refrigerator },
-  { id: "shopping", label: "Shopping", icon: ShoppingBasket },
   { id: "plan", label: "Plan", icon: CalendarDays },
+  { id: "shopping", label: "Shopping", icon: ShoppingBasket },
+  { id: "fridge", label: "Inventory", icon: Refrigerator },
 ];
-
-// Household tab only exists while the kill switch is on.
-const tabs = HOUSEHOLDS_ENABLED
-  ? [...baseTabs, { id: "household" as AppView, label: "Household", icon: House }]
-  : baseTabs;
 
 export function BottomNav({ current, onChange }: BottomNavProps) {
   return (
