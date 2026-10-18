@@ -8,6 +8,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { SharedHouseholdChip } from "@/components/household/SharedHouseholdChip";
+import { ReadyMealsSection } from "@/components/fridge/ReadyMealsSection";
 import { readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
 
 interface InventoryItem {
@@ -422,6 +423,10 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
             })}
           </div>
         )}
+
+        <div className="mt-8">
+          <ReadyMealsSection />
+        </div>
       </div>
     </div>
   );

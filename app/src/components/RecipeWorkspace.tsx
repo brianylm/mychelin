@@ -15,6 +15,7 @@ import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
 import { FIRST_COOK_MISSION_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { prefetchViewData } from "@/lib/view-cache";
+import { MealReviewController } from "@/components/planner/MealReviewController";
 import { ChevronLeft, Link, Mic2, PencilLine, Plus, Sparkles } from "lucide-react";
 
 // Household settings and the cooking log open from Profile rather than
@@ -765,6 +766,8 @@ function RecipeWorkspaceContent({
 
   return (
     <div className="mychelin-app-shell min-h-[100dvh]">
+      {/* Next-visit review of meals whose serving time has passed. */}
+      <MealReviewController enabled={Boolean(user)} />
       <Header
         onMenuClick={() => setSidebarOpen(true)}
         onProfileClick={() => handleViewChange("profile")}

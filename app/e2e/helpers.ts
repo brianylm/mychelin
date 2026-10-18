@@ -111,13 +111,40 @@ export async function createRecipe(
   return { id: body.id, title };
 }
 
+async function ignoreMissingTable(fn: () => Promise<unknown>): Promise<void> {
+  try {
+    await fn();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("no such table")) throw error;
+  }
+}
+
 // Best-effort cleanup: deletes the synthetic user (cascades recipes,
 // plans, attempts, photos rows — blob storage is not touched).
 export async function cleanupUsers(prefix: string): Promise<void> {
   const db = turso();
+  const emailPattern = `${prefix}-%@example.com`;
+  await ignoreMissingTable(() =>
+    db.execute({
+      sql: `
+        DELETE FROM prepared_reservations
+        WHERE meal_group_id IN (
+          SELECT id FROM meal_groups
+          WHERE user_id IN (SELECT id FROM users WHERE email LIKE ?)
+        )
+        OR lot_id IN (
+          SELECT l.id FROM prepared_lots l
+          JOIN prepared_batches b ON b.id = l.batch_id
+          WHERE b.user_id IN (SELECT id FROM users WHERE email LIKE ?)
+        )
+      `,
+      args: [emailPattern, emailPattern],
+    })
+  );
   await db.execute({
     sql: "DELETE FROM users WHERE email LIKE ?",
-    args: [`${prefix}-%@example.com`],
+    args: [emailPattern],
   });
 }
 
@@ -129,8 +156,10 @@ export function devDb() {
 
 // Best-effort cleanup for synthetic households. Child rows are deleted
 // explicitly — SQLite FK cascade enforcement is connection-dependent,
-// so cleanup does not rely on it. Run BEFORE cleanupUsers (member rows
-// reference users).
+// so cleanup does not rely on it. Meal-pilot rows go first in FK-safe
+// order (reservations → groups → lots → batches), then the remaining
+// household child tables. Run BEFORE cleanupUsers (member rows reference
+// users).
 export async function cleanupHouseholds(namePrefix: string): Promise<void> {
   const db = turso();
   const { rows } = await db.execute({
@@ -139,6 +168,38 @@ export async function cleanupHouseholds(namePrefix: string): Promise<void> {
   });
   for (const row of rows) {
     const id = Number(row.id);
+    await ignoreMissingTable(() =>
+      db.execute({
+        sql: `
+          DELETE FROM prepared_reservations
+          WHERE meal_group_id IN (SELECT id FROM meal_groups WHERE household_id = ?)
+          OR lot_id IN (
+            SELECT l.id FROM prepared_lots l
+            JOIN prepared_batches b ON b.id = l.batch_id
+            WHERE b.household_id = ?
+          )
+        `,
+        args: [id, id],
+      })
+    );
+    await ignoreMissingTable(() =>
+      db.execute({
+        sql: "DELETE FROM meal_groups WHERE household_id = ?",
+        args: [id],
+      })
+    );
+    await ignoreMissingTable(() =>
+      db.execute({
+        sql: "DELETE FROM prepared_lots WHERE batch_id IN (SELECT id FROM prepared_batches WHERE household_id = ?)",
+        args: [id],
+      })
+    );
+    await ignoreMissingTable(() =>
+      db.execute({
+        sql: "DELETE FROM prepared_batches WHERE household_id = ?",
+        args: [id],
+      })
+    );
     for (const table of [
       "shopping_list_items",
       "inventory",

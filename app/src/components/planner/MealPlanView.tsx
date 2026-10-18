@@ -12,6 +12,7 @@ import {
   Ban,
   Plus,
   Undo2,
+  UtensilsCrossed,
   X,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -52,6 +53,10 @@ import {
 } from "@/lib/household-portions";
 import { mondayOfWeek } from "@/lib/household-blocking";
 import { RandomizeReviewDialog } from "./RandomizeReviewDialog";
+import { MealComposerDialog, type MealComposerRecipe } from "./MealComposerDialog";
+import { MealGroupCard } from "./MealGroupCard";
+import { useMealPilotPlanner } from "./useMealPilotPlanner";
+import type { MealGroupView, MealType } from "@/lib/meal-pilot/types";
 
 interface MealPlan {
   id: number;
@@ -61,6 +66,9 @@ interface MealPlan {
   servings: number;
   notes: string | null;
   cookedAt: string | null;
+  // Set when this dish belongs to a multi-dish meal; the meal card renders
+  // it, so the slot's loose list skips it.
+  mealGroupId?: number | null;
   recipe?: { id: number; title: string; yield: string | null };
   // Household ghost copies (Slice 2): display snapshot captured when the
   // recipe's owner left the household — the slot keeps rendering even if
@@ -106,6 +114,9 @@ interface Recipe {
   ingredients?: string[];
   lastCookedAt?: string | null;
   recipeFlags?: RecipeFlag[];
+  yield?: string | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
 }
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -313,6 +324,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
     () => readViewCache<Recipe[]>(qc, userId, viewUrls.plannerRecipes) ?? []
   );
   const [loading, setLoading] = useState(!initialPlan);
+  // Bumped when a meal-group change alters the plan rows (fresh dishes are
+  // meal_plans rows), so the plan list reloads.
+  const [planReload, setPlanReload] = useState(0);
   const [addingSlot, setAddingSlot] = useState<{
     date: string;
     mealType: string;
@@ -375,6 +389,14 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
 
   const planUrl = viewUrls.mealPlans(currentDateRange.startDate, currentDateRange.endDate);
 
+  const reloadPlans = useCallback(() => setPlanReload((n) => n + 1), []);
+  const pilot = useMealPilotPlanner({
+    startDate: currentDateRange.startDate,
+    endDate: currentDateRange.endDate,
+    enabled: Boolean(userId),
+    onPlansChanged: reloadPlans,
+  });
+
   const applyPlanData = useCallback((url: string, data: PlanData) => {
     setPlans(data.plans);
     setAttempts(data.attempts);
@@ -419,7 +441,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
     return () => {
       cancelled = true;
     };
-  }, [qc, userId, planUrl, applyPlanData]);
+  }, [qc, userId, planUrl, applyPlanData, planReload]);
 
   // Keep the cache in step with local edits (add/remove/block) so a
   // return visit does not flash pre-edit state.
@@ -866,6 +888,63 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
   const getPlansForDate = (date: string) =>
     allEntries.filter((p) => p.date === date);
 
+  // Dishes that belong to a multi-dish meal are shown by its meal card.
+  const getLoosePlansForSlot = (date: string, mealType: string) =>
+    getPlansForSlot(date, mealType).filter((p) => p.mealGroupId == null);
+
+  const composerRecipes = useMemo<MealComposerRecipe[]>(
+    () =>
+      recipes.map((r) => ({
+        id: r.id,
+        title: r.title,
+        yield: r.yield ?? null,
+        prepTime: r.prepTime ?? null,
+        cookTime: r.cookTime ?? null,
+      })),
+    [recipes]
+  );
+
+  const confirmDeleteMeal = useCallback(
+    async (meal: MealGroupView) => {
+      const dishCount = meal.dishes.length;
+      const ok = window.confirm(
+        dishCount > 0
+          ? `Delete this meal? Its ${dishCount === 1 ? "dish comes" : `${dishCount} dishes come`} off the plan, and any ready food goes back to your stock.`
+          : "Delete this meal?"
+      );
+      if (!ok) return;
+      const error = await pilot.deleteMeal(meal);
+      addToast(error ?? "Meal deleted", error ? "error" : "success");
+    },
+    [pilot, addToast]
+  );
+
+  const cookFreshDishes = onCookMeals
+    ? (dishes: { recipeId: number; mealPlanId: number }[]) =>
+        onCookMeals(dishes.map((d) => ({ recipeId: d.recipeId, mealPlanId: d.mealPlanId })))
+    : undefined;
+
+  const renderMealGroups = (date: string, mealType: (typeof MEAL_TYPES)[number], compact: boolean) => {
+    const groups = pilot.groupsForSlot(date, mealType);
+    if (groups.length === 0) return null;
+    return (
+      <div className="mb-1.5 space-y-1.5">
+        {groups.map((meal) => (
+          <MealGroupCard
+            key={meal.id}
+            meal={meal}
+            compact={compact}
+            busy={pilot.composerBusy}
+            onAddDish={(m) => pilot.openComposer({ purpose: "add-dish", date, mealType: mealType as MealType, meal: m })}
+            onEdit={(m) => pilot.openComposer({ purpose: "edit", date, mealType: mealType as MealType, meal: m })}
+            onDelete={(m) => void confirmDeleteMeal(m)}
+            onCookFresh={cookFreshDishes}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const buildCalendarEvents = (mealPlans: MealPlan[]): CalendarEvent[] => {
     return mealPlans
       .filter((plan) => !plan.loggedAttempt)
@@ -1061,7 +1140,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                   {/* Meal slots */}
                   <div className="grid gap-2 sm:grid-cols-4">
                     {MEAL_TYPES.map((mealType) => {
-                      const slotPlans = getPlansForSlot(date, mealType);
+                      const slotPlans = getLoosePlansForSlot(date, mealType);
                       const slotBlock = getBlockForSlot(date, mealType);
                       const outMembers = household ? getOutMembersForSlot(date, mealType) : [];
                       return (
@@ -1150,6 +1229,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   ))}
                                 </div>
                               )}
+                              {renderMealGroups(date, mealType, true)}
                               <div className="space-y-1.5">
                               {slotPlans.map((plan) => (
                                 <div
@@ -1203,12 +1283,27 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 </div>
                               ))}
                               </div>
-                              <button
-                                onClick={() => openAddDialog(date, mealType)}
-                                className="mt-1 flex w-full items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 py-1 text-[10px] text-neutral-400 transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </button>
+                              <div className="mt-1 flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openAddDialog(date, mealType)}
+                                  aria-label={`Add a recipe to ${mealType}`}
+                                  title="Add a recipe"
+                                  className="flex min-h-8 flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 text-[10px] text-ui-muted transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => pilot.openComposer({ purpose: "create", date, mealType, meal: null })}
+                                  aria-label={`Plan ${mealType} with several dishes or ready food`}
+                                  title="Plan a meal: several dishes, ready food, diners and serving time"
+                                  className="flex min-h-8 flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 text-[10px] font-medium text-ui-muted transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
+                                >
+                                  <UtensilsCrossed className="h-3 w-3" aria-hidden="true" />
+                                  Meal
+                                </button>
+                              </div>
                             </>
                           )}
                         </div>
@@ -1346,7 +1441,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
               </div>
               <div className="space-y-2">
                 {MEAL_TYPES.map((mealType) => {
-                  const slotPlans = getPlansForSlot(selectedDayDate, mealType);
+                  const slotPlans = getLoosePlansForSlot(selectedDayDate, mealType);
                   const slotBlock = getBlockForSlot(selectedDayDate, mealType);
                   const outMembers = household ? getOutMembersForSlot(selectedDayDate, mealType) : [];
 
@@ -1393,7 +1488,16 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent"
                               >
                                 <Plus className="h-3 w-3" aria-hidden="true" />
-                                Add meal
+                                Add recipe
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => pilot.openComposer({ purpose: "create", date: selectedDayDate, mealType, meal: null })}
+                                aria-label={`Plan ${mealType} with several dishes or ready food`}
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent"
+                              >
+                                <UtensilsCrossed className="h-3 w-3" aria-hidden="true" />
+                                Plan a meal
                               </button>
                               <button
                                 type="button"
@@ -1423,7 +1527,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                             Unblock
                           </button>
                         </div>
-                      ) : slotPlans.length === 0 ? (
+                      ) : slotPlans.length === 0 && pilot.groupsForSlot(selectedDayDate, mealType).length === 0 ? (
                         <>
                           {outMembers.length > 0 && (
                             <div className="mb-1.5 flex flex-wrap gap-1">
@@ -1467,6 +1571,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                               ))}
                             </div>
                           )}
+                          {renderMealGroups(selectedDayDate, mealType, false)}
                           {slotPlans.map((plan) => (
                             <div
                               key={plan.id}
@@ -1698,6 +1803,21 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
               </button>
             </div>
           </>
+        )}
+        {pilot.composer && (
+          <MealComposerDialog
+            open
+            purpose={pilot.composer.purpose}
+            date={pilot.composer.date}
+            mealType={pilot.composer.mealType}
+            meal={pilot.composer.meal}
+            recipes={composerRecipes}
+            batches={pilot.batches}
+            busy={pilot.composerBusy}
+            error={pilot.composerError}
+            onClose={pilot.closeComposer}
+            onSubmit={pilot.submitComposer}
+          />
         )}
         {review && (
           <RandomizeReviewDialog

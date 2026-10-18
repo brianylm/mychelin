@@ -9,7 +9,14 @@ import type {
   MealReviewsResponse,
   PreparedBatchResponse,
   PreparedBatchesResponse,
+  ConfirmMealRequest,
+  ReplaceStationAssignmentsRequest,
+  TransferPreparedPortionsRequest,
+  UndoMealConfirmationRequest,
   UpdateMealGroupRequest,
+  UpdateFreshDishRequest,
+  UpdatePreparedBatchRequest,
+  UpdatePreparedDishRequest,
 } from "./types";
 
 export class MealPilotClientError extends Error {
@@ -99,12 +106,109 @@ export function addPreparedDish(id: number, input: AddPreparedDishRequest) {
   });
 }
 
+export function updateFreshDish(
+  id: number,
+  mealPlanId: number,
+  input: UpdateFreshDishRequest
+) {
+  return requestJson<MealGroupResponse>(
+    `/api/meal-groups/${id}/fresh-dishes/${mealPlanId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }
+  );
+}
+
+export function removeFreshDish(
+  id: number,
+  mealPlanId: number,
+  expectedRevision: number
+) {
+  const params = new URLSearchParams({ expectedRevision: String(expectedRevision) });
+  return requestJson<MealGroupResponse>(
+    `/api/meal-groups/${id}/fresh-dishes/${mealPlanId}?${params}`,
+    { method: "DELETE" }
+  );
+}
+
+export function updatePreparedDish(
+  id: number,
+  reservationId: number,
+  input: UpdatePreparedDishRequest
+) {
+  return requestJson<MealGroupResponse>(
+    `/api/meal-groups/${id}/prepared-dishes/${reservationId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }
+  );
+}
+
+export function removePreparedDish(
+  id: number,
+  reservationId: number,
+  expectedRevision: number
+) {
+  const params = new URLSearchParams({ expectedRevision: String(expectedRevision) });
+  return requestJson<MealGroupResponse>(
+    `/api/meal-groups/${id}/prepared-dishes/${reservationId}?${params}`,
+    { method: "DELETE" }
+  );
+}
+
+export function replaceStationAssignments(
+  id: number,
+  input: ReplaceStationAssignmentsRequest
+) {
+  return requestJson<MealGroupResponse>(`/api/meal-groups/${id}/stations`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function confirmMeal(id: number, input: ConfirmMealRequest) {
+  return requestJson<MealGroupResponse>(`/api/meal-groups/${id}/confirm`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function undoMealConfirmation(id: number, input: UndoMealConfirmationRequest) {
+  return requestJson<MealGroupResponse>(`/api/meal-groups/${id}/undo-confirmation`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export function listPreparedBatches() {
   return requestJson<PreparedBatchesResponse>("/api/prepared-batches");
 }
 
 export function createPreparedBatch(input: CreatePreparedBatchRequest) {
   return requestJson<PreparedBatchResponse>("/api/prepared-batches", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getPreparedBatch(id: number) {
+  return requestJson<PreparedBatchResponse>(`/api/prepared-batches/${id}`);
+}
+
+export function updatePreparedBatch(id: number, input: UpdatePreparedBatchRequest) {
+  return requestJson<PreparedBatchResponse>(`/api/prepared-batches/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function transferPreparedPortions(
+  id: number,
+  input: TransferPreparedPortionsRequest
+) {
+  return requestJson<PreparedBatchResponse>(`/api/prepared-batches/${id}/transfer`, {
     method: "POST",
     body: JSON.stringify(input),
   });

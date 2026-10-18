@@ -12,12 +12,16 @@ import {
   householdActivityLog,
   householdMemberBlocks,
   inventory,
+  mealGroups,
   mealPlans,
+  preparedBatches,
+  preparedLots,
+  preparedReservations,
   recipes,
   shoppingListItems,
   type Household,
 } from "@/db/schema";
-import { and, eq, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { ensureMealPilotTables } from "@/db/ensure-schema";
 import {
@@ -246,6 +250,33 @@ export async function queueCalendarHouseholdRemoval(householdId: number): Promis
 // it. Share links are user-owned (share_links.created_by → users), never
 // household-owned, so there is nothing to decommission here.
 export async function purgeHousehold(householdId: number): Promise<void> {
+  // Meal pilot rows first. Reservations hold their lot with ON DELETE
+  // restrict, so they must go before the lots and batches; otherwise the
+  // household delete's cascade order decides whether the purge throws.
+  await ensureMealPilotTables();
+  const groupIds = db
+    .select({ id: mealGroups.id })
+    .from(mealGroups)
+    .where(eq(mealGroups.householdId, householdId));
+  const batchIds = db
+    .select({ id: preparedBatches.id })
+    .from(preparedBatches)
+    .where(eq(preparedBatches.householdId, householdId));
+  const lotIds = db
+    .select({ id: preparedLots.id })
+    .from(preparedLots)
+    .where(inArray(preparedLots.batchId, batchIds));
+  await db
+    .delete(preparedReservations)
+    .where(
+      or(
+        inArray(preparedReservations.mealGroupId, groupIds),
+        inArray(preparedReservations.lotId, lotIds)
+      )
+    );
+  await db.delete(mealGroups).where(eq(mealGroups.householdId, householdId));
+  await db.delete(preparedLots).where(inArray(preparedLots.batchId, batchIds));
+  await db.delete(preparedBatches).where(eq(preparedBatches.householdId, householdId));
   await db.delete(shoppingListItems).where(eq(shoppingListItems.householdId, householdId));
   await db.delete(inventory).where(eq(inventory.householdId, householdId));
   await db.delete(mealPlans).where(eq(mealPlans.householdId, householdId));
