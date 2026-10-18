@@ -8,6 +8,7 @@ import { detectStepTimerSeconds } from "@/lib/step-timers";
 import { parseHeatFromTip } from "@/lib/instruction-heat";
 import { HeatChip } from "./HeatChip";
 import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
+import { requestLeftovers } from "@/lib/leftovers-prompt";
 
 interface BatchCookMeal {
   recipe: RecipeWithRelations;
@@ -211,6 +212,11 @@ export function MultiCookWithMeSession({ meals, onClose, onComplete }: MultiCook
           const body = await response.json().catch(() => ({}));
           throw new Error(body.error || "Failed to save batch cooking attempt");
         }
+        requestLeftovers({
+          recipeId: meal.recipe.id,
+          title: meal.recipe.title,
+          mealPlanId: meal.mealPlanId ?? null,
+        });
       }
 
       await onComplete?.(meals.map((meal) => meal.mealPlanId).filter((id): id is number => id != null));

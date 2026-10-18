@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { HalfStarRating } from "@/components/recipes/HalfStarRating";
+import { requestLeftovers } from "@/lib/leftovers-prompt";
 
 interface Ingredient {
   name: string;
@@ -41,6 +42,7 @@ interface AdjustedIngredient extends Ingredient {
 
 interface CookAlongCaptureProps {
   recipeId: number;
+  recipeTitle?: string;
   onClose: () => void;
   onComplete?: (mode: "attempt_only" | "attempt_and_version") => void;
 }
@@ -67,7 +69,7 @@ function buildAttemptNotes(closenessRating: number, closenessNotes: string) {
   return parts.length ? parts.join("\n") : null;
 }
 
-export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCaptureProps) {
+export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }: CookAlongCaptureProps) {
   const [step, setStep] = useState(0);
   const [versions, setVersions] = useState<Version[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
@@ -152,6 +154,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
           const body = await response.json().catch(() => ({}));
           throw new Error(body.error || "Failed to save attempt");
         }
+        requestLeftovers({ recipeId, title: recipeTitle ?? "this dish", mealPlanId: null });
         onComplete?.("attempt_only");
         onClose();
         return;
@@ -180,6 +183,7 @@ export function CookAlongCapture({ recipeId, onClose, onComplete }: CookAlongCap
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Failed to save cooked version");
       }
+      requestLeftovers({ recipeId, title: recipeTitle ?? "this dish", mealPlanId: null });
       onComplete?.("attempt_and_version");
       onClose();
     } catch (err) {

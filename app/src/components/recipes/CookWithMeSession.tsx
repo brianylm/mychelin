@@ -20,6 +20,7 @@ import { detectStepTimerSeconds } from "@/lib/step-timers";
 import { encodeHeatInTip, HEAT_CONFIG, HEAT_LEVELS, parseHeatFromTip, type HeatLevel } from "@/lib/instruction-heat";
 import { HeatChip } from "./HeatChip";
 import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
+import { requestLeftovers } from "@/lib/leftovers-prompt";
 
 interface CookWithMeSessionProps {
   recipe: RecipeWithRelations;
@@ -403,6 +404,8 @@ export function CookWithMeSession({
           throw new Error(body.error || "Attempt saved, but next try could not be saved");
         }
       }
+
+      requestLeftovers({ recipeId: recipe.id, title: recipe.title, mealPlanId: mealPlanId ?? null });
 
       const proposal = savedAttempt?.deduction;
       if (

@@ -2048,6 +2048,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
       {showCookAlong && selectedRecipe && (
         <CookAlongCapture
           recipeId={selectedRecipe.id}
+          recipeTitle={selectedRecipe.title}
           onClose={() => setShowCookAlong(false)}
           onComplete={(mode) => {
             setVersionTimelineKey((k) => k + 1);
