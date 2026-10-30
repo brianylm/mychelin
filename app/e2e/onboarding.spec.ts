@@ -51,7 +51,7 @@ test.describe("one-question onboarding", () => {
     // Closing the mission leaves the resumable card without a reload.
     await page.keyboard.press("Escape");
     await expect(page.getByText("Cook your first dish")).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText(/onion omelette/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Onion omelette" })).toBeVisible();
   });
 
   test("a failed dish save does not complete onboarding", async ({ page }) => {
