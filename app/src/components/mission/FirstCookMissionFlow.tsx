@@ -34,6 +34,7 @@ interface FirstCookMissionFlowProps {
 }
 
 const STEP_LABELS = ["Pick a dish", "Plan it", "What to buy", "Cook with Me"];
+const GOAL_CHOICES = [1, 2, 3, 4, 5];
 
 const RECIPE_KEY = "mychelin:first-cook-recipe-id";
 
@@ -120,6 +121,17 @@ export function FirstCookMissionFlow({
     };
   }, [phase]);
 
+  const chooseGoal = (next: number) => {
+    setGoal(next);
+    fetch("/api/notifications/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weeklyCookingGoal: next }),
+    }).catch(() => {
+      /* best-effort — it can still be changed in Profile */
+    });
+  };
+
   const rememberPick = (id: number) => {
     setSelectedId(id);
     try {
@@ -153,6 +165,28 @@ export function FirstCookMissionFlow({
             </span>
             .
           </p>
+          <div className="mt-6 w-full max-w-xs">
+            <p className="text-sm font-semibold text-[var(--ui-text)]">How many meals a week feels realistic?</p>
+            <div className="mt-2 grid grid-cols-5 gap-1.5">
+              {GOAL_CHOICES.map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  onClick={() => chooseGoal(choice)}
+                  aria-pressed={goal === choice}
+                  aria-label={`${choice} meal${choice === 1 ? "" : "s"} a week`}
+                  className={
+                    "min-h-11 rounded-xl border text-sm font-semibold transition-colors " +
+                    (goal === choice
+                      ? "border-[var(--ui-action)] bg-[var(--ui-action)] text-[var(--ui-action-text)]"
+                      : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:border-[var(--ui-border-strong)]")
+                  }
+                >
+                  {choice}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="mt-7 flex w-full max-w-xs flex-col gap-2.5">
             {recipeId != null && (
               <button

@@ -1,86 +1,52 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 import { starterRecipes } from "@/lib/starter-recipes";
 
-type Goal = "learn" | "regular" | "family" | "plan" | "waste";
-type Frequency = "daily" | "most_weekdays" | "weekly" | "occasional";
-type CaptureMode = "starter" | "voice" | "url" | "scratch";
-type OnboardingStep = "goals" | "rhythm" | "capture";
+export type FirstCaptureMode = "starter" | "voice" | "url" | "paste";
+export type OnboardingStart = FirstCaptureMode | null;
 
 interface OnboardingFlowProps {
   userName: string;
-  onComplete: () => void;
+  onComplete: (start: OnboardingStart) => void;
 }
 
-const goals: Array<{ value: Goal; title: string; body: string }> = [
-  { value: "family", title: "Save family recipes", body: "Turn memory, voice, and messy notes into recipes you can keep." },
-  { value: "regular", title: "Cook regularly", body: "Build a steady home-cooking rhythm without deciding from scratch every day." },
-  { value: "learn", title: "Learn how to cook", body: "Get guided steps, timers, and clearer technique as you build confidence." },
-  { value: "plan", title: "Plan meals", body: "Know what to cook and what to buy before the week gets noisy." },
-  { value: "waste", title: "Use what I have", body: "Reduce forgotten groceries and make fridge decisions easier." },
+const startOptions: Array<{ value: FirstCaptureMode; title: string; body: string }> = [
+  { value: "voice", title: "A dish my family makes", body: "Sit with the cook and capture it as they talk." },
+  { value: "url", title: "A link", body: "Bring in a recipe page, blog post, or video." },
+  { value: "paste", title: "Notes or a message", body: "Paste WhatsApp messages, rough lists, or old docs." },
+  { value: "starter", title: "Nothing yet", body: "Start from a simple local dish and make it yours." },
 ];
 
-const frequencies: Array<{ value: Frequency; label: string; body: string }> = [
-  { value: "most_weekdays", label: "3-4 times a week", body: "A steady weeknight rhythm." },
-  { value: "weekly", label: "Once a week", body: "One reliable home-cooked meal." },
-  { value: "daily", label: "Almost daily", body: "For an active home kitchen." },
-  { value: "occasional", label: "When I can", body: "Keep it flexible and forgiving." },
-];
-
-const captureModes: Array<{ value: CaptureMode; title: string; body: string }> = [
-  { value: "starter", title: "Start from a sample dish", body: "Copy a simple local recipe into your library and edit it as you cook." },
-  { value: "voice", title: "Live recipe conversation", body: "Sit with a family cook while Mychelin captures the gist and suggests what to ask." },
-  { value: "url", title: "Import from link", body: "Paste a recipe page, blog post, or video URL, with a Text fallback inside." },
-  { value: "scratch", title: "Write or paste recipe", body: "Type naturally, paste OCR text, WhatsApp notes, or a rough memory dump." },
-];
-
-const steps: OnboardingStep[] = ["goals", "rhythm", "capture"];
+function trackOnboarding(
+  eventName: "onboarding_viewed" | "onboarding_option_picked" | "onboarding_skipped",
+  option?: FirstCaptureMode
+) {
+  void fetch("/api/usage-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventName, ...(option ? { properties: { option } } : {}) }),
+  }).catch(() => {
+    /* analytics are best-effort */
+  });
+}
 
 export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [selectedGoals, setSelectedGoals] = useState<Goal[]>(["family"]);
-  const [frequency, setFrequency] = useState<Frequency>("most_weekdays");
-  const [firstCaptureMode, setFirstCaptureMode] = useState<CaptureMode>("starter");
+  const [pickingStarter, setPickingStarter] = useState(false);
   const [selectedStarterSlug, setSelectedStarterSlug] = useState(starterRecipes[0]?.slug ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Survives a failed preferences save, so a retry cannot copy the dish twice.
+  const starterCreatedRef = useRef(false);
 
-  const step = steps[stepIndex];
-  const isLastStep = stepIndex === steps.length - 1;
-
-  const selectedGoalSummary = useMemo(() => {
-    const selected = goals.filter((item) => selectedGoals.includes(item.value));
-    return selected.length > 0
-      ? selected.map((item) => item.title).join(" + ")
-      : "Your goals";
-  }, [selectedGoals]);
-
-  const stepTitle = step === "goals"
-    ? "What do you want Mychelin to help with first?"
-    : step === "rhythm"
-      ? "How often do you want to cook at home?"
-      : "How do you want to add your first recipe?";
-
-  const stepBody = step === "goals"
-    ? "Choose one or more. This helps Mychelin shape your first cooking loop."
-    : step === "rhythm"
-      ? "Set a realistic rhythm. This is a weekly promise, not a daily streak."
-      : "Pick the starting point that matches what you already have.";
-
-  const toggleGoal = (nextGoal: Goal) => {
-    setSelectedGoals((current) => {
-      if (current.includes(nextGoal)) {
-        return current.length === 1 ? current : current.filter((item) => item !== nextGoal);
-      }
-      return [...current, nextGoal];
-    });
-  };
+  useEffect(() => {
+    trackOnboarding("onboarding_viewed");
+  }, []);
 
   const createStarterRecipe = async () => {
     const starter = starterRecipes.find((item) => item.slug === selectedStarterSlug);
-    if (!starter || firstCaptureMode !== "starter") return;
+    if (!starter) throw new Error("Choose a dish to start from");
 
     const response = await fetch("/api/recipes", {
       method: "POST",
@@ -100,223 +66,170 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(body.error || "Failed to create starter recipe");
+      throw new Error(body.error || "Could not add that dish. Try again.");
     }
   };
 
-  const save = async (skip = false) => {
+  const finish = async (start: OnboardingStart) => {
     setSaving(true);
     setError(null);
     try {
+      // The recipe comes first: onboarding must never be marked done while
+      // the dish the user picked is missing.
+      if (start === "starter" && !starterCreatedRef.current) {
+        await createStarterRecipe();
+        starterCreatedRef.current = true;
+      }
+
       const response = await fetch("/api/user/preferences", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          skip
-            ? { onboardingCompleted: true }
-            : {
-                onboardingCompleted: true,
-                cookingGoal: JSON.stringify(selectedGoals),
-                cookingFrequency: frequency,
-                firstCaptureMode,
-              }
+          start ? { onboardingCompleted: true, firstCaptureMode: start } : { onboardingCompleted: true }
         ),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        throw new Error(body.error || "Failed to save onboarding");
+        throw new Error(body.error || "Could not save that. Try again.");
       }
-      if (!skip) {
-        await createStarterRecipe();
-      }
+
+      if (start) trackOnboarding("onboarding_option_picked", start);
+      else trackOnboarding("onboarding_skipped");
       window.localStorage.removeItem("mychelin_onboarding_pending");
-      onComplete();
+      onComplete(start);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save onboarding");
+      setError(err instanceof Error ? err.message : "Could not save that. Try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const continueFlow = () => {
-    if (isLastStep) {
-      void save(false);
+  const pick = (option: FirstCaptureMode) => {
+    if (option === "starter") {
+      setError(null);
+      setPickingStarter(true);
       return;
     }
-    setStepIndex((current) => Math.min(current + 1, steps.length - 1));
+    void finish(option);
   };
+
+  const firstName = userName ? userName.split(" ")[0] : "";
 
   return (
     <main className="min-h-screen bg-ui-bg px-4 py-5 text-ui-text sm:px-6 sm:py-8">
-      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-3xl flex-col rounded-[2rem] border border-ui-border bg-ui-surface shadow-[0_24px_80px_rgba(60,43,25,0.08)]">
-        <div className="flex items-center justify-between gap-4 border-b border-ui-border px-5 py-4 sm:px-7">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-xl flex-col">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src="/images/mychelin-icon-96.webp" alt="" className="h-9 w-9 object-contain" />
-            <div>
-              <p className="logo-serif text-lg font-bold leading-none">
-                <span className="text-ui-accent">my</span><span>chelin</span>
-              </p>
-              <p className="mt-1 text-xs text-stone-500">Set your home-cooking path</p>
-            </div>
+            <p className="logo-serif text-lg font-bold leading-none">
+              <span className="text-ui-accent">my</span><span>chelin</span>
+            </p>
           </div>
           <button
             type="button"
-            onClick={() => void save(true)}
+            onClick={() => void finish(null)}
             disabled={saving}
-            className="rounded-full px-3 py-2 text-xs font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:opacity-60"
+            className="min-h-11 rounded-full px-3 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text disabled:opacity-60"
           >
             Skip
           </button>
         </div>
 
-        <section className="flex flex-1 flex-col px-5 py-6 sm:px-7 sm:py-8">
-          <div className="mb-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ui-accent">
-              Welcome{userName ? ", " + userName.split(" ")[0] : ""}
-            </p>
-            <div className="mt-5 flex gap-2">
-              {steps.map((item, index) => (
-                <span
-                  key={item}
-                  className={
-                    "h-1.5 flex-1 rounded-full transition " +
-                    (index <= stepIndex ? "bg-ui-accent" : "bg-[#ece4d8]")
-                  }
-                />
-              ))}
-            </div>
-            <p className="mt-3 text-xs font-medium text-stone-500">Step {stepIndex + 1} of {steps.length}</p>
-            <h1 className="app-editorial-title mt-4 max-w-2xl text-4xl leading-[1.02] text-ui-text sm:text-5xl">
-              {stepTitle}
+        {pickingStarter ? (
+          <section className="flex flex-1 flex-col pt-8">
+            <h1 className="app-editorial-title text-3xl leading-tight text-ui-text sm:text-4xl">
+              Pick a dish to start with
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-stone-600">{stepBody}</p>
-          </div>
-
-          {step === "goals" && (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {goals.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => toggleGoal(item.value)}
-                  className={
-                    "rounded-2xl border px-4 py-3 text-left transition " +
-                    (selectedGoals.includes(item.value)
-                      ? "border-ui-accent/40 bg-ui-accent/5 shadow-sm"
-                      : "border-ui-border bg-white hover:border-ui-accent/20")
-                  }
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="block text-sm font-semibold text-stone-900">{item.title}</span>
-                    <span className={"mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] " + (selectedGoals.includes(item.value) ? "border-ui-accent bg-ui-accent text-white" : "border-[#d8d8d2] text-transparent")}>✓</span>
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-stone-500">{item.body}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === "rhythm" && (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {frequencies.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setFrequency(item.value)}
-                  className={
-                    "rounded-2xl border px-4 py-4 text-left transition " +
-                    (frequency === item.value
-                      ? "border-ui-action bg-ui-action text-white shadow-sm"
-                      : "border-ui-border bg-white text-stone-700 hover:border-ui-accent/25")
-                  }
-                >
-                  <span className="block text-sm font-semibold">{item.label}</span>
-                  <span className={"mt-1 block text-xs leading-5 " + (frequency === item.value ? "text-white/70" : "text-stone-500")}>{item.body}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === "capture" && (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {captureModes.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setFirstCaptureMode(item.value)}
-                  className={
-                    "rounded-2xl border px-4 py-4 text-left transition " +
-                    (firstCaptureMode === item.value
-                      ? "border-ui-accent/40 bg-ui-accent/5 shadow-sm"
-                      : "border-ui-border bg-white hover:border-ui-accent/20")
-                  }
-                >
-                  <span className="block text-sm font-semibold text-stone-900">{item.title}</span>
-                  <span className="mt-1 block text-xs leading-5 text-stone-500">{item.body}</span>
-                </button>
-              ))}
-              {firstCaptureMode === "starter" && (
-                <div className="sm:col-span-2">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
-                    Choose a starter recipe
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {starterRecipes.map((recipe) => (
-                      <button
-                        key={recipe.slug}
-                        type="button"
-                        onClick={() => setSelectedStarterSlug(recipe.slug)}
-                        className={
-                          "rounded-2xl border px-4 py-4 text-left transition " +
-                          (selectedStarterSlug === recipe.slug
-                            ? "border-ui-action bg-ui-action text-white shadow-sm"
-                            : "border-ui-border bg-white text-stone-700 hover:border-ui-accent/25")
-                        }
-                      >
-                        <span className="block text-sm font-semibold">{recipe.title}</span>
-                        <span className={"mt-1 block text-xs leading-5 " + (selectedStarterSlug === recipe.slug ? "text-white/70" : "text-stone-500")}>
-                          {recipe.subtitle}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="mt-7 rounded-2xl border border-[#f0e5d8] bg-[#f8f3ec] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Your first loop</p>
-            <p className="mt-3 text-sm leading-6 text-stone-700">
-              {selectedGoalSummary}: capture one recipe, cook one attempt, then improve it from what actually happened.
+            <p className="mt-3 text-sm leading-6 text-ui-muted">
+              We&rsquo;ll add it to your library, then cook it with you.
             </p>
-          </div>
 
-          {error && (
-            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</p>
-          )}
+            <div className="mt-6 flex flex-col gap-2">
+              {starterRecipes.map((recipe) => {
+                const selected = selectedStarterSlug === recipe.slug;
+                return (
+                  <button
+                    key={recipe.slug}
+                    type="button"
+                    onClick={() => setSelectedStarterSlug(recipe.slug)}
+                    aria-pressed={selected}
+                    className={
+                      "rounded-2xl border px-4 py-3 text-left transition-colors " +
+                      (selected
+                        ? "border-ui-accent bg-ui-accent/5"
+                        : "border-ui-border bg-ui-surface hover:border-ui-accent/40")
+                    }
+                  >
+                    <span className="block text-sm font-semibold text-ui-text">{recipe.title}</span>
+                    <span className="mt-0.5 block text-sm leading-5 text-ui-muted">{recipe.subtitle}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-          <div className="mt-auto flex items-center justify-between gap-3 pt-7">
-            <button
-              type="button"
-              onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
-              disabled={stepIndex === 0 || saving}
-              className="rounded-full px-4 py-2 text-sm font-semibold text-stone-500 transition hover:bg-stone-100 hover:text-stone-800 disabled:opacity-0"
-            >
-              Back
-            </button>
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              onClick={continueFlow}
-              disabled={saving}
-              className="!rounded-full !px-5 !font-semibold"
-            >
-              {saving ? "Saving..." : isLastStep ? "Start Mychelin" : "Continue"}
-            </Button>
-          </div>
-        </section>
+            {error && <p role="alert" className="mt-4 text-sm text-ui-danger">{error}</p>}
+
+            <div className="mt-auto flex items-center justify-between gap-3 pt-7">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setPickingStarter(false);
+                }}
+                disabled={saving}
+                className="min-h-11 rounded-full px-4 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
+              >
+                Back
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                onClick={() => void finish("starter")}
+                disabled={saving}
+                className="!rounded-full !px-5 !font-semibold"
+              >
+                {saving ? "Adding..." : "Use this dish"}
+              </Button>
+            </div>
+          </section>
+        ) : (
+          <section className="flex flex-1 flex-col pt-8">
+            <p className="text-sm font-semibold text-ui-accent">
+              Welcome{firstName ? ", " + firstName : ""}
+            </p>
+            <h1 className="app-editorial-title mt-2 text-3xl leading-tight text-ui-text sm:text-4xl">
+              What do you have to start with?
+            </h1>
+
+            <div className="mt-5 rounded-2xl bg-ui-surface-subtle p-4">
+              <p className="text-sm leading-6 text-ui-muted">
+                &ldquo;Ah Ma&rsquo;s chap chye: soak mushrooms first, one big spoon taucheo, agak agak the water, cook till cabbage soft&rdquo;
+              </p>
+              <p className="mt-3 text-sm font-semibold text-ui-text">Mychelin turns it into a recipe you can cook</p>
+              <p className="mt-1 text-sm leading-6 text-ui-muted">
+                Chap chye. Soak the mushrooms, fry the taucheo, add cabbage and water, simmer until soft.
+              </p>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              {startOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => pick(option.value)}
+                  disabled={saving}
+                  className="rounded-2xl border border-ui-border bg-ui-surface px-4 py-3 text-left transition-colors hover:border-ui-accent/40 disabled:opacity-60"
+                >
+                  <span className="block text-sm font-semibold text-ui-text">{option.title}</span>
+                  <span className="mt-0.5 block text-sm leading-5 text-ui-muted">{option.body}</span>
+                </button>
+              ))}
+            </div>
+
+            {error && <p role="alert" className="mt-4 text-sm text-ui-danger">{error}</p>}
+          </section>
+        )}
       </div>
     </main>
   );

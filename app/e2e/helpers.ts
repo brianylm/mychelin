@@ -52,7 +52,7 @@ export async function signup(page: Page, email: string, password: string, name =
     args: [name, email, passwordHash, new Date().toISOString()],
   });
   // Synthetic users skip onboarding — the app would otherwise show the
-  // 3-step OnboardingFlow instead of the library.
+  // OnboardingFlow instead of the library.
   await db.execute({
     sql: "UPDATE users SET onboarding_completed = 1 WHERE email = ?",
     args: [email],

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { RecipeStoreProvider, useRecipeStore, type RecipeWithRelations } from "@/store/RecipeStore";
+import type { OnboardingStart } from "@/components/onboarding/OnboardingFlow";
 import { RecipeSidebar } from "@/components/layout/RecipeSidebar";
 import { RecipeView } from "@/components/recipes/RecipeView";
 import { Header } from "@/components/layout/Header";
@@ -145,6 +146,7 @@ export function RecipeWorkspace() {
   const [currentView, setCurrentView] = useState<AppView>("recipes");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [onboardingStart, setOnboardingStart] = useState<OnboardingStart>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -189,7 +191,11 @@ export function RecipeWorkspace() {
     return (
       <OnboardingFlow
         userName={user.name}
-        onComplete={() => setShowOnboarding(false)}
+        onComplete={(start) => {
+          setOnboardingStart(start);
+          setOnboardingCompleted(true);
+          setShowOnboarding(false);
+        }}
       />
     );
   }
@@ -202,6 +208,7 @@ export function RecipeWorkspace() {
         isSidebarOpen={isSidebarOpen}
         setSidebarOpen={setSidebarOpen}
         onboardingCompleted={onboardingCompleted}
+        onboardingStart={onboardingStart}
       />
     </RecipeStoreProvider>
   );
@@ -212,15 +219,17 @@ function RecipeWorkspaceContent({
   setCurrentView,
   isSidebarOpen,
   setSidebarOpen,
-  onboardingCompleted
+  onboardingCompleted,
+  onboardingStart
 }: {
   currentView: AppView;
   setCurrentView: (view: AppView) => void;
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   onboardingCompleted: boolean;
+  onboardingStart: OnboardingStart;
 }) {
-  const { selectRecipe, selectedRecipeId } = useRecipeStore();
+  const { recipes, selectRecipe, selectedRecipeId } = useRecipeStore();
   const qc = useQueryClient();
   const { addToast } = useToast();
   const { user } = useAuth();
@@ -774,6 +783,27 @@ function RecipeWorkspaceContent({
     promptPilotFeedback("first_capture");
   }, [pasteRecipeId, promptPilotFeedback, qc]);
 
+  // Take the user straight to what they chose in onboarding. Runs once:
+  // the choice only exists for the session that just finished onboarding.
+  const onboardingStartHandledRef = useRef(false);
+  useEffect(() => {
+    if (!onboardingStart || onboardingStartHandledRef.current) return;
+    onboardingStartHandledRef.current = true;
+    if (onboardingStart === "voice") void createDraftForConversation();
+    else if (onboardingStart === "url") void createDraftForCapture("url");
+    else if (onboardingStart === "paste") void createDraftForCapture("paste");
+    else openMission();
+    if (onboardingStart !== "starter") {
+      void fetch("/api/usage-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventName: "onboarding_tool_opened", properties: { option: onboardingStart } }),
+      }).catch(() => {
+        /* analytics are best-effort */
+      });
+    }
+  }, [createDraftForCapture, createDraftForConversation, onboardingStart, openMission]);
+
   const showFab = currentView === "recipes" && !isSidebarOpen;
 
   // First Recipe Guided Mission card: post-onboarding, before the first
@@ -839,6 +869,7 @@ function RecipeWorkspaceContent({
               <NextMealCard onStartPrep={(dishes) => void handleCookMealBatch(dishes)} />
               {showMissionCard && (
                 <FirstCookMissionCard
+                  hasRecipe={recipes.some((recipe) => recipe.status === "active")}
                   onStart={openMission}
                   onDismiss={() => setMissionDismissed(true)}
                 />

@@ -3,6 +3,7 @@
 import { ChefHat, X } from "lucide-react";
 
 interface FirstCookMissionCardProps {
+  hasRecipe: boolean;
   onStart: () => void;
   onDismiss: () => void;
 }
@@ -11,7 +12,7 @@ interface FirstCookMissionCardProps {
 // Mission. "Not now" hides it for this session only — per the locked
 // decision it stays resumable (and reappears on the next visit) until the
 // user records their first attempt.
-export function FirstCookMissionCard({ onStart, onDismiss }: FirstCookMissionCardProps) {
+export function FirstCookMissionCard({ hasRecipe, onStart, onDismiss }: FirstCookMissionCardProps) {
   return (
     <div className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-3 sm:px-6">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-4">
@@ -21,11 +22,12 @@ export function FirstCookMissionCard({ onStart, onDismiss }: FirstCookMissionCar
           </span>
           <div className="min-w-0">
             <p className="logo-serif text-base font-bold leading-tight text-[var(--ui-text)]">
-              Cook your first dish
+              {hasRecipe ? "Cook your first dish" : "Add your first recipe"}
             </p>
             <p className="mt-0.5 text-xs leading-5 text-[var(--ui-muted)]">
-              You&rsquo;ve got a recipe. Let&rsquo;s take it from the page to the pan — plan it,
-              cook it with guidance, and record how it went.
+              {hasRecipe
+                ? "You’ve got a recipe. Let’s take it from the page to the pan — plan it, cook it with guidance, and record how it went."
+                : "Start with one dish from home. Then we’ll help you plan it, cook it, and record how it went."}
             </p>
           </div>
         </div>
@@ -35,7 +37,7 @@ export function FirstCookMissionCard({ onStart, onDismiss }: FirstCookMissionCar
             onClick={onStart}
             className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--ui-action)] px-4 text-xs font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
           >
-            Cook with me
+            {hasRecipe ? "Cook with me" : "Add a recipe"}
           </button>
           <button
             type="button"
