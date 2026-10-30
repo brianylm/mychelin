@@ -5,6 +5,10 @@ import { ensureUsageEventsTable } from "@/db/ensure-schema";
 export type UsageEventName =
   | "user_signed_up"
   | "onboarding_completed"
+  | "onboarding_viewed"
+  | "onboarding_option_picked"
+  | "onboarding_skipped"
+  | "onboarding_tool_opened"
   | "recipe_created"
   | "recipe_capture_completed"
   | "ai_draft_completed"

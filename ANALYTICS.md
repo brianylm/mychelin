@@ -58,6 +58,8 @@ Watch drop-off across:
 
 The most important early question: where does the first user fail before the full loop?
 
+Onboarding also tracks `onboarding_viewed`, `onboarding_option_picked`, `onboarding_skipped`, and `onboarding_tool_opened`; option metadata is limited to the `starter`, `voice`, `url`, and `paste` choices.
+
 ### Capture Quality
 
 Watch:

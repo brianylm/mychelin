@@ -13,6 +13,10 @@ const CLIENT_EVENT_NAMES: ReadonlySet<UsageEventName> = new Set([
   "cooking_card_viewed",
   "cooking_card_export_png",
   "cooking_card_export_copy",
+  "onboarding_viewed",
+  "onboarding_option_picked",
+  "onboarding_skipped",
+  "onboarding_tool_opened",
 ]);
 
 export async function POST(request: NextRequest) {
@@ -28,12 +32,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unknown event" }, { status: 400 });
     }
     const recipeId = Number.isInteger(body?.recipeId) ? Number(body.recipeId) : null;
+    const allowedOptions = new Set(["starter", "voice", "url", "paste"]);
+    const option = body?.properties?.option;
+    const properties =
+      (eventName === "onboarding_option_picked" || eventName === "onboarding_tool_opened") &&
+      typeof option === "string" && allowedOptions.has(option)
+        ? { option }
+        : undefined;
 
     await trackUsageEvent({
       userId: currentUser.id,
       eventName,
       source: "client",
       recipeId,
+      properties,
       path: requestPath(request),
     });
 
