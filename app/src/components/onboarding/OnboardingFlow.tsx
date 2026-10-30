@@ -15,7 +15,7 @@ interface OnboardingFlowProps {
 const startOptions: Array<{ value: FirstCaptureMode; title: string; body: string }> = [
   { value: "voice", title: "A dish my family makes", body: "Sit with the cook and capture it as they talk." },
   { value: "url", title: "A link", body: "Bring in a recipe page, blog post, or video." },
-  { value: "paste", title: "Notes or a message", body: "Paste WhatsApp messages, rough lists, or old docs." },
+  { value: "paste", title: "Notes or a message", body: "Paste WhatsApp messages or rough lists." },
   { value: "starter", title: "Nothing yet", body: "Start from a simple local dish and make it yours." },
 ];
 
@@ -204,12 +204,9 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
 
             <div className="mt-5 rounded-2xl bg-ui-surface-subtle p-4">
               <p className="text-sm leading-6 text-ui-muted">
-                &ldquo;Ah Ma&rsquo;s chap chye: soak mushrooms first, one big spoon taucheo, agak agak the water, cook till cabbage soft&rdquo;
+                &ldquo;Soak mushrooms first, one big spoon taucheo, agak agak the water&rdquo;
               </p>
-              <p className="mt-3 text-sm font-semibold text-ui-text">Mychelin turns it into a recipe you can cook</p>
-              <p className="mt-1 text-sm leading-6 text-ui-muted">
-                Chap chye. Soak the mushrooms, fry the taucheo, add cabbage and water, simmer until soft.
-              </p>
+              <p className="mt-1 text-sm font-semibold text-ui-text">Mychelin turns it into steps you can cook.</p>
             </div>
 
             <div className="mt-5 flex flex-col gap-2">
