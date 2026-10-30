@@ -186,7 +186,7 @@ async function main() {
     // 2. Sign up (or seed + log in if rate-limited)
     const signup = await session.json("/api/auth/signup", {
       method: "POST",
-      json: { email: USER_EMAIL, password: PASSWORD, name: "Regression Smoke" },
+      json: { email: USER_EMAIL, password: PASSWORD, name: "Regression Smoke", ageConfirmed: true },
     });
     if (signup.response.status === 429 || signup.response.status === 409) {
       assert(await seedSyntheticUser(), "synthetic user seeded via Turso fallback");

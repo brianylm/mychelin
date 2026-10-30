@@ -28,7 +28,10 @@ export async function GET(request: NextRequest) {
   const state = randomState();
   const returnTo = request.nextUrl.searchParams.get("returnTo");
   const safeReturn = safeReturnTo(returnTo) ?? "/";
-  const statePayload = JSON.stringify({ state, returnTo: safeReturn });
+  // Set only when the person ticked the age confirmation on the signup form.
+  // The callback refuses to create a new account without it.
+  const ageConfirmed = request.nextUrl.searchParams.get("ageConfirmed") === "1";
+  const statePayload = JSON.stringify({ state, returnTo: safeReturn, ageConfirmed });
   const redirectUri = baseUrl(request) + "/api/auth/google/callback";
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);

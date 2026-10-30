@@ -127,6 +127,7 @@ async function main() {
       name: "Pilot Smoke",
       email: USER_EMAIL,
       password: PASSWORD,
+      ageConfirmed: true,
     },
   });
   assert(Boolean(user.cookie), "Pilot user receives auth cookie");

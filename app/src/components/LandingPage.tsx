@@ -454,10 +454,13 @@ export function LandingPage() {
       </section>
 
       {/* ==================== FOOTER ==================== */}
-      <footer className="mx-auto max-w-6xl px-6 py-10">
+      <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-10">
         <p className="text-xs text-ui-muted">
           Cook like home, even in your new home.
         </p>
+        <Link href="/copyright" className="text-xs text-ui-muted underline-offset-4 hover:underline">
+          Copyright and takedowns
+        </Link>
       </footer>
     </div>
   );

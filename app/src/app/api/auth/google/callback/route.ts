@@ -35,20 +35,31 @@ function baseUrl(request: NextRequest): string {
   return new URL(request.url).origin;
 }
 
-function errorRedirect(request: NextRequest, reason: string): NextResponse {
+function errorRedirect(
+  request: NextRequest,
+  reason: string,
+  options: { returnTo?: string; mode?: "signup" } = {}
+): NextResponse {
+  const { returnTo, mode } = options;
   const url = new URL("/login", baseUrl(request));
+  if (mode) url.searchParams.set("mode", mode);
   url.searchParams.set("error", reason);
+  // Keep invite/share destinations so the retry lands where the person started.
+  if (returnTo && returnTo !== "/") url.searchParams.set("returnTo", returnTo);
   return NextResponse.redirect(url);
 }
 
-function parseStateCookie(value: string | undefined): { state: string; returnTo: string } | null {
+function parseStateCookie(
+  value: string | undefined
+): { state: string; returnTo: string; ageConfirmed: boolean } | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(value) as { state?: unknown; returnTo?: unknown };
+    const parsed = JSON.parse(value) as { state?: unknown; returnTo?: unknown; ageConfirmed?: unknown };
     if (typeof parsed.state !== "string") return null;
     return {
       state: parsed.state,
       returnTo: (typeof parsed.returnTo === "string" && safeReturnTo(parsed.returnTo)) || "/",
+      ageConfirmed: parsed.ageConfirmed === true,
     };
   } catch {
     return null;
@@ -97,7 +108,10 @@ async function verifyGoogleIdToken(idToken: string, clientId: string): Promise<G
   };
 }
 
-async function findOrCreateGoogleUser(profile: GoogleProfile): Promise<AuthUser> {
+class AgeConfirmationRequiredError extends Error {}
+class UnverifiedEmailError extends Error {}
+
+async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: boolean): Promise<AuthUser> {
   await ensureUserOAuthColumns();
   const now = new Date().toISOString();
 
@@ -112,19 +126,23 @@ async function findOrCreateGoogleUser(profile: GoogleProfile): Promise<AuthUser>
     where: eq(users.email, profile.email),
   });
   if (byEmail) {
-    if (profile.email_verified) {
-      await db
-        .update(users)
-        .set({
-          googleSub: profile.sub,
-          authProvider: byEmail.authProvider === "password" ? "password_google" : byEmail.authProvider,
-          emailVerified: true,
-          avatarUrl: byEmail.avatarUrl ?? profile.picture ?? null,
-        })
-        .where(eq(users.id, byEmail.id));
-    }
+    // Google has not proven this person controls the address, so it must not
+    // unlock an existing account.
+    if (!profile.email_verified) throw new UnverifiedEmailError();
+    await db
+      .update(users)
+      .set({
+        googleSub: profile.sub,
+        authProvider: byEmail.authProvider === "password" ? "password_google" : byEmail.authProvider,
+        emailVerified: true,
+        avatarUrl: byEmail.avatarUrl ?? profile.picture ?? null,
+      })
+      .where(eq(users.id, byEmail.id));
     return { id: byEmail.id, name: byEmail.name, email: byEmail.email };
   }
+
+  // New account: only after the age confirmation on the signup form.
+  if (!ageConfirmed) throw new AgeConfirmationRequiredError();
 
   const passwordHash = await hashPassword(crypto.randomUUID());
   const [created] = await db
@@ -170,7 +188,7 @@ export async function GET(request: NextRequest) {
     const redirectUri = baseUrl(request) + "/api/auth/google/callback";
     const idToken = await exchangeCodeForIdToken({ code, clientId, clientSecret, redirectUri });
     const profile = await verifyGoogleIdToken(idToken, clientId);
-    const authUser = await findOrCreateGoogleUser(profile);
+    const authUser = await findOrCreateGoogleUser(profile, stateCookie.ageConfirmed);
     const host = request.headers.get("host") || undefined;
     await setAuthCookie(authUser, host);
 
@@ -185,7 +203,16 @@ export async function GET(request: NextRequest) {
     });
     return response;
   } catch (err) {
+    if (err instanceof AgeConfirmationRequiredError) {
+      return errorRedirect(request, "google_age_required", {
+        mode: "signup",
+        returnTo: stateCookie.returnTo,
+      });
+    }
+    if (err instanceof UnverifiedEmailError) {
+      return errorRedirect(request, "google_email_unverified", { returnTo: stateCookie.returnTo });
+    }
     console.error("Google OAuth callback error:", err);
-    return errorRedirect(request, "google_login_failed");
+    return errorRedirect(request, "google_login_failed", { returnTo: stateCookie.returnTo });
   }
 }

@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import { AuthScreen } from "@/components/auth/AuthScreen";
+import { AuthScreen, type AgeGateVariant } from "@/components/auth/AuthScreen";
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
 import { useAuth } from "@/context/AuthContext";
 
 interface LoginPageClientProps {
   authenticatedDestination: string;
   defaultMode: "login" | "signup";
+  ageGateVariant?: AgeGateVariant;
 }
 
 export function LoginPageClient({
   authenticatedDestination,
   defaultMode,
+  ageGateVariant,
 }: LoginPageClientProps) {
   const { user, loading } = useAuth();
 
@@ -30,5 +32,5 @@ export function LoginPageClient({
     );
   }
 
-  return <AuthScreen defaultMode={defaultMode} />;
+  return <AuthScreen defaultMode={defaultMode} ageGateVariant={ageGateVariant} />;
 }

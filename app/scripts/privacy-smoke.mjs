@@ -154,7 +154,7 @@ async function login(session, email, name) {
 async function signup(session, email, name) {
   const { response, body } = await session.json("/api/auth/signup", {
     method: "POST",
-    json: { email, password: PASSWORD, name },
+    json: { email, password: PASSWORD, name, ageConfirmed: true },
   });
 
   if (response.status === 429 && await seedSyntheticUser(email, name)) {

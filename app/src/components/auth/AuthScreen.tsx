@@ -4,13 +4,27 @@ import { useEffect, useState } from "react";
 import { safeReturnTo } from "@/lib/return-to";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
+import { MINIMUM_AGE } from "@/lib/legal";
 
 type Mode = "login" | "signup" | "forgot";
+
+// Layout trials for the signup age confirmation (non-production only, via
+// /login?mode=signup&ageGate=a|b|c). "a" is the default everywhere.
+//   a: checkbox above "Continue with Google"
+//   b: checkbox above "Create account"; Google stays disabled until ticked
+//   c: a yes/no question first, then the normal form
+export type AgeGateVariant = "a" | "b" | "c";
 
 const fieldClass =
   "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-ui-accent/45 focus:bg-white focus:ring-4 focus:ring-ui-accent/10";
 
-export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
+export function AuthScreen({
+  defaultMode = "login",
+  ageGateVariant = "a",
+}: {
+  defaultMode?: Mode;
+  ageGateVariant?: AgeGateVariant;
+}) {
   const { login, signup } = useAuth();
   const [mode, setMode] = useState<Mode>(defaultMode);
 
@@ -20,6 +34,8 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [ageAnsweredNo, setAgeAnsweredNo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
@@ -35,6 +51,8 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
       google_not_configured: "Google sign-in is not configured yet.",
       google_state_mismatch: "Google sign-in expired. Please try again.",
       google_login_failed: "Google sign-in failed. Please try again.",
+      google_age_required: `To create an account, confirm you're ${MINIMUM_AGE} or older, then continue with Google.`,
+      google_email_unverified: "Google hasn't verified this email address. Sign in with your password instead.",
     };
     setError(messages[authError] || "Google sign-in failed. Please try again.");
     params.delete("error");
@@ -49,6 +67,10 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
   };
 
   const startGoogleLogin = () => {
+    if (mode === "signup" && !ageConfirmed) {
+      setError(`Please confirm you're ${MINIMUM_AGE} or older.`);
+      return;
+    }
     setGoogleLoading(true);
     setError(null);
     const params = new URLSearchParams(window.location.search);
@@ -56,6 +78,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
     const url = new URL("/api/auth/google/start", window.location.origin);
     const safe = safeReturnTo(returnTo);
     if (safe) url.searchParams.set("returnTo", safe);
+    if (mode === "signup" && ageConfirmed) url.searchParams.set("ageConfirmed", "1");
     window.location.href = url.toString();
   };
 
@@ -92,7 +115,7 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
     const result =
       mode === "login"
         ? await login(email, password)
-        : await signup(name, email, password);
+        : await signup(name, email, password, ageConfirmed);
 
     if (result) {
       setError(result);
@@ -108,6 +131,24 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
     }
     setLoading(false);
   };
+
+  const ageCheckbox = (spacing: string) => (
+    <label className={`${spacing} flex min-h-11 cursor-pointer items-start gap-3 text-sm text-stone-600`}>
+      <input
+        type="checkbox"
+        checked={ageConfirmed}
+        onChange={(e) => {
+          setAgeConfirmed(e.target.checked);
+          if (e.target.checked) setError(null);
+        }}
+        className="mt-0.5 h-5 w-5 shrink-0 accent-ui-accent"
+        required
+      />
+      <span>I&apos;m {MINIMUM_AGE} or older.</span>
+    </label>
+  );
+
+  const showAgeQuestion = mode === "signup" && ageGateVariant === "c" && !ageConfirmed;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface px-4 py-10">
@@ -146,7 +187,49 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                 : "We’ll send a reset link if this email has a Mychelin account."}
           </p>
 
-          {mode === "forgot" && forgotSent ? (
+          {showAgeQuestion ? (
+            <div className="space-y-4">
+              <p className="text-base font-medium text-ui-text">Are you {MINIMUM_AGE} or older?</p>
+              {ageAnsweredNo && (
+                <p role="alert" className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-sm leading-6 text-[#521224]">
+                  You need to be {MINIMUM_AGE} or older to create a Mychelin account.
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="lg"
+                  className="!rounded-full !font-semibold"
+                  onClick={() => {
+                    setAgeAnsweredNo(false);
+                    setAgeConfirmed(true);
+                  }}
+                >
+                  Yes
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="!rounded-full !font-semibold"
+                  onClick={() => setAgeAnsweredNo(true)}
+                >
+                  No
+                </Button>
+              </div>
+              <p className="text-center text-xs text-stone-500">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => switchMode("login")}
+                  className="font-medium text-ui-accent hover:underline"
+                >
+                  Log in
+                </button>
+              </p>
+            </div>
+          ) : mode === "forgot" && forgotSent ? (
             <div className="space-y-4">
               <p className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-xs leading-5 text-[#521224]">
                 If an account exists for <strong>{email}</strong>, we&apos;ve sent a
@@ -164,12 +247,18 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
             </div>
           ) : (
             <>
+              {mode === "signup" && ageGateVariant === "a" && ageCheckbox("mb-4")}
+
               {mode !== "forgot" && (
                 <>
                   <button
                     type="button"
                     onClick={startGoogleLogin}
-                    disabled={loading || googleLoading}
+                    disabled={
+                      loading ||
+                      googleLoading ||
+                      (mode === "signup" && ageGateVariant === "b" && !ageConfirmed)
+                    }
                     className="flex h-11 w-full items-center justify-center gap-3 rounded border border-[#dadce0] bg-white px-4 text-[14px] font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8fafd] hover:shadow focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30 disabled:cursor-not-allowed disabled:opacity-70"
                     style={{ fontFamily: "Roboto, Arial, sans-serif" }}
                   >
@@ -181,6 +270,11 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                     </svg>
                     <span>{googleLoading ? "Opening Google..." : "Continue with Google"}</span>
                   </button>
+                  {mode === "signup" && ageGateVariant === "b" && !ageConfirmed && (
+                    <p className="mt-2 text-center text-xs text-stone-500">
+                      Tick the age box below to use Google.
+                    </p>
+                  )}
                   <div className="my-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
                     <span className="h-px flex-1 bg-stone-200" />
                     <span>{mode === "signup" ? "or create with email" : "or sign in with email"}</span>
@@ -253,8 +347,10 @@ export function AuthScreen({ defaultMode = "login" }: { defaultMode?: Mode }) {
                 )}
               </div>
 
+              {mode === "signup" && ageGateVariant === "b" && ageCheckbox("mt-4")}
+
               {error && (
-                <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
+                <p role="alert" className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
                   {error}
                 </p>
               )}

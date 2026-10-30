@@ -19,7 +19,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
-  signup: (name: string, email: string, password: string) => Promise<string | null>;
+  signup: (name: string, email: string, password: string, ageConfirmed: boolean) => Promise<string | null>;
   logout: () => Promise<void>;
 }
 
@@ -73,11 +73,11 @@ export function AuthProvider({
   }, []);
 
   const signup = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (name: string, email: string, password: string, ageConfirmed: boolean) => {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: email.trim(), password }),
+        body: JSON.stringify({ name, email: email.trim(), password, ageConfirmed }),
       });
       const data = await res.json();
       if (!res.ok) return data.error || "Signup failed";
