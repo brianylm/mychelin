@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { cleanupUsers, uniqueEmail } from "./helpers";
+import { cleanupUsers, signup, uniqueEmail } from "./helpers";
 
 const PREFIX = "e2e-onboarding";
 const PASSWORD = "E2eOnboarding123!";
@@ -8,12 +8,8 @@ test.afterAll(async () => {
   await cleanupUsers(PREFIX);
 });
 
-// A real new account: unlike helpers.signup, this leaves onboarding pending.
 async function newUser(page: Page) {
-  const response = await page.request.post("/api/auth/signup", {
-    data: { name: "Onboarding Test", email: uniqueEmail(PREFIX), password: PASSWORD, ageConfirmed: true },
-  });
-  expect(response.ok()).toBeTruthy();
+  await signup(page, uniqueEmail(PREFIX), PASSWORD, "Onboarding Test", { onboarded: false });
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: "What do you have to start with?" })).toBeVisible({
     timeout: 60_000,
@@ -55,6 +51,7 @@ test.describe("one-question onboarding", () => {
     // Closing the mission leaves the resumable card without a reload.
     await page.keyboard.press("Escape");
     await expect(page.getByText("Cook your first dish")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(/onion omelette/i).first()).toBeVisible();
   });
 
   test("a failed dish save does not complete onboarding", async ({ page }) => {
@@ -66,7 +63,7 @@ test.describe("one-question onboarding", () => {
     );
     await page.getByRole("button", { name: /^Nothing yet/ }).click();
     await page.getByRole("button", { name: "Use this dish" }).click();
-    await expect(page.getByRole("alert")).toHaveText("Could not add that dish. Try again.");
+    await expect(page.locator("p[role=alert]")).toHaveText("Could not add that dish. Try again.");
 
     const preferences = await (await page.request.get("/api/user/preferences")).json();
     expect(preferences.onboardingCompleted).toBe(false);
@@ -75,9 +72,9 @@ test.describe("one-question onboarding", () => {
   test("skip lands on the library and asks for a first recipe", async ({ page }) => {
     await newUser(page);
     await page.getByRole("button", { name: "Skip" }).click();
-    await expect(page.getByText("Add your first recipe")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("Start your recipe library")).toBeVisible({ timeout: 60_000 });
     await page.reload();
     await expect(page.getByRole("heading", { name: "What do you have to start with?" })).not.toBeVisible();
-    await expect(page.getByText("Add your first recipe")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("Start your recipe library")).toBeVisible({ timeout: 60_000 });
   });
 });

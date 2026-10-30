@@ -789,6 +789,8 @@ function RecipeWorkspaceContent({
   useEffect(() => {
     if (!onboardingStart || onboardingStartHandledRef.current) return;
     onboardingStartHandledRef.current = true;
+    // The starter dish was saved before this workspace existed.
+    qc.invalidateQueries({ queryKey: ["recipes"] });
     if (onboardingStart === "voice") void createDraftForConversation();
     else if (onboardingStart === "url") void createDraftForCapture("url");
     else if (onboardingStart === "paste") void createDraftForCapture("paste");
@@ -802,7 +804,7 @@ function RecipeWorkspaceContent({
         /* analytics are best-effort */
       });
     }
-  }, [createDraftForCapture, createDraftForConversation, onboardingStart, openMission]);
+  }, [createDraftForCapture, createDraftForConversation, onboardingStart, openMission, qc]);
 
   const showFab = currentView === "recipes" && !isSidebarOpen;
 
@@ -812,7 +814,9 @@ function RecipeWorkspaceContent({
     FIRST_COOK_MISSION_ENABLED &&
     onboardingCompleted &&
     hasAttemptedAny === false &&
-    !missionDismissed;
+    !missionDismissed &&
+    // An empty library has its own "add your first recipe" prompt.
+    recipes.length > 0;
 
   return (
     <div className="mychelin-app-shell min-h-[100dvh]">

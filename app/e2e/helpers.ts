@@ -43,7 +43,13 @@ export function uniqueEmail(prefix: string): string {
 // entirely — both are IP rate-limited, and tests must not depend on the
 // rate-limit bucket's state. The cookie matches createToken() in
 // src/lib/auth.ts (HS256, { id, name, email }, mychelin_token).
-export async function signup(page: Page, email: string, password: string, name = "E2E Test"): Promise<void> {
+export async function signup(
+  page: Page,
+  email: string,
+  password: string,
+  name = "E2E Test",
+  options: { onboarded?: boolean } = {}
+): Promise<void> {
   const bcrypt = await import("bcryptjs");
   const db = turso();
   const passwordHash = await bcrypt.hash(password, 12);
@@ -53,10 +59,12 @@ export async function signup(page: Page, email: string, password: string, name =
   });
   // Synthetic users skip onboarding — the app would otherwise show the
   // OnboardingFlow instead of the library.
-  await db.execute({
-    sql: "UPDATE users SET onboarding_completed = 1 WHERE email = ?",
-    args: [email],
-  });
+  if (options.onboarded !== false) {
+    await db.execute({
+      sql: "UPDATE users SET onboarding_completed = 1 WHERE email = ?",
+      args: [email],
+    });
+  }
   const user = (
     await db.execute({ sql: "SELECT id FROM users WHERE email = ?", args: [email] })
   ).rows[0];
