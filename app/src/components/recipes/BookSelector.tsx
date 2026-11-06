@@ -47,13 +47,13 @@ export function BookSelector({ currentBookId, onSave }: BookSelectorProps) {
 
   return (
     <div className="flex items-center gap-3">
-      <label className="shrink-0 text-xs font-medium uppercase tracking-wide text-neutral-500">
+      <label className="shrink-0 text-xs font-medium text-ui-muted">
         📚 Book
       </label>
       <select
         value={selectedId ?? ""}
         onChange={handleChange}
-        className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white"
+        className="flex-1 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm text-ui-text outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
       >
         <option value="">No book</option>
         {books.map((book) => (

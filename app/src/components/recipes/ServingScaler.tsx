@@ -49,9 +49,9 @@ export function ServingScaler({ baseYield, onScaleChange }: ServingScalerProps) 
   const isScaled = currentServings !== baseServings;
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-3">
+    <div className="flex items-center justify-between rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-3">
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-neutral-500">Yield</span>
+        <span className="text-ui-muted">Yield</span>
         {isScaled && (
           <button
             onClick={() => handleChange(baseServings)}
@@ -65,16 +65,16 @@ export function ServingScaler({ baseYield, onScaleChange }: ServingScalerProps) 
         <button
           onClick={() => handleChange(currentServings - 1)}
           disabled={currentServings <= 1}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-ui-border text-ui-muted transition-colors hover:bg-ui-surface-subtle disabled:opacity-30 disabled:cursor-not-allowed"
         >
           −
         </button>
-        <span className={`min-w-[4rem] text-center text-sm font-semibold tabular-nums ${isScaled ? "text-ui-accent" : "text-neutral-800"}`}>
+        <span className={`min-w-[4rem] text-center text-sm font-semibold tabular-nums ${isScaled ? "text-ui-accent" : "text-ui-text"}`}>
           {currentServings} {yieldLabel}
         </span>
         <button
           onClick={() => handleChange(currentServings + 1)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-ui-border text-ui-muted transition-colors hover:bg-ui-surface-subtle"
         >
           +
         </button>

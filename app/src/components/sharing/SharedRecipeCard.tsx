@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Flame, ImageDown, Timer, Wand2 } from "lucide-react";
+import { ImageDown, Timer, Wand2 } from "lucide-react";
 import type { SharedRecipeDTO } from "@/lib/shared-recipe";
 import { HEAT_CONFIG } from "@/lib/instruction-heat";
 import { buildCookingCardLayout } from "@/lib/cooking-card-layout";
@@ -91,19 +91,19 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
   };
 
   return (
-    <div ref={cardRef} className="overflow-hidden rounded-2xl border border-ui-border bg-ui-surface-raised shadow-sm">
+    <div ref={cardRef} className="overflow-hidden rounded-2xl border border-ui-border bg-ui-surface-raised">
       {/* Hero */}
       {heroUrl && (
         <div className="relative">
           <img src={heroUrl} alt={recipe.title} className="h-56 w-full object-cover sm:h-72" />
           {painting && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-[11px] font-medium text-white">
+            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-ui-scrim px-3 py-1 text-[11px] font-medium text-ui-action-text">
               <Wand2 className="h-3 w-3" aria-hidden="true" />
               Painting the dish…
             </span>
           )}
           {(existingVariant || paintedUrl) && (
-            <span className="absolute right-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-medium text-white">
+            <span className="absolute right-3 top-3 rounded-full bg-ui-scrim px-2.5 py-1 text-[10px] font-medium text-ui-action-text">
               AI illustration
             </span>
           )}
@@ -117,7 +117,7 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
         </h1>
         <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-ui-muted">
           {recipe.cuisine && (
-            <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 font-semibold text-ui-accent">
+            <span className="text-sm text-ui-muted">
               {recipe.cuisine}
             </span>
           )}
@@ -143,7 +143,7 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
               }}
             >
               <div
-                className="sticky left-0 z-20 bg-ui-surface-raised p-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted"
+                className="sticky left-0 z-20 bg-ui-surface-raised p-2 text-xs font-semibold text-ui-muted"
                 style={{ gridColumn: 1, gridRow: 1 }}
               >
                 Ingredients
@@ -151,7 +151,7 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
               {layout.steps.map((step) => (
                 <div key={step.stepNumber} className="bg-ui-surface-raised p-2" style={{ gridColumn: step.stepNumber + 1, gridRow: 1 }}>
                   <div className="flex items-center gap-1.5">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-white">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ui-accent text-[10px] font-bold text-ui-action-text">
                       {step.stepNumber}
                     </span>
                     <span className="text-xs font-semibold leading-4 text-ui-text">{step.title}</span>
@@ -159,13 +159,12 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
                   {(step.heat || step.timerText) && (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {step.heat && HEAT_CONFIG[step.heat] && (
-                        <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${HEAT_CONFIG[step.heat].className}`}>
-                          <Flame className="h-2.5 w-2.5" aria-hidden="true" />
+                        <span className={`text-sm ${HEAT_CONFIG[step.heat].className}`}>
                           {HEAT_CONFIG[step.heat].shortLabel}
                         </span>
                       )}
                       {step.timerText && (
-                        <span className="inline-flex items-center gap-0.5 rounded-full border border-ui-warning/25 bg-ui-warning-soft px-1.5 py-0.5 text-[9px] font-semibold text-ui-warning-text">
+                        <span className="inline-flex items-center gap-0.5 rounded-full border border-ui-border bg-ui-warning-soft px-1.5 py-0.5 text-xs font-semibold text-ui-warning-text">
                           <Timer className="h-2.5 w-2.5" aria-hidden="true" />
                           {step.timerText}
                         </span>
@@ -212,7 +211,7 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
                 return [
                   <div
                     key={`block-${step.stepNumber}`}
-                    className="flex items-center justify-center rounded-lg border border-ui-accent/10 bg-ui-accent/20"
+                    className="flex items-center justify-center rounded-lg border border-ui-border bg-ui-accent-muted"
                     style={{ gridColumn: step.stepNumber + 1, gridRow: `${first + 2} / ${last + 3}` }}
                   />,
                 ];
@@ -222,7 +221,7 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
         )}
 
         {/* Signup CTA — also appears in the exported PNG */}
-        <div className="mt-5 rounded-xl border border-ui-accent/20 bg-ui-accent/5 px-4 py-3 text-center">
+        <div className="mt-5 rounded-xl border border-ui-border bg-ui-accent-muted px-4 py-3 text-center">
           <p className="text-sm font-semibold text-ui-text">
             Cook this at home — save it free on Mychelin
           </p>
@@ -235,13 +234,13 @@ export function SharedRecipeCard({ recipe, shareToken }: SharedRecipeCardProps) 
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-[9px] text-ui-muted/70">made with Mychelin</span>
+          <span className="text-[9px] text-ui-muted">made with Mychelin</span>
           <button
             type="button"
             onClick={saveAsImage}
             disabled={exporting}
             data-export-hide
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-ui-border bg-ui-surface px-3 text-[11px] font-semibold text-ui-text transition-colors hover:border-ui-accent/30 hover:text-ui-accent disabled:opacity-50"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-ui-border bg-ui-surface-raised px-3 text-[11px] font-semibold text-ui-text transition-colors hover:border-ui-border-strong hover:text-ui-accent disabled:opacity-50"
           >
             <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
             {exporting ? "Saving…" : "Save as image"}

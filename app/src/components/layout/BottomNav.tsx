@@ -36,7 +36,7 @@ const tabs: { id: AppView; label: string; icon: LucideIcon }[] = [
 export function BottomNav({ current, onChange }: BottomNavProps) {
   return (
     <nav
-      className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-around border-t border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-[0_-8px_24px_rgba(40,26,19,0.06)] md:hidden"
+      className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-around border-t border-ui-border bg-ui-surface-raised shadow-ui-raised md:hidden"
       aria-label="Primary"
     >
       {tabs.map((tab) => {
@@ -51,8 +51,8 @@ export function BottomNav({ current, onChange }: BottomNavProps) {
             className={cn(
               "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 transition-colors duration-150",
               active
-                ? "text-[var(--ui-accent)]"
-                : "text-[var(--ui-muted)] hover:text-[var(--ui-text)]"
+                ? "text-ui-accent"
+                : "text-ui-muted hover:text-ui-text"
             )}
           >
             <Icon className="h-5 w-5" aria-hidden="true" />

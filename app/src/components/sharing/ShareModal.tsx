@@ -82,20 +82,20 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/55 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-ui-scrim"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-ui-surface p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
+        <div className="w-full max-w-md rounded-2xl bg-ui-surface-raised p-6 shadow-ui-overlay">
           {/* Header */}
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-neutral-900">Share</h2>
-              <p className="text-xs text-neutral-500 truncate">{resourceName}</p>
+              <h2 className="text-lg font-semibold text-ui-text">Share</h2>
+              <p className="text-xs text-ui-muted truncate">{resourceName}</p>
             </div>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-muted"
             >
               <X className="h-4 w-4" />
             </button>
@@ -108,21 +108,21 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
           ) : (
             <div className="space-y-4">
               {/* View-only link */}
-              <div className="rounded-2xl border border-ui-accent/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
+              <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-semibold text-neutral-800">👁 View only</span>
-                    <p className="text-xs text-neutral-500">Can view but not edit</p>
+                    <span className="text-sm font-semibold text-ui-text">👁 View only</span>
+                    <p className="text-xs text-ui-muted">Can view but not edit</p>
                   </div>
                 </div>
                 {viewLink ? (
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 truncate rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 font-mono">
+                    <div className="flex-1 truncate rounded-lg bg-ui-surface-subtle px-3 py-2 text-xs text-ui-muted font-mono">
                       {window.location.origin}/shared/{viewLink.token}
                     </div>
                     <button
                       onClick={() => copyLink(viewLink.token)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent transition-colors hover:bg-ui-accent/15"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent transition-colors hover:bg-ui-accent-muted"
                       title="Copy link"
                     >
                       {copiedToken === viewLink.token ? (
@@ -133,7 +133,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                     </button>
                     <button
                       onClick={() => deleteLink(viewLink.id)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors hover:bg-red-50 hover:text-red-500"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors hover:bg-ui-danger-soft hover:text-ui-danger"
                       title="Remove link"
                     >
                       <Unlink className="h-4 w-4" />
@@ -142,7 +142,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                 ) : (
                   <button
                     onClick={() => createLink("view")}
-                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 hover:text-ui-accent"
+                    className="w-full rounded-lg border border-dashed border-ui-border-strong px-4 py-2.5 text-sm font-medium text-ui-muted transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted hover:text-ui-accent"
                   >
                     Create view-only link
                   </button>
@@ -150,21 +150,21 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
               </div>
 
               {/* Collaborator link */}
-              <div className="rounded-2xl border border-ui-accent/10 bg-white/70 p-4 shadow-[0_12px_32px_rgba(60,43,25,0.06)]">
+              <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-semibold text-neutral-800">✏️ Collaborator</span>
-                    <p className="text-xs text-neutral-500">Can view and edit</p>
+                    <span className="text-sm font-semibold text-ui-text">✏️ Collaborator</span>
+                    <p className="text-xs text-ui-muted">Can view and edit</p>
                   </div>
                 </div>
                 {editLink ? (
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 truncate rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 font-mono">
+                    <div className="flex-1 truncate rounded-lg bg-ui-surface-subtle px-3 py-2 text-xs text-ui-muted font-mono">
                       {window.location.origin}/shared/{editLink.token}
                     </div>
                     <button
                       onClick={() => copyLink(editLink.token)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent transition-colors hover:bg-ui-accent/15"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent transition-colors hover:bg-ui-accent-muted"
                       title="Copy link"
                     >
                       {copiedToken === editLink.token ? (
@@ -175,7 +175,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                     </button>
                     <button
                       onClick={() => deleteLink(editLink.id)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors hover:bg-red-50 hover:text-red-500"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors hover:bg-ui-danger-soft hover:text-ui-danger"
                       title="Remove link"
                     >
                       <Unlink className="h-4 w-4" />
@@ -184,7 +184,7 @@ export function ShareModal({ resourceType, resourceId, resourceName, onClose }: 
                 ) : (
                   <button
                     onClick={() => createLink("edit")}
-                    className="w-full rounded-lg border border-dashed border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 hover:text-ui-accent"
+                    className="w-full rounded-lg border border-dashed border-ui-border-strong px-4 py-2.5 text-sm font-medium text-ui-muted transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted hover:text-ui-accent"
                   >
                     Create collaborator link
                   </button>

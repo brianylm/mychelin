@@ -19,12 +19,12 @@ const FOOD_EMOJIS = [
 ];
 
 const COLORS = [
-  { name: "amber", label: "Amber", class: "bg-ui-accent/10 border-ui-accent/15" },
-  { name: "rose", label: "Blush", class: "bg-ui-accent/10 border-ui-accent/15" },
-  { name: "emerald", label: "Sage", class: "bg-ui-surface-subtle border-ui-accent/15" },
-  { name: "sky", label: "Parchment", class: "bg-ui-bg border-ui-accent/15" },
-  { name: "violet", label: "Mulberry", class: "bg-ui-accent/15 border-ui-accent/20" },
-  { name: "slate", label: "Ink", class: "bg-ui-action/10 border-ui-action/15" },
+  { name: "amber", label: "Amber", class: "bg-ui-accent-muted border-ui-border" },
+  { name: "rose", label: "Blush", class: "bg-ui-accent-muted border-ui-border" },
+  { name: "emerald", label: "Sage", class: "bg-ui-surface-subtle border-ui-border" },
+  { name: "sky", label: "Parchment", class: "bg-ui-bg border-ui-border" },
+  { name: "violet", label: "Mulberry", class: "bg-ui-accent-muted border-ui-border" },
+  { name: "slate", label: "Ink", class: "bg-ui-action border-ui-action" },
 ];
 
 export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps) {
@@ -53,16 +53,16 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/55 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-ui-scrim"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="flex min-h-full items-start justify-center p-4 pb-48 md:items-center md:pb-4">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-ui-surface p-6 shadow-[0_24px_80px_rgba(60,43,25,0.18)]">
+        <div className="w-full max-w-md rounded-2xl bg-ui-surface-raised p-6 shadow-ui-overlay">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-neutral-900">Create Recipe Book</h2>
+          <h2 className="text-xl font-semibold text-ui-text">Create Recipe Book</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-muted"
           >
             ×
           </button>
@@ -73,16 +73,16 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
           <div className="flex items-center gap-3">
             <div
               className={`flex h-16 w-16 items-center justify-center rounded-xl text-2xl border-2 ${
-                COLORS.find(c => c.name === coverColor)?.class || "bg-ui-accent/10 border-ui-accent/15"
+                COLORS.find(c => c.name === coverColor)?.class || "bg-ui-accent-muted border-ui-border"
               }`}
             >
               {coverEmoji}
             </div>
             <div className="flex-1">
-              <div className="font-medium text-neutral-900">
+              <div className="font-medium text-ui-text">
                 {title || "Untitled Book"}
               </div>
-              <div className="text-sm text-neutral-600">
+              <div className="text-sm text-ui-muted">
                 {description || "No description"}
               </div>
             </div>
@@ -90,7 +90,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+            <label className="block text-xs font-medium text-ui-muted mb-2">
               Title *
             </label>
             <input
@@ -98,14 +98,14 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="My Recipe Collection"
-              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-ui-accent/45 focus:bg-white focus:outline-none focus:ring-2 focus:ring-ui-accent/10"
+              className="w-full rounded-xl border border-ui-border-strong bg-ui-surface-subtle px-4 py-3 text-ui-text placeholder-ui-muted transition-colors focus:border-ui-accent focus:bg-ui-surface-raised focus:outline-none focus:ring-2 focus:ring-ui-focus-soft"
               required
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+            <label className="block text-xs font-medium text-ui-muted mb-2">
               Description
             </label>
             <textarea
@@ -113,13 +113,13 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
               onChange={(e) => setDescription(e.target.value)}
               placeholder="A collection of my favorite family recipes..."
               rows={3}
-              className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-neutral-900 placeholder-neutral-500 transition-colors focus:border-ui-accent/45 focus:bg-white focus:outline-none focus:ring-2 focus:ring-ui-accent/10 resize-none"
+              className="w-full rounded-xl border border-ui-border-strong bg-ui-surface-subtle px-4 py-3 text-ui-text placeholder-ui-muted transition-colors focus:border-ui-accent focus:bg-ui-surface-raised focus:outline-none focus:ring-2 focus:ring-ui-focus-soft resize-none"
             />
           </div>
 
           {/* Emoji Picker */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+            <label className="block text-xs font-medium text-ui-muted mb-2">
               Cover Emoji
             </label>
             <div className="grid grid-cols-8 gap-2">
@@ -130,8 +130,8 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   onClick={() => setCoverEmoji(emoji)}
                   className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl transition ${
                     coverEmoji === emoji
-                      ? "bg-ui-accent/10 ring-2 ring-ui-accent/35"
-                      : "hover:bg-neutral-100"
+                      ? "bg-ui-accent-muted ring-2 ring-ui-focus"
+                      : "hover:bg-ui-surface-subtle"
                   }`}
                 >
                   {emoji}
@@ -142,7 +142,7 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
 
           {/* Color Picker */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wide text-neutral-500 mb-2">
+            <label className="block text-xs font-medium text-ui-muted mb-2">
               Cover Color
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -153,11 +153,11 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
                   onClick={() => setCoverColor(color.name)}
                   className={`flex items-center gap-2 rounded-lg border-2 p-3 transition ${
                     coverColor === color.name
-                      ? "ring-2 ring-ui-accent/35"
-                      : "border-neutral-200 hover:border-neutral-300"
+                      ? "ring-2 ring-ui-focus"
+                      : "border-ui-border hover:border-ui-border-strong"
                   } ${color.class}`}
                 >
-                  <div className="font-medium text-neutral-900 text-sm">
+                  <div className="font-medium text-ui-text text-sm">
                     {color.label}
                   </div>
                 </button>
@@ -170,14 +170,14 @@ export function CreateBookModal({ onClose, onCreateBook }: CreateBookModalProps)
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              className="flex-1 rounded-xl border border-ui-border-strong bg-ui-surface-raised px-4 py-3 font-medium text-ui-text transition-colors hover:bg-ui-surface-subtle"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!title.trim() || submitting}
-              className="flex-1 rounded-xl bg-ui-action px-4 py-3 font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 rounded-xl bg-ui-action px-4 py-3 font-medium text-ui-action-text transition-colors hover:bg-ui-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Creating..." : "Create Book"}
             </button>

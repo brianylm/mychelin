@@ -314,12 +314,12 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
   const checkedCount = checkedItems.size;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
+    <div className="flex-1 overflow-y-auto bg-ui-bg pb-20 md:pb-6">
       <div className="mx-auto max-w-3xl px-4 py-6">
         {/* Header */}
         <div className="mb-4">
           <h2 className="text-base font-semibold">Shopping List</h2>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-ui-muted">
             Based on your meal plan, grouped by ingredient and adjusted for matching inventory.
             {householdName && (
               <SharedHouseholdChip name={householdName} onOpen={onOpenHousehold} />
@@ -328,9 +328,9 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
         </div>
 
         {/* Date range picker */}
-        <div className="mb-4 grid gap-3 rounded-2xl border border-neutral-200 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div className="mb-4 grid gap-3 rounded-2xl border border-ui-border bg-ui-surface-raised p-3 sm:grid-cols-[1fr_auto] sm:items-end">
           <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-            <label className="min-w-0 text-xs font-medium text-neutral-500">
+            <label className="min-w-0 text-xs font-medium text-ui-muted">
               <span className="mb-1 block">From</span>
               <input
                 type="date"
@@ -338,10 +338,10 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                 onChange={(e) =>
                   setDateRange((r) => ({ ...r, start: e.target.value }))
                 }
-                className="w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-[13px] outline-none focus:border-neutral-400"
+                className="w-full min-w-0 rounded-lg border border-ui-border px-2 py-1.5 text-[13px] outline-none focus:border-ui-border-strong"
               />
             </label>
-            <label className="min-w-0 text-xs font-medium text-neutral-500">
+            <label className="min-w-0 text-xs font-medium text-ui-muted">
               <span className="mb-1 block">To</span>
               <input
                 type="date"
@@ -349,7 +349,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                 onChange={(e) =>
                   setDateRange((r) => ({ ...r, end: e.target.value }))
                 }
-                className="w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-1.5 text-[13px] outline-none focus:border-neutral-400"
+                className="w-full min-w-0 rounded-lg border border-ui-border px-2 py-1.5 text-[13px] outline-none focus:border-ui-border-strong"
               />
             </label>
           </div>
@@ -360,36 +360,27 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
 
         {/* Summary */}
         {summary && (
-          <div className="mb-4 grid gap-2 sm:grid-cols-3">
-            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-muted">Meals</p>
-              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.mealCount}</p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-muted">Recipes</p>
-              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.recipeCount}</p>
-            </div>
-            <div className="rounded-2xl border border-neutral-200 bg-white p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-muted">To buy</p>
-              <p className="mt-1 text-lg font-semibold text-neutral-900">{summary.itemCount}</p>
-            </div>
+          <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ui-muted">
+            <span>Meals: {summary.mealCount}</span>
+            <span>Recipes: {summary.recipeCount}</span>
+            <span>To buy: {summary.itemCount}</span>
           </div>
         )}
 
         {/* Progress */}
         {totalItems > 0 && (
-          <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4">
+          <div className="mb-4 rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-neutral-500">
+              <span className="text-xs font-medium text-ui-muted">
                 Progress
               </span>
-              <span className="text-xs tabular-nums text-neutral-500">
+              <span className="text-xs tabular-nums text-ui-muted">
                 {checkedCount}/{totalItems}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+            <div className="h-2 overflow-hidden rounded-full bg-ui-surface-subtle">
               <div
-                className="h-full rounded-full bg-ui-accent/50 transition-[width] duration-300"
+                className="h-full rounded-full bg-ui-accent transition-[width] duration-300"
                 style={{
                   width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%`,
                 }}
@@ -404,7 +395,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
             <button
               type="button"
               onClick={openMoveSheet}
-              className="w-full rounded-2xl bg-ui-accent px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#6b001b]"
+              className="w-full rounded-2xl bg-ui-accent px-4 py-3.5 text-sm font-semibold text-ui-action-text transition hover:bg-ui-accent"
             >
               Move {checkedCount} ticked item{checkedCount === 1 ? "" : "s"} to inventory
             </button>
@@ -415,7 +406,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
         {householdName && (
           <div className="mb-4">
             {isAdding ? (
-              <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+              <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
                 <h3 className="mb-3 text-sm font-semibold">Add to shared list</h3>
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                   <input
@@ -423,7 +414,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                     onChange={(e) => setAddDraft((d) => ({ ...d, name: e.target.value }))}
                     placeholder="Item name"
                     aria-label="Item name"
-                    className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
+                    className="rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent"
                     autoFocus
                   />
                   <input
@@ -432,14 +423,14 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                     placeholder="Qty"
                     type="number"
                     aria-label="Quantity"
-                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
+                    className="w-24 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent"
                   />
                   <input
                     value={addDraft.unit}
                     onChange={(e) => setAddDraft((d) => ({ ...d, unit: e.target.value }))}
                     placeholder="Unit"
                     aria-label="Unit"
-                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
+                    className="w-24 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent"
                   />
                 </div>
                 <div className="mt-3 flex gap-2">
@@ -455,7 +446,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
               <button
                 type="button"
                 onClick={() => setIsAdding(true)}
-                className="w-full rounded-2xl border border-dashed border-neutral-300 px-4 py-3 text-sm font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent"
+                className="w-full rounded-2xl border border-dashed border-ui-border-strong px-4 py-3 text-sm font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent"
               >
                 + Add an item manually
               </button>
@@ -465,20 +456,20 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
 
         {/* Content */}
         {loading ? (
-          <p className="py-12 text-center text-sm text-neutral-500">
+          <p className="py-12 text-center text-sm text-ui-muted">
             Generating shopping list...
           </p>
         ) : error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="rounded-2xl border border-ui-border bg-ui-danger-soft p-4 text-center">
+            <p className="text-sm text-ui-danger">{error}</p>
           </div>
         ) : totalItems === 0 ? (
           <div className="py-12 text-center">
             <p className="text-3xl">🛒</p>
-            <p className="mt-2 text-sm font-medium text-neutral-700">
+            <p className="mt-2 text-sm font-medium text-ui-text">
               Nothing to buy!
             </p>
-            <p className="mt-1 text-xs text-neutral-500">
+            <p className="mt-1 text-xs text-ui-muted">
               Add recipes to your meal plan and items will appear here
               automatically — minus what you already have in inventory.
             </p>
@@ -487,7 +478,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
           <div className="space-y-4">
             {Object.entries(grouped).map(([category, catItems]) => (
               <div key={category}>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                <h3 className="mb-2 text-xs font-medium text-ui-muted">
                   {category}
                 </h3>
                 <div className="space-y-1">
@@ -497,23 +488,23 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                       <button
                         key={item.key}
                         onClick={() => toggleCheck(item)}
-                        className={`flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition ${
+                        className={`flex w-full items-center gap-3 rounded-xl border bg-ui-surface-raised px-4 py-3 text-left transition ${
                           checked
-                            ? "border-green-200 bg-green-50/50"
-                            : "border-neutral-200 hover:border-neutral-300"
+                            ? "border-ui-border bg-ui-success-soft"
+                            : "border-ui-border hover:border-ui-border-strong"
                         }`}
                       >
                         {/* Checkbox */}
                         <div
                           className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                             checked
-                              ? "border-green-500 bg-green-500"
-                              : "border-neutral-300"
+                              ? "border-ui-success bg-ui-success"
+                              : "border-ui-border-strong"
                           }`}
                         >
                           {checked && (
                             <svg
-                              className="h-3 w-3 text-white"
+                              className="h-3 w-3 text-ui-action-text"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -534,7 +525,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                             className={`text-sm ${
                               checked
                                 ? "text-ui-muted line-through"
-                                : "text-neutral-800"
+                                : "text-ui-text"
                             }`}
                           >
                             {item.name}
@@ -550,7 +541,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                         <div className="text-right">
                           <p
                             className={`text-sm font-medium tabular-nums ${
-                              checked ? "text-ui-muted" : "text-neutral-800"
+                              checked ? "text-ui-muted" : "text-ui-text"
                             }`}
                           >
                             {item.quantityLabel}
@@ -578,16 +569,16 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
         {/* Already moved to inventory — shown as such, never re-pushed */}
         {movedItems.length > 0 && (
           <div className="mt-6">
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-ui-muted">
+            <h3 className="mb-2 text-xs font-medium text-ui-muted">
               Moved to inventory
             </h3>
             <div className="space-y-1">
               {movedItems.map((item) => (
                 <div
                   key={item.key}
-                  className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-2.5"
+                  className="flex items-center gap-3 rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-2.5"
                 >
-                  <span className="text-green-600">✓</span>
+                  <span className="text-ui-success">✓</span>
                   <p className="min-w-0 flex-1 truncate text-sm text-ui-muted">
                     {item.name}
                     {item.quantity != null && (
@@ -608,18 +599,18 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
 
       {/* Move-to-inventory confirm sheet (edit before confirm) */}
       {moveSheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-          <div className="w-full max-w-md rounded-t-3xl bg-white p-5 sm:rounded-3xl">
-            <h3 className="text-base font-semibold text-neutral-900">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ui-scrim sm:items-center">
+          <div className="w-full max-w-md rounded-t-3xl bg-ui-surface-raised p-5 sm:rounded-2xl">
+            <h3 className="text-base font-semibold text-ui-text">
               Move to inventory
             </h3>
-            <p className="mt-1 text-xs text-neutral-500">
+            <p className="mt-1 text-xs text-ui-muted">
               Check the amounts before they land in the shared inventory.
             </p>
             <div className="mt-4 max-h-80 space-y-2 overflow-y-auto">
               {tickedItems.map((item) => (
                 <div key={item.key} className="flex items-center gap-3">
-                  <p className="min-w-0 flex-1 truncate text-sm text-neutral-800">
+                  <p className="min-w-0 flex-1 truncate text-sm text-ui-text">
                     {item.name}
                   </p>
                   <input
@@ -630,9 +621,9 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                     }
                     placeholder="Qty"
                     aria-label={`Quantity for ${item.name}`}
-                    className="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45"
+                    className="w-24 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent"
                   />
-                  <span className="w-12 text-xs text-neutral-500">{item.unit}</span>
+                  <span className="w-12 text-xs text-ui-muted">{item.unit}</span>
                 </div>
               ))}
             </div>
@@ -641,7 +632,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                 type="button"
                 onClick={confirmMove}
                 disabled={moving}
-                className="flex-1 rounded-xl bg-ui-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-40"
+                className="flex-1 rounded-xl bg-ui-accent px-4 py-3 text-sm font-semibold text-ui-action-text transition hover:bg-ui-accent disabled:opacity-40"
               >
                 {moving ? "Moving..." : "Confirm move"}
               </button>
@@ -649,7 +640,7 @@ export function ShoppingListView({ initialDateRange, onOpenHousehold }: Shopping
                 type="button"
                 onClick={() => setMoveSheetOpen(false)}
                 disabled={moving}
-                className="rounded-xl border border-neutral-200 px-4 py-3 text-sm font-medium text-neutral-600"
+                className="rounded-xl border border-ui-border px-4 py-3 text-sm font-medium text-ui-muted"
               >
                 Cancel
               </button>

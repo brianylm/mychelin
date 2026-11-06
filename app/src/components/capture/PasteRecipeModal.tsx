@@ -384,7 +384,7 @@ export function PasteRecipeModal({
                 : `Paste ingredients, steps, a WhatsApp message, photo OCR, or notes from a call.\n\nIf extraction misses, you can still save the text as a draft.`
             }
             rows={isUrl ? 5 : 12}
-            className={`w-full resize-y rounded-xl border border-ui-border-strong bg-ui-surface-subtle px-3 py-3 text-sm leading-relaxed text-ui-text outline-none transition focus:border-ui-accent/45 focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted ${isUrl ? "font-mono" : ""}`}
+            className={`w-full resize-y rounded-xl border border-ui-border-strong bg-ui-surface-subtle px-3 py-3 text-sm leading-relaxed text-ui-text outline-none transition focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted ${isUrl ? "font-mono" : ""}`}
             autoFocus
           />
           <div className="flex items-center justify-between gap-2 text-[11px] text-ui-muted">
@@ -398,7 +398,7 @@ export function PasteRecipeModal({
           </div>
 
           {errorMessage && (
-            <div className="rounded-lg border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-xs leading-5 text-ui-text">
+            <div className="rounded-lg border border-ui-border bg-ui-accent-muted px-3 py-2 text-xs leading-5 text-ui-text">
               {errorMessage}
             </div>
           )}

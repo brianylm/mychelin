@@ -46,9 +46,9 @@ export function RecipeListItem({
       className={cn(
         "group flex min-w-0 items-center rounded-lg transition-colors duration-150",
         isSelected
-          ? "bg-[var(--ui-accent-muted)] text-accent-dark"
-          : "hover:bg-[var(--ui-surface-subtle)]",
-        isDraft && !isSelected && "text-[var(--ui-muted)]"
+          ? "bg-ui-accent-muted text-ui-text"
+          : "hover:bg-ui-surface-subtle",
+        isDraft && !isSelected && "text-ui-muted"
       )}
       onPointerEnter={handlePointerEnter}
     >
@@ -60,42 +60,42 @@ export function RecipeListItem({
       >
         <span
           className={cn(
-            "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]",
-            isDraft && "border-dashed border-[var(--ui-accent)]/30 bg-[var(--ui-accent-muted)]"
+            "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-ui-border bg-ui-surface-subtle",
+            isDraft && "border-dashed border-ui-accent bg-ui-accent-muted"
           )}
         >
           {recipe.imageUrl ? (
             <img src={recipe.imageUrl} alt="" className="h-full w-full object-cover" />
           ) : isDraft ? (
-            <PencilLine className="h-4 w-4 text-[var(--ui-accent)]/60" aria-hidden="true" />
+            <PencilLine className="h-4 w-4 text-ui-accent" aria-hidden="true" />
           ) : (
-            <ChefHat className="h-4 w-4 text-[var(--ui-accent)]/60" aria-hidden="true" />
+            <ChefHat className="h-4 w-4 text-ui-accent" aria-hidden="true" />
           )}
         </span>
 
         <span className="flex min-w-0 flex-1 flex-col">
           <span
             className={cn(
-              "truncate text-sm text-[var(--ui-text)]",
+              "truncate text-sm text-ui-text",
               isSelected && "font-semibold",
-              isDraft && !isSelected && "italic"
+              isDraft && !isSelected && "text-ui-muted"
             )}
           >
             {recipe.title}
           </span>
           {bookSubtitle && (
-            <span className="line-clamp-2 break-words text-[11px] leading-4 text-[var(--ui-muted)]" title={bookSubtitle}>
+            <span className="line-clamp-2 break-words text-[11px] leading-4 text-ui-muted" title={bookSubtitle}>
               {bookSubtitle}
             </span>
           )}
           {matchedIngredient ? (
-            <span className="truncate text-[11px] text-[var(--ui-accent)]">
+            <span className="truncate text-[11px] text-ui-accent">
               Ingredient: <span className="font-semibold">{matchedIngredient}</span>
             </span>
           ) : isDraft ? (
-            <span className="truncate text-[11px] text-[var(--ui-muted)]">Draft</span>
+            <span className="truncate text-[11px] text-ui-muted">Draft</span>
           ) : recipe.cuisine ? (
-            <span className="truncate text-xs text-[var(--ui-muted)]">{recipe.cuisine}</span>
+            <span className="truncate text-xs text-ui-muted">{recipe.cuisine}</span>
           ) : null}
         </span>
       </button>
@@ -105,7 +105,7 @@ export function RecipeListItem({
           <button
             type="button"
             onClick={() => onCook(recipe.id)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-[background-color,color,opacity] duration-150 hover:bg-[var(--ui-action)] hover:text-[var(--ui-action-text)] lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ui-muted transition-[background-color,color,opacity] duration-150 hover:bg-ui-action hover:text-ui-action-text lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
             aria-label={`Cook ${recipe.title}`}
             title="Cook with me"
           >
@@ -116,7 +116,7 @@ export function RecipeListItem({
           <Menu.Trigger>
             <button
               type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-ui-muted transition-colors duration-150 hover:bg-ui-surface-subtle hover:text-ui-text"
               aria-label={`Recipe options for ${recipe.title}`}
               title="Recipe options"
             >

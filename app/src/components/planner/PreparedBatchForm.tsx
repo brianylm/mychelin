@@ -6,10 +6,10 @@ import type { CreatePreparedBatchRequest } from "@/lib/meal-pilot/types";
 import { effectivePortions, PortionStepper } from "./PortionStepper";
 
 const inputClass =
-  "h-11 w-full min-w-0 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 text-sm text-ui-text outline-none transition-colors placeholder:text-ui-muted focus:border-ui-accent/45 focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
+  "h-11 w-full min-w-0 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 text-sm text-ui-text outline-none transition-colors placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
 
 const textareaClass =
-  "min-h-[88px] w-full min-w-0 resize-y rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm text-ui-text outline-none transition-colors placeholder:text-ui-muted focus:border-ui-accent/45 focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
+  "min-h-[88px] w-full min-w-0 resize-y rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm text-ui-text outline-none transition-colors placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
 
 const segmentedOptionClass =
   "min-h-11 min-w-0 flex-1 rounded-md px-2 text-xs font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm";
@@ -389,7 +389,7 @@ export function PreparedBatchForm({
       {error && (
         <p
           role="alert"
-          className="rounded-lg border border-ui-danger/20 bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger"
+          className="rounded-lg border border-ui-border bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger"
         >
           {error}
         </p>

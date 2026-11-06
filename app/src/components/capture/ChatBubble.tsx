@@ -28,19 +28,14 @@ export function ChatBubble({
       <div className={cn(
         "max-w-[80%] rounded-2xl px-4 py-3 shadow-sm",
         isRight
-          ? "bg-ui-accent/10 text-[#241017]"
-          : "bg-neutral-100 text-neutral-900"
+          ? "bg-ui-accent-muted text-ui-text"
+          : "bg-ui-surface-subtle text-ui-text"
       )}>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium text-current opacity-80">
             {speaker}
           </span>
-          <span className={cn(
-            "text-[10px] px-1.5 py-0.5 rounded-full font-mono uppercase",
-            isRight
-              ? "bg-ui-accent/15 text-ui-accent"
-              : "bg-neutral-200 text-neutral-600"
-          )}>
+          <span className="text-xs text-current opacity-80">
             {language}
           </span>
         </div>

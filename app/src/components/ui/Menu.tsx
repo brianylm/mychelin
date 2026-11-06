@@ -24,7 +24,7 @@ function Content({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-44 rounded-lg border border-ui-border bg-ui-surface-raised p-1 shadow-lg",
+          "z-50 min-w-44 rounded-lg border border-ui-border bg-ui-surface-raised p-1",
           className
         )}
         {...props}

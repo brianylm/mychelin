@@ -68,24 +68,24 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
   };
 
   const panel = (
-    <div className="w-full max-w-md rounded-2xl border border-[#e7ded1] bg-white p-5 shadow-[0_28px_90px_rgba(40,26,19,0.18)]">
+    <div className="w-full max-w-md rounded-2xl bg-ui-surface-raised p-5 shadow-ui-overlay">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
             <MessageSquare className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-base font-semibold text-neutral-900">{copy.title}</h2>
-            <p className="mt-1 text-sm leading-5 text-neutral-500">{copy.body}</p>
+            <h2 className="text-base font-semibold text-ui-text">{copy.title}</h2>
+            <p className="mt-1 text-sm leading-5 text-ui-muted">{copy.body}</p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="rounded-full p-2 text-ui-muted hover:bg-neutral-100 hover:text-neutral-700" aria-label="Close feedback">
+        <button type="button" onClick={onClose} className="rounded-full p-2 text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-text" aria-label="Close feedback">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <div className="mt-5">
-        <label className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">How useful was this step?</label>
+        <label className="text-xs font-semibold text-ui-muted">How useful was this step?</label>
         <div className="mt-2 grid grid-cols-5 gap-2">
           {[1, 2, 3, 4, 5].map((value) => (
             <button
@@ -95,8 +95,8 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
               className={
                 "h-10 rounded-lg border text-sm font-semibold transition " +
                 (rating === value
-                  ? "border-ui-accent bg-ui-accent text-white"
-                  : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-ui-accent/30")
+                  ? "border-ui-accent bg-ui-accent text-ui-action-text"
+                  : "border-ui-border bg-ui-surface-subtle text-ui-muted hover:border-ui-border-strong")
               }
             >
               {value}
@@ -105,16 +105,16 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
         </div>
       </div>
 
-      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">What should we fix?</label>
+      <label className="mt-4 block text-xs font-semibold text-ui-muted">What should we fix?</label>
       <textarea
         value={comment}
         onChange={(event) => setComment(event.target.value)}
         rows={3}
         maxLength={600}
         placeholder="Short, privacy-safe note. Avoid family names, full recipe text, or private details."
-        className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10"
+        className="mt-2 w-full resize-none rounded-xl border border-ui-border bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft"
       />
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-xs text-ui-danger">{error}</p>}
       <div className="mt-4 flex justify-end gap-2">
         <Button type="button" variant="secondary" size="md" onClick={onClose} disabled={saving}>Skip</Button>
         <Button type="button" variant="primary" size="md" onClick={submit} disabled={saving}>
@@ -127,7 +127,7 @@ export function PilotFeedbackPrompt({ stage, source = "pilot_prompt", onClose, c
   if (compact) return panel;
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-stone-950/30 px-4 py-5 backdrop-blur-sm sm:items-center">
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-ui-scrim px-4 py-5 sm:items-center">
       {panel}
     </div>
   );

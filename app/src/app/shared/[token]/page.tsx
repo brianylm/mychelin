@@ -48,16 +48,16 @@ function SaveRecipeButton({ token }: { token: string }) {
 
   if (state === "saved") {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-emerald-200 bg-emerald-50 px-4 py-3 shadow-lg">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ui-border bg-ui-success-soft px-4 py-3 shadow-lg">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <span className="text-xl">✓</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-emerald-900">Saved to your Mychelin!</p>
-            <p className="text-[11px] text-emerald-700">This recipe is now in your collection.</p>
+            <p className="text-sm font-semibold text-ui-success">Saved to your Mychelin!</p>
+            <p className="text-[11px] text-ui-success">This recipe is now in your collection.</p>
           </div>
           <Link
             href="/"
-            className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+            className="shrink-0 rounded-full bg-ui-success px-4 py-2 text-xs font-semibold text-ui-action-text shadow-sm transition-colors hover:bg-ui-success"
           >
             Open my recipes
           </Link>
@@ -67,26 +67,26 @@ function SaveRecipeButton({ token }: { token: string }) {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ui-accent/15 bg-gradient-to-br from-ui-accent/5 to-white px-4 py-3 shadow-lg">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ui-border bg-ui-surface-raised px-4 py-3 shadow-lg">
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         <span className="hidden text-2xl sm:inline">📖</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#241017]">
+          <p className="text-sm font-semibold text-ui-text">
             Like this recipe?
           </p>
-          <p className="text-[11px] text-neutral-600 truncate">
+          <p className="text-[11px] text-ui-muted truncate">
             Save it to your collection and make it your own.
           </p>
         </div>
         <button
           onClick={handleSave}
           disabled={state === "saving"}
-          className="shrink-0 rounded-full bg-ui-action px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-ui-accent disabled:opacity-60"
+          className="shrink-0 rounded-xl bg-ui-action px-4 py-2 text-xs font-semibold text-ui-action-text shadow-sm transition-colors hover:bg-ui-accent disabled:opacity-60 min-h-11"
         >
           {state === "saving" ? "Saving…" : "Save to my Mychelin"}
         </button>
         {state === "error" && (
-          <span className="text-[10px] text-red-600">Failed — try again</span>
+          <span className="text-[10px] text-ui-danger">Failed — try again</span>
         )}
       </div>
     </div>
@@ -98,13 +98,13 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
   const r = recipe;
   const [scale, setScale] = useState(1);
   return (
-    <div className="min-h-screen bg-neutral-50 pb-24">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-ui-surface-subtle pb-24">
+      <header className="sticky top-0 z-10 border-b border-ui-border bg-ui-surface-raised">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-3">
           {onBack ? (
             <button
               onClick={onBack}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-ui-surface-subtle"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6" />
@@ -113,10 +113,10 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
           ) : (
             <img src="/icons/icon-96.png" alt="Mychelin" className="h-8 w-8 rounded-lg" />
           )}
-          <span className="text-sm font-semibold text-neutral-800 truncate flex-1">
+          <span className="text-sm font-semibold text-ui-text truncate flex-1">
             {onBack ? r.title : "Mychelin"}
           </span>
-          <span className="ml-auto rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-medium text-ui-accent shrink-0">
+          <span className="ml-auto text-xs text-ui-muted shrink-0">
             {permission === "edit" ? "Collaborator" : "View only"}
           </span>
         </div>
@@ -131,30 +131,30 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         )}
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-neutral-900">{r.title}</h1>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <h1 className="text-2xl font-bold text-ui-text">{r.title}</h1>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
           {r.cuisine && (
-            <span className="inline-block rounded-full bg-ui-accent/5 px-3 py-1 text-xs font-medium text-ui-accent">
+            <span className="inline-block text-sm text-ui-muted">
               {r.cuisine}
             </span>
           )}
-          <span className="inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+          <span className="inline-block text-sm text-ui-success">
             Definitive version{r.definitiveVersionLabel ? " " + r.definitiveVersionLabel : ""}
           </span>
         </div>
         {r.description && (
-          <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{r.description}</p>
+          <p className="mt-3 text-sm text-ui-muted leading-relaxed">{r.description}</p>
         )}
 
         {/* Source URL attribution */}
         {r.sourceUrl && (
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-sky-600">
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-ui-info">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
             <span>Imported from{" "}
-              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2 hover:text-sky-800">
+              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2 hover:text-ui-info">
                 {(() => { try { return new URL(r.sourceUrl).hostname.replace(/^www\./, ""); } catch { return r.sourceUrl; } })()}
               </a>
             </span>
@@ -163,7 +163,7 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
 
         {/* Times */}
         {(r.prepTime || r.cookTime) && (
-          <div className="mt-4 flex gap-4 text-sm text-neutral-500">
+          <div className="mt-4 flex gap-4 text-sm text-ui-muted">
             {r.prepTime && <span>🔪 {r.prepTime}m prep</span>}
             {r.cookTime && <span>🔥 {r.cookTime}m cook</span>}
           </div>
@@ -171,19 +171,19 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
 
         {/* Story */}
         {r.story && (
-          <div className="mt-6 rounded-xl bg-ui-accent/5 border border-ui-accent/10 p-4">
-            <h3 className="mb-2 text-sm font-semibold text-[#521224]">Family Story</h3>
-            <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">{r.story}</p>
+          <div className="mt-6">
+            <h3 className="mb-2 text-sm font-semibold text-ui-text">Family Story</h3>
+            <p className="text-sm text-ui-text leading-relaxed whitespace-pre-wrap">{r.story}</p>
           </div>
         )}
 
         {/* Cultural context */}
         {(r.origin || r.dialect || r.occasion || r.familyMember) && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {r.origin && <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">📍 {r.origin}</span>}
-            {r.dialect && <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">🗣 {r.dialect}</span>}
-            {r.occasion && <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">🎉 {r.occasion}</span>}
-            {r.familyMember && <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">👨‍👩‍👧 {r.familyMember}</span>}
+          <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1">
+            {r.origin && <span className="text-sm text-ui-muted">📍 {r.origin}</span>}
+            {r.dialect && <span className="text-sm text-ui-muted">🗣 {r.dialect}</span>}
+            {r.occasion && <span className="text-sm text-ui-muted">🎉 {r.occasion}</span>}
+            {r.familyMember && <span className="text-sm text-ui-muted">👨‍👩‍👧 {r.familyMember}</span>}
           </div>
         )}
 
@@ -197,15 +197,15 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         {/* Ingredients */}
         {r.ingredients.length > 0 && (
           <div className="mt-4">
-            <h2 className="mb-3 text-lg font-semibold text-neutral-800">Ingredients</h2>
+            <h2 className="mb-3 text-lg font-semibold text-ui-text">Ingredients</h2>
             <ul className="space-y-2">
               {r.ingredients.map((ing, i) => (
-                <li key={i} className="flex items-start gap-3 rounded-lg bg-white border border-neutral-100 p-3">
-                  <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-ui-accent/30" />
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-ui-accent" />
                   <div>
-                    <span className="font-medium text-neutral-800">{ing.name}</span>
+                    <span className="font-medium text-ui-text">{ing.name}</span>
                     {(ing.quantityText || ing.quantity || ing.unit) && (
-                      <span className={`ml-2 text-sm ${scale !== 1 && !ing.quantityText ? "text-ui-accent font-medium" : "text-neutral-500"}`}>
+                      <span className={`ml-2 text-sm ${scale !== 1 && !ing.quantityText ? "text-ui-accent font-medium" : "text-ui-muted"}`}>
                         {ing.quantityText || (ing.quantity ? formatScaledQuantity(ing.quantity, scale) : "")}{!ing.quantityText && ing.unit ? ` ${ing.unit}` : ""}
                       </span>
                     )}
@@ -220,17 +220,17 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         {/* Instructions */}
         {r.instructions.length > 0 && (
           <div className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold text-neutral-800">Steps</h2>
+            <h2 className="mb-3 text-lg font-semibold text-ui-text">Steps</h2>
             <ol className="space-y-4">
               {r.instructions.map((step) => (
                 <li key={step.stepNumber} className="flex gap-4">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-xs font-bold text-ui-accent">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent-muted text-xs font-bold text-ui-accent">
                     {step.stepNumber}
                   </span>
                   <div>
-                    <p className="text-sm text-neutral-700 leading-relaxed">{step.content}</p>
+                    <p className="text-sm text-ui-text leading-relaxed">{step.content}</p>
                     {step.tip && (
-                      <p className="mt-1 text-xs text-ui-accent italic">💡 {step.tip}</p>
+                      <p className="mt-1 text-xs text-ui-accent">💡 {step.tip}</p>
                     )}
                   </div>
                 </li>
@@ -242,7 +242,7 @@ function RecipeDetail({ recipe, permission, onBack }: { recipe: SharedRecipe; pe
         {/* Photos */}
         {r.photos.length > 0 && (
           <div className="mt-8">
-            <h2 className="mb-3 text-lg font-semibold text-neutral-800">Photos</h2>
+            <h2 className="mb-3 text-lg font-semibold text-ui-text">Photos</h2>
             <div className="grid grid-cols-2 gap-3">
               {r.photos.map((p, i) => (
                 <img key={i} src={p.blobUrl} alt="" className="rounded-xl object-cover h-40 w-full" />
@@ -304,7 +304,7 @@ export default function SharedPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
+      <div className="flex min-h-screen items-center justify-center bg-ui-surface-subtle">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
       </div>
     );
@@ -312,10 +312,10 @@ export default function SharedPage() {
 
   if (error || !shared) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-ui-surface-subtle px-6 text-center">
         <span className="mb-4 text-5xl">🔗</span>
-        <h1 className="text-xl font-semibold text-neutral-800">Link not found</h1>
-        <p className="mt-2 text-sm text-neutral-500">{error}</p>
+        <h1 className="text-xl font-semibold text-ui-text">Link not found</h1>
+        <p className="mt-2 text-sm text-ui-muted">{error}</p>
       </div>
     );
   }
@@ -327,12 +327,12 @@ export default function SharedPage() {
 
     if (SHARED_RECIPE_CARD_ENABLED && !selectedRecipe) {
       return (
-        <div className="min-h-screen bg-neutral-50 pb-24">
-          <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
+        <div className="min-h-screen bg-ui-surface-subtle pb-24">
+          <header className="sticky top-0 z-10 border-b border-ui-border bg-ui-surface-raised">
             <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-3">
               <img src="/icons/icon-96.png" alt="Mychelin" className="h-8 w-8 rounded-lg" />
-              <span className="text-sm font-semibold text-neutral-800">Mychelin</span>
-              <span className="ml-auto rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-medium text-ui-accent">
+              <span className="text-sm font-semibold text-ui-text">Mychelin</span>
+              <span className="ml-auto text-xs text-ui-muted">
                 {shared.permission === "edit" ? "Collaborator" : "View only"}
               </span>
             </div>
@@ -368,12 +368,12 @@ export default function SharedPage() {
   // Book view with clickable recipe cards
   const b = shared.data;
   return (
-    <div className="min-h-screen bg-neutral-50 pb-24">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-ui-surface-subtle pb-24">
+      <header className="sticky top-0 z-10 border-b border-ui-border bg-ui-surface-raised">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-3">
           <img src="/icons/icon-96.png" alt="Mychelin" className="h-8 w-8 rounded-lg" />
-          <span className="text-sm font-semibold text-neutral-800">Mychelin</span>
-          <span className="ml-auto rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-medium text-ui-accent">
+          <span className="text-sm font-semibold text-ui-text">Mychelin</span>
+          <span className="ml-auto text-xs text-ui-muted">
             {shared.permission === "edit" ? "Collaborator" : "View only"}
           </span>
         </div>
@@ -383,8 +383,8 @@ export default function SharedPage() {
         <div className="mb-6 flex items-center gap-3">
           <span className="text-3xl">{b.coverEmoji}</span>
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">{b.title}</h1>
-            {b.description && <p className="text-sm text-neutral-500">{b.description}</p>}
+            <h1 className="text-2xl font-bold text-ui-text">{b.title}</h1>
+            {b.description && <p className="text-sm text-ui-muted">{b.description}</p>}
             <p className="text-xs text-ui-muted mt-1">{b.recipes.length} recipe{b.recipes.length !== 1 ? "s" : ""}</p>
           </div>
         </div>
@@ -404,9 +404,9 @@ export default function SharedPage() {
               <button
                 key={recipe.id}
                 onClick={() => openRecipe(recipe.id)}
-                className="flex flex-col rounded-2xl border border-neutral-200 bg-white overflow-hidden text-left transition hover:border-ui-accent/30 hover:shadow-md active:scale-[0.98]"
+                className="flex flex-col rounded-2xl border border-ui-border bg-ui-surface-raised overflow-hidden text-left transition hover:border-ui-border-strong hover:shadow-md active:scale-[0.98]"
               >
-                <div className="flex h-32 items-center justify-center bg-gradient-to-br from-ui-accent/5 to-stone-50">
+                <div className="flex h-32 items-center justify-center bg-ui-surface-subtle">
                   {recipe.imageUrl ? (
                     <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full object-cover" />
                   ) : (
@@ -414,14 +414,14 @@ export default function SharedPage() {
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-neutral-800">{recipe.title}</h3>
+                  <h3 className="font-semibold text-ui-text">{recipe.title}</h3>
                   {recipe.cuisine && (
-                    <span className="mt-1 inline-block text-xs font-medium text-ui-accent bg-ui-accent/5 rounded-full px-2 py-0.5">
+                    <span className="mt-1 inline-block text-sm text-ui-muted">
                       {recipe.cuisine}
                     </span>
                   )}
                   {recipe.description && (
-                    <p className="mt-2 line-clamp-2 text-xs text-neutral-500">{recipe.description}</p>
+                    <p className="mt-2 line-clamp-2 text-xs text-ui-muted">{recipe.description}</p>
                   )}
                 </div>
               </button>

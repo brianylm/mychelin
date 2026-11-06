@@ -139,7 +139,7 @@ export function VoiceRecording({
             {recordings.map((clip) => (
               <li
                 key={clip.id}
-                className="group flex items-center gap-3 rounded-lg border border-neutral-100 bg-neutral-50/50 px-3 py-2"
+                className="group flex items-center gap-3 rounded-lg border border-ui-border bg-ui-surface-raised px-3 py-2"
               >
                 <IconButton
                   variant="secondary"
@@ -147,7 +147,7 @@ export function VoiceRecording({
                   onClick={() => playClip(clip)}
                   className={
                     playingId === clip.id
-                      ? "bg-ui-accent/10 text-ui-accent"
+                      ? "bg-ui-accent-muted text-ui-accent"
                       : ""
                   }
                 >
@@ -159,10 +159,10 @@ export function VoiceRecording({
                 </IconButton>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-neutral-800 truncate">
+                  <p className="text-sm text-ui-text truncate">
                     {clip.label || "Voice recording"}
                   </p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-ui-muted">
                     {formatTime(clip.duration)} •{" "}
                     {new Date(clip.createdAt).toLocaleDateString("en-SG", {
                       day: "numeric",
@@ -178,8 +178,8 @@ export function VoiceRecording({
                       key={i}
                       className={`w-0.5 rounded-full ${
                         playingId === clip.id
-                          ? "bg-amber-400 animate-pulse"
-                          : "bg-neutral-300"
+                          ? "bg-ui-warning animate-pulse"
+                          : "bg-ui-border-strong"
                       }`}
                       style={{
                         height: `${8 + Math.sin(i * 0.8) * 8 + Math.random() * 4}px`,
@@ -203,14 +203,14 @@ export function VoiceRecording({
 
         {/* Record button */}
         {isRecording ? (
-          <div className="flex items-center gap-4 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="flex items-center gap-4 rounded-lg border border-ui-border bg-ui-danger-soft p-4">
             <div className="relative flex h-10 w-10 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-40" />
-              <span className="relative inline-flex h-6 w-6 rounded-full bg-red-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-danger opacity-40" />
+              <span className="relative inline-flex h-6 w-6 rounded-full bg-ui-danger" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-red-800">Recording...</p>
-              <p className="text-xs text-red-600 tabular-nums">
+              <p className="text-sm font-medium text-ui-danger">Recording...</p>
+              <p className="text-xs text-ui-danger tabular-nums">
                 {formatTime(recordingTime)}
               </p>
             </div>
@@ -233,7 +233,7 @@ export function VoiceRecording({
         )}
 
         {error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+          <p className="rounded-lg border border-ui-border bg-ui-danger-soft px-3 py-2 text-xs text-ui-danger">
             {error}
           </p>
         )}

@@ -78,7 +78,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: COMFORT_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-screen bg-surface text-foreground antialiased">
+      <body className="min-h-screen bg-ui-bg text-ui-text antialiased">
         <AppProviders>
           <PWARegister />
           <main>{children}</main>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Check,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -53,12 +52,12 @@ interface VersionTimelineProps {
   onVersionSelect?: (version: Version) => void;
 }
 
-const METHOD_ICONS: Record<string, { icon: string; label: string }> = {
-  ai_capture: { icon: "🎙️", label: "AI Capture" },
-  cook_along: { icon: "👨‍🍳", label: "Logged Cook" },
-  attempt_promotion: { icon: "⭐", label: "Promoted Attempt" },
-  manual: { icon: "✏️", label: "Manual Edit" },
-  refinement: { icon: "🔄", label: "Refinement" },
+const METHOD_LABELS: Record<string, string> = {
+  ai_capture: "AI Capture",
+  cook_along: "Logged Cook",
+  attempt_promotion: "Promoted Attempt",
+  manual: "Manual Edit",
+  refinement: "Refinement",
 };
 
 function ClosenessStars({ rating }: { rating: number }) {
@@ -66,8 +65,8 @@ function ClosenessStars({ rating }: { rating: number }) {
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) =>
         star <= rating
-          ? <Star key={star} className="h-3 w-3 text-ui-accent/70" fill="currentColor" />
-          : <Star key={star} className="h-3 w-3 text-neutral-300" />
+          ? <Star key={star} className="h-3 w-3 text-ui-accent" fill="currentColor" />
+          : <Star key={star} className="h-3 w-3 text-ui-muted" />
       )}
     </div>
   );
@@ -186,7 +185,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-neutral-200 bg-white p-4">
+      <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
         <div className="flex items-center gap-2 text-sm text-ui-muted">
           <Clock className="h-4 w-4" aria-hidden="true" /> Loading versions…
         </div>
@@ -199,49 +198,47 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
   const displayVersions = expanded ? versions : versions.slice(0, 3);
 
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white">
+    <div className="rounded-2xl border border-ui-border bg-ui-surface-raised">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-ui-accent">🌿</span>
-          <h3 className="text-sm font-semibold text-neutral-800">Versions</h3>
-          <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-xs font-medium text-ui-accent">{versions.length}</span>
+          <h3 className="text-sm font-semibold text-ui-text">Versions</h3>
         </div>
         {versions.length >= 2 && (
           <button
             onClick={() => { setCompareMode(!compareMode); setCompareSelection([]); }}
-            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-              compareMode ? "bg-ui-accent/10 text-ui-accent" : "text-neutral-500 hover:bg-neutral-100"
+            className={`flex min-h-11 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+              compareMode ? "bg-ui-accent-muted text-ui-accent" : "text-ui-muted hover:bg-ui-surface-subtle"
             }`}
           >⇄ Compare</button>
         )}
       </div>
 
       {compareMode && (
-        <div className="border-b border-ui-accent/10 bg-ui-accent/5 px-4 py-2 text-xs text-ui-accent">
+        <div className="px-4 py-2 text-sm text-ui-muted">
           Select two versions to compare ({compareSelection.length}/2)
         </div>
       )}
 
       {error && (
-        <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+        <div className="px-4 py-2 text-sm text-ui-danger">
           {error}
         </div>
       )}
 
       {/* Timeline */}
-      <div className="divide-y divide-neutral-100">
-        {displayVersions.map((version, index) => {
-          const method = METHOD_ICONS[version.captureMethod] ?? METHOD_ICONS.manual;
+      <div className="space-y-4 px-4">
+        {displayVersions.map((version) => {
+          const method = METHOD_LABELS[version.captureMethod] ?? METHOD_LABELS.manual;
           const isActive = version.id === activeVersionId;
           const isAncestor = version.recipeId !== recipeId;
           return (
             <div
               key={version.id}
-              className={`relative px-4 py-3 transition-colors ${
-                isActive ? "bg-ui-accent/5" : "hover:bg-neutral-50"
+              className={`relative py-3 transition-colors ${
+                isActive ? "text-ui-accent" : "hover:bg-ui-surface-subtle"
               } ${compareMode ? "cursor-pointer" : ""} ${
-                compareSelection.includes(version.id) ? "ring-2 ring-inset ring-amber-400" : ""
+                compareSelection.includes(version.id) ? "ring-2 ring-inset ring-ui-warning" : ""
               }`}
               onClick={() => {
                 if (compareMode) handleCompareToggle(version.id);
@@ -249,29 +246,20 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
               }}
             >
               <div className="flex items-start gap-3">
-                <div className="mt-1 flex flex-col items-center">
-                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
-                    isActive ? "bg-ui-accent/50 text-white" : "bg-neutral-100 text-neutral-500"
-                  }`}>
-                    {isActive ? <Check className="h-3.5 w-3.5" /> : labelOf(version)}
-                  </div>
-                  {index < displayVersions.length - 1 && <div className="mt-1 h-4 w-px bg-neutral-200" />}
-                </div>
-
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm" title={method.label}>{method.icon}</span>
-                    <span className="text-sm font-medium text-neutral-800">v{labelOf(version)}</span>
+                    <span className="text-xs text-ui-muted">{method}</span>
+                    <span className="text-sm font-medium text-ui-text">v{labelOf(version)}</span>
                     {isActive && (
-                      <span className="rounded-full bg-ui-accent/50 px-1.5 py-0.5 text-[10px] font-semibold text-white">DEFINITIVE</span>
+                      <span className="text-sm text-ui-accent">Definitive</span>
                     )}
                     {isAncestor && (
-                      <span className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">ANCESTOR</span>
+                      <span className="text-sm text-ui-muted">Ancestor</span>
                     )}
                     {version.closenessRating && <ClosenessStars rating={version.closenessRating} />}
                   </div>
                   {version.changeNote && (
-                    <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">{version.changeNote}</p>
+                    <p className="mt-0.5 text-xs text-ui-muted line-clamp-1">{version.changeNote}</p>
                   )}
                   <p className="mt-0.5 text-[11px] text-ui-muted">
                     {new Date(version.createdAt).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
@@ -290,16 +278,16 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                   <div className="relative">
                     <button
                       onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === version.id ? null : version.id); }}
-                      className="rounded-lg p-1 text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
+                      className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-muted"
                     >
                       <EllipsisVertical className="h-3.5 w-3.5" />
                     </button>
                     {menuOpen === version.id && (
-                      <div className="absolute right-0 top-8 z-10 w-40 rounded-xl border border-neutral-200 bg-white py-1 shadow-lg">
+                      <div className="absolute right-0 top-8 z-10 w-40 rounded-xl border border-ui-border bg-ui-surface-raised py-1">
                         {!isActive && !isAncestor && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleSetDefinitive(version.id); }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
+                            className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-xs text-ui-text hover:bg-ui-surface-subtle"
                           >
                             <History className="h-3 w-3" aria-hidden="true" /> Set as definitive
                           </button>
@@ -307,21 +295,21 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                         {!isAncestor && (
                           <button
                             onClick={(e) => { e.stopPropagation(); startEditVersion(version); }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
+                            className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-xs text-ui-text hover:bg-ui-surface-subtle"
                           >
                             <Pencil className="h-3 w-3" aria-hidden="true" /> Edit notes
                           </button>
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); onVersionSelect?.(version); setMenuOpen(null); }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50"
+                          className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-xs text-ui-text hover:bg-ui-surface-subtle"
                         >
                           <Clock className="h-3 w-3" aria-hidden="true" /> View Details
                         </button>
                         {!isActive && !isAncestor && (
                           <button
                             onClick={(e) => { e.stopPropagation(); void deleteVersion(version.id); }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-700 hover:bg-red-50"
+                            className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-xs text-ui-danger hover:bg-ui-danger-soft"
                             disabled={savingVersionId === version.id}
                           >
                             <Trash2 className="h-3 w-3" aria-hidden="true" /> Delete version
@@ -335,24 +323,24 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
 
               {editingVersionId === version.id && (
                 <div
-                  className="mt-3 rounded-xl border border-neutral-200 bg-white p-3"
+                  className="mt-6 space-y-4"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <label className="block text-xs font-semibold text-neutral-500">
+                  <label className="block text-xs font-semibold text-ui-muted">
                     Version note
                     <input
                       value={draftChangeNote}
                       onChange={(event) => setDraftChangeNote(event.target.value)}
-                      className="mt-1 h-9 w-full rounded-md border border-neutral-200 px-2 text-sm text-neutral-800"
+                      className="mt-1 h-9 w-full rounded-md border border-ui-border px-2 text-sm text-ui-text"
                     />
                   </label>
-                  <label className="mt-2 block text-xs font-semibold text-neutral-500">
+                  <label className="mt-2 block text-xs font-semibold text-ui-muted">
                     Details
                     <textarea
                       value={draftNotes}
                       onChange={(event) => setDraftNotes(event.target.value)}
                       rows={2}
-                      className="mt-1 w-full resize-none rounded-md border border-neutral-200 px-2 py-2 text-sm text-neutral-800"
+                      className="mt-1 w-full resize-none rounded-md border border-ui-border px-2 py-2 text-sm text-ui-text"
                     />
                   </label>
                   <div className="mt-3 flex gap-2">
@@ -360,14 +348,14 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
                       type="button"
                       onClick={() => void saveVersion(version.id)}
                       disabled={savingVersionId === version.id}
-                      className="rounded-md bg-ui-action px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                      className="rounded-md bg-ui-action px-3 py-2 text-xs font-semibold text-ui-action-text disabled:opacity-50"
                     >
                       {savingVersionId === version.id ? "Saving..." : "Save version"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingVersionId(null)}
-                      className="rounded-md bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700"
+                      className="rounded-md bg-ui-surface-subtle px-3 py-2 text-xs font-semibold text-ui-text"
                     >
                       Cancel
                     </button>
@@ -382,7 +370,7 @@ export function VersionTimeline({ recipeId, onCompare, onVersionSelect }: Versio
       {versions.length > 3 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex w-full items-center justify-center gap-1 border-t border-neutral-100 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-50"
+          className="flex min-h-11 w-full items-center justify-center gap-1 py-2 text-xs font-medium text-ui-muted hover:bg-ui-surface-subtle"
         >
           {expanded
             ? <><ChevronUp className="h-3 w-3" aria-hidden="true" /> Show less</>

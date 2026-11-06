@@ -46,8 +46,8 @@ export function RecipeSaveStatus({ isSaving, updatedAt, compact = false }: Recip
           </>
         ) : (
           <>
-            <Check className={`h-3 w-3 ${justSaved ? "text-emerald-500" : "text-ui-muted"}`} aria-hidden="true" />
-            <span className="hidden font-medium text-neutral-500 sm:inline">
+            <Check className={`h-3 w-3 ${justSaved ? "text-ui-success" : "text-ui-muted"}`} aria-hidden="true" />
+            <span className="hidden font-medium text-ui-muted sm:inline">
               {justSaved ? "Saved" : "Autosaved"}
             </span>
             <span className="hidden text-ui-muted md:inline">{formatDateTime(updatedAt)}</span>
@@ -68,17 +68,17 @@ export function RecipeSaveStatus({ isSaving, updatedAt, compact = false }: Recip
         <>
           <div
             className={`flex h-4 w-4 items-center justify-center rounded-full transition-colors ${
-              justSaved ? "bg-emerald-500" : "bg-emerald-100"
+              justSaved ? "bg-ui-success" : "bg-ui-success-soft"
             }`}
           >
             <Check
               className={`h-3 w-3 ${
-                justSaved ? "text-white" : "text-emerald-600"
+                justSaved ? "text-ui-action-text" : "text-ui-success"
               }`}
               aria-hidden="true"
             />
           </div>
-          <span className="font-medium text-neutral-700">
+          <span className="font-medium text-ui-text">
             {justSaved ? "Saved" : "Autosaved"}
           </span>
           <span className="text-ui-muted">· {formatDateTime(updatedAt)}</span>

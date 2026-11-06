@@ -68,7 +68,7 @@ export function NextMealCard({
 
   return (
     <section aria-label="Next meal" className="mx-4 mt-4 w-auto rounded-xl border border-ui-border bg-ui-surface-raised p-4 md:mx-auto md:w-full md:max-w-3xl">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ui-accent">
+      <p className="text-xs font-semibold text-ui-accent">
         {describeWhen(meal.serveAt)} · {mealType}{meal.dinerCount ? ` for ${meal.dinerCount}` : ""}
       </p>
       <p className="mt-1 text-base font-semibold text-ui-text">{titles}</p>

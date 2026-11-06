@@ -16,7 +16,7 @@ type Mode = "login" | "signup" | "forgot";
 export type AgeGateVariant = "a" | "b" | "c";
 
 const fieldClass =
-  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-ui-accent/45 focus:bg-white focus:ring-4 focus:ring-ui-accent/10";
+  "w-full rounded-2xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-sm outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-4 focus:ring-ui-focus-soft";
 
 export function AuthScreen({
   defaultMode = "login",
@@ -133,7 +133,7 @@ export function AuthScreen({
   };
 
   const ageCheckbox = (spacing: string) => (
-    <label className={`${spacing} flex min-h-11 cursor-pointer items-start gap-3 text-sm text-stone-600`}>
+    <label className={`${spacing} flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ui-muted`}>
       <input
         type="checkbox"
         checked={ageConfirmed}
@@ -151,18 +151,17 @@ export function AuthScreen({
   const showAgeQuestion = mode === "signup" && ageGateVariant === "c" && !ageConfirmed;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface px-4 py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_12%,rgba(128,0,32,0.10),transparent_24rem),linear-gradient(180deg,rgba(250,250,248,0.96),rgba(246,242,235,0.92))]" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ui-bg px-4 py-10">
       <div className="relative w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-white/70 shadow-[0_18px_55px_rgba(40,26,19,0.10)] ring-1 ring-white/70 backdrop-blur-xl">
+          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-ui-surface-raised ring-1 ring-ui-border">
             <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
           </div>
-          <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
+          <h1 className="logo-serif text-2xl font-bold">
             <span className="text-ui-accent">my</span><span className="text-ui-text">chelin</span>
           </h1>
-          <p className="mt-2 text-sm text-stone-500">
+          <p className="mt-2 text-sm text-ui-muted">
             Cook like home, even in your new home.
           </p>
         </div>
@@ -170,7 +169,7 @@ export function AuthScreen({
         {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="rounded-[2rem] border border-white/70 bg-white/70 p-6 shadow-[0_24px_80px_rgba(60,43,25,0.10)] backdrop-blur-2xl"
+          className="rounded-2xl border border-ui-border bg-ui-surface-raised p-6"
         >
           <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">
             {mode === "login"
@@ -179,7 +178,7 @@ export function AuthScreen({
                 ? "Create account"
                 : "Reset your password"}
           </h2>
-          <p className="mb-5 text-sm leading-6 text-stone-500">
+          <p className="mb-5 text-sm leading-6 text-ui-muted">
             {mode === "login"
               ? "Return to your family cookbook, meal plans, and saved recipes."
               : mode === "signup"
@@ -191,7 +190,7 @@ export function AuthScreen({
             <div className="space-y-4">
               <p className="text-base font-medium text-ui-text">Are you {MINIMUM_AGE} or older?</p>
               {ageAnsweredNo && (
-                <p role="alert" className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-sm leading-6 text-[#521224]">
+                <p role="alert" className="rounded-2xl border border-ui-border bg-ui-accent-muted px-4 py-3 text-sm leading-6 text-ui-text">
                   You need to be {MINIMUM_AGE} or older to create a Mychelin account.
                 </p>
               )}
@@ -218,7 +217,7 @@ export function AuthScreen({
                   No
                 </Button>
               </div>
-              <p className="text-center text-xs text-stone-500">
+              <p className="text-center text-xs text-ui-muted">
                 Already have an account?{" "}
                 <button
                   type="button"
@@ -231,7 +230,7 @@ export function AuthScreen({
             </div>
           ) : mode === "forgot" && forgotSent ? (
             <div className="space-y-4">
-              <p className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-xs leading-5 text-[#521224]">
+              <p className="rounded-2xl border border-ui-border bg-ui-accent-muted px-4 py-3 text-xs leading-5 text-ui-text">
                 If an account exists for <strong>{email}</strong>, we&apos;ve sent a
                 password reset link. Check your inbox (and spam folder).
               </p>
@@ -259,7 +258,7 @@ export function AuthScreen({
                       googleLoading ||
                       (mode === "signup" && ageGateVariant === "b" && !ageConfirmed)
                     }
-                    className="flex h-11 w-full items-center justify-center gap-3 rounded border border-[#dadce0] bg-white px-4 text-[14px] font-medium text-[#3c4043] shadow-sm transition hover:bg-[#f8fafd] hover:shadow focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="flex h-11 w-full items-center justify-center gap-3 rounded border border-[#dadce0] bg-ui-surface-raised px-4 text-[14px] font-medium text-[#3c4043] transition hover:bg-[#f8fafd] hover:shadow focus:outline-none focus:ring-2 focus:ring-ui-focus disabled:cursor-not-allowed disabled:opacity-70"
                     style={{ fontFamily: "Roboto, Arial, sans-serif" }}
                   >
                     <svg className="h-[18px] w-[18px]" viewBox="0 0 18 18" aria-hidden="true">
@@ -271,14 +270,14 @@ export function AuthScreen({
                     <span>{googleLoading ? "Opening Google..." : "Continue with Google"}</span>
                   </button>
                   {mode === "signup" && ageGateVariant === "b" && !ageConfirmed && (
-                    <p className="mt-2 text-center text-xs text-stone-500">
+                    <p className="mt-2 text-center text-xs text-ui-muted">
                       Tick the age box below to use Google.
                     </p>
                   )}
-                  <div className="my-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-400">
-                    <span className="h-px flex-1 bg-stone-200" />
+                  <div className="my-5 flex items-center gap-3 text-xs font-semibold text-ui-muted">
+                    <span className="h-px flex-1 bg-ui-border" />
                     <span>{mode === "signup" ? "or create with email" : "or sign in with email"}</span>
-                    <span className="h-px flex-1 bg-stone-200" />
+                    <span className="h-px flex-1 bg-ui-border" />
                   </div>
                 </>
               )}
@@ -286,7 +285,7 @@ export function AuthScreen({
               <div className="space-y-3">
                 {mode === "signup" && (
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    <label className="mb-1.5 block text-xs font-semibold text-ui-muted">
                       Name
                     </label>
                     <input
@@ -302,7 +301,7 @@ export function AuthScreen({
                 )}
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold text-ui-muted">
                     Email
                   </label>
                   <input
@@ -319,7 +318,7 @@ export function AuthScreen({
                 {mode !== "forgot" && (
                   <div>
                     <div className="mb-1 flex items-center justify-between">
-                      <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                      <label className="block text-xs font-semibold text-ui-muted">
                         Password
                       </label>
                       {mode === "login" && (
@@ -350,7 +349,7 @@ export function AuthScreen({
               {mode === "signup" && ageGateVariant === "b" && ageCheckbox("mt-4")}
 
               {error && (
-                <p role="alert" className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
+                <p role="alert" className="mt-3 rounded-2xl border border-ui-border bg-ui-danger-soft px-4 py-3 text-xs text-ui-danger">
                   {error}
                 </p>
               )}
@@ -372,7 +371,7 @@ export function AuthScreen({
                       : "Send reset link"}
               </Button>
 
-              <p className="mt-4 text-center text-xs text-stone-500">
+              <p className="mt-4 text-center text-xs text-ui-muted">
                 {mode === "login" && (
                   <>
                     Don&apos;t have an account?{" "}

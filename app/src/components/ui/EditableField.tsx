@@ -41,17 +41,17 @@ export function EditableField({
   }, [autoFocusAndSelect]);
 
   const inputClasses =
-    "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
+    "w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted";
 
   return (
     <label className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <span className="text-xs font-medium text-ui-muted">
           {label}
         </span>
         <SaveIndicator isSaving={isSaving} />
       </div>
-      {helpText && <p className="text-xs leading-5 text-neutral-500">{helpText}</p>}
+      {helpText && <p className="text-xs leading-5 text-ui-muted">{helpText}</p>}
       {multiline ? (
         <textarea
           ref={(el) => {

@@ -123,7 +123,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-stretch justify-center bg-neutral-950/45 sm:items-start sm:px-4 sm:pt-16"
+      className="fixed inset-0 z-[70] flex items-stretch justify-center bg-ui-scrim sm:items-start sm:px-4 sm:pt-16"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -133,22 +133,22 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
         role="dialog"
         aria-modal="true"
         aria-labelledby="recipe-search-title"
-        className="flex h-full w-full flex-col border-[var(--ui-border)] bg-[var(--ui-surface-raised)] sm:h-auto sm:max-h-[75vh] sm:max-w-xl sm:rounded-xl sm:border sm:shadow-[0_20px_56px_rgba(40,26,19,0.18)]"
+        className="flex h-full w-full flex-col border-ui-border bg-ui-surface-raised sm:h-auto sm:max-h-[75vh] sm:max-w-xl sm:rounded-xl sm:border sm:shadow-ui-overlay"
       >
-        <div className="border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
+        <div className="border-b border-ui-border px-4 py-4 sm:px-5">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 id="recipe-search-title" className="text-lg font-semibold text-[var(--ui-text)]">
+              <h2 id="recipe-search-title" className="text-lg font-semibold text-ui-text">
                 Search recipes
               </h2>
-              <p className="mt-0.5 text-xs leading-5 text-[var(--ui-muted)]">
+              <p className="mt-0.5 text-xs leading-5 text-ui-muted">
                 Find a recipe by title, ingredient, cuisine, or notes.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ui-muted transition-colors duration-150 hover:bg-ui-surface-subtle hover:text-ui-text"
               aria-label="Close search"
               title="Close"
             >
@@ -174,7 +174,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
               {[0, 1, 2].map((item) => (
                 <div
                   key={item}
-                  className="h-20 animate-pulse rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]"
+                  className="h-20 animate-pulse rounded-lg border border-ui-border bg-ui-surface-subtle"
                 />
               ))}
             </div>

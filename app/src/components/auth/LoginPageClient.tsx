@@ -26,7 +26,7 @@ export function LoginPageClient({
 
   if (loading || user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
+      <div className="flex min-h-screen items-center justify-center bg-ui-bg">
         <LoadingAnimation />
       </div>
     );

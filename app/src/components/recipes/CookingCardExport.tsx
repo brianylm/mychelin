@@ -63,7 +63,7 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
         type="button"
         onClick={exportPng}
         disabled={exporting}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-ui-border bg-ui-surface px-3 text-xs font-semibold text-ui-text transition-colors hover:border-ui-accent/30 hover:text-ui-accent disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-ui-border bg-ui-surface-raised px-3 text-xs font-semibold text-ui-text transition-colors hover:border-ui-border-strong hover:text-ui-accent disabled:opacity-50"
       >
         <ImageDown className="h-4 w-4" aria-hidden="true" />
         {exporting ? "Exporting…" : "Export PNG"}
@@ -71,7 +71,7 @@ export function CookingCardExport({ targetRef, markdown, fileSlug, recipeId }: C
       <button
         type="button"
         onClick={copyMarkdown}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-ui-border bg-ui-surface px-3 text-xs font-semibold text-ui-text transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-ui-border bg-ui-surface-raised px-3 text-xs font-semibold text-ui-text transition-colors hover:border-ui-border-strong hover:text-ui-accent"
       >
         <Copy className="h-4 w-4" aria-hidden="true" />
         Copy recipe

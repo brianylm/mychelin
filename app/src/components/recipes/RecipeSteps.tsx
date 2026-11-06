@@ -30,7 +30,7 @@ interface RecipeStepsProps {
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
+  "w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted";
 
 
 function capitalize(s: string): string {
@@ -225,16 +225,13 @@ export function RecipeSteps({
 
   if (readOnly) {
     return (
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+      <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
-            {sorted.length}
-          </span>
+          <h3 className="text-sm font-semibold text-ui-text">Steps</h3>
         </div>
 
         {sorted.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-ui-muted">
+          <p className="rounded-xl border border-dashed border-ui-border bg-ui-surface-subtle px-3 py-3 text-sm text-ui-muted">
             No steps yet
           </p>
         ) : (
@@ -243,27 +240,27 @@ export function RecipeSteps({
               const { heat, cleanTip } = parseHeatFromTip(step.tip);
               const amountHints = matchIngredientsForStep(step.content, ingredients);
               return (
-                <li key={step.id} className="rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-3">
+                <li key={step.id} className="py-2">
                   <div className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-xs font-semibold text-ui-accent">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent-muted text-xs font-semibold text-ui-accent">
                       {step.stepNumber}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm leading-6 text-neutral-800">{step.content}</p>
+                      <p className="text-sm leading-6 text-ui-text">{step.content}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {heat && HEAT_CONFIG[heat] && (
-                          <span className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-medium ${HEAT_CONFIG[heat].className}`}>
+                          <span className={`text-sm ${HEAT_CONFIG[heat].className}`}>
                             {HEAT_CONFIG[heat].label}
                           </span>
                         )}
                         {amountHints.map((hint) => (
-                          <span key={hint.name} className="inline-flex max-w-full items-center gap-1 rounded-full border border-ui-accent/10 bg-white px-2 py-1 text-[11px] text-neutral-600">
-                            <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                          <span key={hint.name} className="inline-flex max-w-full items-center gap-1 text-sm text-ui-muted">
+                            <span className="font-semibold text-ui-text">{hint.amount}</span>
                             <span className="truncate">{hint.name}</span>
                           </span>
                         ))}
                       </div>
-                      {cleanTip && <p className="mt-2 text-xs leading-5 text-neutral-500">{cleanTip}</p>}
+                      {cleanTip && <p className="mt-2 text-xs leading-5 text-ui-muted">{cleanTip}</p>}
                     </div>
                   </div>
                 </li>
@@ -276,12 +273,9 @@ export function RecipeSteps({
   }
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+    <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-neutral-800">Steps</h3>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
-          {sorted.length}
-        </span>
+        <h3 className="text-sm font-semibold text-ui-text">Steps</h3>
       </div>
 
       {sorted.length > 0 && (
@@ -303,10 +297,10 @@ export function RecipeSteps({
                 ref={(el) => {
                   if (el) itemRefs.current.set(displayIdx, el);
                 }}
-                className={`group flex gap-2 rounded-xl border px-3 py-2.5 transition ${
+                className={`group flex gap-2 py-2 transition ${
                   isDragging
-                    ? "relative z-10 scale-[1.02] select-none border-ui-accent/35 bg-ui-accent/5 shadow-md ring-2 ring-ui-accent/10"
-                    : "border-neutral-100 bg-neutral-50/50"
+                    ? "relative z-10 scale-[1.02] select-none bg-ui-accent-muted shadow-md ring-2 ring-ui-focus-soft"
+                    : ""
                 }`}
               >
                 {/* Drag handle + step number */}
@@ -324,15 +318,15 @@ export function RecipeSteps({
                     onPointerCancel={handlePointerUp}
                     className={`flex h-10 w-10 cursor-grab touch-none select-none items-center justify-center rounded-full border transition active:cursor-grabbing ${
                       isDragging
-                        ? "border-ui-accent/30 bg-ui-accent text-white"
-                        : "border-neutral-200 bg-white text-neutral-500 hover:border-ui-accent/25 hover:text-ui-accent"
+                        ? "border-ui-accent bg-ui-accent text-ui-action-text"
+                        : "border-ui-border bg-ui-surface-raised text-ui-muted hover:border-ui-border-strong hover:text-ui-accent"
                     }`}
                     title="Drag to reorder"
                     aria-label="Drag step to reorder"
                   >
                     <GripIcon className="h-4 w-4" />
                   </button>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ui-accent/10 text-xs font-semibold text-ui-accent">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ui-accent-muted text-xs font-semibold text-ui-accent">
                     {displayIdx + 1}
                   </span>
                 </div>
@@ -350,16 +344,16 @@ export function RecipeSteps({
                       }
                       onUpdate(recipeId, step.id, { content: capitalized });
                     }}
-                    className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-neutral-800 outline-none transition hover:border-neutral-200 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10"
+                    className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-ui-text outline-none transition hover:border-ui-border focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft"
                   />
                   {amountHints.length > 0 && (
                     <div className="mt-2 ml-2 flex flex-wrap gap-1.5" aria-label="Ingredient amounts mentioned in this step">
                       {amountHints.map((hint) => (
                         <span
                           key={hint.name}
-                          className="inline-flex max-w-full items-center gap-1 rounded-full border border-ui-accent/10 bg-white px-2 py-1 text-[11px] text-neutral-600"
+                      className="inline-flex max-w-full items-center gap-1 text-sm text-ui-muted"
                         >
-                          <span className="font-semibold text-[#521224]">{hint.amount}</span>
+                          <span className="font-semibold text-ui-text">{hint.amount}</span>
                           <span className="truncate">{hint.name}</span>
                         </span>
                       ))}
@@ -369,10 +363,10 @@ export function RecipeSteps({
                   <button
                     type="button"
                     onClick={() => cycleHeat(step)}
-                    className={`mt-1 ml-2 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition ${
+                    className={`ml-2 inline-flex min-h-11 items-center gap-1 text-sm transition ${
                       heat && HEAT_CONFIG[heat]
                         ? HEAT_CONFIG[heat].className
-                        : "border-neutral-200 bg-white text-ui-muted hover:border-neutral-300"
+                        : "text-ui-muted"
                     }`}
                     title="Cycle heat: off to low to medium to high"
                   >
@@ -386,7 +380,7 @@ export function RecipeSteps({
 
                 <button
                   type="button"
-                  className="mt-1 flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
+                  className="mt-1 flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-ui-border bg-ui-surface-raised text-ui-danger transition hover:border-ui-border hover:bg-ui-danger-soft"
                   onClick={() => onDelete(recipeId, step.id)}
                   aria-label="Remove step"
                   title="Remove step"

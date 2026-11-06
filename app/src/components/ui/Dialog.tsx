@@ -126,7 +126,7 @@ export function Dialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ui-scrim sm:items-center sm:p-4"
       onMouseDown={handleOverlayMouseDown}
     >
       <div
@@ -136,7 +136,7 @@ export function Dialog({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          "flex w-full flex-col border border-ui-border bg-ui-surface-raised shadow-xl outline-none",
+          "flex w-full flex-col bg-ui-surface-raised shadow-xl outline-none",
           mobileFullHeight
             ? "h-[100dvh] rounded-none sm:h-auto sm:max-h-[85vh] sm:max-w-lg sm:rounded-2xl"
             : "max-h-[85vh] max-w-lg rounded-2xl",

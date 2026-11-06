@@ -48,10 +48,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={toast.id}
               className={`animate-fade-in rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg ${
                 toast.type === "success"
-                  ? "bg-green-600 text-white"
+                  ? "bg-ui-success text-ui-action-text"
                   : toast.type === "error"
-                    ? "bg-red-600 text-white"
-                    : "bg-neutral-800 text-white"
+                    ? "bg-ui-danger text-ui-action-text"
+                    : "bg-ui-action text-ui-action-text"
               }`}
             >
               {toast.message}

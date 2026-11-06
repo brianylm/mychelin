@@ -55,12 +55,12 @@ function PhotoUploadProgress({ status }: { status: UploadStatus }) {
     : "Uploading photo";
 
   return (
-    <div className="rounded-xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2" role="status" aria-live="polite">
-      <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] font-semibold text-[#4a1824]">
+    <div className="rounded-xl border border-ui-border bg-ui-accent-muted px-3 py-2" role="status" aria-live="polite">
+      <div className="mb-1.5 flex items-center justify-between gap-3 text-[11px] font-semibold text-ui-text">
         <span className="min-w-0 truncate">{label}</span>
         <span className="shrink-0 tabular-nums">{progress === null ? "Working" : `${progress}%`}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/90">
+      <div className="h-2 overflow-hidden rounded-full bg-ui-surface-raised">
         <div
           className={`h-full rounded-full bg-ui-accent transition-[width] duration-200 ${progress === null ? "animate-pulse" : ""}`}
           style={{ width: `${visibleProgress}%` }}
@@ -71,7 +71,7 @@ function PhotoUploadProgress({ status }: { status: UploadStatus }) {
           aria-label={label}
         />
       </div>
-      <p className="mt-1.5 truncate text-[11px] text-neutral-500">{status.fileName}</p>
+      <p className="mt-1.5 truncate text-[11px] text-ui-muted">{status.fileName}</p>
     </div>
   );
 }
@@ -198,7 +198,7 @@ export function PhotoUploadSection({
   if (variant === "cover") {
     return (
       <>
-        <section className="relative -mx-5 -mt-4 overflow-hidden bg-neutral-100 md:mx-0 md:mt-0 md:rounded-[1.75rem]">
+        <section className="relative -mx-5 -mt-4 overflow-hidden bg-ui-surface-subtle md:mx-0 md:mt-0 md:rounded-2xl">
           <div className="relative h-[245px] sm:h-[310px]">
             {coverUrl ? (
               <button
@@ -212,7 +212,7 @@ export function PhotoUploadSection({
                 <img src={coverUrl} alt="Recipe cover" className="h-full w-full object-cover" />
               </button>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center bg-[#f4eee7] text-ui-muted">
+              <div className="flex h-full flex-col items-center justify-center bg-ui-surface-subtle text-ui-muted">
                 <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
                   <circle cx="9" cy="9" r="2"/>
@@ -221,7 +221,7 @@ export function PhotoUploadSection({
               </div>
             )}
 
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ui-scrim to-transparent" />
 
             <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-wrap gap-2">
@@ -229,7 +229,7 @@ export function PhotoUploadSection({
                   <button
                     type="button"
                     onClick={() => openGallery(galleryStartIndex)}
-                    className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white/85 transition hover:bg-black/50"
+                    className="rounded-lg bg-ui-scrim px-2.5 py-1 text-[11px] font-medium text-ui-night-text transition hover:bg-ui-night"
                   >
                     {photos.length} photo{photos.length === 1 ? "" : "s"}
                   </button>
@@ -247,7 +247,7 @@ export function PhotoUploadSection({
           </div>
 
           {!readOnly && (
-            <div className="bg-white px-4 py-3 md:px-5">
+            <div className="bg-ui-surface-raised px-4 py-3 md:px-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 gap-2 overflow-x-auto">
                 {photos.map((photo, index) => (
@@ -255,14 +255,14 @@ export function PhotoUploadSection({
                     key={photo.id}
                     type="button"
                     onClick={() => openGallery(index)}
-                    className={`relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors hover:border-ui-accent/45 ${photo.url === coverUrl ? "border-ui-accent/45" : "border-neutral-200"}`}
+                    className={`relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors hover:border-ui-border-strong ${photo.url === coverUrl ? "border-ui-accent" : "border-ui-border"}`}
                   >
                     <img src={photo.url} alt={`Recipe photo ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
                   </button>
                 ))}
                 </div>
                 {canAddMore && (
-                  <label className={`flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-ui-accent/20 bg-ui-accent/5 px-3 text-xs font-semibold text-ui-accent transition hover:bg-ui-accent/10 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                  <label className={`flex min-h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-ui-border bg-ui-accent-muted px-3 text-xs font-semibold text-ui-accent transition hover:bg-ui-accent-muted ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                     {uploadInProgress ? "Uploading" : "Add photos"}
                     <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={uploadInProgress} />
                   </label>
@@ -277,7 +277,7 @@ export function PhotoUploadSection({
           )}
 
           {uploadError && (
-            <p className="border-t border-red-100 bg-red-50 px-4 py-2 text-xs text-red-600">{uploadError}</p>
+            <p className="bg-ui-danger-soft px-4 py-2 text-xs text-ui-danger">{uploadError}</p>
           )}
         </section>
 
@@ -289,35 +289,35 @@ export function PhotoUploadSection({
             onKeyDown={handleKeyDown}
             tabIndex={0}
           >
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={closeGallery} />
+            <div className="absolute inset-0 bg-ui-night" onClick={closeGallery} />
             {photos.length > 1 && (
               <>
-                <button onClick={goPrev} className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex">
-                  <ChevronLeft className="h-6 w-6 text-white" />
+                <button onClick={goPrev} className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-ui-night-raised transition-colors hover:bg-ui-night-line md:flex">
+                  <ChevronLeft className="h-6 w-6 text-ui-action-text" />
                 </button>
-                <button onClick={goNext} className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex">
-                  <ChevronRight className="h-6 w-6 text-white" />
+                <button onClick={goNext} className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-ui-night-raised transition-colors hover:bg-ui-night-line md:flex">
+                  <ChevronRight className="h-6 w-6 text-ui-action-text" />
                 </button>
               </>
             )}
             <div className="absolute right-4 top-4 z-20 flex flex-wrap gap-2">
               {!readOnly && onSetCover && photos[galleryIndex].url !== coverUrl && (
-                <button onClick={() => onSetCover(photos[galleryIndex].url)} className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action">
+                <button onClick={() => onSetCover(photos[galleryIndex].url)} className="flex min-h-11 items-center gap-1.5 rounded-lg bg-ui-action px-3 text-xs font-medium text-ui-action-text transition-colors hover:bg-ui-action">
                   Set as cover
                 </button>
               )}
               {photos[galleryIndex].url === coverUrl && (
-                <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action px-3 text-xs font-medium text-white">Current cover</span>
+                <span className="text-xs font-medium text-ui-action-text">Current cover</span>
               )}
               {!readOnly && onBeautify && photos[galleryIndex].source !== "generated" && (
                 <button
                   onClick={() => void onBeautify(photos[galleryIndex])}
                   disabled={beautifyingId !== null}
-                  className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action disabled:opacity-60"
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg bg-ui-action px-3 text-xs font-medium text-ui-action-text transition-colors hover:bg-ui-action disabled:opacity-60"
                   title="Beautify — repaint as an illustration"
                 >
                   {beautifyingId === photos[galleryIndex].id ? (
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ui-night-line border-t-ui-night-text" />
                   ) : (
                     <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
@@ -325,12 +325,12 @@ export function PhotoUploadSection({
                 </button>
               )}
               {photos[galleryIndex].source === "generated" && (
-                <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-accent/80 px-3 text-xs font-medium text-white">
+                <span className="text-xs font-medium text-ui-action-text">
                   AI illustration
                 </span>
               )}
-              <button onClick={rotatePhoto} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Rotate">
-                <RotateCcw className="h-4 w-4 text-white" />
+              <button onClick={rotatePhoto} className="flex h-9 w-9 items-center justify-center rounded-full bg-ui-scrim transition-colors hover:bg-ui-night" title="Rotate">
+                <RotateCcw className="h-4 w-4 text-ui-action-text" />
               </button>
               {!readOnly && (
                 <button
@@ -340,25 +340,25 @@ export function PhotoUploadSection({
                     if (photos.length <= 1) closeGallery();
                     else if (galleryIndex >= photos.length - 1) setGalleryIndex(galleryIndex - 1);
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-ui-danger transition-colors hover:bg-ui-danger"
                   title="Delete photo"
                 >
-                  <Trash2 className="h-4 w-4 text-white" />
+                  <Trash2 className="h-4 w-4 text-ui-action-text" />
                 </button>
               )}
-              <button onClick={closeGallery} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60" title="Close">
-                <X className="h-4 w-4 text-white" />
+              <button onClick={closeGallery} className="flex h-9 w-9 items-center justify-center rounded-full bg-ui-scrim transition-colors hover:bg-ui-night" title="Close">
+                <X className="h-4 w-4 text-ui-action-text" />
               </button>
             </div>
             {photos.length > 1 && (
-              <div className="absolute left-4 top-4 z-20 rounded-full bg-black/50 px-3 py-1 text-sm text-white">
+              <div className="absolute left-4 top-4 z-20 rounded-full bg-ui-scrim px-3 py-1 text-sm text-ui-action-text">
                 {galleryIndex + 1} / {photos.length}
               </div>
             )}
             <img src={photos[galleryIndex].url} alt={`Recipe photo ${galleryIndex + 1}`} className="relative z-10 max-h-[calc(100vh-7rem)] max-w-full object-contain transition-transform duration-200" style={{ transform: `rotate(${rotation}deg)` }} />
             {photos.length > 1 && (
               <div className="absolute bottom-4 left-4 right-4 z-20 overflow-x-auto pb-1">
-                <div className="mx-auto flex w-max max-w-full gap-2 rounded-2xl bg-black/45 p-2 backdrop-blur-sm">
+                <div className="mx-auto flex w-max max-w-full gap-2 rounded-2xl bg-ui-scrim p-2">
                   {photos.map((photo, index) => (
                     <button
                       key={photo.id}
@@ -367,7 +367,7 @@ export function PhotoUploadSection({
                         setGalleryIndex(index);
                         setRotation(0);
                       }}
-                      className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition ${index === galleryIndex ? "border-white" : "border-white/20 opacity-70 hover:opacity-100"}`}
+                      className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition ${index === galleryIndex ? "border-ui-night-text" : "border-ui-night-line opacity-70 hover:opacity-100"}`}
                       aria-label={`Open photo ${index + 1}`}
                     >
                       <img src={photo.url} alt={`Recipe thumbnail ${index + 1}`} className="h-full w-full object-cover" loading="lazy" />
@@ -384,7 +384,7 @@ export function PhotoUploadSection({
 
   return (
     <>
-      <section className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+      <section className="rounded-2xl border border-ui-border bg-ui-surface-raised overflow-hidden">
         {/* Cover / hero image */}
         {coverUrl ? (
           <div className="relative group">
@@ -394,13 +394,13 @@ export function PhotoUploadSection({
               className="w-full h-48 sm:h-56 object-cover"
             />
             {/* Overlay controls */}
-            <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/50 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100">
-              <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white">
+            <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-ui-scrim via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100">
+              <span className="rounded-lg bg-ui-scrim px-2.5 py-1 text-[11px] font-medium text-ui-action-text">
                 Cover photo
               </span>
               <div className="flex gap-1.5">
                 {canAddMore && (
-                  <label className={`flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                  <label className={`flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-ui-scrim px-3 text-[11px] font-medium text-ui-action-text transition hover:bg-ui-night ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                     Change
                     <input
                       ref={coverInputRef}
@@ -421,7 +421,7 @@ export function PhotoUploadSection({
                       );
                       if (idx >= 0) openGallery(idx);
                     }}
-                    className="flex h-8 items-center gap-1.5 rounded-full bg-black/40 px-3 text-[11px] font-medium text-white transition hover:bg-black/60"
+                    className="flex h-8 items-center gap-1.5 rounded-lg bg-ui-scrim px-3 text-[11px] font-medium text-ui-action-text transition hover:bg-ui-night"
                   >
                     {readOnly ? "View" : "Edit"}
                   </button>
@@ -430,8 +430,8 @@ export function PhotoUploadSection({
             </div>
           </div>
         ) : readOnly ? (
-          <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
+          <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-dashed border-ui-border bg-ui-surface-subtle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-ui-muted">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
               <circle cx="9" cy="9" r="2"/>
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
@@ -439,8 +439,8 @@ export function PhotoUploadSection({
             <span className="text-xs font-medium text-ui-muted">No cover photo</span>
           </div>
         ) : (
-          <label className={`flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-neutral-200 bg-neutral-50 transition hover:bg-ui-accent/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300">
+          <label className={`flex h-32 cursor-pointer flex-col items-center justify-center gap-2 border-b border-dashed border-ui-border bg-ui-surface-subtle transition hover:bg-ui-accent-muted ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-ui-muted">
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
               <circle cx="9" cy="9" r="2"/>
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
@@ -462,8 +462,8 @@ export function PhotoUploadSection({
         <div className="p-4">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-neutral-800">Photos</h3>
-              <p className="truncate text-xs text-neutral-500">
+              <h3 className="text-sm font-semibold text-ui-text">Photos</h3>
+              <p className="truncate text-xs text-ui-muted">
                 {photos.length}/{MAX_PHOTOS}
               </p>
             </div>
@@ -474,8 +474,8 @@ export function PhotoUploadSection({
                   key={photo.id}
                   type="button"
                   onClick={() => openGallery(index)}
-                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-ui-accent/45 focus:outline-none focus:ring-2 focus:ring-ui-accent/40 ${
-                    photo.url === coverUrl ? "border-ui-accent/45" : "border-neutral-200"
+                  className={`relative flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:border-ui-border-strong focus:outline-none focus:ring-2 focus:ring-ui-focus ${
+                    photo.url === coverUrl ? "border-ui-accent" : "border-ui-border"
                   }`}
                 >
                   <img
@@ -485,7 +485,7 @@ export function PhotoUploadSection({
                     loading="lazy"
                   />
                   {photo.url === coverUrl && (
-                    <span className="absolute bottom-0 right-0 rounded-tl bg-ui-accent/50 px-1 py-0.5 text-[8px] font-bold text-white">
+                    <span className="absolute bottom-0 right-0 rounded-tl bg-ui-accent px-1 py-0.5 text-[8px] font-bold text-ui-action-text">
                       COVER
                     </span>
                   )}
@@ -494,16 +494,16 @@ export function PhotoUploadSection({
 
               {/* Camera (mobile) */}
               {canAddMore && (
-                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 md:hidden ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-ui-border-strong transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted md:hidden ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                   {uploadInProgress ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent/45 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-ui-muted">
                         <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                         <circle cx="12" cy="13" r="3"/>
                       </svg>
-                      <span className="text-[9px] text-neutral-500">Camera</span>
+                      <span className="text-[9px] text-ui-muted">Camera</span>
                     </div>
                   )}
                   <input
@@ -520,13 +520,13 @@ export function PhotoUploadSection({
 
               {/* Gallery */}
               {canAddMore && (
-                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 transition-colors hover:border-ui-accent/45 hover:bg-ui-accent/5 ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
+                <label className={`flex h-16 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-ui-border-strong transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted ${uploadInProgress ? "pointer-events-none opacity-60" : ""}`}>
                   {uploadInProgress ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent/45 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
                   ) : (
                     <div className="flex flex-col items-center gap-0.5">
                       <Plus className="h-4 w-4 text-ui-muted" aria-hidden="true" />
-                      <span className="text-[9px] text-neutral-500">Gallery</span>
+                      <span className="text-[9px] text-ui-muted">Gallery</span>
                     </div>
                   )}
                   <input
@@ -550,7 +550,7 @@ export function PhotoUploadSection({
           )}
 
           {uploadError && (
-            <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+            <p className="mt-2 rounded-lg border border-ui-border bg-ui-danger-soft px-3 py-2 text-xs text-ui-danger">
               {uploadError}
             </p>
           )}
@@ -567,7 +567,7 @@ export function PhotoUploadSection({
           tabIndex={0}
         >
           <div
-            className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+            className="absolute inset-0 bg-ui-night"
             onClick={closeGallery}
           />
 
@@ -576,15 +576,15 @@ export function PhotoUploadSection({
             <>
               <button
                 onClick={goPrev}
-                className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex"
+                className="absolute left-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-ui-night-raised transition-colors hover:bg-ui-night-line md:flex"
               >
-                <ChevronLeft className="h-6 w-6 text-white" />
+                <ChevronLeft className="h-6 w-6 text-ui-action-text" />
               </button>
               <button
                 onClick={goNext}
-                className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 md:flex"
+                className="absolute right-4 z-20 hidden h-12 w-12 items-center justify-center rounded-full bg-ui-night-raised transition-colors hover:bg-ui-night-line md:flex"
               >
-                <ChevronRight className="h-6 w-6 text-white" />
+                <ChevronRight className="h-6 w-6 text-ui-action-text" />
               </button>
             </>
           )}
@@ -594,14 +594,14 @@ export function PhotoUploadSection({
             {!readOnly && onSetCover && photos[galleryIndex].url !== coverUrl && (
               <button
                 onClick={() => onSetCover(photos[galleryIndex].url)}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg bg-ui-action px-3 text-xs font-medium text-ui-action-text transition-colors hover:bg-ui-action"
                 title="Set as cover"
               >
                 Set as cover
               </button>
             )}
             {photos[galleryIndex].url === coverUrl && (
-              <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action px-3 text-xs font-medium text-white">
+              <span className="text-xs font-medium text-ui-action-text">
                 Current cover
               </span>
             )}
@@ -609,11 +609,11 @@ export function PhotoUploadSection({
               <button
                 onClick={() => void onBeautify(photos[galleryIndex])}
                 disabled={beautifyingId !== null}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-ui-action/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ui-action disabled:opacity-60"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg bg-ui-action px-3 text-xs font-medium text-ui-action-text transition-colors hover:bg-ui-action disabled:opacity-60"
                 title="Beautify — repaint as an illustration"
               >
                 {beautifyingId === photos[galleryIndex].id ? (
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ui-night-line border-t-ui-night-text" />
                 ) : (
                   <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
                 )}
@@ -621,16 +621,16 @@ export function PhotoUploadSection({
               </button>
             )}
             {photos[galleryIndex].source === "generated" && (
-              <span className="flex h-9 items-center gap-1.5 rounded-full bg-ui-accent/80 px-3 text-xs font-medium text-white">
+              <span className="text-xs font-medium text-ui-action-text">
                 AI illustration
               </span>
             )}
             <button
               onClick={rotatePhoto}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-ui-scrim transition-colors hover:bg-ui-night"
               title="Rotate"
             >
-              <RotateCcw className="h-4 w-4 text-white" />
+              <RotateCcw className="h-4 w-4 text-ui-action-text" />
             </button>
             {!readOnly && (
               <button
@@ -641,24 +641,24 @@ export function PhotoUploadSection({
                 else if (galleryIndex >= photos.length - 1)
                   setGalleryIndex(galleryIndex - 1);
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 transition-colors hover:bg-red-500"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-ui-danger transition-colors hover:bg-ui-danger"
               title="Delete photo"
             >
-                <Trash2 className="h-4 w-4 text-white" />
+                <Trash2 className="h-4 w-4 text-ui-action-text" />
               </button>
             )}
             <button
               onClick={closeGallery}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 transition-colors hover:bg-black/60"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-ui-scrim transition-colors hover:bg-ui-night"
               title="Close"
             >
-              <X className="h-4 w-4 text-white" />
+              <X className="h-4 w-4 text-ui-action-text" />
             </button>
           </div>
 
           {/* Counter */}
           {photos.length > 1 && (
-            <div className="absolute left-4 top-4 z-20 rounded-full bg-black/50 px-3 py-1 text-sm text-white">
+              <div className="absolute left-4 top-4 z-20 rounded-lg bg-ui-scrim px-3 py-1 text-sm text-ui-action-text">
               {galleryIndex + 1} / {photos.length}
             </div>
           )}
@@ -680,8 +680,8 @@ export function PhotoUploadSection({
                   onClick={() => setGalleryIndex(idx)}
                   className={`h-2 w-2 rounded-full transition-colors ${
                     idx === galleryIndex
-                      ? "bg-white"
-                      : "bg-white/40 hover:bg-white/60"
+                      ? "bg-ui-surface-raised"
+                      : "bg-ui-night-raised hover:bg-ui-night-line"
                   }`}
                 />
               ))}

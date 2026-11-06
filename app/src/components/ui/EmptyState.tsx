@@ -11,9 +11,9 @@ interface EmptyStateProps {
 export function EmptyState({ title, description, action, className }: EmptyStateProps) {
   return (
     <div className={cn("grid justify-items-center gap-2 py-8 text-center", className)}>
-      <p className="text-sm font-semibold text-[var(--ui-text)]">{title}</p>
+      <p className="text-sm font-semibold text-ui-text">{title}</p>
       {description && (
-        <p className="max-w-sm text-xs leading-5 text-[var(--ui-muted)]">
+        <p className="max-w-sm text-xs leading-5 text-ui-muted">
           {description}
         </p>
       )}

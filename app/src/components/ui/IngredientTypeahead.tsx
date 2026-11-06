@@ -185,7 +185,7 @@ export function IngredientTypeahead({
       {isOpen && (suggestions.length > 0 || loading) && (
         <ul
           ref={listRef}
-          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-60 overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg"
+          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-60 overflow-y-auto rounded-lg border border-ui-border bg-ui-surface-raised py-1"
         >
           {loading && suggestions.length === 0 ? (
             <li className="px-3 py-2 text-xs text-ui-muted">Searching…</li>
@@ -204,8 +204,8 @@ export function IngredientTypeahead({
                   onMouseEnter={() => setHighlightIdx(idx)}
                   className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
                     idx === highlightIdx
-                      ? "bg-ui-accent/5 text-[#521224]"
-                      : "text-neutral-700 hover:bg-neutral-50"
+                      ? "bg-ui-accent-muted text-ui-text"
+                      : "text-ui-text hover:bg-ui-surface-subtle"
                   }`}
                 >
                   <span className="truncate">
@@ -219,8 +219,8 @@ export function IngredientTypeahead({
                   <span
                     className={`flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                       s.source === "history"
-                        ? "bg-ui-accent/10 text-ui-accent"
-                        : "bg-neutral-100 text-neutral-500"
+                        ? "bg-ui-accent-muted text-ui-accent"
+                        : "bg-ui-surface-subtle text-ui-muted"
                     }`}
                   >
                     {s.source === "history" ? "recent" : "catalog"}

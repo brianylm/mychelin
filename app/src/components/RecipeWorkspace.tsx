@@ -30,7 +30,7 @@ function ProfileSubpage({ onBack, children }: { onBack: () => void; children: Re
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--ui-muted)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+          className="inline-flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-ui-muted transition-colors duration-150 hover:bg-ui-surface-subtle hover:text-ui-text"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           Profile
@@ -42,7 +42,7 @@ function ProfileSubpage({ onBack, children }: { onBack: () => void; children: Re
 }
 
 const LazyPanelFallback = () => (
-  <div className="flex flex-1 items-center justify-center bg-surface">
+  <div className="flex flex-1 items-center justify-center bg-ui-bg">
     <LoadingAnimation />
   </div>
 );
@@ -177,7 +177,7 @@ export function RecipeWorkspace() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
+      <div className="flex min-h-screen items-center justify-center bg-ui-bg">
         <LoadingAnimation />
       </div>
     );
@@ -843,7 +843,7 @@ function RecipeWorkspaceContent({
         />
       )}
 
-      <div className="flex h-[calc(100dvh-68px)] min-w-0 w-full bg-transparent text-foreground">
+      <div className="flex h-[calc(100dvh-68px)] min-w-0 w-full bg-transparent text-ui-text">
         {currentView !== "recipes" && isSidebarOpen && (
           <RecipeSidebar
             mobileOnly
@@ -933,7 +933,7 @@ function RecipeWorkspaceContent({
             <button
               type="button"
               aria-label="Close create recipe menu"
-              className="fixed inset-0 z-40 bg-stone-950/25 md:hidden"
+              className="fixed inset-0 z-40 bg-ui-scrim md:hidden"
               onClick={() => setFabOpen(false)}
             />
           )}
@@ -949,12 +949,12 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={handleImportUrl}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-[var(--ui-surface-raised)] py-2 pl-4 pr-3 shadow-[0_14px_36px_rgba(40,26,19,0.14)] ring-1 ring-[var(--ui-border)] transition-[transform,box-shadow] duration-150 hover:shadow-[0_16px_40px_rgba(40,26,19,0.18)] active:scale-[0.98]"
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-ui-surface-raised py-2 pl-4 pr-3 shadow-ui-raised ring-1 ring-ui-border transition-[transform,box-shadow] duration-150 hover:shadow-ui-overlay active:scale-[0.98]"
                 >
-                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                  <span className="flex-1 text-sm font-medium text-ui-text">
                     Import from link
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
                     <Link className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -962,12 +962,12 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={handleFromScratch}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-[var(--ui-surface-raised)] py-2 pl-4 pr-3 shadow-[0_14px_36px_rgba(40,26,19,0.14)] ring-1 ring-[var(--ui-border)] transition-[transform,box-shadow] duration-150 hover:shadow-[0_16px_40px_rgba(40,26,19,0.18)] active:scale-[0.98]"
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-ui-surface-raised py-2 pl-4 pr-3 shadow-ui-raised ring-1 ring-ui-border transition-[transform,box-shadow] duration-150 hover:shadow-ui-overlay active:scale-[0.98]"
                 >
-                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                  <span className="flex-1 text-sm font-medium text-ui-text">
                     Write or paste recipe
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
                     <PencilLine className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -975,12 +975,12 @@ function RecipeWorkspaceContent({
                 <button
                   type="button"
                   onClick={createDraftForConversation}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-[var(--ui-surface-raised)] py-2 pl-4 pr-3 shadow-[0_14px_36px_rgba(40,26,19,0.14)] ring-1 ring-[var(--ui-border)] transition-[transform,box-shadow] duration-150 hover:shadow-[0_16px_40px_rgba(40,26,19,0.18)] active:scale-[0.98]"
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-ui-surface-raised py-2 pl-4 pr-3 shadow-ui-raised ring-1 ring-ui-border transition-[transform,box-shadow] duration-150 hover:shadow-ui-overlay active:scale-[0.98]"
                 >
-                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                  <span className="flex-1 text-sm font-medium text-ui-text">
                     Live conversation
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
                     <Mic2 className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -991,12 +991,12 @@ function RecipeWorkspaceContent({
                     setFabOpen(false);
                     setAiDraftOpen(true);
                   }}
-                  className="flex w-52 items-center gap-2.5 rounded-full bg-[var(--ui-surface-raised)] py-2 pl-4 pr-3 shadow-[0_14px_36px_rgba(40,26,19,0.14)] ring-1 ring-[var(--ui-border)] transition-[transform,box-shadow] duration-150 hover:shadow-[0_16px_40px_rgba(40,26,19,0.18)] active:scale-[0.98]"
+                  className="flex w-52 items-center gap-2.5 rounded-full bg-ui-surface-raised py-2 pl-4 pr-3 shadow-ui-raised ring-1 ring-ui-border transition-[transform,box-shadow] duration-150 hover:shadow-ui-overlay active:scale-[0.98]"
                 >
-                  <span className="flex-1 text-sm font-medium text-neutral-800">
+                  <span className="flex-1 text-sm font-medium text-ui-text">
                     Ask Mychelin
                   </span>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
                     <Sparkles className="h-[18px] w-[18px]" />
                   </span>
                 </button>
@@ -1009,7 +1009,7 @@ function RecipeWorkspaceContent({
               onClick={() => setFabOpen((v) => !v)}
               aria-label={fabOpen ? "Close menu" : "New recipe"}
               aria-expanded={fabOpen}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-ui-action text-white shadow-[0_18px_40px_rgba(23,19,31,0.24)] ring-1 ring-white/20 transition-transform hover:bg-ui-accent active:scale-95"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-ui-action text-ui-action-text shadow-ui-overlay ring-1 ring-ui-night-line transition-transform hover:bg-ui-accent active:scale-95"
             >
               <Plus
                 className={`h-6 w-6 transition-transform duration-150 ${fabOpen ? "rotate-45" : ""}`}

@@ -55,7 +55,7 @@ export function MealGroupCard({
   );
 
   return (
-    <article className="rounded-xl border border-ui-accent/15 bg-ui-surface-raised shadow-sm">
+    <article className="rounded-xl border border-ui-border bg-ui-surface-raised">
       <div className={compact ? "p-2.5" : "p-3.5"}>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 space-y-1">
@@ -80,7 +80,7 @@ export function MealGroupCard({
               </p>
             ) : null}
           </div>
-          <span className="rounded-full bg-ui-surface-subtle px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-ui-muted">
+          <span className="rounded-full bg-ui-surface-subtle px-2 py-1 text-xs font-semibold text-ui-muted">
             {meal.syncState === "synced" ? "Calendar synced" : meal.status}
           </span>
         </div>
@@ -126,7 +126,7 @@ export function MealGroupCard({
         </div>
 
         {meal.conflicts.length > 0 && (
-          <div className="mt-2 rounded-lg border border-ui-warning/25 bg-ui-warning-soft px-2.5 py-2 text-[11px] text-ui-text">
+          <div className="mt-2 rounded-lg border border-ui-border bg-ui-warning-soft px-2.5 py-2 text-[11px] text-ui-text">
             {meal.conflicts[0].message}
             {meal.conflicts.length > 1 ? ` · ${meal.conflicts.length - 1} more` : ""}
           </div>
@@ -148,7 +148,7 @@ export function MealGroupCard({
             type="button"
             onClick={() => onAddDish(meal)}
             disabled={busy || meal.status !== "planned"}
-            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-ui-border-strong bg-ui-surface-raised px-3 text-xs font-semibold text-ui-text transition hover:border-ui-accent/40 hover:bg-ui-accent-muted disabled:opacity-55"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-ui-border-strong bg-ui-surface-raised px-3 text-xs font-semibold text-ui-text transition hover:border-ui-border-strong hover:bg-ui-accent-muted disabled:opacity-55"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add dish

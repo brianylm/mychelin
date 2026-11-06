@@ -47,12 +47,12 @@ export function RecipeTitleCard({
 
   if (variant === "cover") {
     return (
-      <section className="min-w-0 text-white">
+      <section className="min-w-0 text-ui-action-text">
         <div className="mb-1 flex justify-end">
           <SaveIndicator isSaving={isSaving} />
         </div>
         {readOnly ? (
-          <h1 className="max-w-[34rem] text-3xl font-semibold leading-[0.98] tracking-normal text-white drop-shadow-sm sm:text-5xl">
+          <h1 className="max-w-[34rem] text-3xl font-semibold leading-[0.98] tracking-normal text-ui-action-text drop-shadow-sm sm:text-5xl">
             {title || UNTITLED_RECIPE}
           </h1>
         ) : (
@@ -71,7 +71,7 @@ export function RecipeTitleCard({
               onBlur();
             }}
             placeholder={UNTITLED_RECIPE}
-            className="w-full max-w-[34rem] rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-3xl font-semibold leading-none tracking-normal text-white outline-none transition placeholder:text-white/45 hover:border-white/35 focus:border-white/55 focus:bg-black/35 focus:ring-4 focus:ring-white/15 sm:text-5xl"
+            className="w-full max-w-[34rem] rounded-xl border border-ui-night-line bg-ui-scrim px-3 py-2 text-3xl font-semibold leading-none tracking-normal text-ui-action-text outline-none transition placeholder:text-ui-night-muted hover:border-ui-night-line focus:border-ui-highlight focus:bg-ui-night-raised focus:ring-4 focus:ring-ui-night-line sm:text-5xl"
           />
         )}
         <span className="sr-only">Last updated {formatDateTime(recipe.updatedAt)}</span>
@@ -80,15 +80,15 @@ export function RecipeTitleCard({
   }
 
   return (
-    <section className="rounded-2xl border border-ui-accent/10 bg-[#fff8f4] px-4 py-4 shadow-sm ring-1 ring-white/70 sm:px-5">
+    <section className="rounded-2xl border border-ui-border bg-ui-surface-raised px-4 py-4 ring-1 ring-ui-border sm:px-5">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ui-accent/70">
+        <span className="text-xs font-semibold text-ui-accent">
           Recipe name
         </span>
         <SaveIndicator isSaving={isSaving} />
       </div>
       {readOnly ? (
-        <div className="w-full rounded-xl border border-transparent bg-white/45 px-3 py-2 text-2xl font-semibold leading-tight text-ui-text sm:text-3xl">
+        <div className="w-full rounded-xl border border-transparent bg-ui-surface-subtle px-3 py-2 text-2xl font-semibold leading-tight text-ui-text sm:text-3xl">
           {title || UNTITLED_RECIPE}
         </div>
       ) : (
@@ -107,7 +107,7 @@ export function RecipeTitleCard({
             onBlur();
           }}
           placeholder={UNTITLED_RECIPE}
-          className="w-full rounded-xl border border-transparent bg-white/65 px-3 py-2 text-2xl font-semibold leading-tight text-ui-text outline-none transition placeholder:text-ui-accent/35 hover:border-ui-accent/15 focus:border-ui-accent/35 focus:bg-white focus:ring-4 focus:ring-ui-accent/10 sm:text-3xl"
+          className="w-full rounded-xl border border-transparent bg-ui-surface-subtle px-3 py-2 text-2xl font-semibold leading-tight text-ui-text outline-none transition placeholder:text-ui-accent hover:border-ui-border-strong focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-4 focus:ring-ui-focus-soft sm:text-3xl"
         />
       )}
       <span className="mt-2 block text-xs text-ui-muted">

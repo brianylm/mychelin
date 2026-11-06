@@ -128,20 +128,20 @@ function isSetupError(message: string): boolean {
 function ErrorBanner({ message }: { message: string }) {
   if (isSetupError(message)) {
     return (
-      <div className="border-t border-ui-accent/15 bg-ui-accent/5 px-4 py-3 text-xs text-[#241017]">
+      <div className="border-t border-ui-border bg-ui-accent-muted px-4 py-3 text-xs text-ui-text">
         <div className="mb-1 flex items-center gap-1.5 font-semibold">
           <span>AI capture needs speech and text keys</span>
         </div>
-        <p className="leading-relaxed text-[#521224]">
-          Add <code className="rounded bg-ui-accent/10 px-1">OPENAI_API_KEY</code>{" "}
-          for speech-to-text and <code className="rounded bg-ui-accent/10 px-1">DEEPSEEK_API_KEY</code>{" "}
+        <p className="leading-relaxed text-ui-text">
+          Add <code className="rounded bg-ui-accent-muted px-1">OPENAI_API_KEY</code>{" "}
+          for speech-to-text and <code className="rounded bg-ui-accent-muted px-1">DEEPSEEK_API_KEY</code>{" "}
           for conversation gist, prompts, and recipe extraction.
         </p>
       </div>
     );
   }
   return (
-    <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+    <div className="border-t border-ui-border bg-ui-danger-soft px-4 py-2 text-xs text-ui-danger">
       {message}
     </div>
   );
@@ -199,19 +199,19 @@ function ConversationAssistPanel({
 
   return (
     <div
-      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[#eadfd0] bg-ui-action-text/95 px-4 py-3 shadow-[0_12px_32px_rgba(60,43,25,0.08)] backdrop-blur"
+      className="sticky top-0 z-10 -mx-4 mb-3 border-b border-ui-border bg-ui-action-text px-4 py-3 shadow-ui-raised"
       aria-live="polite"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ui-accent/10 text-ui-accent">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ui-accent-muted text-ui-accent">
             <Languages className="h-4 w-4" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ui-accent">
+            <p className="text-xs font-semibold text-ui-accent">
               Live helper
             </p>
-            <p className="truncate text-xs text-stone-500">
+            <p className="truncate text-xs text-ui-muted">
               {isLoading
                 ? "Reading the latest turn..."
                 : hasMessages
@@ -221,12 +221,12 @@ function ConversationAssistPanel({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className="flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-stone-600 ring-1 ring-[#eadfd0]">
+          <span className="flex items-center gap-1 text-xs font-medium text-ui-muted">
             <RadioTower className="h-3 w-3 text-ui-accent" aria-hidden="true" />
             {statusLabel}
           </span>
           {copiedQuestion && (
-            <span className="flex items-center gap-1 rounded-full bg-ui-action px-2.5 py-1 text-[10px] font-semibold text-white">
+            <span className="flex items-center gap-1 text-xs font-medium text-ui-success">
               <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
               Copied
             </span>
@@ -235,25 +235,25 @@ function ConversationAssistPanel({
       </div>
 
       {error && (
-        <div className="mt-3 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+        <div className="mt-3 flex gap-2 rounded-xl border border-ui-border bg-ui-warning-soft px-3 py-2 text-xs leading-5 text-ui-warning-text">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
       {!hasMessages && !error && (
-        <p className="mt-3 text-sm leading-6 text-stone-600">
+        <p className="mt-3 text-sm leading-6 text-ui-muted">
           Mychelin will listen for family terms, translate the gist, and suggest
           useful questions while the recipe is being narrated.
         </p>
       )}
 
       {assist?.translatedGist && (
-        <div className="mt-3 rounded-2xl border border-[#eadfd0] bg-white px-3 py-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+        <div className="mt-3">
+          <p className="text-xs font-semibold text-ui-muted">
             Gist
           </p>
-          <p className="mt-1 text-sm leading-6 text-stone-800">
+          <p className="mt-1 text-sm leading-6 text-ui-text">
             {assist.translatedGist}
           </p>
         </div>
@@ -261,20 +261,19 @@ function ConversationAssistPanel({
 
       {visibleQuestions.length > 0 && (
         <div className="mt-3">
-          <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
-            <MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden="true" />
+          <p className="mb-2 text-xs font-semibold text-ui-muted">
             Ask next
           </p>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {visibleQuestions.map((question) => (
               <div
                 key={question}
-                className="relative min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2"
+                className="relative min-w-[12rem] max-w-[18rem] shrink-0"
               >
                 <button
                   type="button"
                   onClick={() => onCopyQuestion(question)}
-                  className="block w-full pr-5 text-left text-xs leading-5 text-[#241017] transition hover:opacity-80"
+                  className="block w-full pr-5 text-left text-xs leading-5 text-ui-text transition hover:opacity-80"
                 >
                   {question}
                 </button>
@@ -283,7 +282,7 @@ function ConversationAssistPanel({
                   onClick={() => onDismissQuestion(question)}
                   aria-label="Dismiss suggestion"
                   title="Dismiss"
-                  className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-stone-400 transition hover:bg-white/70 hover:text-stone-700"
+                  className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-ui-muted transition hover:bg-ui-surface-raised hover:text-ui-text"
                 >
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
@@ -294,7 +293,7 @@ function ConversationAssistPanel({
             <button
               type="button"
               onClick={() => setShowOverflow((v) => !v)}
-              className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 transition hover:text-ui-accent"
+              className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-ui-muted transition hover:text-ui-accent"
               aria-expanded={showOverflow}
             >
               <ChevronDown className={`h-[15px] w-[15px] ${showOverflow ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -306,12 +305,12 @@ function ConversationAssistPanel({
               {overflowQuestions.map((question) => (
                 <div
                   key={question}
-                  className="relative min-w-[12rem] max-w-[18rem] shrink-0 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2"
+                  className="relative min-w-[12rem] max-w-[18rem] shrink-0"
                 >
                   <button
                     type="button"
                     onClick={() => onCopyQuestion(question)}
-                    className="block w-full pr-5 text-left text-xs leading-5 text-stone-600 transition hover:opacity-80"
+                    className="block w-full pr-5 text-left text-xs leading-5 text-ui-muted transition hover:opacity-80"
                   >
                     {question}
                   </button>
@@ -320,7 +319,7 @@ function ConversationAssistPanel({
                     onClick={() => onDismissQuestion(question)}
                     aria-label="Dismiss suggestion"
                     title="Dismiss"
-                    className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-stone-400 transition hover:bg-white/70 hover:text-stone-700"
+                    className="absolute right-1.5 top-1.5 rounded-full p-0.5 text-ui-muted transition hover:bg-ui-surface-raised hover:text-ui-text"
                   >
                     <X className="h-3 w-3" aria-hidden="true" />
                   </button>
@@ -335,12 +334,12 @@ function ConversationAssistPanel({
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {missingCues.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+              <p className="text-xs font-semibold text-ui-muted">
                 Still missing
               </p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <div className="mt-1.5 space-y-1">
                 {missingCues.map((cue) => (
-                  <span key={cue} className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] text-stone-600">
+                  <span key={cue} className="text-sm text-ui-muted">
                     {cue}
                   </span>
                 ))}
@@ -349,12 +348,12 @@ function ConversationAssistPanel({
           )}
           {uncertainTerms.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+              <p className="text-xs font-semibold text-ui-muted">
                 Confirm wording
               </p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <div className="mt-1.5 space-y-1">
                 {uncertainTerms.map((term) => (
-                  <span key={term} className="rounded-full bg-[#f7c86a]/25 px-2.5 py-1 text-[11px] text-stone-700">
+                  <span key={term} className="text-sm text-ui-night-text">
                     {term}
                   </span>
                 ))}
@@ -1300,7 +1299,7 @@ export function ConversationCapture({
         {step === "recording" && (
           <>
             {/* Chat log */}
-            <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4 space-y-2">
+            <div className="flex-1 overflow-y-auto bg-ui-surface-subtle px-4 py-4 space-y-2">
               <ConversationAssistPanel
                 assist={conversationAssist}
                 isLoading={isAssisting}
@@ -1315,9 +1314,9 @@ export function ConversationCapture({
 
               {connecting && (
                 <div className="flex justify-center py-2">
-                  <div className="flex items-center gap-2 rounded-full bg-ui-accent/5 px-3 py-1 text-[11px] text-ui-accent ring-1 ring-ui-accent/10">
+                  <div className="flex items-center gap-2 text-sm text-ui-muted">
                     <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-accent/40 opacity-75" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-accent opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-ui-accent" />
                     </span>
                     Opening microphone...
@@ -1328,14 +1327,14 @@ export function ConversationCapture({
               {messages.length === 0 && !isRecording && !connecting && (
                 <div className="flex h-full items-center justify-center">
                   {showConsent && !consentAcked ? (
-                    <div className="max-w-xs rounded-2xl border border-ui-accent/15 bg-white p-4 text-center shadow-sm">
-                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent">
+                    <div className="max-w-xs rounded-2xl border border-ui-border bg-ui-surface-raised p-4 text-center">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-ui-accent-muted text-ui-accent">
                         <Mic2 className="h-5 w-5" aria-hidden="true" />
                       </div>
-                      <p className="text-sm font-semibold text-neutral-800">
+                      <p className="text-sm font-semibold text-ui-text">
                         Before you record
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-neutral-600">
+                      <p className="mt-2 text-sm leading-6 text-ui-muted">
                         Make sure everyone is okay being recorded. Audio is used
                         to create your private recipe draft, and you can delete
                         it later.
@@ -1351,14 +1350,14 @@ export function ConversationCapture({
                             setShowConsent(false);
                             void startRecording();
                           }}
-                          className="rounded-full bg-ui-action px-4 py-2 text-sm font-semibold text-white transition hover:bg-ui-accent"
+                          className="rounded-xl bg-ui-action px-4 py-2 text-sm font-semibold text-ui-action-text transition hover:bg-ui-accent min-h-11"
                         >
                           Got it — start recording
                         </button>
                         <button
                           type="button"
                           onClick={() => setShowConsent(false)}
-                          className="text-xs font-medium text-neutral-500 transition hover:text-neutral-700"
+                          className="text-xs font-medium text-ui-muted transition hover:text-ui-text"
                         >
                           Not now
                         </button>
@@ -1366,10 +1365,10 @@ export function ConversationCapture({
                     </div>
                   ) : (
                     <div className="max-w-xs text-center">
-                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-ui-accent-muted text-ui-accent">
                         <Mic2 className="h-6 w-6" aria-hidden="true" />
                       </div>
-                      <p className="text-sm leading-6 text-neutral-600">
+                      <p className="text-sm leading-6 text-ui-muted">
                         Start while a parent or grandparent explains the recipe.
                         Mychelin will capture the transcript, translate the gist,
                         and suggest questions you can ask out loud.
@@ -1380,14 +1379,14 @@ export function ConversationCapture({
               )}
 
               {isRecording && (
-                <div className="mb-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                <div className="mb-3 rounded-2xl border border-ui-border bg-ui-success-soft px-3 py-2 text-xs text-ui-success">
                   <div className="mb-1 flex items-center justify-between gap-3">
                     <span className="font-semibold">Recording now</span>
                     <span>{inputLevel > 0.08 ? "Hearing audio" : "Waiting for speech"}</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/80">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-ui-surface-raised">
                     <div
-                      className="h-full rounded-full bg-emerald-500 transition-[width] duration-100"
+                      className="h-full rounded-full bg-ui-success transition-[width] duration-100"
                       style={{ width: Math.max(8, Math.round(inputLevel * 100)) + "%" }}
                     />
                   </div>
@@ -1404,7 +1403,7 @@ export function ConversationCapture({
                     isRight={false}
                   />
                   <div className="-mt-3 mb-3 flex justify-start pl-2">
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-800 ring-1 ring-amber-100">
+                    <span className="rounded-full bg-ui-warning-soft px-2 py-0.5 text-xs font-semibold text-ui-warning-text ring-1 ring-ui-border">
                       audio detected
                     </span>
                   </div>
@@ -1422,7 +1421,7 @@ export function ConversationCapture({
                   />
                   {m.isPartial && (
                     <div className="-mt-3 mb-3 flex justify-start pl-2">
-                      <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ui-accent">
+                      <span className="rounded-full bg-ui-accent-muted px-2 py-0.5 text-xs font-semibold text-ui-accent">
                         updating
                       </span>
                     </div>
@@ -1432,10 +1431,10 @@ export function ConversationCapture({
 
               {isRecording && (transcriptionMode === "realtime" || transcriptionMode === "browser") && messages.length === 0 && (
                 <div className="flex justify-center py-2">
-                  <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] text-emerald-800 ring-1 ring-emerald-100">
+                  <div className="flex items-center gap-2 rounded-full bg-ui-success-soft px-3 py-1 text-[11px] text-ui-success ring-1 ring-ui-border">
                     <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-success opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-ui-success" />
                     </span>
                     {transcriptionMode === "browser" ? "Browser captions active. Dialect AI batches may add fuller text shortly." : "Realtime stream connected. Speak and watch this area."}
                   </div>
@@ -1444,10 +1443,10 @@ export function ConversationCapture({
 
               {isRecording && processingChunks > 0 && (
                 <div className="flex justify-center py-2">
-                  <div className="flex items-center gap-2 rounded-full bg-ui-accent/5 px-3 py-1 text-[11px] text-ui-accent">
+                  <div className="flex items-center gap-2 rounded-full bg-ui-accent-muted px-3 py-1 text-[11px] text-ui-accent">
                     <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-ui-accent/50" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-warning opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-ui-accent" />
                     </span>
                     Transcribing the last few seconds...
                   </div>
@@ -1459,12 +1458,12 @@ export function ConversationCapture({
             {errorMessage && <ErrorBanner message={errorMessage} />}
 
             {/* Controls */}
-            <div className="border-t border-neutral-200 bg-white px-4 py-4">
+            <div className="border-t border-ui-border bg-ui-surface-raised px-4 py-4">
               <div className="flex items-center justify-center gap-3">
                 {isRecording ? (
                   <button
                     onClick={stopRecording}
-                    className="flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-red-600 active:scale-95"
+                    className="flex items-center gap-2 rounded-full bg-ui-danger px-5 py-2.5 text-sm font-semibold text-ui-action-text shadow-lg transition hover:bg-ui-danger active:scale-95"
                   >
                     <Square className="h-4 w-4" aria-hidden="true" />
                     Stop
@@ -1476,11 +1475,11 @@ export function ConversationCapture({
                       else void startRecording();
                     }}
                     disabled={connecting}
-                    className="flex items-center gap-2 rounded-full bg-ui-action px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-ui-accent active:scale-95 disabled:opacity-60"
+                    className="flex items-center gap-2 rounded-full bg-ui-action px-5 py-2.5 text-sm font-semibold text-ui-action-text shadow-lg transition hover:bg-ui-accent active:scale-95 disabled:opacity-60"
                   >
                     <span className="relative flex h-2.5 w-2.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ui-surface-raised opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-ui-surface-raised" />
                     </span>
                     {connecting
                       ? "Opening mic…"
@@ -1499,7 +1498,7 @@ export function ConversationCapture({
                   </Button>
                 )}
               </div>
-              <p className="mt-2 text-center text-[11px] text-neutral-500">
+              <p className="mt-2 text-center text-[11px] text-ui-muted">
                 {transcriptionMode === "realtime"
                   ? "Realtime captions stream as the conversation happens; original terms are kept for review."
                   : transcriptionMode === "browser"
@@ -1514,8 +1513,8 @@ export function ConversationCapture({
 
         {step === "naming" && (
           <>
-            <div className="flex-1 overflow-y-auto bg-neutral-50 px-4 py-4">
-              <p className="mb-4 text-sm text-neutral-600">
+            <div className="flex-1 overflow-y-auto bg-ui-surface-subtle px-4 py-4">
+              <p className="mb-4 text-sm text-ui-muted">
                 Mychelin heard {uniqueSpeakerLabels.length}{" "}
                 {uniqueSpeakerLabels.length === 1 ? "speaker" : "speakers"}.
                 Confirm the names before saving the recipe.
@@ -1527,10 +1526,10 @@ export function ConversationCapture({
                   return (
                     <div
                       key={label}
-                      className="rounded-xl border border-neutral-200 bg-white p-3"
+                      className="rounded-xl border border-ui-border bg-ui-surface-raised p-3"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-ui-muted">
+                        <span className="text-xs font-semibold text-ui-muted">
                           {label}
                           {side === "right" ? " · right side" : " · left side"}
                         </span>
@@ -1549,10 +1548,10 @@ export function ConversationCapture({
                           }))
                         }
                         placeholder="e.g. Ah Ma, Me, Grandpa"
-                        className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white"
+                        className="w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
                       />
                       {preview && (
-                        <p className="mt-2 line-clamp-2 text-xs text-neutral-500 italic">
+                        <p className="mt-2 line-clamp-2 text-xs text-ui-muted">
                           &ldquo;{preview}&rdquo;
                         </p>
                       )}
@@ -1564,7 +1563,7 @@ export function ConversationCapture({
 
             {errorMessage && <ErrorBanner message={errorMessage} />}
 
-            <div className="flex items-center gap-2 border-t border-neutral-200 bg-white px-4 py-3">
+            <div className="flex items-center gap-2 border-t border-ui-border bg-ui-surface-raised px-4 py-3">
               <Button variant="secondary" onClick={() => setStep("recording")}>
                 Back
               </Button>
@@ -1591,17 +1590,17 @@ export function ConversationCapture({
             onBack={() => setStep("naming")}
             onSave={saveReviewedConversation}
           >
-            <section className="rounded-2xl border border-[#eadfce] bg-white p-4">
+            <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-stone-900">Transcript used</p>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-500">
+                <p className="text-sm font-semibold text-ui-text">Transcript used</p>
+                <span className="rounded-full bg-ui-surface-subtle px-2 py-0.5 text-xs font-semibold text-ui-muted">
                   {reviewTranscript.length} turns
                 </span>
               </div>
               <div className="space-y-2">
                 {reviewTranscript.slice(-8).map((turn, index) => (
-                  <div key={index} className="rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-600">
-                    <span className="font-semibold text-stone-900">{turn.speaker}: </span>
+                  <div key={index} className="rounded-xl bg-ui-surface-subtle px-3 py-2 text-xs leading-5 text-ui-muted">
+                    <span className="font-semibold text-ui-text">{turn.speaker}: </span>
                     {turn.text}
                   </div>
                 ))}
@@ -1612,8 +1611,8 @@ export function ConversationCapture({
 
         {step === "processing" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-ui-accent/15 border-t-ui-accent" />
-            <p className="text-center text-sm text-neutral-700">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-ui-border border-t-ui-accent" />
+            <p className="text-center text-sm text-ui-text">
               {reviewRecipe ? "Saving the reviewed recipe..." : "Extracting the recipe from your conversation..."}
             </p>
             <p className="text-center text-xs text-ui-muted">

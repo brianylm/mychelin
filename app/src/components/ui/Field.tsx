@@ -13,17 +13,17 @@ interface FieldProps {
 export function Field({ id, label, help, error, children, className }: FieldProps) {
   return (
     <div className={cn("grid gap-1.5", className)}>
-      <label htmlFor={id} className="text-xs font-semibold text-[var(--ui-muted)]">
+      <label htmlFor={id} className="text-xs font-semibold text-ui-muted">
         {label}
       </label>
       {children}
       {help && !error && (
-        <p id={id + "-help"} className="text-xs leading-5 text-[var(--ui-muted)]">
+        <p id={id + "-help"} className="text-xs leading-5 text-ui-muted">
           {help}
         </p>
       )}
       {error && (
-        <p id={id + "-error"} className="text-xs leading-5 text-red-700">
+        <p id={id + "-error"} className="text-xs leading-5 text-ui-danger">
           {error}
         </p>
       )}

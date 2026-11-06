@@ -10,17 +10,17 @@ export const HEAT_CONFIG: Record<Exclude<HeatLevel, null>, {
   low: {
     label: "Low heat",
     shortLabel: "Low",
-    className: "border-blue-200 bg-blue-50 text-blue-700",
+    className: "text-ui-info",
   },
   medium: {
     label: "Medium heat",
     shortLabel: "Medium",
-    className: "border-amber-200 bg-amber-50 text-amber-800",
+    className: "text-ui-warning-text",
   },
   high: {
     label: "High heat",
     shortLabel: "High",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "text-ui-danger",
   },
 };
 

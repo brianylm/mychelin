@@ -26,7 +26,7 @@ function AddCookedFoodButton({ onAdd }: { onAdd: () => void }) {
     <button
       type="button"
       onClick={onAdd}
-      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-ui-border-strong bg-ui-surface-raised px-3 text-xs font-semibold text-ui-text transition hover:border-ui-accent/40 hover:bg-ui-accent-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2"
+      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-ui-border-strong bg-ui-surface-raised px-3 text-xs font-semibold text-ui-text transition hover:border-ui-border-strong hover:bg-ui-accent-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2"
     >
       <Plus className="h-4 w-4" aria-hidden="true" />
       Add cooked food
@@ -56,7 +56,7 @@ export function PreparedBatchList({
             <li
               key={row}
               aria-hidden="true"
-              className="h-20 animate-pulse rounded-lg bg-[var(--ui-surface-subtle)]"
+              className="h-20 animate-pulse rounded-lg bg-ui-surface-subtle"
             />
           ))}
         </ul>

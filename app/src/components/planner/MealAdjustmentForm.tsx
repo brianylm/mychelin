@@ -13,7 +13,7 @@ import type {
 } from "@/lib/meal-pilot/types";
 
 const inputClass =
-  "h-11 w-full min-w-0 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 text-sm text-ui-text outline-none transition-colors placeholder:text-ui-muted focus:border-ui-accent/45 focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
+  "h-11 w-full min-w-0 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 text-sm text-ui-text outline-none transition-colors placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
 
 const checkboxClass =
   "h-5 w-5 shrink-0 rounded border-ui-border-strong accent-ui-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:cursor-not-allowed disabled:opacity-60";
@@ -176,7 +176,7 @@ export function MealAdjustmentForm({
       {error && (
         <p
           role="alert"
-          className="rounded-lg border border-ui-danger/20 bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger"
+          className="rounded-lg border border-ui-border bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger"
         >
           {error}
         </p>
@@ -218,7 +218,7 @@ export function MealAdjustmentForm({
 
       {preparedDishes.length > 0 && (
         <section className="grid gap-2">
-          <h3 className="text-xs font-semibold tracking-wide text-ui-muted uppercase">
+          <h3 className="text-xs font-semibold text-ui-muted">
             Ready-made dishes
           </h3>
           <ul className="divide-y divide-ui-border">
@@ -280,7 +280,7 @@ export function MealAdjustmentForm({
 
       {freshDishes.length > 0 && (
         <section className="grid gap-2">
-          <h3 className="text-xs font-semibold tracking-wide text-ui-muted uppercase">
+          <h3 className="text-xs font-semibold text-ui-muted">
             Cooked fresh
           </h3>
           <ul className="divide-y divide-ui-border">

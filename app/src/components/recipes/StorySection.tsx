@@ -37,7 +37,7 @@ export function StorySection({ story, onSave }: StorySectionProps) {
     >
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <span className="text-xs font-medium text-ui-muted">
             Story
           </span>
           <SaveIndicator isSaving={isSaving} />
@@ -48,7 +48,7 @@ export function StorySection({ story, onSave }: StorySectionProps) {
           onBlur={handleBlur}
           placeholder="Who taught this recipe, what occasion it belongs to, or what makes it feel like home?"
           rows={5}
-          className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400"
+          className="w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted"
         />
         <p className="text-[10px] text-ui-muted">
           This is for memory and provenance, not the short recipe-card summary.

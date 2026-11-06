@@ -136,7 +136,7 @@ export function Combobox({
   return (
     <div ref={containerRef} className="relative flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium uppercase tracking-wide text-ui-muted">
+        <label className="text-xs font-medium text-ui-muted">
           {label}
         </label>
         <SaveIndicator isSaving={isSaving} />
@@ -159,7 +159,7 @@ export function Combobox({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 pr-8 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted ${
+          className={`w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 pr-8 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted ${
             !value && !isOpen ? "text-ui-muted" : "text-ui-text"
           }`}
         />
@@ -197,7 +197,7 @@ export function Combobox({
       {isOpen && (
         <ul
           ref={listRef}
-          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-60 overflow-y-auto rounded-lg border border-ui-border bg-ui-surface-raised py-1 shadow-lg"
+          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-60 overflow-y-auto rounded-lg border border-ui-border bg-ui-surface-raised py-1"
         >
           {flatFiltered.length === 0 ? (
             <li className="px-3 py-2 text-sm text-ui-muted">
@@ -217,7 +217,7 @@ export function Combobox({
             Object.entries(grouped).map(([group, opts]) => (
               <li key={group}>
                 {group && (
-                  <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-ui-muted">
+                  <div className="px-3 py-1 text-xs font-semibold text-ui-muted">
                     {group}
                   </div>
                 )}
@@ -230,7 +230,7 @@ export function Combobox({
                       data-combobox-option
                       className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
                         idx === highlightIdx
-                          ? "bg-ui-accent/5 text-accent-dark"
+                          ? "bg-ui-accent-muted text-ui-text"
                           : value === opt.value
                             ? "bg-ui-surface-subtle font-medium text-ui-text"
                             : "text-ui-text hover:bg-ui-surface-subtle"

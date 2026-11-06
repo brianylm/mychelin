@@ -92,8 +92,8 @@ export function PilotChecklistPanel() {
   };
 
   return (
-    <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] shadow-sm">
-      <div className="flex items-start justify-between gap-3 p-5">
+    <div>
+      <div className="flex items-start justify-between gap-3">
         <button
           type="button"
           onClick={() => setIsOpen((open) => !open)}
@@ -101,9 +101,8 @@ export function PilotChecklistPanel() {
           aria-expanded={isOpen}
         >
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">Pilot loop</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-950">First Mychelin run-through</h2>
-            <p className="mt-1 text-sm leading-6 text-neutral-600">
+            <h2 className="text-xl font-semibold text-ui-text">First Mychelin run-through</h2>
+            <p className="mt-1 text-sm leading-6 text-ui-muted">
               Follow the core path once: capture, plan, shop, cook, record an attempt, then promote the useful changes.
             </p>
           </div>
@@ -113,42 +112,42 @@ export function PilotChecklistPanel() {
           <button
             type="button"
             onClick={() => void loadStatus("refresh")}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-500 transition hover:border-ui-accent/30 hover:text-ui-accent disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-ui-border bg-ui-surface-raised text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent disabled:opacity-50"
             disabled={loading || refreshing}
             aria-label="Refresh pilot checklist"
           >
             <RefreshCw className={"h-3.5 w-3.5 " + (refreshing ? "animate-spin" : "")} />
           </button>
-          <div className="rounded-full border border-[#eadfce] bg-white px-3 py-1 text-xs font-semibold text-neutral-700">
+          <div className="text-sm text-ui-muted">
             {loading ? "..." : String(status?.completedCount ?? 0) + "/" + String(status?.totalCount ?? checklist.length)}
           </div>
         </div>
       </div>
 
       {isOpen && (
-        <div className="border-t border-[#eadfce] px-5 pb-5 pt-4">
-          <div className="h-2 rounded-full bg-[#eadfce]" aria-hidden="true">
+        <div className="mt-4">
+          <div className="h-2 rounded-full bg-ui-surface-subtle" aria-hidden="true">
             <div className="h-full rounded-full bg-ui-accent transition-[width]" style={{ width: progress + "%" }} />
           </div>
 
           {!loading && nextItem && (
-            <div className="mt-4 flex items-start gap-3 rounded-xl border border-ui-accent/15 bg-white px-3 py-3">
-              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+            <div className="mt-4 flex items-start gap-3">
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
                 <ArrowRight className="h-3.5 w-3.5" />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-accent">Next pilot step</p>
-                <p className="mt-1 text-sm font-semibold text-neutral-900">{nextItem.label}</p>
-                <p className="mt-1 text-xs leading-5 text-neutral-500">{ITEM_DETAILS[nextItem.id]}</p>
+                <p className="text-xs font-semibold text-ui-accent">Next pilot step</p>
+                <p className="mt-1 text-sm font-semibold text-ui-text">{nextItem.label}</p>
+                <p className="mt-1 text-xs leading-5 text-ui-muted">{ITEM_DETAILS[nextItem.id]}</p>
               </div>
             </div>
           )}
 
           <div className="mt-4 space-y-2">
             {loading ? (
-              <p className="rounded-xl border border-[#eadfce] bg-white px-3 py-3 text-sm text-neutral-500">Loading pilot checklist...</p>
+              <p className="py-2 text-sm text-ui-muted">Loading pilot checklist...</p>
             ) : checklist.length === 0 ? (
-              <p className="rounded-xl border border-[#eadfce] bg-white px-3 py-3 text-sm text-neutral-500">No pilot activity yet.</p>
+              <p className="py-2 text-sm text-ui-muted">No pilot activity yet.</p>
             ) : (
               checklist.map((item) => {
                 const completedDate = formatDate(item.completedAt);
@@ -156,21 +155,21 @@ export function PilotChecklistPanel() {
                   <div
                     key={item.id}
                     className={
-                      "flex items-start gap-3 rounded-xl border bg-white px-3 py-3 " +
-                      (item.completed ? "border-[#eadfce]" : "border-[#eadfce] opacity-85")
+                      "flex items-start gap-3 py-2 " +
+                      (item.completed ? "" : "opacity-85")
                     }
                   >
                     {item.completed ? (
                       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ui-accent" />
                     ) : (
-                      <Circle className="mt-0.5 h-4 w-4 shrink-0 text-neutral-300" />
+                      <Circle className="mt-0.5 h-4 w-4 shrink-0 text-ui-muted" />
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className={"text-sm " + (item.completed ? "font-semibold text-neutral-900" : "font-medium text-neutral-600")}>{item.label}</span>
+                        <span className={"text-sm " + (item.completed ? "font-semibold text-ui-text" : "font-medium text-ui-muted")}>{item.label}</span>
                         {completedDate && <span className="text-[11px] font-medium text-ui-muted">Done {completedDate}</span>}
                       </div>
-                      <p className="mt-1 text-xs leading-5 text-neutral-500">{ITEM_DETAILS[item.id]}</p>
+                      <p className="mt-1 text-xs leading-5 text-ui-muted">{ITEM_DETAILS[item.id]}</p>
                     </div>
                   </div>
                 );
@@ -178,10 +177,10 @@ export function PilotChecklistPanel() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#eadfce] bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-2">
               <MessageSquare className="mt-0.5 h-4 w-4 text-ui-accent" />
-              <p className="text-xs leading-5 text-neutral-500">{feedbackLabel}</p>
+              <p className="text-xs leading-5 text-ui-muted">{feedbackLabel}</p>
             </div>
             <Button type="button" size="md" variant="secondary" onClick={() => setShowFeedback(true)}>
               Send feedback

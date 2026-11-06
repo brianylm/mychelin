@@ -11,8 +11,8 @@ export default function CopyrightPage() {
   const agent = COPYRIGHT_AGENT;
 
   return (
-    <main className="min-h-screen bg-surface px-6 py-12 text-ui-text">
-      <article className="mx-auto max-w-2xl space-y-6 text-[15px] leading-7 text-stone-700">
+    <main className="min-h-screen bg-ui-bg px-6 py-12 text-ui-text">
+      <article className="mx-auto max-w-2xl space-y-6 text-[15px] leading-7 text-ui-text">
         <Link href="/" className="text-sm font-medium text-ui-accent hover:underline">
           ← Mychelin
         </Link>

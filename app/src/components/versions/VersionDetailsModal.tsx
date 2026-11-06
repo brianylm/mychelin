@@ -55,19 +55,19 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ui-scrim sm:items-center"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-ui-surface-raised sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ui-border bg-ui-surface-raised px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
             <span>{method.icon}</span>
             <div>
-              <h3 className="text-sm font-semibold text-neutral-800">Version v{label}</h3>
+              <h3 className="text-sm font-semibold text-ui-text">Version v{label}</h3>
               <p className="text-[11px] text-ui-muted">
                 {method.label} ·{" "}
                 {new Date(version.createdAt).toLocaleDateString("en-SG", {
@@ -80,7 +80,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-ui-muted hover:bg-neutral-100"
+            className="rounded-lg p-1 text-ui-muted hover:bg-ui-surface-subtle"
           >
             <X className="h-4 w-4" />
           </button>
@@ -89,7 +89,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
         <div className="space-y-5 px-4 py-4">
           {/* Meta */}
           {(version.changeNote || version.closenessRating !== null) && (
-            <div className="rounded-xl bg-ui-accent/5 p-3 text-xs text-[#521224]">
+            <div className="rounded-xl bg-ui-accent-muted p-3 text-xs text-ui-text">
               {version.changeNote && (
                 <p className="font-medium">{version.changeNote}</p>
               )}
@@ -101,39 +101,39 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
                       star <= (version.closenessRating ?? 0) ? (
                         <Star
                           key={star}
-                          className="h-3 w-3 text-amber-500"
+                          className="h-3 w-3 text-ui-warning"
                           fill="currentColor"
                           aria-hidden="true"
                         />
                       ) : (
-                        <Star key={star} className="h-3 w-3 text-amber-300" aria-hidden="true" />
+                        <Star key={star} className="h-3 w-3 text-ui-warning" aria-hidden="true" />
                       )
                     )}
                   </div>
                 </div>
               )}
               {version.closenessNotes && (
-                <p className="mt-1 italic">&quot;{version.closenessNotes}&quot;</p>
+                <p className="mt-1">&quot;{version.closenessNotes}&quot;</p>
               )}
             </div>
           )}
 
           {/* Ingredients */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-muted">
+            <h4 className="mb-2 text-xs font-semibold text-ui-muted">
               Ingredients
             </h4>
             {version.ingredients.length === 0 ? (
-              <p className="text-xs italic text-ui-muted">No ingredients recorded</p>
+              <p className="text-xs text-ui-muted">No ingredients recorded</p>
             ) : (
               <ul className="space-y-1">
                 {version.ingredients.map((ing, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-neutral-700">
-                    <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                  <li key={i} className="flex items-start gap-2 text-sm text-ui-text">
+                    <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-ui-warning" />
                     <span className="flex-1">
                       <span className="font-medium">{ing.name}</span>
                       {(ing.quantity !== undefined || ing.unit) && (
-                        <span className="text-neutral-500">
+                        <span className="text-ui-muted">
                           {" "}
                           — {ing.quantity ?? ""} {ing.unit ?? ""}
                         </span>
@@ -150,21 +150,21 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
 
           {/* Instructions */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-muted">
+            <h4 className="mb-2 text-xs font-semibold text-ui-muted">
               Instructions
             </h4>
             {version.instructions.length === 0 ? (
-              <p className="text-xs italic text-ui-muted">No instructions recorded</p>
+              <p className="text-xs text-ui-muted">No instructions recorded</p>
             ) : (
               <ol className="space-y-2">
                 {version.instructions.map((inst, i) => (
-                  <li key={i} className="text-sm leading-relaxed text-neutral-700">
+                  <li key={i} className="text-sm leading-relaxed text-ui-text">
                     <span className="mr-1.5 font-semibold text-ui-accent">
                       {inst.step ?? i + 1}.
                     </span>
                     {inst.content ?? inst.text}
                     {inst.tip && (
-                      <div className="mt-1 rounded-lg bg-ui-accent/5 px-2 py-1 text-xs text-ui-accent">
+                      <div className="mt-1 rounded-lg bg-ui-accent-muted px-2 py-1 text-xs text-ui-accent">
                         💡 {inst.tip}
                       </div>
                     )}
@@ -177,10 +177,10 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           {/* Notes */}
           {version.notes && (
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ui-muted">
+              <h4 className="mb-2 text-xs font-semibold text-ui-muted">
                 Notes
               </h4>
-              <p className="text-sm leading-relaxed text-neutral-600">{version.notes}</p>
+              <p className="text-sm leading-relaxed text-ui-muted">{version.notes}</p>
             </div>
           )}
 
@@ -188,7 +188,7 @@ export function VersionDetailsModal({ version, onClose, onRefine }: VersionDetai
           {canRefine && onRefine && (
             <button
               onClick={onRefine}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-ui-action px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-ui-accent"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-ui-action px-4 py-3 text-sm font-medium text-ui-action-text transition-colors hover:bg-ui-accent"
             >
               ✨ Refine with AI
             </button>

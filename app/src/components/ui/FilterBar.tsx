@@ -42,14 +42,14 @@ export function FilterBar({
         <label htmlFor={id} className="sr-only">
           {label}
         </label>
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ui-muted)]" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ui-muted" />
         <input
           id={id}
           type="search"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder={placeholder}
-          className="h-10 w-full rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] pl-9 pr-3 text-sm text-[var(--ui-text)] outline-none transition placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus-soft)]"
+          className="h-10 w-full rounded-lg border border-ui-border-strong bg-ui-surface-raised pl-9 pr-3 text-sm text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
           autoFocus={autoFocus}
         />
       </div>
@@ -64,10 +64,10 @@ export function FilterBar({
                 type="button"
                 onClick={() => onFilterChange?.(filter.value)}
                 className={cn(
-                  "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2",
+                  "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2",
                   active
-                    ? "border-[var(--ui-action)] bg-[var(--ui-action)] text-[var(--ui-action-text)]"
-                    : "border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] text-[var(--ui-muted)] hover:border-[var(--ui-accent)]/40 hover:text-[var(--ui-accent)]"
+                    ? "border-ui-action bg-ui-action text-ui-action-text"
+                    : "border-ui-border-strong bg-ui-surface-raised text-ui-muted hover:border-ui-border-strong hover:text-ui-accent"
                 )}
               >
                 {filter.label}
@@ -78,7 +78,7 @@ export function FilterBar({
             );
           })}
           {resultCount !== undefined && (
-            <span className="ml-auto whitespace-nowrap px-1 text-[11px] font-medium text-[var(--ui-muted)]">
+            <span className="ml-auto whitespace-nowrap px-1 text-[11px] font-medium text-ui-muted">
               {resultCount} {resultLabel}
             </span>
           )}

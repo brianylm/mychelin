@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, ChevronUp, History, Pencil, Star, Target, Trash2 } from "lucide-react";
-import { Button, EmptyState, Panel } from "@/components/ui";
+import { Check, ChevronUp, Pencil, Star, Target, Trash2 } from "lucide-react";
+import { Button, EmptyState } from "@/components/ui";
 import { HalfStarRating } from "./HalfStarRating";
 
 interface RecipeAttempt {
@@ -33,21 +33,17 @@ function formatCookedAt(value: string): string {
   });
 }
 
-function cookedAtParts(value: string): { day: string; month: string; time: string } {
+function cookedAtTime(value: string): string {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { day: "–", month: "", time: "" };
-  return {
-    day: String(date.getDate()),
-    month: date.toLocaleDateString("en-SG", { month: "short" }),
-    time: date.toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit" }),
-  };
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("en-SG", { hour: "numeric", minute: "2-digit" });
 }
 
 function RatingNote({ rating, label }: { rating: number | null; label: string }) {
   if (!rating) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-[var(--ui-muted)]">
-      <Star className="h-3.5 w-3.5 fill-[#f7c86a] text-[#c68a18]" aria-hidden="true" />
+    <span className="inline-flex items-center gap-1 text-xs text-ui-muted">
+      <Star className="h-3.5 w-3.5 fill-ui-highlight text-ui-warning" aria-hidden="true" />
       {label} {rating.toFixed(1).replace(".0", "")}
     </span>
   );
@@ -220,34 +216,23 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
   const nextBatch = Math.min(5, remaining);
 
   return (
-    <Panel raised className="p-4">
+    <div>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--ui-muted)]">
-            <History className="h-4 w-4" />
-            Attempts
-            {!loading && (
-              <span className="rounded-md bg-[var(--ui-accent-muted)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ui-accent)]">
-                {attempts.length} so far
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-sm text-[var(--ui-muted)]">
-            Every cook is saved here as an attempt. Keep a note for next time, then promote the ones worth keeping into a recipe version.
-          </p>
+          <h3 className="text-sm font-semibold text-ui-text">Attempts</h3>
         </div>
       </div>
 
       {error && (
-        <p className="mt-3 rounded-md border border-[var(--ui-danger)]/20 bg-[var(--ui-danger-soft)] px-3 py-2 text-sm text-[var(--ui-danger)]">
+        <p className="mt-3 text-sm text-ui-danger">
           {error}
         </p>
       )}
 
       {loading ? (
         <div className="mt-4 space-y-2">
-          <div className="h-16 animate-pulse rounded-lg bg-[var(--ui-surface-subtle)]" />
-          <div className="h-16 animate-pulse rounded-lg bg-[var(--ui-surface-subtle)]" />
+          <div className="h-16 animate-pulse rounded-lg bg-ui-surface-subtle" />
+          <div className="h-16 animate-pulse rounded-lg bg-ui-surface-subtle" />
         </div>
       ) : attempts.length === 0 ? (
         <EmptyState
@@ -260,39 +245,30 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
           {attempts.slice(0, visibleCount).map((attempt, index) => {
             const isEditing = editingId === attempt.id;
             const attemptNumber = attempts.length - index;
-            const tile = cookedAtParts(attempt.cookedAt);
+            const time = cookedAtTime(attempt.cookedAt);
             return (
               <div
                 key={attempt.id}
-                className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3.5 shadow-sm"
+                className="rounded-xl border border-ui-border bg-ui-surface-raised p-3.5"
               >
-                <div className="flex items-start gap-3">
-                  {/* Date tile — gives each attempt a distinct visual anchor */}
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]">
-                    <span className="text-base font-bold leading-none">{tile.day}</span>
-                    <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">
-                      {tile.month}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <p className="text-sm font-semibold text-[var(--ui-text)]">
+                      <p className="text-sm font-semibold text-ui-text">
                         Attempt {attemptNumber}
                       </p>
-                      <span className="text-xs text-[var(--ui-muted)]">
-                        {formatCookedAt(attempt.cookedAt)}{tile.time ? ` · ${tile.time}` : ""}
+                      <span className="text-xs text-ui-muted">
+                        {formatCookedAt(attempt.cookedAt)}{time ? ` · ${time}` : ""}
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                       <RatingNote rating={attempt.dishRating} label="Dish" />
                       {attempt.promotedVersionId && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--ui-success)]">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-ui-success">
                           <Check className="h-3.5 w-3.5" aria-hidden="true" />
                           Saved as a version
                         </span>
                       )}
                     </div>
-                  </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -300,7 +276,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="border-[var(--ui-accent)]/20 bg-ui-surface-raised text-[var(--ui-accent)] shadow-sm hover:bg-[var(--ui-accent)]/5"
+                      className="min-h-11 border-ui-border bg-ui-surface-raised text-ui-accent shadow-sm hover:bg-ui-accent-muted"
                       iconEnd={<Target className="h-3.5 w-3.5" />}
                       loading={nextTrySavingId === attempt.id}
                       onClick={() => saveAsNextTry(attempt)}
@@ -311,6 +287,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                   {!attempt.promotedVersionId && (
                     <Button
                       size="sm"
+                      className="min-h-11"
                       variant="primary"
                       loading={promotingId === attempt.id}
                       onClick={() => promoteAttempt(attempt.id)}
@@ -322,6 +299,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                   <Button
                     size="sm"
                     variant="secondary"
+                    className="min-h-11"
                     iconStart={<Pencil className="h-3.5 w-3.5" />}
                     onClick={() => isEditing ? setEditingId(null) : startEdit(attempt)}
                     aria-label={isEditing ? "Cancel editing attempt" : "Edit attempt"}
@@ -331,6 +309,7 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                   <Button
                     size="sm"
                     variant="danger"
+                    className="min-h-11"
                     iconStart={<Trash2 className="h-3.5 w-3.5" />}
                     loading={savingId === attempt.id && !isEditing}
                     onClick={() => deleteAttempt(attempt.id)}
@@ -341,23 +320,23 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                 </div>
 
                 {isEditing ? (
-                  <div className="mt-3 space-y-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3">
-                    <label className="block text-xs font-semibold text-[var(--ui-muted)]">
+                <div className="mt-6 space-y-4">
+                    <label className="block text-xs font-semibold text-ui-muted">
                       Attempt notes
                       <textarea
                         value={draftNotes}
                         onChange={(event) => setDraftNotes(event.target.value)}
                         rows={2}
-                        className="mt-1 w-full resize-none rounded-md border border-[var(--ui-border)] px-2 py-2 text-sm text-[var(--ui-text)]"
+                        className="mt-1 w-full resize-none rounded-md border border-ui-border px-2 py-2 text-sm text-ui-text"
                       />
                     </label>
-                    <label className="block text-xs font-semibold text-[var(--ui-muted)]">
+                    <label className="block text-xs font-semibold text-ui-muted">
                       Next time
                       <textarea
                         value={draftNextTime}
                         onChange={(event) => setDraftNextTime(event.target.value)}
                         rows={2}
-                        className="mt-1 w-full resize-none rounded-md border border-[var(--ui-border)] px-2 py-2 text-sm text-[var(--ui-text)]"
+                        className="mt-1 w-full resize-none rounded-md border border-ui-border px-2 py-2 text-sm text-ui-text"
                       />
                     </label>
                     <Button
@@ -370,8 +349,8 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                   </div>
                 ) : (
                   <>
-                    <div className="mt-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-3">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ui-muted)]">
+                    <div className="mt-6">
+                      <p className="mb-2 text-xs font-semibold text-ui-muted">
                         How did the dish turn out?
                       </p>
                       <HalfStarRating
@@ -385,16 +364,16 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
                       />
                     </div>
                     {attempt.changeNotes.length > 0 && (
-                      <ul className="mt-3 space-y-1 text-sm text-[var(--ui-muted)]">
+                      <ul className="mt-3 space-y-1 text-sm text-ui-muted">
                         {attempt.changeNotes.slice(0, 3).map((note, index) => (
                           <li key={index}>{note}</li>
                         ))}
                       </ul>
                     )}
                     {attempt.nextTime && (
-                      <div className="mt-3 rounded-lg border border-[var(--ui-accent)]/10 bg-[var(--ui-accent)]/5 p-3">
-                        <p className="text-sm text-[var(--ui-muted)]">
-                          <span className="font-semibold text-[var(--ui-text)]">Next time:</span> {attempt.nextTime}
+                      <div className="mt-6">
+                        <p className="text-sm text-ui-muted">
+                          <span className="font-semibold text-ui-text">Next time:</span> {attempt.nextTime}
                         </p>
                       </div>
                     )}
@@ -428,6 +407,6 @@ export function AttemptHistory({ recipeId, refreshKey, onPromoted, onNextTrySave
           </div>
         </div>
       )}
-    </Panel>
+    </div>
   );
 }

@@ -60,7 +60,7 @@ interface MealComposerDialogProps {
 }
 
 const inputClass =
-  "h-11 w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 text-sm text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent/45 focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:opacity-60";
+  "h-11 w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 text-sm text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus-visible:ring-2 focus-visible:ring-ui-focus-soft disabled:opacity-60";
 
 function timeInZone(instant: string, timezone: string) {
   const date = new Date(instant);
@@ -317,7 +317,7 @@ export function MealComposerDialog({
     >
       <form id="meal-composer-form" onSubmit={handleSubmit} className="space-y-5">
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ui-muted">
+          <h3 className="mb-2 text-xs font-semibold text-ui-muted">
             Eating occasion
           </h3>
           <MealPlanningFields
@@ -344,7 +344,7 @@ export function MealComposerDialog({
         {purpose !== "edit" && (
           <section className="space-y-4 border-t border-ui-border pt-5">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ui-muted">
+              <h3 className="text-xs font-semibold text-ui-muted">
                 Dish source
               </h3>
               <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Dish source">
@@ -495,7 +495,7 @@ export function MealComposerDialog({
         )}
 
         {(validationError || error) && (
-          <p role="alert" className="rounded-lg border border-ui-danger/20 bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger">
+          <p role="alert" className="rounded-lg border border-ui-border bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger">
             {validationError || error}
           </p>
         )}

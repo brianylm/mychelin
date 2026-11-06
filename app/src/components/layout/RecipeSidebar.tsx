@@ -218,7 +218,7 @@ export function RecipeSidebar({
         <button
           type="button"
           aria-label="Close library panel"
-          className="fixed inset-0 z-30 bg-neutral-950/35 md:hidden"
+          className="fixed inset-0 z-30 bg-ui-scrim md:hidden"
           onClick={onClose}
         />
       )}
@@ -228,7 +228,7 @@ export function RecipeSidebar({
         tabIndex={-1}
         aria-label="Recipe library"
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_24px_64px_rgba(60,43,25,0.16)] transition-[transform,visibility] duration-200 ease-out focus:outline-none",
+          "fixed inset-y-0 left-0 z-40 flex w-[85vw] max-w-sm flex-col border-r border-ui-border bg-ui-surface-raised shadow-ui-overlay transition-[transform,visibility] duration-200 ease-out focus:outline-none",
           mobileOnly ? "md:hidden" : "md:static md:z-auto md:h-full md:w-72 md:translate-x-0 md:shadow-none lg:w-80",
           isOpen
             ? "visible translate-x-0"
@@ -236,7 +236,7 @@ export function RecipeSidebar({
         )}
       >
         {/* Header + search + toolbar */}
-        <div className="space-y-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-3">
+        <div className="space-y-3 border-b border-ui-border bg-ui-surface-raised px-5 py-3">
           <RecipeSearchHeader
             query={query}
             onQueryChange={setQuery}
@@ -246,7 +246,7 @@ export function RecipeSidebar({
           />
 
           {(loading || error) && (
-            <div className="rounded-xl border border-ui-accent/10 bg-ui-accent/5 px-3 py-2 text-xs text-[#521224]">
+            <div className="rounded-xl border border-ui-border bg-ui-accent-muted px-3 py-2 text-xs text-ui-text">
               {loading ? "Loading recipes…" : error}
             </div>
           )}
@@ -265,16 +265,16 @@ export function RecipeSidebar({
           <section className="mb-4">
             <button
               type="button"
-              className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-left transition-colors hover:bg-ui-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/30 focus-visible:ring-offset-1"
+              className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-left transition-colors hover:bg-ui-accent-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-1"
               aria-expanded={isRecipesOpen}
               onClick={() => setIsRecipesOpen((value) => !value)}
             >
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-accent/60">
+              <span className="text-xs font-semibold text-ui-accent">
                 {hasQuery ? "Search results" : "Recipe library"}
               </span>
               <span className="flex items-center gap-2">
                 {!hasQuery && filteredRecipes.length > 0 && (
-                  <span className="rounded-full bg-ui-accent/10 px-1.5 text-[10px] font-medium text-ui-accent">
+                  <span className="rounded-full bg-ui-accent-muted px-1.5 text-[10px] font-medium text-ui-accent">
                     {filteredRecipes.length}
                   </span>
                 )}
@@ -291,10 +291,10 @@ export function RecipeSidebar({
             {isRecipesOpen && draftRecipes.length > 0 && (
               <div className="mb-3">
                 <div className="flex items-center justify-between px-3 pb-1.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ui-muted">
+                  <span className="text-xs font-semibold text-ui-muted">
                     Drafts
                   </span>
-                  <span className="rounded-full bg-ui-accent/10 px-1.5 text-[10px] font-medium text-ui-accent">
+                  <span className="rounded-full bg-ui-accent-muted px-1.5 text-[10px] font-medium text-ui-accent">
                     {draftRecipes.length}
                   </span>
                 </div>
@@ -349,19 +349,19 @@ export function RecipeSidebar({
             ))}
           </section>
 
-          <section className="border-t border-ui-accent/10 pt-3">
+          <section className="border-t border-ui-border pt-3">
             <div className="flex items-center justify-between gap-2 px-3 pb-1.5">
               <button
                 type="button"
-                className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg text-left transition-colors hover:text-ui-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/30 focus-visible:ring-offset-1"
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg text-left transition-colors hover:text-ui-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-1"
                 aria-expanded={isBooksOpen}
                 onClick={() => setIsBooksOpen((value) => !value)}
               >
-                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-accent/60">
+                <span className="text-xs font-semibold text-ui-accent">
                   Books
                 </span>
                 {books.length > 0 && (
-                  <span className="rounded-full bg-ui-accent/10 px-1.5 text-[10px] font-medium text-ui-accent">
+                  <span className="rounded-full bg-ui-accent-muted px-1.5 text-[10px] font-medium text-ui-accent">
                     {books.length}
                   </span>
                 )}
@@ -378,7 +378,7 @@ export function RecipeSidebar({
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("mychelin:create-book"));
                 }}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-ui-accent/10 text-ui-accent transition-colors hover:border-ui-accent/25 hover:bg-ui-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/30 focus-visible:ring-offset-1"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-ui-border text-ui-accent transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-1"
                 aria-label="Create book"
                 title="Create book"
               >
@@ -394,8 +394,8 @@ export function RecipeSidebar({
                       onClick={() => toggleBook(book.id)}
                       aria-expanded={expandedBooks.has(book.id)}
                       className={cn(
-                        "flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm transition-colors hover:bg-ui-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/30 focus-visible:ring-offset-1",
-                        expandedBooks.has(book.id) && "bg-ui-accent/10 text-[#521224]"
+                        "flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm transition-colors hover:bg-ui-accent-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-1",
+                        expandedBooks.has(book.id) && "bg-ui-accent-muted text-ui-text"
                       )}
                     >
                       <ChevronRight
@@ -433,9 +433,9 @@ export function RecipeSidebar({
                                   onClose();
                                 }}
                                 className={cn(
-                                  "min-h-11 w-full truncate rounded-md px-2 text-left text-sm transition-colors hover:bg-ui-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-accent/30 focus-visible:ring-offset-1",
+                                  "min-h-11 w-full truncate rounded-md px-2 text-left text-sm transition-colors hover:bg-ui-accent-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-1",
                                   selectedRecipeId === r.id
-                                    ? "bg-ui-accent/10 font-medium text-[#521224]"
+                                    ? "bg-ui-accent-muted font-medium text-ui-text"
                                     : "text-ui-text"
                                 )}
                               >

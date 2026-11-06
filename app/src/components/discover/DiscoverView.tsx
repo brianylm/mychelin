@@ -76,13 +76,13 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
 
   if (recipes.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-8">
+      <div className="flex flex-1 flex-col items-center justify-center bg-ui-bg px-6 py-8">
         <div className="mx-auto max-w-md text-center">
           <div className="mb-4 text-6xl">🎲</div>
-          <h2 className="text-lg font-semibold text-neutral-800 mb-2">
+          <h2 className="text-lg font-semibold text-ui-text mb-2">
             No Recipes Yet
           </h2>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-ui-muted">
             Add some recipes to your collection first, then come back to
             discover what to cook!
           </p>
@@ -96,23 +96,23 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
   const canRoll = pool.length > 0 && !isRolling && !poolLoading;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface">
+    <div className="flex-1 overflow-y-auto bg-ui-bg">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-neutral-800 mb-2">
+          <h1 className="text-2xl font-bold text-ui-text mb-2">
             What should I cook? 🤔
           </h1>
-          <p className="text-neutral-600">
+          <p className="text-ui-muted">
             Let us surprise you with a random recipe from your collection!
           </p>
         </div>
 
         {/* Narrow-by filter */}
-        <div className="rounded-2xl border border-ui-accent/15 bg-ui-accent/5 p-4">
+        <div className="rounded-2xl border border-ui-border bg-ui-accent-muted p-4">
           <label
             htmlFor="surprise-filter"
-            className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#521224]"
+            className="mb-2 block text-xs font-semibold text-ui-text"
           >
             Surprise me by…
           </label>
@@ -122,7 +122,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
             placeholder="chicken, Italian, soup… (leave blank for all recipes)"
-            className="w-full rounded-xl border border-ui-accent/15 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
+            className="w-full rounded-xl border border-ui-border bg-ui-surface-raised px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
           />
           <p className="mt-2 text-[11px] leading-relaxed text-ui-accent">
             Narrow the randomiser by an ingredient, cuisine, or keyword.
@@ -130,7 +130,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             <button
               type="button"
               onClick={() => setFilterQuery("chicken")}
-              className="underline underline-offset-2 hover:text-[#241017]"
+              className="underline underline-offset-2 hover:text-ui-text"
             >
               chicken
             </button>
@@ -138,7 +138,7 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             <button
               type="button"
               onClick={() => setFilterQuery("italian")}
-              className="underline underline-offset-2 hover:text-[#241017]"
+              className="underline underline-offset-2 hover:text-ui-text"
             >
               italian
             </button>
@@ -146,13 +146,13 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
             <button
               type="button"
               onClick={() => setFilterQuery("soup")}
-              className="underline underline-offset-2 hover:text-[#241017]"
+              className="underline underline-offset-2 hover:text-ui-text"
             >
               soup
             </button>
           </p>
           {isFiltered && !poolLoading && (
-            <p className="mt-1 text-[11px] text-[#521224]">
+            <p className="mt-1 text-[11px] text-ui-text">
               {pool.length === 0
                 ? `No recipes match "${filterQuery.trim()}"`
                 : `Picking from ${pool.length} matching recipe${
@@ -183,26 +183,26 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
 
         {/* Selected Recipe Card */}
         {randomRecipe && !isRolling && (
-          <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-6">
             <div className="text-center mb-4">
-              <h3 className="text-xl font-semibold text-neutral-800 mb-2">
+              <h3 className="text-xl font-semibold text-ui-text mb-2">
                 {randomRecipe.title}
               </h3>
               {randomRecipe.cuisine && (
-                <span className="inline-block bg-ui-accent/10 text-[#521224] text-sm px-3 py-1 rounded-full">
+                <span className="inline-block bg-ui-accent-muted text-ui-text text-sm px-3 py-1 rounded-full">
                   {randomRecipe.cuisine}
                 </span>
               )}
             </div>
 
             {randomRecipe.description && (
-              <p className="text-neutral-600 text-center mb-4">
+              <p className="text-ui-muted text-center mb-4">
                 {randomRecipe.description}
               </p>
             )}
 
             {/* Recipe Details */}
-            <div className="flex justify-center gap-4 mb-6 text-sm text-neutral-500">
+            <div className="flex justify-center gap-4 mb-6 text-sm text-ui-muted">
               {randomRecipe.prepTime && (
                 <span>⏱️ Prep: {randomRecipe.prepTime}m</span>
               )}
@@ -229,10 +229,10 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
         )}
 
         {/* Recipe Stats */}
-        <div className="text-center text-sm text-neutral-500">
+        <div className="text-center text-sm text-ui-muted">
           <p>
             You have{" "}
-            <span className="font-medium text-neutral-700">
+            <span className="font-medium text-ui-text">
               {recipes.length}
             </span>{" "}
             recipe{recipes.length !== 1 ? "s" : ""} in your collection

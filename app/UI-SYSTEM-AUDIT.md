@@ -107,7 +107,7 @@ Target:
 - `Panel`: groups a page region.
 - `ObjectCard`: represents a recipe/book/planned meal only.
 - `ActionList` / `DataList`: for selectable rows and operational data.
-- Avoid cards inside cards. Use dividers, sections, and list rows for dense workflows.
+- Avoid cards inside cards. Use whitespace, sections, and list rows for dense workflows.
 
 ### 5. Forms and Fields
 

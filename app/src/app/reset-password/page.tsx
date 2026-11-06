@@ -12,26 +12,25 @@ type Status =
   | { kind: "success" };
 
 const fieldClass =
-  "w-full rounded-2xl border border-[#d8d8d2] bg-white/70 px-4 py-3 text-sm outline-none transition placeholder:text-stone-400 focus:border-ui-accent/45 focus:bg-white focus:ring-4 focus:ring-ui-accent/10";
+  "w-full rounded-2xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-sm outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-4 focus:ring-ui-focus-soft";
 
 function ResetPasswordShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface px-4 py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_12%,rgba(128,0,32,0.10),transparent_24rem),linear-gradient(180deg,rgba(250,250,248,0.96),rgba(246,242,235,0.92))]" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ui-bg px-4 py-10">
       <div className="relative w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-white/70 shadow-[0_18px_55px_rgba(40,26,19,0.10)] ring-1 ring-white/70 backdrop-blur-xl">
+          <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-ui-surface-raised ring-1 ring-ui-border">
             <img src="/images/mychelin-icon-96.webp" alt="Mychelin" className="h-11 w-11 object-contain" />
           </div>
-          <h1 className="logo-serif text-2xl font-bold tracking-[-0.015em]">
+          <h1 className="logo-serif text-2xl font-bold">
             <span className="text-ui-accent">my</span><span className="text-ui-text">chelin</span>
           </h1>
-          <p className="mt-2 text-sm text-stone-500">
+          <p className="mt-2 text-sm text-ui-muted">
             Cook like home, even in your new home.
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-white/70 bg-white/70 p-6 shadow-[0_24px_80px_rgba(60,43,25,0.10)] backdrop-blur-2xl">{children}</div>
+        <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-6">{children}</div>
       </div>
     </div>
   );
@@ -43,7 +42,7 @@ export default function ResetPasswordPage() {
       fallback={
         <ResetPasswordShell>
           <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Checking your link…</h2>
-          <p className="text-sm leading-6 text-stone-500">One moment.</p>
+          <p className="text-sm leading-6 text-ui-muted">One moment.</p>
         </ResetPasswordShell>
       }
     >
@@ -138,14 +137,14 @@ function ResetPasswordInner() {
       {status.kind === "checking" && (
             <>
               <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Checking your link…</h2>
-              <p className="text-sm leading-6 text-stone-500">One moment.</p>
+              <p className="text-sm leading-6 text-ui-muted">One moment.</p>
             </>
           )}
 
           {status.kind === "invalid" && (
             <>
               <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Can&apos;t reset password</h2>
-              <p className="mb-4 text-sm leading-6 text-stone-500">{status.message}</p>
+              <p className="mb-4 text-sm leading-6 text-ui-muted">{status.message}</p>
               <Button
                 type="button"
                 variant="primary"
@@ -165,7 +164,7 @@ function ResetPasswordInner() {
 
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold text-ui-muted">
                     New password
                   </label>
                   <input
@@ -180,7 +179,7 @@ function ResetPasswordInner() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                  <label className="mb-1.5 block text-xs font-semibold text-ui-muted">
                     Confirm password
                   </label>
                   <input
@@ -196,7 +195,7 @@ function ResetPasswordInner() {
               </div>
 
               {error && (
-                <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
+                <p className="mt-3 rounded-2xl border border-ui-border bg-ui-danger-soft px-4 py-3 text-xs text-ui-danger">
                   {error}
                 </p>
               )}
@@ -217,7 +216,7 @@ function ResetPasswordInner() {
       {status.kind === "success" && (
         <>
           <h2 className="app-editorial-title mb-2 text-3xl leading-tight text-ui-text">Password updated</h2>
-          <p className="mb-4 text-sm leading-6 text-stone-500">
+          <p className="mb-4 text-sm leading-6 text-ui-muted">
             Your password has been reset. Sign in with your new password.
           </p>
           <Button

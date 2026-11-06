@@ -156,8 +156,8 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                     className={
                       "rounded-2xl border px-4 py-3 text-left transition-colors " +
                       (selected
-                        ? "border-ui-accent bg-ui-accent/5"
-                        : "border-ui-border bg-ui-surface hover:border-ui-accent/40")
+                        ? "border-ui-accent bg-ui-accent-muted"
+                        : "border-ui-border bg-ui-surface-raised hover:border-ui-border-strong")
                     }
                   >
                     <span className="block text-sm font-semibold text-ui-text">{recipe.title}</span>
@@ -216,7 +216,7 @@ export function OnboardingFlow({ userName, onComplete }: OnboardingFlowProps) {
                   type="button"
                   onClick={() => pick(option.value)}
                   disabled={saving}
-                  className="rounded-2xl border border-ui-border bg-ui-surface px-4 py-3 text-left transition-colors hover:border-ui-accent/40 disabled:opacity-60"
+                  className="rounded-2xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-left transition-colors hover:border-ui-border-strong disabled:opacity-60"
                 >
                   <span className="block text-sm font-semibold text-ui-text">{option.title}</span>
                   <span className="mt-0.5 block text-sm leading-5 text-ui-muted">{option.body}</span>

@@ -341,22 +341,22 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-surface">
+      <div className="flex flex-1 items-center justify-center bg-ui-bg">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
+    <div className="flex-1 overflow-y-auto bg-ui-bg pb-20 md:pb-6">
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-6 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ui-accent/10 text-ui-accent">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ui-accent-muted text-ui-accent">
             <House className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-xl font-bold text-neutral-900">Household</h1>
-            <p className="text-sm text-neutral-500">
+            <h1 className="text-xl font-bold text-ui-text">Household</h1>
+            <p className="text-sm text-ui-muted">
               One shared plan, inventory, and shopping list for the people you cook with.
             </p>
           </div>
@@ -364,11 +364,11 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
 
         {!household ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-              <h2 className="mb-1 text-sm font-semibold text-neutral-900">
+            <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+              <h2 className="mb-1 text-sm font-semibold text-ui-text">
                 Start a household
               </h2>
-              <p className="mb-3 text-xs text-neutral-500">
+              <p className="mb-3 text-xs text-ui-muted">
                 You get a join code to share with the people you cook with.
               </p>
               <form
@@ -385,18 +385,18 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                   placeholder="e.g. Tan Family"
                   maxLength={80}
                   aria-label="Household name"
-                  className="min-w-0 flex-1 rounded-xl border border-neutral-200 px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
+                  className="min-w-0 flex-1 rounded-xl border border-ui-border px-3 py-2.5 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
                 />
                 <button
                   type="submit"
                   disabled={!newName.trim() || busy}
                   aria-busy={pendingAction === "create"}
-                  className="shrink-0 rounded-xl bg-ui-action px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-40"
+                  className="shrink-0 rounded-xl bg-ui-action px-4 py-2.5 text-sm font-medium text-ui-action-text transition-colors hover:bg-ui-accent disabled:opacity-40"
                 >
                   {pendingAction === "create" ? "Creating…" : "Create"}
                 </button>
               </form>
-              <div className="mt-4 border-t border-neutral-100 pt-3">
+              <div className="mt-4">
                 <button
                   type="button"
                   onClick={() => setShowJoin((open) => !open)}
@@ -407,7 +407,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                 </button>
                 {showJoin && (
                   <div className="mt-2">
-                    <p className="mb-2 text-xs text-neutral-500">
+                    <p className="mb-2 text-xs text-ui-muted">
                       Or open the invite link someone sent you.
                     </p>
                     <form
@@ -424,13 +424,13 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                         placeholder="ABC123"
                         maxLength={6}
                         aria-label="Join code"
-                        className="min-w-0 flex-1 rounded-xl border border-neutral-200 px-3 py-2.5 font-mono text-sm uppercase tracking-widest outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
+                        className="min-w-0 flex-1 rounded-xl border border-ui-border px-3 py-2.5 font-mono text-sm uppercase tracking-widest outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
                       />
                       <button
                         type="submit"
                         disabled={joinCode.trim().length === 0 || busy}
                         aria-busy={pendingAction === "join"}
-                        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-ui-action px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-40"
+                        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-ui-action px-4 py-2.5 text-sm font-medium text-ui-action-text transition-colors hover:bg-ui-accent disabled:opacity-40"
                       >
                         <UserPlus className="h-4 w-4" />
                         {pendingAction === "join" ? "Joining…" : "Join"}
@@ -444,13 +444,13 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
         ) : (
           <div className="space-y-4">
             {/* Household card with join code */}
-            <div className="rounded-2xl border border-ui-accent/15 bg-white p-5">
+            <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-base font-semibold text-neutral-900">
+                  <h2 className="text-base font-semibold text-ui-text">
                     {household.name}
                   </h2>
-                  <p className="mt-0.5 text-xs text-neutral-500">
+                  <p className="mt-0.5 text-xs text-ui-muted">
                     {household.memberCount} member{household.memberCount === 1 ? "" : "s"} · you&rsquo;re {household.myRole === "admin" ? "an admin" : "a member"}
                   </p>
                 </div>
@@ -458,16 +458,16 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                   type="button"
                   onClick={handleLeave}
                   disabled={busy}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:border-red-200 hover:text-red-700 disabled:opacity-40"
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ui-border px-3 py-1.5 text-xs font-medium text-ui-muted transition hover:border-ui-border hover:text-ui-danger disabled:opacity-40"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   Leave
                 </button>
               </div>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-ui-muted">
                   Invite code{" "}
-                  <span className="font-mono text-sm font-semibold tracking-widest text-neutral-900">
+                  <span className="font-mono text-sm font-semibold tracking-widest text-ui-text">
                     {household.joinCode}
                   </span>
                 </p>
@@ -483,11 +483,11 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                   <button
                     type="button"
                     onClick={copyJoinCode}
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-ui-muted hover:text-neutral-900"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-ui-muted hover:text-ui-text"
                   >
                     {copied ? (
                       <>
-                        <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                        <Check className="h-4 w-4 text-ui-success" aria-hidden />
                         Copied
                       </>
                     ) : (
@@ -502,28 +502,27 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
             </div>
 
             {/* Members */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Members</h3>
+            <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+              <h3 className="mb-3 text-sm font-semibold text-ui-text">Members</h3>
               <ul className="space-y-2">
                 {members.map((member) => {
                   const isMe = member.userId === user?.id;
                   return (
                     <li
                       key={member.userId}
-                      className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-2.5"
+                      className="flex items-center gap-3 px-1 py-2.5"
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ui-action text-xs font-semibold text-white">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ui-action text-xs font-semibold text-ui-action-text">
                         {member.name.slice(0, 1).toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-neutral-800">
+                        <p className="truncate text-sm font-medium text-ui-text">
                           {member.name}
                           {isMe && <span className="text-ui-muted"> (you)</span>}
                         </p>
                       </div>
                       {member.role === "admin" && (
-                        <span className="flex items-center gap-1 rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold text-ui-accent">
-                          <Crown className="h-3 w-3" />
+                        <span className="text-sm text-ui-accent">
                           Admin
                         </span>
                       )}
@@ -534,7 +533,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                               type="button"
                               onClick={() => handlePromote(member.userId)}
                               disabled={busy}
-                              className="rounded-lg border border-neutral-200 px-2 py-1 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent disabled:opacity-40"
+                              className="rounded-lg border border-ui-border px-2 py-1 text-[11px] font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent disabled:opacity-40"
                             >
                               Make admin
                             </button>
@@ -544,7 +543,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                             onClick={() => handleRemove(member.userId)}
                             disabled={busy}
                             aria-label={`Remove ${member.name}`}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-ui-muted transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-ui-muted transition hover:bg-ui-danger-soft hover:text-ui-danger disabled:opacity-40"
                           >
                             <UserMinus className="h-3.5 w-3.5" />
                           </button>
@@ -556,16 +555,16 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-              <h3 className="text-sm font-semibold text-neutral-900">Shared recipes</h3>
-              <p className="mt-1 text-xs text-neutral-500">
+            <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+              <h3 className="text-sm font-semibold text-ui-text">Shared recipes</h3>
+              <p className="mt-1 text-xs text-ui-muted">
                 Recipes your household shares now live in your Library, under &ldquo;From your household&rdquo;.
               </p>
               {onOpenLibrary && (
                 <button
                   type="button"
                   onClick={onOpenLibrary}
-                  className="mt-3 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent"
+                  className="mt-3 rounded-lg border border-ui-border px-2.5 py-1.5 text-[11px] font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent"
                 >
                   Open Library
                 </button>
@@ -573,15 +572,15 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
             </div>
 
             {/* Activity feed — in-app only, no push notifications */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Activity</h3>
+            <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+              <h3 className="mb-3 text-sm font-semibold text-ui-text">Activity</h3>
               {activity.length === 0 ? (
                 <p className="text-xs text-ui-muted">Nothing yet.</p>
               ) : (
                 <ul className="space-y-2.5">
                   {activity.map((item) => (
                     <li key={item.id} className="flex items-baseline justify-between gap-3">
-                      <p className="min-w-0 flex-1 text-xs text-neutral-700">
+                      <p className="min-w-0 flex-1 text-xs text-ui-text">
                         {describeActivity(item)}
                       </p>
                       <span className="shrink-0 text-[10px] text-ui-muted">
@@ -598,7 +597,7 @@ export function HouseholdView({ onOpenLibrary }: HouseholdViewProps) {
                 type="button"
                 onClick={handleDelete}
                 disabled={busy}
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-red-700 hover:underline disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ui-danger hover:underline disabled:opacity-40"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
                 Delete household…

@@ -14,15 +14,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "border border-[var(--ui-action)] bg-[var(--ui-action)] text-[var(--ui-action-text)] hover:bg-[var(--ui-action-hover)]",
+    "border border-ui-action bg-ui-action text-ui-action-text hover:bg-ui-action-hover",
   secondary:
-    "border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:border-[var(--ui-accent)]/40 hover:bg-[var(--ui-accent-muted)]",
+    "border border-ui-border-strong bg-ui-surface-raised text-ui-text hover:border-ui-border-strong hover:bg-ui-accent-muted",
   tertiary:
-    "border border-transparent bg-transparent text-[var(--ui-accent)] hover:bg-[var(--ui-accent-muted)]",
+    "border border-transparent bg-transparent text-ui-accent hover:bg-ui-accent-muted",
   danger:
-    "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+    "border border-transparent bg-transparent text-ui-danger hover:bg-ui-danger-soft",
   quiet:
-    "border border-transparent bg-transparent text-[var(--ui-muted)] hover:bg-neutral-100 hover:text-[var(--ui-text)]",
+    "border border-transparent bg-transparent text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-text",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -48,7 +48,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55",
+        "inline-flex shrink-0 items-center justify-center font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-55",
         sizes[size],
         variants[variant],
         className

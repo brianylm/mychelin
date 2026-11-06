@@ -132,27 +132,27 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
 
   const getColorClass = (color: string) => {
     const colorMap: Record<string, string> = {
-      amber: "bg-ui-accent/10 border-ui-accent/15",
-      rose: "bg-rose-100 border-rose-200",
-      emerald: "bg-emerald-100 border-emerald-200",
-      sky: "bg-sky-100 border-sky-200",
-      violet: "bg-violet-100 border-violet-200",
-      slate: "bg-slate-100 border-slate-200",
+      amber: "bg-ui-accent-muted border-ui-border",
+      rose: "bg-ui-danger-soft border-ui-border",
+      emerald: "bg-ui-success-soft border-ui-border",
+      sky: "bg-ui-info-soft border-ui-border",
+      violet: "bg-ui-accent-muted border-ui-accent-muted",
+      slate: "bg-ui-surface-subtle border-ui-border",
     };
-    return colorMap[color] || "bg-ui-accent/10 border-ui-accent/15";
+    return colorMap[color] || "bg-ui-accent-muted border-ui-border";
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-scrim p-4">
+      <div className="w-full max-w-md rounded-2xl bg-ui-surface-raised p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-neutral-900">Add to Book</h2>
-            <p className="text-sm text-neutral-600">Add &ldquo;{recipeName}&rdquo; to your books</p>
+            <h2 className="text-xl font-semibold text-ui-text">Add to Book</h2>
+            <p className="text-sm text-ui-muted">Add &ldquo;{recipeName}&rdquo; to your books</p>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-muted"
           >
             ×
           </button>
@@ -165,8 +165,8 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
         ) : books.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mb-2 text-4xl">📚</div>
-            <p className="text-neutral-600">No books where you can add recipes</p>
-            <p className="text-sm text-neutral-500">You need owner or editor permissions to add recipes</p>
+            <p className="text-ui-muted">No books where you can add recipes</p>
+            <p className="text-sm text-ui-muted">You need owner or editor permissions to add recipes</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -174,13 +174,13 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
               {books.map((book) => (
                 <label
                   key={book.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-transparent p-3 transition hover:bg-neutral-50"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-transparent p-3 transition hover:bg-ui-surface-subtle"
                 >
                   <input
                     type="checkbox"
                     checked={selectedBooks.has(book.id)}
                     onChange={() => handleBookToggle(book.id)}
-                    className="h-4 w-4 rounded border-neutral-300 text-ui-accent focus:ring-amber-500"
+                    className="h-4 w-4 rounded border-ui-border-strong text-ui-accent focus:ring-ui-warning"
                   />
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${getColorClass(book.coverColor)}`}
@@ -188,8 +188,8 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
                     {book.coverEmoji}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-neutral-900">{book.title}</div>
-                    <div className="text-xs text-neutral-500 capitalize">{book.userRole}</div>
+                    <div className="font-medium text-ui-text">{book.title}</div>
+                    <div className="text-xs text-ui-muted capitalize">{book.userRole}</div>
                   </div>
                 </label>
               ))}
@@ -199,14 +199,14 @@ export function AddToBookModal({ recipeId, recipeName, onClose }: AddToBookModal
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+                className="flex-1 rounded-xl border border-ui-border-strong bg-ui-surface-raised px-4 py-3 font-medium text-ui-text transition-colors hover:bg-ui-surface-subtle"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={selectedBooks.size === 0 || submitting}
-                className="flex-1 rounded-xl bg-ui-action px-4 py-3 font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-xl bg-ui-action px-4 py-3 font-medium text-ui-action-text transition-colors hover:bg-ui-accent disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting
                   ? "Adding..."

@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Check,
   ChefHat,
-  Clock3,
   Minus,
   PencilLine,
   Plus,
@@ -473,47 +472,47 @@ export function CookWithMeSession({
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-ui-action text-white">
+    <div className="fixed inset-0 z-50 bg-ui-night text-ui-night-text">
       <div className="flex h-full flex-col">
-        <header className="flex items-center justify-between border-b border-white/10 bg-ui-action/95 px-4 py-3 backdrop-blur">
+        <header className="flex items-center justify-between border-b border-ui-night-line bg-ui-action px-4 py-3">
           <button
             type="button"
             onClick={requestClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-night-raised text-ui-action-text transition hover:bg-ui-night-line"
             aria-label="Close cook with me"
           >
             <X className="h-5 w-5" />
           </button>
           <div className="min-w-0 px-3 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
+            <p className="text-xs font-semibold text-ui-night-muted">
               Cook with me
             </p>
-            <h2 className="truncate text-sm font-semibold text-white">{recipe.title}</h2>
+            <h2 className="truncate text-sm font-semibold text-ui-action-text">{recipe.title}</h2>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ui-accent text-ui-action-text">
             <ChefHat className="h-5 w-5" />
           </div>
         </header>
 
-        <div className="h-1 bg-white/10">
+        <div className="h-1 bg-ui-night-raised">
           <div
-            className="h-full bg-[#f7c86a] transition-[width] duration-300"
+            className="h-full bg-ui-highlight transition-[width] duration-300"
             style={{ width: completed ? "100%" : `${progress}%` }}
           />
         </div>
 
         {nextTry && !nextTryBannerDismissed && !completed && (
-          <div className="border-b border-[#f7c86a]/25 bg-[#f7c86a]/10 px-4 py-3">
+          <div className="border-b border-ui-night-line bg-ui-night-raised px-4 py-3">
             <div className="mx-auto flex max-w-2xl items-start gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f7c86a]">
+                <p className="text-xs font-semibold text-ui-highlight">
                   From your next try
                 </p>
                 {nextTry.notes && (
-                  <p className="mt-1 text-sm leading-5 text-white/85">{nextTry.notes}</p>
+                  <p className="mt-1 text-sm leading-5 text-ui-night-text">{nextTry.notes}</p>
                 )}
                 {(nextTry.ingredientCount > 0 || nextTry.stepCount > 0) && (
-                  <p className="mt-1 text-xs text-white/50">
+                  <p className="mt-1 text-xs text-ui-night-muted">
                     {[nextTry.ingredientCount > 0 ? `${nextTry.ingredientCount} ingredient tweak${nextTry.ingredientCount === 1 ? "" : "s"}` : null, nextTry.stepCount > 0 ? `${nextTry.stepCount} step tweak${nextTry.stepCount === 1 ? "" : "s"}` : null].filter(Boolean).join(" · ")} planned for this cook
                   </p>
                 )}
@@ -521,7 +520,7 @@ export function CookWithMeSession({
               <button
                 type="button"
                 onClick={() => setNextTryBannerDismissed(true)}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ui-night-muted transition hover:bg-ui-night-raised hover:text-ui-action-text"
                 aria-label="Dismiss next try notes"
               >
                 <X className="h-4 w-4" />
@@ -533,9 +532,9 @@ export function CookWithMeSession({
         {!hasContent ? (
           <main className="flex flex-1 items-center justify-center px-6 text-center">
             <div className="max-w-sm">
-              <ChefHat className="mx-auto mb-4 h-12 w-12 text-[#f7c86a]" />
+              <ChefHat className="mx-auto mb-4 h-12 w-12 text-ui-highlight" />
               <h3 className="text-2xl font-semibold">Add steps first</h3>
-              <p className="mt-3 text-sm leading-6 text-white/65">
+              <p className="mt-3 text-sm leading-6 text-ui-night-muted">
                 Cook-with-me needs recipe steps so it can guide you through the dish.
               </p>
               <Button variant="primary" className="mt-6" onClick={requestClose}>Back to recipe</Button>
@@ -544,21 +543,21 @@ export function CookWithMeSession({
         ) : completed ? (
           <main className="flex-1 overflow-y-auto px-5 py-6">
             <div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center">
-              <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#f7c86a]">
+              <div className="rounded-2xl bg-ui-night-raised p-5 shadow-2xl">
+                <p className="text-xs font-semibold text-ui-highlight">
                   Session complete
                 </p>
                 <h3 className="mt-3 text-3xl font-semibold leading-tight">
                   Nice cook!
                 </h3>
-                <p className="mt-3 text-sm leading-6 text-white/60">
+                <p className="mt-3 text-sm leading-6 text-ui-night-muted">
                   {ephemeral
                     ? "This is a practice cook of a shared recipe — nothing is saved. Import it to keep your own attempts."
                     : "Rate how the dish tasted later from Activity after eating."}
                 </p>
 
                 {!ephemeral && (
-                  <label className="mt-6 block text-sm font-medium text-white/80">
+                  <label className="mt-6 block text-sm font-medium text-ui-night-text">
                     What should change next time?
                   </label>
                 )}
@@ -571,22 +570,22 @@ export function CookWithMeSession({
                     }}
                     rows={4}
                     placeholder="Texture, timing, seasoning, missing family trick..."
-                    className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
+                    className="mt-2 w-full resize-none rounded-2xl border border-ui-night-line bg-ui-night-raised px-4 py-3 text-sm text-ui-action-text outline-none transition placeholder:text-ui-night-muted focus:border-ui-highlight focus:ring-2 focus:ring-ui-focus-soft"
                   />
                 )}
 
                 {!ephemeral && (
-                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="mt-4 rounded-2xl border border-ui-night-line bg-ui-night-raised p-4">
                   <label className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={saveNextTry}
                       onChange={(event) => setSaveNextTry(event.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 accent-[#f7c86a]"
+                      className="mt-1 h-4 w-4 rounded border-ui-night-line bg-ui-night-raised accent-ui-highlight"
                     />
                     <span>
-                      <span className="block text-sm font-semibold text-white">Save as private next try</span>
-                      <span className="block text-xs leading-5 text-white/55">Keeps this as the version to test next time without changing the definitive recipe.</span>
+                      <span className="block text-sm font-semibold text-ui-action-text">Save as private next try</span>
+                      <span className="block text-xs leading-5 text-ui-night-muted">Keeps this as the version to test next time without changing the definitive recipe.</span>
                     </span>
                   </label>
 
@@ -596,7 +595,7 @@ export function CookWithMeSession({
                       setShowNextTryEditor((open) => !open);
                       setSaveNextTry(true);
                     }}
-                    className="mt-3 rounded-full border border-[#f7c86a]/35 px-3 py-2 text-xs font-semibold text-[#f7c86a] transition hover:bg-[#f7c86a]/10"
+                    className="mt-3 rounded-xl border border-ui-highlight px-3 py-2 text-xs font-semibold text-ui-highlight transition hover:bg-ui-night-raised"
                   >
                     {showNextTryEditor ? "Hide next try draft" : "Edit next try draft"}
                   </button>
@@ -604,26 +603,26 @@ export function CookWithMeSession({
                   {showNextTryEditor && (
                     <div className="mt-4 space-y-4">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Ingredients next time</p>
+                        <p className="text-xs font-semibold text-ui-night-muted">Ingredients next time</p>
                         <div className="mt-2 space-y-2">
                           {nextTryIngredients.map((ingredient, index) => (
                             <div key={index} className="grid grid-cols-[1fr_72px_84px] gap-2">
                               <input
                                 value={ingredient.name}
                                 onChange={(event) => updateNextTryIngredient(index, { name: event.target.value })}
-                                className="min-w-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                className="min-w-0 rounded-xl border border-ui-night-line bg-ui-night-raised px-3 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                               />
                               <input
                                 value={ingredient.quantity ?? ""}
                                 onChange={(event) => updateNextTryIngredient(index, { quantity: event.target.value ? Number(event.target.value) : null })}
                                 inputMode="decimal"
-                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                className="rounded-xl border border-ui-night-line bg-ui-night-raised px-2 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                                 placeholder="qty"
                               />
                               <select
                                 value={ingredient.unit ?? ""}
                                 onChange={(event) => updateNextTryIngredient(index, { unit: event.target.value || null })}
-                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                className="rounded-xl border border-ui-night-line bg-ui-night-raised px-2 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                               >
                                 {SNAPSHOT_UNITS.map((unit) => (
                                   <option key={unit || "none"} value={unit} className="text-ui-action">{unit || "unit"}</option>
@@ -635,21 +634,21 @@ export function CookWithMeSession({
                       </div>
 
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Steps next time</p>
+                        <p className="text-xs font-semibold text-ui-night-muted">Steps next time</p>
                         <div className="mt-2 space-y-2">
                           {nextTryInstructions.map((instruction, index) => {
                             const { heat } = parseHeatFromTip(instruction.tip);
                             return (
-                              <div key={index} className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                              <div key={index}>
                                 <div className="mb-2 flex items-center gap-2">
-                                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">{index + 1}</span>
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ui-night-raised text-xs font-semibold text-ui-night-text">{index + 1}</span>
                                   <select
                                     value={heat ?? ""}
                                     onChange={(event) => {
                                       const { cleanTip } = parseHeatFromTip(instruction.tip);
                                       updateNextTryInstruction(index, { tip: encodeHeatInTip((event.target.value || null) as HeatLevel, cleanTip) });
                                     }}
-                                    className="rounded-lg border border-white/10 bg-white/10 px-2 py-1 text-xs text-white outline-none"
+                                    className="rounded-lg border border-ui-night-line bg-ui-night-raised px-2 py-1 text-xs text-ui-action-text outline-none"
                                   >
                                     {HEAT_LEVELS.map((level) => (
                                       <option key={level ?? "none"} value={level ?? ""} className="text-ui-action">
@@ -662,7 +661,7 @@ export function CookWithMeSession({
                                   value={instruction.content}
                                   onChange={(event) => updateNextTryInstruction(index, { content: event.target.value })}
                                   rows={2}
-                                  className="w-full resize-none rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                  className="w-full resize-none rounded-xl border border-ui-night-line bg-ui-night-raised px-3 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                                 />
                               </div>
                             );
@@ -675,11 +674,11 @@ export function CookWithMeSession({
                 )}
 
                 {changeNotes.length > 0 && (
-                  <div className="mt-5 rounded-2xl bg-black/20 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                  <div className="mt-5">
+                    <p className="mb-2 text-xs font-semibold text-ui-night-muted">
                       Changes noted
                     </p>
-                    <ul className="space-y-2 text-sm text-white/75">
+                    <ul className="space-y-2 text-sm text-ui-night-text">
                       {changeNotes.map((note, index) => (
                         <li key={`${note}-${index}`}>{note}</li>
                       ))}
@@ -688,7 +687,7 @@ export function CookWithMeSession({
                 )}
 
                 {error && (
-                  <p className="mt-4 rounded-xl border border-red-300/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+                  <p className="mt-4 rounded-xl bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger">
                     {error}
                   </p>
                 )}
@@ -698,106 +697,80 @@ export function CookWithMeSession({
         ) : (
           <main className="flex-1 overflow-y-auto px-5 py-5">
             <div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center">
-              <div className="mb-5 flex items-center justify-between text-sm text-white/55">
+              <div className="mb-5 flex items-center justify-between text-sm text-ui-night-muted">
                 <span>Step {stepIndex + 1} of {totalSteps}</span>
                 <span>{changeNotes.length} change{changeNotes.length === 1 ? "" : "s"} noted</span>
               </div>
 
-              <section className="rounded-[2rem] border border-white/10 bg-ui-surface p-5 text-ui-action shadow-2xl sm:p-7">
-                <div className="flex items-center gap-3 text-ui-accent">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-sm font-bold">
-                    {currentInstruction?.stepNumber ?? stepIndex + 1}
-                  </span>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em]">
-                    Next step
-                  </p>
-                </div>
+              <section className="rounded-2xl bg-ui-surface-raised p-5 text-ui-text sm:p-7">
+                {currentStepMeta.heat && <HeatChip heat={currentStepMeta.heat} />}
 
-                {currentStepMeta.heat && (
-                  <div className="mt-5">
-                    <HeatChip heat={currentStepMeta.heat} />
-                  </div>
-                )}
-
-                <p className="mt-6 text-3xl font-semibold leading-tight tracking-normal sm:text-5xl">
+                <p className="mt-2 text-3xl font-semibold leading-tight tracking-normal sm:text-5xl">
                   {currentInstruction?.content}
                 </p>
 
                 {currentStepIngredients.length > 0 && (
-                  <div className="mt-5 rounded-2xl border border-ui-accent/10 bg-ui-accent/5 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ui-accent">Amounts in this step</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {currentStepIngredients.map((hint) => (
-                        <span key={hint.name} className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm text-neutral-700 shadow-sm">
-                          <span className="font-semibold text-[#521224]">{hint.amount}</span>
-                          <span className="truncate">{hint.name}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  <ul className="mt-6 space-y-1 text-lg text-ui-text" aria-label="Amounts in this step">
+                    {currentStepIngredients.map((hint) => (
+                      <li key={hint.name} className="flex gap-2">
+                        <span className="shrink-0 font-semibold">{hint.amount}</span>
+                        <span className="min-w-0">{hint.name}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
 
                 {currentStepMeta.cleanTip && (
-                  <p className="mt-5 rounded-2xl bg-ui-accent/5 px-4 py-3 text-base leading-7 text-[#521224]">
-                    {currentStepMeta.cleanTip}
-                  </p>
+                  <p className="mt-6 text-base leading-7 text-ui-muted">{currentStepMeta.cleanTip}</p>
                 )}
 
-                <div className="mt-6 rounded-2xl border border-ui-accent/10 bg-ui-accent/5 p-4">
+                <div className="mt-8">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Clock3 className="h-5 w-5 text-ui-accent" />
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">
-                          Timer
-                        </p>
-                        <p className="font-mono text-3xl font-semibold text-ui-action">
-                          {formatTime(currentTimer?.remaining ?? detectStepTimerSeconds(currentInstruction?.content ?? ""))}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="font-mono text-4xl font-semibold text-ui-text" aria-label="Timer">
+                      {formatTime(currentTimer?.remaining ?? detectStepTimerSeconds(currentInstruction?.content ?? ""))}
+                    </p>
                     <button
                       type="button"
                       onClick={() => {
                         ensureTimer();
                         toggleTimer();
                       }}
-                      className="rounded-full bg-ui-action px-5 py-3 text-sm font-semibold text-white transition hover:bg-ui-accent"
+                      className="min-h-11 rounded-xl bg-ui-action px-6 py-3 text-base font-semibold text-ui-action-text transition hover:bg-ui-accent"
                     >
                       {currentTimer?.running ? "Pause" : "Start"}
                     </button>
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => adjustTimer(-60)}
-                      className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-xl bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"
+                      className="flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-xl text-sm font-medium text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
                     >
-                      <Minus className="h-3.5 w-3.5" /> -1m
+                      <Minus className="h-4 w-4" /> 1 min
                     </button>
                     <button
                       type="button"
                       onClick={resetTimer}
-                      className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-xl bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"
+                      className="flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-xl text-sm font-medium text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
                     >
-                      <TimerReset className="h-3.5 w-3.5" /> Reset
+                      <TimerReset className="h-4 w-4" /> Reset
                     </button>
                     <button
                       type="button"
                       onClick={() => adjustTimer(60)}
-                      className="flex items-center justify-center gap-0.5 whitespace-nowrap rounded-xl bg-white px-2 py-2 text-[11px] font-medium text-neutral-700 shadow-sm"
+                      className="flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-xl text-sm font-medium text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
                     >
-                      <Plus className="h-3.5 w-3.5" /> +1m
+                      <Plus className="h-4 w-4" /> 1 min
                     </button>
                   </div>
                 </div>
               </section>
 
-              <section className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4">
+              <section className="mt-4">
                 {showChangeCapture ? (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-white/80">
+                      <label className="text-sm font-medium text-ui-night-text">
                         This cook
                       </label>
                       <textarea
@@ -805,17 +778,17 @@ export function CookWithMeSession({
                         onChange={(event) => updateActualInstruction(stepIndex, { content: event.target.value })}
                         rows={3}
                         autoFocus
-                        className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
+                        className="mt-2 w-full resize-none rounded-2xl border border-ui-night-line bg-ui-night-raised px-4 py-3 text-sm text-ui-action-text outline-none placeholder:text-ui-night-muted focus:border-ui-highlight focus:ring-2 focus:ring-ui-focus-soft"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
                       <label className="block">
-                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Heat used</span>
+                        <span className="text-xs font-semibold text-ui-night-muted">Heat used</span>
                         <select
                           value={currentStepMeta.heat ?? ""}
                           onChange={(event) => updateActualInstructionHeat(stepIndex, (event.target.value || null) as HeatLevel)}
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                          className="mt-1 w-full rounded-xl border border-ui-night-line bg-ui-night-raised px-3 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                         >
                           {HEAT_LEVELS.map((heat) => (
                             <option key={heat ?? "none"} value={heat ?? ""} className="text-ui-action">
@@ -825,35 +798,35 @@ export function CookWithMeSession({
                         </select>
                       </label>
                       <label className="block">
-                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Timer tried</span>
-                        <div className="mt-1 rounded-xl border border-white/10 bg-white/10 px-3 py-2 font-mono text-sm text-white">
+                        <span className="text-xs font-semibold text-ui-night-muted">Timer tried</span>
+                        <div className="mt-1 rounded-xl border border-ui-night-line bg-ui-night-raised px-3 py-2 font-mono text-sm text-ui-action-text">
                           {formatTime(currentTimer?.duration ?? detectStepTimerSeconds(currentInstruction?.content ?? ""))}
                         </div>
                       </label>
                     </div>
 
                     {currentStepIngredientEdits.length > 0 && (
-                      <div className="rounded-2xl border border-white/10 bg-black/15 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Amounts used</p>
+                      <div>
+                        <p className="text-xs font-semibold text-ui-night-muted">Amounts used</p>
                         <div className="mt-2 space-y-2">
                           {currentStepIngredientEdits.map(({ ingredient, index }) => (
                             <div key={index} className="grid grid-cols-[1fr_72px_84px] gap-2">
                               <input
                                 value={ingredient.name}
                                 onChange={(event) => updateActualIngredient(index, { name: event.target.value })}
-                                className="min-w-0 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                className="min-w-0 rounded-xl border border-ui-night-line bg-ui-night-raised px-3 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                               />
                               <input
                                 value={ingredient.quantity ?? ""}
                                 onChange={(event) => updateActualIngredient(index, { quantity: event.target.value ? Number(event.target.value) : null })}
                                 inputMode="decimal"
-                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                className="rounded-xl border border-ui-night-line bg-ui-night-raised px-2 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                                 placeholder="qty"
                               />
                               <select
                                 value={ingredient.unit ?? ""}
                                 onChange={(event) => updateActualIngredient(index, { unit: event.target.value || null })}
-                                className="rounded-xl border border-white/10 bg-white/10 px-2 py-2 text-sm text-white outline-none focus:border-[#f7c86a]/70"
+                                className="rounded-xl border border-ui-night-line bg-ui-night-raised px-2 py-2 text-sm text-ui-action-text outline-none focus:border-ui-highlight"
                               >
                                 {SNAPSHOT_UNITS.map((unit) => (
                                   <option key={unit || "none"} value={unit} className="text-ui-action">{unit || "unit"}</option>
@@ -870,21 +843,21 @@ export function CookWithMeSession({
                       onChange={(event) => setChangeDraft(event.target.value)}
                       rows={2}
                       placeholder="Optional note: why this changed, sensory cue, family tip..."
-                      className="w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f7c86a]/70 focus:ring-2 focus:ring-[#f7c86a]/15"
+                      className="w-full resize-none rounded-2xl border border-ui-night-line bg-ui-night-raised px-4 py-3 text-sm text-ui-action-text outline-none placeholder:text-ui-night-muted focus:border-ui-highlight focus:ring-2 focus:ring-ui-focus-soft"
                     />
 
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={saveChangeNote}
-                        className="rounded-full bg-[#f7c86a] px-4 py-2 text-sm font-semibold text-ui-action"
+                        className="rounded-xl bg-ui-highlight px-4 py-2 text-sm font-semibold text-ui-action"
                       >
                         Save structured change
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowChangeCapture(false)}
-                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white"
+                        className="rounded-xl bg-ui-night-raised px-4 py-2 text-sm font-semibold text-ui-action-text"
                       >
                         Cancel
                       </button>
@@ -894,7 +867,7 @@ export function CookWithMeSession({
                   <button
                     type="button"
                     onClick={() => setShowChangeCapture(true)}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#f7c86a]/40 bg-[#f7c86a]/10 px-4 py-4 text-base font-semibold text-[#f7c86a] transition hover:bg-[#f7c86a]/15"
+                    className="flex w-full items-center justify-center gap-2 min-h-11 rounded-xl px-4 py-3 text-base font-medium text-ui-night-muted transition-colors hover:bg-ui-night-raised hover:text-ui-night-text"
                   >
                     <PencilLine className="h-5 w-5" />
                     I changed something
@@ -907,10 +880,10 @@ export function CookWithMeSession({
 
 
         {confirmingExit && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-ui-surface p-5 text-ui-action shadow-2xl">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ui-scrim px-4">
+            <div className="w-full max-w-sm rounded-2xl bg-ui-surface-raised p-5 text-ui-action shadow-2xl">
               <h3 className="text-lg font-semibold">Exit cook-with-me?</h3>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">
+              <p className="mt-2 text-sm leading-6 text-ui-muted">
                 {ephemeral
                   ? "This is a practice cook — nothing is saved. Exit anyway?"
                   : "This session has not been saved as an attempt yet. Exit anyway?"}
@@ -919,14 +892,14 @@ export function CookWithMeSession({
                 <button
                   type="button"
                   onClick={() => setConfirmingExit(false)}
-                  className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-neutral-100 px-4 text-sm font-semibold text-neutral-800"
+                  className="flex min-h-10 flex-1 items-center justify-center rounded-xl bg-ui-surface-subtle px-4 text-sm font-semibold text-ui-text"
                 >
                   Keep cooking
                 </button>
                 <button
                   type="button"
                   onClick={confirmExit}
-                  className="flex min-h-10 flex-1 items-center justify-center rounded-full bg-ui-accent px-4 text-sm font-semibold text-white"
+                  className="flex min-h-10 flex-1 items-center justify-center rounded-xl bg-ui-accent px-4 text-sm font-semibold text-ui-action-text"
                 >
                   Exit session
                 </button>
@@ -936,13 +909,13 @@ export function CookWithMeSession({
         )}
 
         {deduction && (
-          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center">
-            <div className="w-full max-w-md rounded-t-3xl bg-ui-surface p-5 text-ui-action sm:rounded-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ui-accent">
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-ui-scrim sm:items-center">
+            <div className="w-full max-w-md rounded-t-3xl bg-ui-surface-raised p-5 text-ui-action sm:rounded-2xl">
+              <p className="text-xs font-semibold text-ui-accent">
                 Shared inventory
               </p>
               <h3 className="mt-2 text-xl font-semibold">Update the household inventory?</h3>
-              <p className="mt-1 text-xs leading-5 text-neutral-500">
+              <p className="mt-1 text-xs leading-5 text-ui-muted">
                 This meal is on the household plan. Confirm what you used — edit any amount first.
               </p>
               <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
@@ -953,13 +926,13 @@ export function CookWithMeSession({
                   return (
                     <div key={`${item.name}-${index}`} className="flex items-center gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-neutral-800">{item.name}</p>
+                        <p className="truncate text-sm font-medium text-ui-text">{item.name}</p>
                         <p className="text-[10px] text-ui-muted">
                           {item.onHand != null
                             ? `${item.onHand} ${item.unit} on hand`
                             : "not tracked in inventory"}
                           {overdraws && (
-                            <span className="ml-1 font-semibold text-amber-700">
+                            <span className="ml-1 font-semibold text-ui-warning-text">
                               · will dip below zero
                             </span>
                           )}
@@ -973,9 +946,9 @@ export function CookWithMeSession({
                         }
                         inputMode="decimal"
                         aria-label={`Amount used of ${item.name}`}
-                        className="w-24 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-ui-accent/45"
+                        className="w-24 rounded-xl border border-ui-border-strong bg-ui-surface-raised px-3 py-2.5 text-sm outline-none focus:border-ui-accent"
                       />
-                      <span className="w-10 text-xs text-neutral-500">{item.unit}</span>
+                      <span className="w-10 text-xs text-ui-muted">{item.unit}</span>
                     </div>
                   );
                 })}
@@ -990,7 +963,7 @@ export function CookWithMeSession({
                   type="button"
                   onClick={() => finishDeduction(true)}
                   disabled={deducting}
-                  className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-ui-accent px-4 text-sm font-semibold text-white transition hover:bg-[#6b001b] disabled:opacity-50"
+                  className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-ui-accent px-4 text-sm font-semibold text-ui-action-text transition hover:bg-ui-accent disabled:opacity-50"
                 >
                   {deducting ? "Updating..." : "Deduct from inventory"}
                 </button>
@@ -998,7 +971,7 @@ export function CookWithMeSession({
                   type="button"
                   onClick={() => finishDeduction(false)}
                   disabled={deducting}
-                  className="flex min-h-12 items-center justify-center rounded-full border border-neutral-200 px-4 text-sm font-medium text-neutral-600"
+                  className="flex min-h-12 items-center justify-center rounded-xl border border-ui-border px-4 text-sm font-medium text-ui-muted"
                 >
                   Skip
                 </button>
@@ -1007,13 +980,13 @@ export function CookWithMeSession({
           </div>
         )}
 
-        <footer className="border-t border-white/10 bg-ui-action/95 px-4 py-3 backdrop-blur">
+        <footer className="border-t border-ui-night-line bg-ui-action px-4 py-3">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <button
               type="button"
               onClick={goBack}
               disabled={!completed && stepIndex === 0}
-              className="flex min-h-12 items-center gap-2 rounded-full bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-35"
+              className="flex min-h-12 items-center gap-2 rounded-xl bg-ui-night-raised px-5 text-sm font-semibold text-ui-action-text transition hover:bg-ui-night-line disabled:opacity-35"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -1024,7 +997,7 @@ export function CookWithMeSession({
                 type="button"
                 onClick={saveSession}
                 disabled={saving}
-                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-ui-action transition hover:bg-[#ffd98a] disabled:opacity-60 sm:flex-none"
+                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-ui-highlight px-6 text-sm font-bold text-ui-action transition hover:bg-ui-highlight-hover disabled:opacity-60 sm:flex-none"
               >
                 {saving ? "Saving..." : "Save session"}
                 <Check className="h-4 w-4" />
@@ -1033,7 +1006,7 @@ export function CookWithMeSession({
               <button
                 type="button"
                 onClick={goNext}
-                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#f7c86a] px-6 text-sm font-bold text-ui-action transition hover:bg-[#ffd98a] sm:flex-none"
+                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-ui-highlight px-6 text-sm font-bold text-ui-action transition hover:bg-ui-highlight-hover sm:flex-none"
               >
                 {stepIndex >= totalSteps - 1 ? "Finish" : "Next step"}
                 <ArrowRight className="h-4 w-4" />

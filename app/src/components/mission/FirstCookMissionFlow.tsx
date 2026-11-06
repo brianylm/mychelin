@@ -152,21 +152,21 @@ export function FirstCookMissionFlow({
         hideCloseButton
       >
         <div className="flex flex-col items-center px-2 pb-4 pt-2 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
             <Check className="h-7 w-7" aria-hidden="true" />
           </span>
-          <p className="logo-serif mt-5 text-2xl font-bold leading-tight text-[var(--ui-text)]">
+          <p className="logo-serif mt-5 text-2xl font-bold leading-tight text-ui-text">
             Nice one{recipeTitle ? ` — ${recipeTitle}` : ""}.
           </p>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--ui-muted)]">
+          <p className="mt-2 max-w-sm text-sm leading-6 text-ui-muted">
             You cooked it and recorded how it went. That&rsquo;s your rhythm moving —{" "}
-            <span className="font-semibold text-[var(--ui-text)]">
+            <span className="font-semibold text-ui-text">
               {cookedThisWeek} of {goal} meal{goal === 1 ? "" : "s"} this week
             </span>
             .
           </p>
           <div className="mt-6 w-full max-w-xs">
-            <p className="text-sm font-semibold text-[var(--ui-text)]">How many meals a week feels realistic?</p>
+            <p className="text-sm font-semibold text-ui-text">How many meals a week feels realistic?</p>
             <div className="mt-2 grid grid-cols-5 gap-1.5">
               {GOAL_CHOICES.map((choice) => (
                 <button
@@ -178,8 +178,8 @@ export function FirstCookMissionFlow({
                   className={
                     "min-h-11 rounded-xl border text-sm font-semibold transition-colors " +
                     (goal === choice
-                      ? "border-[var(--ui-action)] bg-[var(--ui-action)] text-[var(--ui-action-text)]"
-                      : "border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text)] hover:border-[var(--ui-border-strong)]")
+                      ? "border-ui-action bg-ui-action text-ui-action-text"
+                      : "border-ui-border bg-ui-surface-raised text-ui-text hover:border-ui-border-strong")
                   }
                 >
                   {choice}
@@ -192,7 +192,7 @@ export function FirstCookMissionFlow({
               <button
                 type="button"
                 onClick={() => onOpenRecipe(recipeId)}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--ui-action)] px-4 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ui-action px-4 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover"
               >
                 <Check className="h-4 w-4" aria-hidden="true" />
                 Save what changed as a version
@@ -201,7 +201,7 @@ export function FirstCookMissionFlow({
             <button
               type="button"
               onClick={onOpenPlanner}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-4 text-sm font-semibold text-[var(--ui-accent)] transition-colors hover:bg-[var(--ui-surface-subtle)]"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-ui-border-strong bg-ui-surface-raised px-4 text-sm font-semibold text-ui-accent transition-colors hover:bg-ui-surface-subtle"
             >
               <CalendarClock className="h-4 w-4" aria-hidden="true" />
               Plan your next meal
@@ -209,7 +209,7 @@ export function FirstCookMissionFlow({
             <button
               type="button"
               onClick={onDone}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
             >
               Done
             </button>
@@ -233,7 +233,7 @@ export function FirstCookMissionFlow({
             setStep(1);
           }}
           disabled={!selected || recipesLoading}
-          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--ui-action)] px-5 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:opacity-50"
+          className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover disabled:opacity-50"
         >
           Continue
         </button>
@@ -243,7 +243,7 @@ export function FirstCookMissionFlow({
         <button
           type="button"
           onClick={() => setStep(0)}
-          className="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+          className="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
         >
           Back
         </button>
@@ -251,14 +251,14 @@ export function FirstCookMissionFlow({
           <button
             type="button"
             onClick={() => setStep(2)}
-            className="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+            className="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
           >
             Skip for now
           </button>
           <button
             type="button"
             onClick={onOpenPlanner}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--ui-action)] px-5 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover"
           >
             <CalendarClock className="h-4 w-4" aria-hidden="true" />
             Plan it in my week
@@ -270,7 +270,7 @@ export function FirstCookMissionFlow({
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+          className="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
         >
           Back
         </button>
@@ -278,14 +278,14 @@ export function FirstCookMissionFlow({
           <button
             type="button"
             onClick={() => setStep(3)}
-            className="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+            className="inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
           >
             Skip for now
           </button>
           <button
             type="button"
             onClick={onOpenShopping}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[var(--ui-action)] px-5 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover"
           >
             <ShoppingCart className="h-4 w-4" aria-hidden="true" />
             Open shopping list
@@ -297,7 +297,7 @@ export function FirstCookMissionFlow({
         <button
           type="button"
           onClick={() => setStep(2)}
-          className="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-[var(--ui-muted)] transition-colors hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]"
+          className="inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
         >
           Back
         </button>
@@ -305,7 +305,7 @@ export function FirstCookMissionFlow({
           type="button"
           onClick={() => selected && onStartCook(selected.id, selected.title)}
           disabled={!selected}
-          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--ui-action)] px-6 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)] disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-ui-action px-6 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover disabled:opacity-50"
         >
           <Play className="h-4 w-4" aria-hidden="true" />
           Start cooking
@@ -344,7 +344,7 @@ export function FirstCookMissionFlow({
             key={index}
             className={
               "h-1.5 flex-1 rounded-full transition " +
-              (index <= step ? "bg-ui-accent" : "bg-[var(--ui-border)]")
+              (index <= step ? "bg-ui-accent" : "bg-ui-border")
             }
           />
         ))}
@@ -358,14 +358,14 @@ export function FirstCookMissionFlow({
             </div>
           ) : recipes.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center">
-              <p className="text-sm font-semibold text-[var(--ui-text)]">No recipe yet</p>
-              <p className="mt-2 max-w-xs text-xs leading-5 text-[var(--ui-muted)]">
+              <p className="text-sm font-semibold text-ui-text">No recipe yet</p>
+              <p className="mt-2 max-w-xs text-xs leading-5 text-ui-muted">
                 Add your first recipe and come back — the mission will be right here waiting.
               </p>
               <button
                 type="button"
                 onClick={onOpenCreate}
-                className="mt-5 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[var(--ui-action)] px-5 text-sm font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]"
+                className="mt-5 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
                 Add a recipe
@@ -384,16 +384,16 @@ export function FirstCookMissionFlow({
                     className={
                       "flex min-h-12 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition " +
                       (isSelected
-                        ? "border-ui-accent/40 bg-ui-accent/5 shadow-sm"
-                        : "border-[var(--ui-border)] bg-white hover:border-ui-accent/20")
+                        ? "border-ui-accent bg-ui-accent-muted shadow-sm"
+                        : "border-ui-border bg-ui-surface-raised hover:border-ui-border-strong")
                     }
                   >
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-[var(--ui-text)]">
+                      <span className="block truncate text-sm font-semibold text-ui-text">
                         {recipe.title}
                       </span>
                       {recipe.cuisine && (
-                        <span className="mt-0.5 block truncate text-xs text-[var(--ui-muted)]">
+                        <span className="mt-0.5 block truncate text-xs text-ui-muted">
                           {recipe.cuisine}
                         </span>
                       )}
@@ -402,8 +402,8 @@ export function FirstCookMissionFlow({
                       className={
                         "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] " +
                         (isSelected
-                          ? "border-ui-accent bg-ui-accent text-white"
-                          : "border-[var(--ui-border-strong)] text-transparent")
+                          ? "border-ui-accent bg-ui-accent text-ui-action-text"
+                          : "border-ui-border-strong text-transparent")
                       }
                     >
                       <Check className="h-3 w-3" aria-hidden="true" />
@@ -418,11 +418,11 @@ export function FirstCookMissionFlow({
 
       {step === 1 && (
         <div className="min-h-[16rem]">
-          <p className="text-sm leading-6 text-[var(--ui-text)]">
+          <p className="text-sm leading-6 text-ui-text">
             Add <span className="font-semibold">{selected?.title ?? "this dish"}</span> to a week
             slot so Mychelin knows what to cook and what to buy.
           </p>
-          <p className="mt-3 text-xs leading-5 text-[var(--ui-muted)]">
+          <p className="mt-3 text-xs leading-5 text-ui-muted">
             You can skip this and go straight to cooking — the planner stays available whenever
             you&rsquo;re ready.
           </p>
@@ -431,11 +431,11 @@ export function FirstCookMissionFlow({
 
       {step === 2 && (
         <div className="min-h-[16rem]">
-          <p className="text-sm leading-6 text-[var(--ui-text)]">
+          <p className="text-sm leading-6 text-ui-text">
             Generate a shopping list for <span className="font-semibold">{selected?.title ?? "this dish"}</span>{" "}
             so you have everything before you start.
           </p>
-          <p className="mt-3 text-xs leading-5 text-[var(--ui-muted)]">
+          <p className="mt-3 text-xs leading-5 text-ui-muted">
             Skipping is fine — you can cook straight away and grab anything missing on the way.
           </p>
         </div>
@@ -443,18 +443,18 @@ export function FirstCookMissionFlow({
 
       {step === 3 && (
         <div className="min-h-[16rem]">
-          <div className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">
+          <div className="rounded-2xl border border-ui-border bg-ui-surface-subtle p-4">
+            <p className="text-xs font-semibold text-ui-accent">
               Tonight&rsquo;s dish
             </p>
-            <p className="logo-serif mt-2 text-2xl font-bold leading-tight text-[var(--ui-text)]">
+            <p className="logo-serif mt-2 text-2xl font-bold leading-tight text-ui-text">
               {selected?.title}
             </p>
             {selected?.cuisine && (
-              <p className="mt-1 text-xs text-[var(--ui-muted)]">{selected.cuisine}</p>
+              <p className="mt-1 text-xs text-ui-muted">{selected.cuisine}</p>
             )}
           </div>
-          <p className="mt-4 text-sm leading-6 text-[var(--ui-text)]">
+          <p className="mt-4 text-sm leading-6 text-ui-text">
             Cook With Me walks you through each step, times it, and nudges you on heat. When you
             finish, record how it went — that&rsquo;s your first attempt.
           </p>

@@ -76,7 +76,7 @@ interface RecipeDetailsCardProps {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
+  "w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted";
 
 /**
  * The library-info tier of progressive disclosure: short browsing/search
@@ -130,7 +130,7 @@ export function RecipeDetailsCard({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <label className="text-xs font-medium text-ui-muted">
               Prep (min)
             </label>
             <SaveIndicator isSaving={savingPrepTime} />
@@ -147,7 +147,7 @@ export function RecipeDetailsCard({
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            <label className="text-xs font-medium text-ui-muted">
               Cook (min)
             </label>
             <SaveIndicator isSaving={savingCookTime} />
@@ -166,7 +166,7 @@ export function RecipeDetailsCard({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <label className="text-xs font-medium text-ui-muted">
             Yield
           </label>
           <SaveIndicator isSaving={savingYield} />

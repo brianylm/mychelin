@@ -86,7 +86,7 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
       }
     >
       {loading ? (
-        <div className="rounded-2xl border border-ui-accent/10 bg-ui-surface px-4 py-6">
+        <div className="rounded-2xl border border-ui-border bg-ui-surface-raised px-4 py-6">
           <LoadingAnimation
             size={132}
             label="Drafting your first recipe..."
@@ -97,7 +97,7 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           placeholder="e.g. I want to cook chicken curry for 2, not too spicy, beginner friendly"
-          className="min-h-32 w-full rounded-2xl border border-ui-border-strong bg-ui-surface px-4 py-3 text-sm leading-6 text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent/45 focus:ring-4 focus:ring-ui-focus-soft"
+          className="min-h-32 w-full rounded-2xl border border-ui-border-strong bg-ui-surface-raised px-4 py-3 text-sm leading-6 text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-4 focus:ring-ui-focus-soft"
           autoFocus
         />
       )}
@@ -109,7 +109,7 @@ export function AiDraftRecipeModal({ onClose, onCreateDraft }: AiDraftRecipeModa
             type="button"
             onClick={() => setPrompt(example)}
             disabled={loading}
-            className="rounded-full border border-ui-border bg-ui-surface px-3 py-1.5 text-xs text-ui-muted transition hover:border-ui-accent/25 hover:text-ui-text disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-ui-border bg-ui-surface-raised px-3 py-1.5 text-xs text-ui-muted transition hover:border-ui-border-strong hover:text-ui-text disabled:cursor-not-allowed disabled:opacity-50"
           >
             {example}
           </button>

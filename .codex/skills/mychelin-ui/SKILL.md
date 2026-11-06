@@ -19,7 +19,8 @@ Use this skill for user-facing interface work in the Mychelin repository. Keep p
 - Treat the public site as warm editorial food storytelling and the signed-in app as a quiet, task-focused workbench.
 - Preserve the current Newsreader display, DM Sans utility, Libre Baskerville wordmark, warm paper, ink, and burgundy accent system.
 - Use provenance, recipe content, family context, and real food imagery as the visual interest. Do not add ornamental gradients, glows, glass effects, or generic illustrations.
-- Prefer full-width sections, hairline dividers, compact lists, and clear primary actions over repeated floating cards.
+- Prefer full-width, spacing-led sections, compact lists, and clear primary actions over repeated floating cards. Use a single hairline only where whitespace can't separate sections, never inside a card.
+- Follow the Restraint rules in `AGRIPPA_UI.md`: pills only for active tabs and filters, no italics, no negative tracking, no tiny uppercase eyebrows, no section numbering, no monospace labels, one subtle tint per color role.
 - Keep cards for repeated records, modals, and genuinely framed tools. Never put a card inside another card.
 - Do not use equal three-column icon feature grids, fake device chrome, decorative icon tiles, or per-page visual themes.
 

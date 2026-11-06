@@ -184,7 +184,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
         <button
           onClick={handleAnalyze}
           disabled={analyzing}
-          className="flex items-center gap-1.5 rounded-lg border border-ui-accent/30 bg-ui-accent/5 px-3 py-1.5 text-xs font-semibold text-[#521224] transition-colors hover:bg-ui-accent/10 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-lg border border-ui-accent bg-ui-accent-muted px-3 py-1.5 text-xs font-semibold text-ui-text transition-colors hover:bg-ui-accent-muted disabled:opacity-60"
         >
           {analyzing ? (
             <>
@@ -202,8 +202,8 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           click, which adds it to the tips list and removes it from the
           suggestions. */}
       {suggestions.length > 0 && (
-        <div className="mb-6 space-y-2 rounded-xl border border-ui-accent/30 bg-gradient-to-br from-ui-accent/5 to-white p-4">
-          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-[#241017]">
+        <div className="mb-6 space-y-2">
+          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-ui-text">
             <span>✨</span>
             <span>AI-spotted patterns in this book</span>
           </div>
@@ -216,13 +216,13 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
               key={i}
               onClick={() => handleSaveSuggestion(i)}
               disabled={savingIdx !== null}
-              className="flex w-full items-start gap-3 rounded-lg border border-ui-accent/15 bg-white p-3 text-left transition hover:border-ui-accent/45 hover:shadow-sm disabled:opacity-60"
+              className="flex w-full items-start gap-3 rounded-lg border border-ui-border bg-ui-surface-raised p-3 text-left transition hover:border-ui-border-strong hover:shadow-sm disabled:opacity-60"
             >
               <span className="mt-0.5 text-base">💡</span>
-              <p className="flex-1 text-sm leading-relaxed text-neutral-800">
+              <p className="flex-1 text-sm leading-relaxed text-ui-text">
                 {s}
               </p>
-              <span className="shrink-0 rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold text-ui-accent">
+              <span className="shrink-0 text-sm font-medium text-ui-accent">
                 {savingIdx === i ? "Saving…" : "+ Save"}
               </span>
             </button>
@@ -232,8 +232,8 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
 
       {/* Add new tip form */}
       {canEdit && (
-        <div className="mb-6 rounded-xl border border-ui-accent/15 bg-ui-accent/5 p-4">
-          <label className="mb-2 block text-sm font-medium text-[#521224]">
+        <div className="mb-6 mb-6">
+          <label className="mb-2 block text-sm font-medium text-ui-text">
             Add a cooking principle or tip
           </label>
           <textarea
@@ -241,7 +241,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="e.g. Always toast your spices before adding liquid, use cast iron for searing..."
             rows={3}
-            className="w-full resize-none rounded-lg border border-ui-accent/15 bg-white px-3 py-2 text-sm placeholder-neutral-400 focus:border-ui-accent/45 focus:outline-none"
+            className="w-full resize-none rounded-lg border border-ui-border bg-ui-surface-raised px-3 py-2 text-sm placeholder-ui-muted focus:border-ui-accent focus:outline-none"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                 handleAdd();
@@ -253,7 +253,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
             <button
               onClick={handleAdd}
               disabled={submitting || !newContent.trim()}
-              className="rounded-lg bg-ui-action px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-accent disabled:opacity-50"
+              className="rounded-lg bg-ui-action px-4 py-1.5 text-sm font-medium text-ui-action-text transition-colors hover:bg-ui-accent disabled:opacity-50"
             >
               {submitting ? "Adding…" : "Add Principle"}
             </button>
@@ -269,7 +269,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
       ) : tips.length === 0 ? (
         <div className="py-8 text-center">
           <div className="mb-2 text-4xl">💡</div>
-          <p className="text-neutral-600">No cooking principles yet</p>
+          <p className="text-ui-muted">No cooking principles yet</p>
           {canEdit && (
             <p className="mt-1 text-sm text-ui-muted">
               Add tips and principles that guide this book&apos;s cooking style
@@ -281,11 +281,11 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
           {tips.map((tip) => (
             <div
               key={tip.id}
-              className="group flex items-start gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-ui-accent/15 hover:shadow-sm"
+              className="group flex items-start gap-3 rounded-xl border border-ui-border bg-ui-surface-raised p-4 transition hover:border-ui-border-strong hover:shadow-sm"
             >
               <div className="mt-0.5 text-lg">💡</div>
               <div className="flex-1">
-                <p className="text-sm text-neutral-800 leading-relaxed">{tip.content}</p>
+                <p className="text-sm text-ui-text leading-relaxed">{tip.content}</p>
                 <div className="mt-2 flex items-center gap-2 text-xs text-ui-muted">
                   {tip.authorName && <span>by {tip.authorName}</span>}
                   <span>·</span>
@@ -295,7 +295,7 @@ export function CookingPrinciples({ bookId, canEdit, isOwner, onTipCountChange }
               {canDeleteTip(tip) && (
                 <button
                   onClick={() => handleDelete(tip.id)}
-                  className="opacity-0 group-hover:opacity-100 ml-1 shrink-0 text-red-500 transition-opacity hover:text-red-700"
+                  className="opacity-0 group-hover:opacity-100 ml-1 shrink-0 text-ui-danger transition-opacity hover:text-ui-danger"
                   title="Remove principle"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

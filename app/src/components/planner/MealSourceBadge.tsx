@@ -8,12 +8,12 @@ const SOURCE_STYLES: Record<
   fresh: {
     label: "Cook fresh",
     icon: CookingPot,
-    styles: "border-ui-accent/20 bg-ui-accent-muted text-ui-accent",
+    styles: "border-ui-border bg-ui-accent-muted text-ui-accent",
   },
   fridge: {
     label: "Ready — fridge",
     icon: Refrigerator,
-    styles: "border-ui-info/20 bg-ui-info-soft text-ui-info",
+    styles: "border-ui-border bg-ui-info-soft text-ui-info",
   },
   frozen: {
     label: "Ready — frozen",

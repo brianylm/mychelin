@@ -12,11 +12,11 @@ interface SidebarToolbarProps {
 }
 
 const actionClass =
-  "group flex min-h-[3.75rem] w-full items-start gap-3 rounded-xl border border-ui-border bg-ui-surface-raised px-3 py-2.5 text-left transition-colors hover:border-ui-accent/25 hover:bg-ui-accent/5 focus-visible:border-ui-accent/40 disabled:cursor-not-allowed disabled:opacity-50";
+  "group flex min-h-[3.75rem] w-full items-start gap-3 rounded-xl border border-ui-border bg-ui-surface-raised px-3 py-2.5 text-left transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted focus-visible:border-ui-accent disabled:cursor-not-allowed disabled:opacity-50";
 
 function ActionIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ui-accent/10 text-ui-accent">
+    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ui-accent-muted text-ui-accent">
       {children}
     </span>
   );
@@ -24,7 +24,7 @@ function ActionIcon({ children }: { children: ReactNode }) {
 
 function GroupLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="px-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ui-muted first:pt-0">
+    <div className="px-1 pt-2 text-xs font-semibold text-ui-muted first:pt-0">
       {children}
     </div>
   );
@@ -41,7 +41,7 @@ export function SidebarToolbar({
   const openWriteOrPaste = onWriteOrPaste ?? onCreateOpen;
 
   return (
-    <section className="rounded-2xl border border-ui-accent/10 bg-ui-surface/85 p-3.5 shadow-sm">
+    <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-3.5">
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
@@ -49,7 +49,7 @@ export function SidebarToolbar({
         className="flex min-h-11 w-full items-start justify-between gap-3 rounded-xl px-1 py-0.5 text-left"
       >
         <span className="min-w-0">
-          <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-ui-accent">
+          <span className="block text-xs font-semibold text-ui-accent">
             Create recipe
           </span>
           <span className="mt-1 block text-xs leading-4 text-ui-muted">

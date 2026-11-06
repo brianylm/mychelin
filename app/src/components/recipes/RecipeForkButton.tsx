@@ -64,7 +64,7 @@ export function RecipeForkButton({ recipeId, recipeTitle, onForked, variant = "d
       <button
         onClick={handleFork}
         disabled={forking}
-        className="opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-md p-1 text-ui-muted transition hover:bg-ui-accent/5 hover:text-ui-accent disabled:opacity-50"
+        className="opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-md p-1 text-ui-muted transition hover:bg-ui-accent-muted hover:text-ui-accent disabled:opacity-50"
         title="Fork this recipe to your collection"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,7 +82,7 @@ export function RecipeForkButton({ recipeId, recipeTitle, onForked, variant = "d
     <button
       onClick={handleFork}
       disabled={forking}
-      className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-ui-accent/30 hover:bg-ui-accent/5 disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-2 rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-sm font-medium text-ui-text transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted disabled:opacity-50"
       title="Fork this recipe to your own collection"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -25,12 +25,12 @@ export function Header({
 
   return (
     <header className="sticky inset-x-0 top-0 z-30 flex h-[68px] items-center bg-transparent px-3 py-2">
-      <div className="mx-auto flex h-full w-full min-w-0 items-center gap-1 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-2 shadow-[0_8px_24px_rgba(40,26,19,0.1)] sm:gap-2 sm:px-3">
+      <div className="mx-auto flex h-full w-full min-w-0 items-center gap-1 rounded-full border border-ui-border bg-ui-surface-raised px-2 sm:gap-2 sm:px-3">
         <div className="flex shrink-0 items-center gap-1">
           {onMenuClick && (
             <button
               type="button"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--ui-text)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] md:hidden"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ui-text transition-colors duration-150 hover:bg-ui-surface-subtle md:hidden"
               onClick={onMenuClick}
               aria-label="Open library panel"
             >
@@ -41,7 +41,7 @@ export function Header({
           <button
             type="button"
             onClick={onLogoClick}
-            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full px-1.5 transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] sm:gap-2 sm:px-2"
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full px-1.5 transition-colors duration-150 hover:bg-ui-surface-subtle sm:gap-2 sm:px-2"
             aria-label="Open recipe library"
           >
             <Image
@@ -53,8 +53,8 @@ export function Header({
               className="h-7 w-7 object-contain"
             />
             <span className="logo-serif text-[17px] font-bold leading-none tracking-normal sm:text-lg md:hidden lg:inline">
-              <span className="text-[var(--ui-accent)]">my</span>
-              <span className="text-[var(--ui-text)]">chelin</span>
+              <span className="text-ui-accent">my</span>
+              <span className="text-ui-text">chelin</span>
             </span>
           </button>
         </div>
@@ -68,7 +68,7 @@ export function Header({
             <button
               type="button"
               onClick={onSearchClick}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--ui-text)] transition-colors duration-150 hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-accent)]"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-ui-text transition-colors duration-150 hover:bg-ui-surface-subtle hover:text-ui-accent"
               aria-label="Search recipes"
               title="Search by recipe or ingredient"
             >
@@ -84,15 +84,15 @@ export function Header({
               aria-current={profileActive ? "page" : undefined}
               className={`flex h-11 items-center gap-2 rounded-full px-1.5 transition-colors duration-150 ${
                 profileActive
-                  ? "bg-[var(--ui-action)] text-[var(--ui-action-text)]"
-                  : "text-[var(--ui-text)] hover:bg-[var(--ui-surface-subtle)]"
+                  ? "bg-ui-action text-ui-action-text"
+                  : "text-ui-text hover:bg-ui-surface-subtle"
               }`}
             >
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${
                   profileActive
-                    ? "bg-white/15 text-white"
-                    : "bg-[var(--ui-accent-muted)] text-[var(--ui-accent)]"
+                    ? "bg-ui-night-raised text-ui-action-text"
+                    : "bg-ui-accent-muted text-ui-accent"
                 }`}
               >
                 {user.name.charAt(0).toUpperCase()}

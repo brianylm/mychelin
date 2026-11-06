@@ -44,8 +44,8 @@ export function DesktopNav({ current, onChange }: DesktopNavProps) {
             className={cn(
               "flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-medium transition-colors duration-150 lg:px-3",
               active
-                ? "bg-[var(--ui-action)] text-[var(--ui-action-text)] shadow-[0_4px_12px_rgba(23,19,31,0.14)]"
-                : "text-[var(--ui-muted)] hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)]"
+                ? "bg-ui-action text-ui-action-text shadow-ui-raised"
+                : "text-ui-muted hover:bg-ui-surface-raised hover:text-ui-text"
             )}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />

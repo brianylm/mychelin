@@ -194,31 +194,31 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ui-scrim sm:items-center" onClick={onClose}>
       <div
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl animate-in slide-in-from-bottom"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-ui-surface-raised sm:rounded-2xl animate-in slide-in-from-bottom"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ui-border bg-ui-surface-raised px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
             <span>👨‍🍳</span>
-            <h3 className="text-sm font-semibold text-neutral-800">Log cook</h3>
+            <h3 className="text-sm font-semibold text-ui-text">Log cook</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-ui-muted hover:bg-neutral-100">
+          <button onClick={onClose} className="rounded-lg p-1 text-ui-muted hover:bg-ui-surface-subtle">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Progress */}
-        <div className="flex border-b border-neutral-100 px-4">
+        <div className="flex border-b border-ui-border px-4">
           {STEPS.map((s, i) => (
             <div key={i} className={`flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium ${
-              i === step ? "text-ui-accent" : i < step ? "text-emerald-600" : "text-ui-muted"
+              i === step ? "text-ui-accent" : i < step ? "text-ui-success" : "text-ui-muted"
             }`}>
               <span className="text-sm">{s.icon}</span>
               <span className="hidden sm:block">{s.label}</span>
-              <div className={`h-1 w-full rounded-full ${i <= step ? "bg-amber-400" : "bg-neutral-200"}`} />
+              <div className={`h-1 w-full rounded-full ${i <= step ? "bg-ui-warning" : "bg-ui-border"}`} />
             </div>
           ))}
         </div>
@@ -234,7 +234,7 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
               {/* Step 0: Choose Version */}
               {step === 0 && (
                 <div className="space-y-3">
-                  <p className="text-sm text-neutral-600">Which version did you cook from?</p>
+                  <p className="text-sm text-ui-muted">Which version did you cook from?</p>
                   {versions.length === 0 ? (
                     <p className="py-8 text-center text-sm text-ui-muted">No versions yet. Create one first!</p>
                   ) : (
@@ -244,14 +244,14 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
                           key={v.id}
                           onClick={() => setSelectedVersion(v)}
                           className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
-                            selectedVersion?.id === v.id ? "border-ui-accent/45 bg-ui-accent/5" : "border-neutral-200 hover:border-ui-accent/15"
+                            selectedVersion?.id === v.id ? "border-ui-accent bg-ui-accent-muted" : "border-ui-border hover:border-ui-border-strong"
                           }`}
                         >
                           <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                            selectedVersion?.id === v.id ? "bg-ui-accent/50 text-white" : "bg-neutral-100 text-neutral-500"
+                            selectedVersion?.id === v.id ? "bg-ui-accent text-ui-action-text" : "bg-ui-surface-subtle text-ui-muted"
                           }`}>{labelOf(v)}</div>
                           <div>
-                            <div className="text-sm font-medium text-neutral-800">Version {labelOf(v)}</div>
+                            <div className="text-sm font-medium text-ui-text">Version {labelOf(v)}</div>
                             <div className="text-[11px] text-ui-muted">{v.ingredients.length} ingredients</div>
                           </div>
                           {selectedVersion?.id === v.id && <Check className="ml-auto h-4 w-4 text-ui-accent" aria-hidden="true" />}
@@ -265,21 +265,21 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
               {/* Step 1: Adjust Ingredients */}
               {step === 1 && (
                 <div className="space-y-3">
-                  <p className="text-sm text-neutral-600">Record any actual measurements you used. Changed ingredients become attempt notes automatically.</p>
+                  <p className="text-sm text-ui-muted">Record any actual measurements you used. Changed ingredients become attempt notes automatically.</p>
                   <div className="space-y-2">
                     {adjustedIngredients.map((ing, i) => (
-                      <div key={i} className={`rounded-xl border px-3 py-3 ${ing.adjusted ? "border-ui-accent/30 bg-ui-accent/5" : "border-neutral-200"}`}>
-                        <div className="mb-2 text-sm font-medium text-neutral-800">{ing.name}</div>
+                      <div key={i} className={`rounded-xl border px-3 py-3 ${ing.adjusted ? "border-ui-accent bg-ui-accent-muted" : "border-ui-border"}`}>
+                        <div className="mb-2 text-sm font-medium text-ui-text">{ing.name}</div>
                         <div className="flex items-center gap-3">
                           <div className="flex-1 min-w-0">
-                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-ui-muted">Recipe says</label>
-                            <div className="rounded-lg bg-neutral-100 px-2.5 py-1.5 text-xs text-neutral-600">
+                            <label className="mb-1 block text-xs font-semibold text-ui-muted">Recipe says</label>
+                            <div className="rounded-lg bg-ui-surface-subtle px-2.5 py-1.5 text-xs text-ui-muted">
                               {ing.quantity ?? "—"} {ing.unit ?? ""}
                             </div>
                           </div>
-                          <ArrowRight className="mt-5 h-3 w-3 shrink-0 text-neutral-300" aria-hidden="true" />
+                          <ArrowRight className="mt-5 h-3 w-3 shrink-0 text-ui-muted" aria-hidden="true" />
                           <div className="flex-1 min-w-0">
-                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-ui-accent">I used</label>
+                            <label className="mb-1 block text-xs font-semibold text-ui-accent">I used</label>
                             <div className="flex gap-1">
                               <input
                                 type="number"
@@ -287,14 +287,14 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
                                 value={ing.actualQuantity ?? ""}
                                 onChange={(e) => updateIngredient(i, "actualQuantity", e.target.value ? parseFloat(e.target.value) : undefined)}
                                 placeholder="qty"
-                                className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs text-neutral-900 shadow-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-300"
+                                className="w-16 rounded-lg border border-ui-border-strong bg-ui-surface-raised px-2 py-1.5 text-xs text-ui-text outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
                               />
                               <input
                                 type="text"
                                 value={ing.actualUnit ?? ""}
                                 onChange={(e) => updateIngredient(i, "actualUnit", e.target.value)}
                                 placeholder="unit"
-                                className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs text-neutral-900 shadow-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-300"
+                                className="w-16 rounded-lg border border-ui-border-strong bg-ui-surface-raised px-2 py-1.5 text-xs text-ui-text outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
                               />
                             </div>
                           </div>
@@ -309,7 +309,7 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <p className="mb-2 text-sm font-medium text-neutral-700">How close was this cook to the version you want?</p>
+                    <p className="mb-2 text-sm font-medium text-ui-text">How close was this cook to the version you want?</p>
                     <HalfStarRating
                       value={closenessRating || null}
                       onChange={setClosenessRating}
@@ -319,10 +319,10 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-neutral-700">What was different?</label>
+                    <label className="mb-1 block text-sm font-medium text-ui-text">What was different?</label>
                     <textarea value={closenessNotes} onChange={(e) => setClosenessNotes(e.target.value)}
                       placeholder="e.g., too salty, needed more garlic, texture was off..."
-                      rows={3} className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:border-ui-accent/45 focus:outline-none" />
+                      rows={3} className="w-full rounded-xl border border-ui-border px-3 py-2 text-sm focus:border-ui-accent focus:outline-none" />
                   </div>
                 </div>
               )}
@@ -330,8 +330,8 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
               {/* Step 3: Summary & Save */}
               {step === 3 && (
                 <div className="space-y-4">
-                  <div className="rounded-xl bg-ui-accent/5 p-4">
-                    <h4 className="mb-2 text-sm font-semibold text-[#521224]">Cook log summary</h4>
+                  <div className="rounded-xl bg-ui-accent-muted p-4">
+                    <h4 className="mb-2 text-sm font-semibold text-ui-text">Cook log summary</h4>
                     <div className="space-y-1 text-xs text-ui-accent">
                       <p>Cooked from: v{selectedVersion ? labelOf(selectedVersion) : ""}</p>
                       <p>Adjusted: {adjustedIngredients.filter((i) => i.adjusted).length} ingredients</p>
@@ -346,27 +346,27 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">Save as</p>
+                    <p className="text-xs font-semibold text-ui-muted">Save as</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <button
                         type="button"
                         onClick={() => setSaveMode("attempt_and_version")}
-                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_and_version" ? "border-ui-accent/40 bg-ui-accent/5" : "border-neutral-200 bg-white hover:border-ui-accent/20")}
+                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_and_version" ? "border-ui-accent bg-ui-accent-muted" : "border-ui-border bg-ui-surface-raised hover:border-ui-border-strong")}
                       >
-                        <span className="text-sm font-semibold text-neutral-900">Attempt + version</span>
-                        <span className="mt-1 block text-xs leading-5 text-neutral-500">Use this when the cook changed the recipe enough to preserve a new version.</span>
+                        <span className="text-sm font-semibold text-ui-text">Attempt + version</span>
+                        <span className="mt-1 block text-xs leading-5 text-ui-muted">Use this when the cook changed the recipe enough to preserve a new version.</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setSaveMode("attempt_only")}
-                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_only" ? "border-ui-accent/40 bg-ui-accent/5" : "border-neutral-200 bg-white hover:border-ui-accent/20")}
+                        className={"rounded-xl border px-3 py-3 text-left transition " + (saveMode === "attempt_only" ? "border-ui-accent bg-ui-accent-muted" : "border-ui-border bg-ui-surface-raised hover:border-ui-border-strong")}
                       >
-                        <span className="text-sm font-semibold text-neutral-900">Attempt only</span>
-                        <span className="mt-1 block text-xs leading-5 text-neutral-500">Use this when you cooked it but are not ready to change the recipe.</span>
+                        <span className="text-sm font-semibold text-ui-text">Attempt only</span>
+                        <span className="mt-1 block text-xs leading-5 text-ui-muted">Use this when you cooked it but are not ready to change the recipe.</span>
                       </button>
                     </div>
                   </div>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-ui-muted">
                     New versions are not definitive unless you set them later.
                   </p>
                 </div>
@@ -376,28 +376,28 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
         </div>
 
         {error && (
-          <p className="mx-4 mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mx-4 mb-3 rounded-xl border border-ui-border bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger">
             {error}
           </p>
         )}
 
         {/* Navigation */}
-        <div className="sticky bottom-0 flex items-center justify-between border-t border-neutral-100 bg-white px-4 py-3">
+        <div className="sticky bottom-0 flex items-center justify-between border-t border-ui-border bg-ui-surface-raised px-4 py-3">
           <button onClick={() => (step === 0 ? onClose() : setStep(step - 1))}
-            className="flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100">
+            className="flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-ui-muted hover:bg-ui-surface-subtle">
             <ArrowLeft className="h-3 w-3" aria-hidden="true" />
             {step === 0 ? "Cancel" : "Back"}
           </button>
           {step < 3 ? (
             <button onClick={() => setStep(step + 1)} disabled={step === 0 && !selectedVersion}
-              className="flex items-center gap-1 rounded-xl bg-ui-accent/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-ui-action disabled:opacity-50">
+              className="flex items-center gap-1 rounded-xl bg-ui-accent px-4 py-2 text-xs font-semibold text-ui-action-text transition-colors hover:bg-ui-action disabled:opacity-50">
               Next <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </button>
           ) : (
             <button onClick={handleSave} disabled={saving}
-              className="flex items-center gap-1 rounded-xl bg-ui-accent/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-ui-action disabled:opacity-50">
+              className="flex items-center gap-1 rounded-xl bg-ui-accent px-4 py-2 text-xs font-semibold text-ui-action-text transition-colors hover:bg-ui-action disabled:opacity-50">
               {saving
-                ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-ui-action-text border-t-transparent" />
                 : <Check className="h-3 w-3" aria-hidden="true" />}
               {saveMode === "attempt_only" ? "Save attempt" : "Save attempt + version"}
             </button>

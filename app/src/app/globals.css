@@ -21,7 +21,7 @@
   --ui-bg: #fafaf8;
   --ui-surface: #fffdfb;
   --ui-surface-raised: #ffffff;
-  --ui-surface-subtle: #f6f2eb;
+  --ui-surface-subtle: #f8f5f0;
   --ui-text: #1a1a1a;
   --ui-muted: #6b625c;
   --ui-border: #ebe5dc;
@@ -42,6 +42,18 @@
   --ui-danger-soft: #fef2f2;
   --ui-info: #1d4ed8;
   --ui-info-soft: #eff6ff;
+
+  /* Kitchen mode (dark cook-along). Solid values, not white-at-N% overlays. */
+  --ui-night: #17131f;
+  --ui-night-raised: #2e2b35;
+  --ui-night-line: #3a3641;
+  --ui-night-text: #fffaf4;
+  --ui-night-muted: #a2a1a5;
+  --ui-highlight: #f7c86a;
+  --ui-highlight-hover: #ffd98a;
+
+  /* The one overlay for text on photos and modal backdrops. */
+  --ui-scrim: rgba(23, 19, 31, 0.55);
 }
 
 @theme inline {
@@ -75,6 +87,18 @@
   --color-ui-danger-soft: var(--ui-danger-soft);
   --color-ui-info: var(--ui-info);
   --color-ui-info-soft: var(--ui-info-soft);
+  --color-ui-night: var(--ui-night);
+  --color-ui-night-raised: var(--ui-night-raised);
+  --color-ui-night-line: var(--ui-night-line);
+  --color-ui-night-text: var(--ui-night-text);
+  --color-ui-night-muted: var(--ui-night-muted);
+  --color-ui-highlight: var(--ui-highlight);
+  --color-ui-highlight-hover: var(--ui-highlight-hover);
+  --color-ui-scrim: var(--ui-scrim);
+
+  /* Elevation: two levels only. */
+  --shadow-ui-raised: 0 8px 24px rgba(40, 26, 19, 0.08);
+  --shadow-ui-overlay: 0 24px 64px rgba(40, 26, 19, 0.16);
 
   --font-sans: var(--font-dm-sans, "DM Sans"), system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -198,7 +222,6 @@ h5,
 h6 {
   font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif !important;
   font-weight: 600;
-  letter-spacing: -0.01em;
 }
 
 .brand-serif,
@@ -217,7 +240,6 @@ h6 {
 .app-editorial-title {
   font-family: var(--font-brand-serif), "Newsreader", Georgia, serif !important;
   font-weight: 400 !important;
-  letter-spacing: -0.04em;
 }
 
 .landing-content,
@@ -266,15 +288,24 @@ h6 {
   object-position: calc(50% + var(--hero-focus-shift)) 44%;
 }
 
+/* Desktop hero legibility overlays: the canvas colour fading out over the photo. */
+.landing-hero-scrim-side {
+  background: linear-gradient(90deg, rgba(250, 250, 248, 0.92) 0%, rgba(250, 250, 248, 0.75) 35%, rgba(250, 250, 248, 0.2) 60%, rgba(250, 250, 248, 0) 100%);
+}
+
+.landing-hero-scrim-base {
+  background: linear-gradient(0deg, rgba(250, 250, 248, 0.6) 0%, rgba(250, 250, 248, 0) 25%);
+}
+
 .landing-hero-readable-scrim {
   inset: 0;
   height: 100%;
   background: linear-gradient(
     0deg,
-    rgba(250, 250, 248, 0.92) 0%,
-    rgba(250, 250, 248, 0.7) 18%,
-    rgba(250, 250, 248, 0.28) 40%,
-    rgba(250, 250, 248, 0.04) 64%,
+    rgba(250, 250, 248, 0.94) 0%,
+    rgba(250, 250, 248, 0.84) 18%,
+    rgba(250, 250, 248, 0.6) 42%,
+    rgba(250, 250, 248, 0.1) 66%,
     rgba(250, 250, 248, 0) 100%
   );
 }

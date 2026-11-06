@@ -9,8 +9,8 @@ export function HeatChip({ heat, dark = false }: { heat: HeatLevel; dark?: boole
     <span
       className={
         dark
-          ? "inline-flex items-center gap-1 rounded-full border border-[#f7c86a]/30 bg-[#f7c86a]/10 px-2.5 py-1 text-xs font-semibold text-[#f7c86a]"
-          : "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold " + config.className
+          ? "inline-flex items-center gap-1 text-sm font-medium text-ui-highlight"
+          : "inline-flex items-center gap-1 text-sm font-medium " + config.className
       }
     >
       <Flame className="h-3.5 w-3.5" />

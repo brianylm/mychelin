@@ -9,9 +9,9 @@ import { useAuth } from "@/context/AuthContext";
 
 // Links styled as the Button primitive's large primary/secondary variants.
 const primaryLink =
-  "inline-flex h-12 w-full items-center justify-center rounded-lg border border-[var(--ui-action)] bg-[var(--ui-action)] px-5 text-base font-semibold text-[var(--ui-action-text)] transition-colors hover:bg-[var(--ui-action-hover)]";
+  "inline-flex h-12 w-full items-center justify-center rounded-lg border border-ui-action bg-ui-action px-5 text-base font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover";
 const secondaryLink =
-  "inline-flex h-12 w-full items-center justify-center rounded-lg border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] px-5 text-base font-semibold text-[var(--ui-text)] transition-colors hover:border-[var(--ui-accent)]/40 hover:bg-[var(--ui-accent-muted)]";
+  "inline-flex h-12 w-full items-center justify-center rounded-lg border border-ui-border-strong bg-ui-surface-raised px-5 text-base font-semibold text-ui-text transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted";
 
 type JoinState =
   | { kind: "idle" }

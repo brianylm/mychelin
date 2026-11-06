@@ -82,27 +82,27 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
   return (
     <>
       {/* Sticky bottom banner */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ui-accent/15 bg-gradient-to-br from-ui-accent/5 to-white px-4 py-3 shadow-lg">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ui-border bg-ui-surface-raised px-4 py-3 shadow-lg">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <span className="hidden text-2xl sm:inline">📖</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#241017]">
+            <p className="text-sm font-semibold text-ui-text">
               Save this {noun}, discover more heritage recipes
             </p>
-            <p className="text-[11px] text-neutral-600 truncate">
+            <p className="text-[11px] text-ui-muted truncate">
               Join Mychelin to build your own family cookbook.
             </p>
           </div>
           <button
             onClick={() => setExpanded(true)}
-            className="shrink-0 rounded-full bg-ui-action px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-ui-accent"
+            className="shrink-0 rounded-xl bg-ui-action px-4 py-2 text-xs font-semibold text-ui-action-text shadow-sm transition-colors hover:bg-ui-accent min-h-11"
           >
             Sign up
           </button>
           <button
             onClick={persistDismiss}
             aria-label="Dismiss"
-            className="shrink-0 rounded-lg p-1 text-ui-muted hover:bg-neutral-100 hover:text-neutral-600"
+            className="shrink-0 rounded-lg p-1 text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-muted"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -125,26 +125,26 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
       {/* Expanded modal */}
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ui-scrim p-4"
           onClick={() => setExpanded(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            className="w-full max-w-md rounded-2xl bg-ui-surface-raised p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex justify-center text-4xl">🍳</div>
-            <h2 className="text-center text-xl font-bold text-neutral-900">
+            <h2 className="text-center text-xl font-bold text-ui-text">
               Welcome to Mychelin
             </h2>
-            <p className="mt-2 text-center text-sm text-neutral-600">
+            <p className="mt-2 text-center text-sm text-ui-muted">
               You&apos;re viewing{" "}
-              <span className="font-semibold text-[#521224]">
+              <span className="font-semibold text-ui-text">
                 &ldquo;{resourceName}&rdquo;
               </span>
               . Join Mychelin to save it, capture family recipes through
               live conversation help, and build your own heritage cookbook.
             </p>
-            <ul className="mt-5 space-y-2 text-sm text-neutral-700">
+            <ul className="mt-5 space-y-2 text-sm text-ui-text">
               <li className="flex items-center gap-2">
                 <span className="text-ui-accent">✓</span>
                 Save shared recipes to your own collection
@@ -161,19 +161,19 @@ export function SignupNudge({ context, resourceName }: SignupNudgeProps) {
             <div className="mt-6 flex flex-col gap-2">
               <a
                 href={signupHref}
-                className="w-full rounded-xl bg-ui-action px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-ui-accent"
+                className="w-full rounded-xl bg-ui-action px-4 py-3 text-center text-sm font-semibold text-ui-action-text shadow-sm transition-colors hover:bg-ui-accent"
               >
                 Create a free account
               </a>
               <a
                 href={loginHref}
-                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-sm font-medium text-neutral-700 transition-colors hover:border-ui-accent/30 hover:bg-ui-accent/5"
+                className="w-full rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-3 text-center text-sm font-medium text-ui-text transition-colors hover:border-ui-border-strong hover:bg-ui-accent-muted"
               >
                 I already have an account
               </a>
               <button
                 onClick={() => setExpanded(false)}
-                className="mt-1 text-center text-xs text-ui-muted hover:text-neutral-600"
+                className="mt-1 text-center text-xs text-ui-muted hover:text-ui-muted"
               >
                 Keep reading as a guest
               </button>

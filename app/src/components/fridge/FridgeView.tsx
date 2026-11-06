@@ -175,17 +175,17 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
   ).length;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
+    <div className="flex-1 overflow-y-auto bg-ui-bg pb-20 md:pb-6">
       <div className="mx-auto max-w-3xl px-4 py-6">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold">Inventory</h2>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-ui-muted">
               {items.length} items
               {isShared && <SharedHouseholdChip name={householdName} onOpen={onOpenHousehold} />}
               {expiringCount > 0 && (
-                <span className="ml-2 text-red-500">
+                <span className="ml-2 text-ui-danger">
                   ⚠️ {expiringCount} expiring
                 </span>
               )}
@@ -202,7 +202,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
         </div>
 
         {/* Location filter */}
-        <div className="mb-4 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1">
+        <div className="mb-4 flex gap-1 rounded-lg border border-ui-border bg-ui-surface-subtle p-1">
           {LOCATIONS.map((loc) => (
             <button
               key={loc.id}
@@ -210,8 +210,8 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
               className={cn(
                 "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition",
                 filter === loc.id
-                  ? "bg-ui-action text-white shadow-sm"
-                  : "text-neutral-600 hover:bg-neutral-100"
+                  ? "bg-ui-action text-ui-action-text shadow-sm"
+                  : "text-ui-muted hover:bg-ui-surface-subtle"
               )}
             >
               <span>{loc.icon}</span>
@@ -222,14 +222,14 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
 
         {/* Add form */}
         {isAdding && (
-          <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4">
+          <div className="mb-4 rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
             <h3 className="mb-3 text-sm font-semibold">Add item</h3>
             <div className="grid gap-2 sm:grid-cols-2">
               <input
                 value={draft.name}
                 onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
                 placeholder="Item name"
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
+                className="rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
                 autoFocus
               />
               <div className="flex gap-2">
@@ -240,13 +240,13 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                   }
                   placeholder="Qty"
                   type="number"
-                  className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
+                  className="w-20 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
                 />
                 <input
                   value={draft.unit}
                   onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
                   placeholder="Unit (g, ml, pcs)"
-                  className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
+                  className="flex-1 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
                 />
               </div>
               <select
@@ -254,7 +254,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, location: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
+                className="rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
               >
                 <option value="fridge">🧊 Fridge</option>
                 <option value="freezer">❄️ Freezer</option>
@@ -266,7 +266,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, expiryDate: e.target.value }))
                 }
-                className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white"
+                className="rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft focus:bg-ui-surface-raised"
                 placeholder="Expiry date"
               />
             </div>
@@ -287,13 +287,13 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
 
         {/* Items list */}
         {loading ? (
-          <p className="py-12 text-center text-sm text-neutral-500">
+          <p className="py-12 text-center text-sm text-ui-muted">
             Loading inventory...
           </p>
         ) : filteredItems.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-3xl">🧊</p>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm text-ui-muted">
               {filter === "all"
                 ? "Your inventory is empty. Add some items!"
                 : `Nothing in ${filter}. Add items to track them.`}
@@ -310,12 +310,12 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                 <div
                   key={item.id}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl border bg-white px-4 py-3 transition-colors",
+                    "group flex items-center gap-3 rounded-xl border bg-ui-surface-raised px-4 py-3 transition-colors",
                     expired
-                      ? "border-red-200 bg-red-50/50"
+                      ? "border-ui-border bg-ui-danger-soft"
                       : expiring
-                        ? "border-ui-accent/15 bg-ui-accent/5"
-                        : "border-neutral-200"
+                        ? "border-ui-border bg-ui-accent-muted"
+                        : "border-ui-border"
                   )}
                 >
                   {/* Location icon */}
@@ -329,7 +329,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
 
                   {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-neutral-800">
+                    <p className="truncate text-sm font-medium text-ui-text">
                       {item.name}
                     </p>
                     {editingId === item.id ? (
@@ -341,7 +341,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                           }
                           type="number"
                           aria-label="Quantity"
-                          className="w-20 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs outline-none focus:border-ui-accent/45"
+                          className="w-20 rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-2 py-1 text-xs outline-none focus:border-ui-accent"
                         />
                         <input
                           type="date"
@@ -350,28 +350,28 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                             setEditDraft((d) => ({ ...d, expiryDate: e.target.value }))
                           }
                           aria-label="Expiry date"
-                          className="rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs outline-none focus:border-ui-accent/45"
+                          className="rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-2 py-1 text-xs outline-none focus:border-ui-accent"
                         />
                         <button
                           type="button"
                           onClick={() => saveEdit(item.id)}
-                          className="rounded-lg bg-ui-action px-2.5 py-1 text-xs font-medium text-white"
+                          className="rounded-lg bg-ui-action px-2.5 py-1 text-xs font-medium text-ui-action-text"
                         >
                           Save
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingId(null)}
-                          className="rounded-lg px-2 py-1 text-xs text-neutral-500"
+                          className="rounded-lg px-2 py-1 text-xs text-ui-muted"
                         >
                           Cancel
                         </button>
                       </div>
                     ) : (
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-ui-muted">
                         {item.quantity} {item.unit}
                         {outOfStock && (
-                          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                          <span className="ml-2 text-sm font-medium text-ui-warning-text">
                             ⚠️ Out of stock
                           </span>
                         )}
@@ -380,7 +380,7 @@ export function FridgeView({ onOpenHousehold }: { onOpenHousehold?: () => void }
                             className={cn(
                               "ml-2",
                               expired
-                                ? "font-medium text-red-600"
+                                ? "font-medium text-ui-danger"
                                 : expiring
                                   ? "font-medium text-ui-accent"
                                   : ""

@@ -154,36 +154,35 @@ Return ONLY the JSON array, no other text.`,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
-      <div className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ui-scrim sm:items-center" onClick={onClose}>
+      <div className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-ui-surface-raised sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white px-4 py-3 rounded-t-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ui-border bg-ui-surface-raised px-4 py-3 rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <span>✨</span>
-            <h3 className="text-sm font-semibold text-neutral-800">AI Refinement</h3>
+            <h3 className="text-sm font-semibold text-ui-text">AI Refinement</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-ui-muted hover:bg-neutral-100">
+          <button onClick={onClose} className="rounded-lg p-1 text-ui-muted hover:bg-ui-surface-subtle">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Context */}
-        <div className="border-b border-neutral-100 px-4 py-3">
-          <div className="rounded-xl bg-ui-accent/5 p-3">
+        <div className="px-4 py-3">
+          <div>
             <div className="flex items-center gap-2 text-xs text-ui-accent">
               <span>Based on v{labelOf(version)} cook-along</span>
               {version.closenessRating && (
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) =>
                     s <= version.closenessRating!
-                      ? <Star key={s} className="h-2.5 w-2.5 text-amber-500" fill="currentColor" aria-hidden="true" />
-                      : <Star key={s} className="h-2.5 w-2.5 text-amber-300" aria-hidden="true" />
+                      ? <Star key={s} className="h-2.5 w-2.5 text-ui-warning" fill="currentColor" aria-hidden="true" />
+                      : <Star key={s} className="h-2.5 w-2.5 text-ui-warning" aria-hidden="true" />
                   )}
                 </div>
               )}
             </div>
             {version.closenessNotes && (
-              <p className="mt-1 text-xs text-ui-accent italic">&quot;{version.closenessNotes}&quot;</p>
+              <p className="mt-1 text-xs text-ui-accent">&quot;{version.closenessNotes}&quot;</p>
             )}
           </div>
         </div>
@@ -193,34 +192,34 @@ Return ONLY the JSON array, no other text.`,
           {loading ? (
             <div className="flex flex-col items-center gap-2 py-8">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-ui-accent border-t-transparent" />
-              <p className="text-xs text-neutral-500">Generating suggestions…</p>
+              <p className="text-xs text-ui-muted">Generating suggestions…</p>
             </div>
           ) : suggestions.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-neutral-500">No specific suggestions could be generated.</p>
+              <p className="text-sm text-ui-muted">No specific suggestions could be generated.</p>
               <p className="mt-1 text-xs text-ui-muted">Try adding more detailed notes about what was different.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="mb-3 text-xs text-neutral-500">Select which suggestions to apply:</p>
+              <p className="mb-3 text-xs text-ui-muted">Select which suggestions to apply:</p>
               {suggestions.map((suggestion, i) => (
                 <button key={i} onClick={() => toggleSuggestion(i)}
                   className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
-                    selectedSuggestions.has(i) ? "border-ui-accent/45 bg-ui-accent/5" : "border-neutral-200 hover:border-neutral-300"
+                    selectedSuggestions.has(i) ? "border-ui-accent bg-ui-accent-muted" : "border-ui-border hover:border-ui-border-strong"
                   }`}>
                   <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-                    selectedSuggestions.has(i) ? "border-amber-500 bg-ui-accent/50" : "border-neutral-300"
+                    selectedSuggestions.has(i) ? "border-ui-warning bg-ui-accent" : "border-ui-border-strong"
                   }`}>
-                    {selectedSuggestions.has(i) && <Check className="h-3 w-3 text-white" aria-hidden="true" />}
+                    {selectedSuggestions.has(i) && <Check className="h-3 w-3 text-ui-action-text" aria-hidden="true" />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-neutral-800">{suggestion.ingredient}</div>
+                    <div className="text-sm font-medium text-ui-text">{suggestion.ingredient}</div>
                     <div className="mt-0.5 flex items-center gap-1 text-xs">
                       <span className="text-ui-muted">{suggestion.currentAmount}</span>
-                      <ChevronRight className="h-2.5 w-2.5 text-neutral-300" aria-hidden="true" />
+                      <ChevronRight className="h-2.5 w-2.5 text-ui-muted" aria-hidden="true" />
                       <span className="font-medium text-ui-accent">{suggestion.suggestedAmount}</span>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-neutral-500">{suggestion.reason}</p>
+                    <p className="mt-0.5 text-[11px] text-ui-muted">{suggestion.reason}</p>
                   </div>
                 </button>
               ))}
@@ -230,14 +229,14 @@ Return ONLY the JSON array, no other text.`,
 
         {/* Actions */}
         {suggestions.length > 0 && (
-          <div className="sticky bottom-0 flex items-center justify-between border-t border-neutral-100 bg-white px-4 py-3">
+          <div className="sticky bottom-0 flex items-center justify-between bg-ui-surface-raised px-4 py-3">
             <button onClick={generateSuggestions} disabled={loading}
-              className="flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100">
+              className="flex items-center gap-1 rounded-xl px-3 py-3 text-xs font-medium text-ui-muted hover:bg-ui-surface-subtle min-h-11">
               <RotateCw className="h-3 w-3" aria-hidden="true" /> Regenerate
             </button>
             <button onClick={handleApply} disabled={saving || selectedSuggestions.size === 0}
-              className="flex items-center gap-1 rounded-xl bg-ui-accent/50 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-ui-action disabled:opacity-50">
-              {saving ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <span>✨</span>}
+              className="flex items-center gap-1 rounded-xl bg-ui-accent px-4 py-3 text-xs font-semibold text-ui-action-text transition-colors hover:bg-ui-action disabled:opacity-50 min-h-11">
+              {saving ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-ui-action-text border-t-transparent" /> : <span>✨</span>}
               Apply {selectedSuggestions.size} Suggestion{selectedSuggestions.size !== 1 ? "s" : ""}
             </button>
           </div>

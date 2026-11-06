@@ -68,7 +68,7 @@ function FieldRow({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <label className="text-xs font-medium text-ui-muted">
           {label}
         </label>
         <SaveIndicator isSaving={savingField === currentField} />
@@ -117,9 +117,9 @@ export function CulturalContextCard({
   );
 
   const inputClass =
-    "w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
+    "w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm text-ui-text outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted";
   const selectClass = (value: string) =>
-    `w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10 focus:bg-white ${!value ? "text-ui-muted" : "text-neutral-900"}`;
+    `w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft focus:bg-ui-surface-raised ${!value ? "text-ui-muted" : "text-ui-text"}`;
 
   const filledCount = Object.values(values).filter(Boolean).length;
 

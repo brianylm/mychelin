@@ -79,38 +79,38 @@ function rhythmMessage(summary: RhythmSummary | null): string {
 
 function ProfileSkeleton() {
   return (
-    <div className="flex-1 overflow-y-auto bg-surface">
+    <div className="flex-1 overflow-y-auto bg-ui-bg">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 pb-28">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <div className="h-5 w-40 animate-pulse rounded bg-neutral-200" />
-          <div className="mt-4 h-4 w-64 max-w-full animate-pulse rounded bg-neutral-100" />
+        <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+          <div className="h-5 w-40 animate-pulse rounded bg-ui-border" />
+          <div className="mt-4 h-4 w-64 max-w-full animate-pulse rounded bg-ui-surface-subtle" />
         </div>
-        <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] p-5 shadow-sm">
+        <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <div className="h-3 w-28 animate-pulse rounded bg-[#eadfce]" />
-              <div className="mt-3 h-5 w-56 max-w-full animate-pulse rounded bg-neutral-200" />
-              <div className="mt-3 h-4 w-full animate-pulse rounded bg-neutral-100" />
+              <div className="h-3 w-28 animate-pulse rounded bg-ui-surface-subtle" />
+              <div className="mt-3 h-5 w-56 max-w-full animate-pulse rounded bg-ui-border" />
+              <div className="mt-3 h-4 w-full animate-pulse rounded bg-ui-surface-subtle" />
             </div>
-            <div className="h-11 w-11 animate-pulse rounded-full bg-[#eadfce]" />
+            <div className="h-11 w-11 animate-pulse rounded-full bg-ui-surface-subtle" />
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {[0, 1, 2].map((item) => (
-              <div key={item} className="rounded-xl border border-[#eadfce] bg-white p-3">
-                <div className="h-3 w-20 animate-pulse rounded bg-neutral-100" />
-                <div className="mt-3 h-7 w-10 animate-pulse rounded bg-neutral-200" />
+              <div key={item} className="rounded-xl border border-ui-border bg-ui-surface-raised p-3">
+                <div className="h-3 w-20 animate-pulse rounded bg-ui-surface-subtle" />
+                <div className="mt-3 h-7 w-10 animate-pulse rounded bg-ui-border" />
               </div>
             ))}
           </div>
-          <div className="mt-5 h-2 animate-pulse rounded-full bg-[#eadfce]" />
+          <div className="mt-5 h-2 animate-pulse rounded-full bg-ui-surface-subtle" />
         </div>
         {[0, 1, 2].map((section) => (
-          <div key={section} className="rounded-2xl border border-neutral-200 bg-white p-5">
-            <div className="h-5 w-36 animate-pulse rounded bg-neutral-200" />
+          <div key={section} className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+            <div className="h-5 w-36 animate-pulse rounded bg-ui-border" />
             <div className="mt-5 space-y-3">
-              <div className="h-10 animate-pulse rounded-lg bg-neutral-100" />
-              <div className="h-10 animate-pulse rounded-lg bg-neutral-100" />
-              <div className="h-10 w-3/4 animate-pulse rounded-lg bg-neutral-100" />
+              <div className="h-10 animate-pulse rounded-lg bg-ui-surface-subtle" />
+              <div className="h-10 animate-pulse rounded-lg bg-ui-surface-subtle" />
+              <div className="h-10 w-3/4 animate-pulse rounded-lg bg-ui-surface-subtle" />
             </div>
           </div>
         ))}
@@ -134,16 +134,16 @@ function ProfileLinkRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 border-b border-neutral-100 px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-neutral-50"
+      className="flex w-full items-center gap-3 border-b border-ui-border px-5 py-4 text-left transition-colors last:border-b-0 hover:bg-ui-surface-subtle"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-ui-accent">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ui-accent-muted text-ui-accent">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-neutral-900">{title}</span>
-        <span className="mt-0.5 block truncate text-xs text-neutral-500">{detail}</span>
+        <span className="block text-sm font-semibold text-ui-text">{title}</span>
+        <span className="mt-0.5 block truncate text-xs text-ui-muted">{detail}</span>
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-ui-muted" aria-hidden="true" />
     </button>
   );
 }
@@ -434,17 +434,17 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
   const hiddenChangelogCount = Math.max(changelogEntries.length - 3, 0);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface">
+    <div className="flex-1 overflow-y-auto bg-ui-bg">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 pb-28">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h1 className="mb-2 text-2xl font-semibold tracking-tight text-neutral-950">Profile & Settings</h1>
-          <div className="space-y-2 text-sm text-neutral-600">
+        <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+          <h1 className="mb-2 text-2xl font-semibold text-ui-text">Profile & Settings</h1>
+          <div className="space-y-2 text-sm text-ui-muted">
             <p><span className="font-medium">Email:</span> {user?.email}</p>
           </div>
         </div>
 
         {(onOpenActivity || (HOUSEHOLDS_ENABLED && onOpenHousehold)) && (
-          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          <div className="overflow-hidden rounded-2xl border border-ui-border bg-ui-surface-raised">
             {HOUSEHOLDS_ENABLED && onOpenHousehold && (
               <ProfileLinkRow
                 icon={<House className="h-4 w-4" aria-hidden="true" />}
@@ -468,8 +468,8 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           </div>
         )}
 
-        <div className="rounded-2xl border border-[#e7ded1] bg-[#fffaf3] shadow-sm">
-          <div className="flex items-start justify-between gap-3 p-5">
+        <div>
+          <div className="flex items-start justify-between gap-3">
             <button
               type="button"
               onClick={() => setIsRhythmOpen((open) => !open)}
@@ -477,53 +477,52 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
               aria-expanded={isRhythmOpen}
             >
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ui-accent">Cooking rhythm</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-neutral-950">Your weekly dish goal</h2>
-                <p className="mt-1 text-sm leading-6 text-neutral-600">{rhythmMessage(rhythm)}</p>
+                <h2 className="text-xl font-semibold text-ui-text">Your weekly dish goal</h2>
+                <p className="mt-1 text-sm leading-6 text-ui-muted">{rhythmMessage(rhythm)}</p>
               </div>
               <ChevronDown className={"mt-1 h-5 w-5 shrink-0 text-ui-muted transition group-hover:text-ui-accent " + (isRhythmOpen ? "rotate-180" : "")} />
             </button>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ui-accent text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ui-accent text-ui-action-text">
               <Flame className="h-5 w-5" />
             </div>
           </div>
 
           {isRhythmOpen && (
-            <div className="border-t border-[#eadfce] px-5 pb-5 pt-4">
+            <div className="pt-4">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-[#eadfce] bg-white p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-ui-muted">
                     <CheckCircle2 className="h-4 w-4 text-ui-accent" /> Dishes cooked
                   </div>
-                  <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.cookedThisWeek ?? 0}</p>
+                  <p className="mt-2 text-2xl font-semibold text-ui-text">{rhythm?.cookedThisWeek ?? 0}</p>
                 </div>
-                <div className="rounded-xl border border-[#eadfce] bg-white p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-ui-muted">
                     <CalendarClock className="h-4 w-4 text-ui-accent" /> Meals planned
                   </div>
-                  <p className="mt-2 text-2xl font-semibold text-neutral-900">{rhythm?.plannedThisWeek ?? 0}</p>
+                  <p className="mt-2 text-2xl font-semibold text-ui-text">{rhythm?.plannedThisWeek ?? 0}</p>
                 </div>
-                <div className="rounded-xl border border-[#eadfce] bg-white p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-ui-muted">
                     <Target className="h-4 w-4 text-ui-accent" /> Dish goal
                   </div>
-                  <p className="mt-2 text-2xl font-semibold text-neutral-900">{notificationPrefs.weeklyCookingGoal}</p>
+                  <p className="mt-2 text-2xl font-semibold text-ui-text">{notificationPrefs.weeklyCookingGoal}</p>
                 </div>
               </div>
 
               <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-xs text-neutral-500">
+                <div className="mb-2 flex items-center justify-between text-xs text-ui-muted">
                   <span>{formatWeekRange(rhythm)}</span>
                   <span>{rhythm?.progress ?? 0}%</span>
                 </div>
-                <div className="h-2 rounded-full bg-[#eadfce]">
+                <div className="h-2 rounded-full bg-ui-surface-subtle">
                   <div className="h-full rounded-full bg-ui-accent transition-[width]" style={{ width: (rhythm?.progress ?? 0) + "%" }} />
                 </div>
               </div>
 
               <div className="mt-5">
-                <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Weekly dish goal</label>
-                <p className="mt-1 text-xs leading-5 text-neutral-500">This counts completed cook-with-me attempts, so one finished dish equals one point. It is not a daily streak.</p>
+                <label className="text-xs font-medium text-ui-muted">Weekly dish goal</label>
+                <p className="mt-1 text-xs leading-5 text-ui-muted">This counts completed cook-with-me attempts, so one finished dish equals one point. It is not a daily streak.</p>
                 <div className="mt-2 grid grid-cols-6 gap-1.5">
                   {GOAL_OPTIONS.map((goal) => (
                     <button
@@ -533,8 +532,8 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                       className={
                         "h-10 rounded-lg border text-sm font-semibold transition " +
                         (notificationPrefs.weeklyCookingGoal === goal
-                          ? "border-ui-accent bg-ui-accent text-white"
-                          : "border-[#eadfce] bg-white text-neutral-700 hover:border-ui-accent/35")
+                          ? "border-ui-accent bg-ui-accent text-ui-action-text"
+                          : "border-ui-border bg-ui-surface-raised text-ui-text hover:border-ui-border-strong")
                       }
                     >
                       {goal}
@@ -543,7 +542,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-2 text-sm text-neutral-700 sm:grid-cols-2">
+              <div className="mt-5 grid gap-2 text-sm text-ui-text sm:grid-cols-2">
                 {[
                   ["rhythmReminders", "Weekly rhythm nudges"],
                   ["mealReminders", "Planned meal reminders"],
@@ -551,12 +550,12 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                   ["reviewReminders", "Post-cook review prompts"],
                   ["familyActivity", "Family recipe activity"],
                 ].map(([key, label]) => (
-                  <label key={key} className="flex items-center gap-2 rounded-xl border border-[#eadfce] bg-white px-3 py-2">
+                  <label key={key} className="flex items-center gap-2 rounded-xl border border-ui-border bg-ui-surface-raised px-3 py-2">
                     <input
                       type="checkbox"
                       checked={Boolean(notificationPrefs[key as keyof NotificationPreferences])}
                       onChange={(e) => setNotificationToggle(key as keyof NotificationPreferences, e.target.checked)}
-                      className="h-4 w-4 rounded border-neutral-300 text-ui-accent focus:ring-ui-accent/30"
+                      className="h-4 w-4 rounded border-ui-border-strong text-ui-accent focus:ring-ui-focus"
                     />
                     <span>{label}</span>
                   </label>
@@ -565,25 +564,25 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
 
               <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div>
-                  <label className="text-xs font-medium uppercase tracking-wide text-neutral-500">Reminder time</label>
+                  <label className="text-xs font-medium text-ui-muted">Reminder time</label>
                   <input
                     type="time"
                     value={notificationPrefs.reminderTime}
                     onChange={(e) => setNotificationToggle("reminderTime", e.target.value)}
-                    className="mt-2 w-full rounded-lg border border-[#eadfce] bg-white px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-accent/10"
+                    className="mt-2 w-full rounded-lg border border-ui-border bg-ui-surface-raised px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
                   />
                 </div>
-                <Button type="button" size="lg" onClick={saveNotificationPrefs} disabled={isSavingNotifications} className="!rounded-full">
+                <Button type="button" size="lg" onClick={saveNotificationPrefs} disabled={isSavingNotifications} className="!rounded-xl">
                   {isSavingNotifications ? "Saving..." : "Save rhythm"}
                 </Button>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#eadfce] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   {pushState === "subscribed" ? <Bell className="mt-0.5 h-5 w-5 text-ui-accent" /> : <BellOff className="mt-0.5 h-5 w-5 text-ui-muted" />}
                   <div>
-                    <p className="text-sm font-semibold text-neutral-800">Browser reminders</p>
-                    <p className="mt-1 text-xs leading-5 text-neutral-500">
+                    <p className="text-sm font-semibold text-ui-text">Browser reminders</p>
+                    <p className="mt-1 text-xs leading-5 text-ui-muted">
                       {!pushConfigured
                         ? "Push keys are not configured yet, so reminders can be saved but not delivered."
                         : pushState === "unsupported"
@@ -614,8 +613,8 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           <PilotChecklistPanel />
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-          <h2 className="mb-4 text-lg font-semibold tracking-tight text-neutral-950">Basic information</h2>
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-ui-text">Basic information</h2>
 
           <div className="space-y-4">
             <EditableField
@@ -627,10 +626,10 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           </div>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Comfort view</h2>
+              <h2 className="text-lg font-semibold text-ui-text">Comfort view</h2>
               <p className="mt-1 text-sm text-ui-muted">
                 Larger text and buttons, stronger contrast, fewer extras. Saved on this device.
               </p>
@@ -642,12 +641,12 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
               aria-label="Comfort view"
               onClick={toggleComfort}
               className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2 ${
-                comfort ? "bg-ui-action" : "bg-neutral-300"
+                comfort ? "bg-ui-action" : "bg-ui-border-strong"
               }`}
             >
               <span
                 aria-hidden="true"
-                className={`inline-block h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                className={`inline-block h-6 w-6 rounded-full bg-ui-surface-raised shadow transition-transform ${
                   comfort ? "translate-x-7" : "translate-x-1"
                 }`}
               />
@@ -655,9 +654,9 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           </div>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div className="space-y-4">
           <div className={`flex items-center justify-between${showPasswordForm ? " mb-4" : ""}`}>
-            <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Security</h2>
+            <h2 className="text-lg font-semibold text-ui-text">Security</h2>
             {!showPasswordForm && (
               <button
                 type="button"
@@ -672,7 +671,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           {showPasswordForm && (
             <form onSubmit={handleChangePassword} className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                <label className="mb-1 block text-xs font-medium text-ui-muted">
                   Current password
                 </label>
                 <input
@@ -680,13 +679,13 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Your current password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
                   required
                   autoFocus
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                <label className="mb-1 block text-xs font-medium text-ui-muted">
                   New password
                 </label>
                 <input
@@ -694,13 +693,13 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
                   required
                   minLength={6}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">
+                <label className="mb-1 block text-xs font-medium text-ui-muted">
                   Confirm new password
                 </label>
                 <input
@@ -708,14 +707,14 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter your new password"
-                  className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none transition focus:border-ui-accent/45 focus:bg-white focus:ring-2 focus:ring-ui-accent/10 placeholder:text-neutral-400"
+                  className="w-full rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-3 py-2 text-sm outline-none transition focus:border-ui-accent focus:bg-ui-surface-raised focus:ring-2 focus:ring-ui-focus-soft placeholder:text-ui-muted"
                   required
                   minLength={6}
                 />
               </div>
 
               {passwordError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                <p className="rounded-lg border border-ui-border bg-ui-danger-soft px-3 py-2 text-xs text-ui-danger">
                   {passwordError}
                 </p>
               )}
@@ -742,11 +741,11 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           )}
         </div>
 
-        <div data-comfort-hide className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div data-comfort-hide className="space-y-4">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-neutral-950">Changelog</h2>
-              <p className="mt-1 text-xs leading-5 text-neutral-500">
+              <h2 className="text-lg font-semibold text-ui-text">Changelog</h2>
+              <p className="mt-1 text-xs leading-5 text-ui-muted">
                 Recent product updates in Mychelin.
               </p>
             </div>
@@ -760,7 +759,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                 year: "numeric",
               });
               return (
-                <article key={entry.title} className="rounded-xl border border-neutral-100 bg-neutral-50/70">
+                <article key={entry.title} className="rounded-xl border border-ui-border bg-ui-surface-raised">
                   <button
                     type="button"
                     onClick={() => setOpenChangelogId(isOpen ? null : entry.title)}
@@ -768,18 +767,18 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                     aria-expanded={isOpen}
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-neutral-800">{entry.title}</span>
-                      <time className="mt-1 block text-[11px] font-medium uppercase tracking-wide text-ui-muted">
+                      <span className="block text-sm font-semibold text-ui-text">{entry.title}</span>
+                      <time className="mt-1 block text-xs font-medium text-ui-muted">
                         <span className="mr-2 inline-flex items-center rounded-md bg-ui-accent-muted px-1.5 py-0.5 text-[11px] font-semibold normal-case text-ui-accent">{changelogVersion(entry)}</span>
                         {formattedDate} · {entry.items.length} updates
                       </time>
                     </span>
-                    <span className="shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-600">
+                    <span className="shrink-0 text-sm text-ui-muted">
                       {isOpen ? "Hide" : "View"}
                     </span>
                   </button>
                   {isOpen && (
-                    <ul className="space-y-1.5 border-t border-neutral-100 px-4 py-3 text-xs leading-5 text-neutral-600">
+                    <ul className="mt-3 space-y-1.5 text-xs leading-5 text-ui-muted">
                       {entry.items.map((item) => (
                         <li key={item} className="flex gap-2">
                           <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ui-accent" />
@@ -796,14 +795,14 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
             <button
               type="button"
               onClick={() => setShowAllChangelog((current) => !current)}
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-ui-accent/30 hover:text-ui-accent"
+              className="mt-3 w-full rounded-xl border border-ui-border bg-ui-surface-raised px-4 py-2.5 text-sm font-semibold text-ui-text transition hover:border-ui-border-strong hover:text-ui-accent"
             >
               {showAllChangelog ? "Show latest 3" : "View more updates (" + hiddenChangelogCount + ")"}
             </button>
           )}
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row">
             <Button
               variant="primary"

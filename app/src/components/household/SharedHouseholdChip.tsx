@@ -7,14 +7,14 @@ import { House } from "lucide-react";
 export function SharedHouseholdChip({ name, onOpen }: { name?: string | null; onOpen?: () => void }) {
   const label = name ? `Shared with ${name}` : "Shared with household";
   const className =
-    "ml-2 inline-flex items-center gap-1 rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-semibold text-ui-accent";
+    "ml-2 inline-flex items-center gap-1 rounded-full bg-ui-accent-muted px-2 py-0.5 text-[10px] font-semibold text-ui-accent";
   if (!onOpen) return <span className={className}>{label}</span>;
   return (
     <button
       type="button"
       onClick={onOpen}
       title="Household settings"
-      className={`${className} transition-colors hover:bg-ui-accent/20`}
+      className={`${className} transition-colors hover:bg-ui-accent-muted`}
     >
       <House className="h-3 w-3" aria-hidden="true" />
       {label}

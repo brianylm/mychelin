@@ -130,11 +130,12 @@ const MEAL_LABELS: Record<string, string> = {
   snack: "🍪 Snack",
 };
 
+// One marker colour: the meal label carries the meaning, not the colour.
 const MEAL_COLORS: Record<string, string> = {
-  breakfast: "bg-orange-400",
-  lunch: "bg-yellow-400",
-  dinner: "bg-blue-400",
-  snack: "bg-purple-400",
+  breakfast: "bg-ui-accent",
+  lunch: "bg-ui-accent",
+  dinner: "bg-ui-accent",
+  snack: "bg-ui-accent",
 };
 
 type ViewType = "week" | "month";
@@ -970,13 +971,13 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface pb-20 md:pb-6">
+    <div className="flex-1 overflow-y-auto bg-ui-bg pb-20 md:pb-6">
       <div className="mx-auto max-w-5xl px-4 py-6">
         {/* Header with view toggle and navigation */}
         <div className="mb-6">
           {/* View toggle */}
           <div className="mb-4 flex justify-center">
-            <div className="inline-flex rounded-lg bg-neutral-100 p-1">
+            <div className="inline-flex rounded-lg bg-ui-surface-subtle p-1">
               <button
                 onClick={() => {
                   setViewType("week");
@@ -984,8 +985,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   viewType === "week"
-                    ? "bg-ui-action text-white shadow-sm"
-                    : "text-neutral-600 hover:text-neutral-800"
+                    ? "bg-ui-action text-ui-action-text shadow-sm"
+                    : "text-ui-muted hover:text-ui-text"
                 }`}
               >
                 Week
@@ -997,8 +998,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                 }}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                   viewType === "month"
-                    ? "bg-ui-action text-white shadow-sm"
-                    : "text-neutral-600 hover:text-neutral-800"
+                    ? "bg-ui-action text-ui-action-text shadow-sm"
+                    : "text-ui-muted hover:text-ui-text"
                 }`}
               >
                 Month
@@ -1082,7 +1083,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
           </div>
 
           {lastRandomized && (
-            <div data-comfort-hide className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ui-accent/15 bg-ui-accent/5 px-3 py-2 text-xs text-ui-text">
+            <div data-comfort-hide className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ui-border bg-ui-accent-muted px-3 py-2 text-xs text-ui-text">
               <span>
                 Planned {lastRandomized.planIds.length} meal{lastRandomized.planIds.length === 1 ? "" : "s"} for {lastRandomized.label}
               </span>
@@ -1097,7 +1098,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
               <button
                 type="button"
                 onClick={() => setLastRandomized(null)}
-                className="text-neutral-400 hover:text-neutral-600"
+                className="text-ui-muted hover:text-ui-muted"
                 aria-label="Dismiss undo banner"
               >
                 <X className="h-3 w-3" />
@@ -1107,7 +1108,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         </div>
 
         {loading ? (
-          <p className="py-12 text-center text-sm text-neutral-500">
+          <p className="py-12 text-center text-sm text-ui-muted">
             Loading meal plans...
           </p>
         ) : viewType === "week" ? (
@@ -1118,10 +1119,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
               return (
                 <div
                   key={date}
-                  className={`rounded-2xl border bg-white p-4 ${
+                  className={`rounded-2xl border bg-ui-surface-raised p-4 ${
                     isToday
-                      ? "border-ui-accent/30 ring-1 ring-amber-200"
-                      : "border-neutral-200"
+                      ? "border-ui-accent ring-1 ring-ui-border"
+                      : "border-ui-border"
                   }`}
                 >
                   {/* Day header */}
@@ -1129,17 +1130,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${
                         isToday
-                          ? "bg-ui-action text-white"
-                          : "bg-neutral-100 text-neutral-700"
+                          ? "bg-ui-action text-ui-action-text"
+                          : "bg-ui-surface-subtle text-ui-text"
                       }`}
                     >
                       {num}
                     </div>
-                    <span className="text-sm font-medium text-neutral-700">
+                    <span className="text-sm font-medium text-ui-text">
                       {day}
                     </span>
                     {isToday && (
-                      <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-[10px] font-medium text-ui-accent">
+                      <span className="rounded-full bg-ui-accent-muted px-2 py-0.5 text-[10px] font-medium text-ui-accent">
                         Today
                       </span>
                     )}
@@ -1154,10 +1155,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                       return (
                         <div
                           key={mealType}
-                          className="rounded-lg border border-neutral-100 bg-neutral-50/50 p-2"
+                          className="space-y-2 py-2"
                         >
                           <div className="mb-2 flex items-center justify-between gap-2">
-                            <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+                            <p className="text-xs font-medium text-ui-muted">
                               {MEAL_LABELS[mealType]}
                             </p>
                             <span className="flex items-center gap-1">
@@ -1171,7 +1172,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                         .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
                                     )
                                   }
-                                  className="inline-flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-white transition hover:bg-ui-accent"
+                                  className="inline-flex min-h-11 items-center gap-1 rounded-lg bg-ui-action px-2.5 text-[10px] font-semibold text-ui-action-text transition hover:bg-ui-accent"
                                 >
                                   <ChefHat className="h-3 w-3" />
                                   Cook together
@@ -1184,7 +1185,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                     data-comfort-hide
                                     onClick={() => randomizeSlot(date, mealType)}
                                     disabled={recipes.length === 0}
-                                    className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-ui-accent disabled:opacity-30"
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-ui-muted transition-colors hover:bg-ui-surface-raised hover:text-ui-accent disabled:opacity-30"
                                     aria-label={`Randomize ${mealType}`}
                                     title={`Randomize ${mealType}`}
                                   >
@@ -1193,7 +1194,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   <button
                                     type="button"
                                     onClick={() => household ? setBlockMenuSlot({ date, mealType }) : blockSlot(date, mealType)}
-                                    className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-neutral-700"
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-ui-muted transition-colors hover:bg-ui-surface-raised hover:text-ui-text"
                                     aria-label={household ? `Mark me as not eating ${mealType}` : `Block ${mealType} — eating something else`}
                                     title={household ? "I'm not eating" : "Block — eating something else"}
                                   >
@@ -1204,14 +1205,14 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                             </span>
                           </div>
                           {slotBlock ? (
-                            <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-neutral-300 bg-neutral-100/60 px-2.5 py-2">
-                              <span className="text-[11px] italic text-neutral-500">
+                            <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-ui-border-strong bg-ui-surface-raised px-2.5 py-2">
+                              <span className="text-[11px] text-ui-muted">
                                 {slotBlock.note || "Eating something else"}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => unblockSlot(date, mealType)}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white hover:text-neutral-700"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-ui-muted transition-colors hover:bg-ui-surface-raised hover:text-ui-text"
                                 aria-label={`Unblock ${mealType}`}
                                 title="Unblock"
                               >
@@ -1229,8 +1230,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                       disabled={m.userId !== user?.id}
                                       onClick={() => unblockSlotForMe(date, mealType)}
                                       title={m.userId === user?.id ? "Tap to mark yourself back in" : undefined}
-                                      className={`rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-600 ${
-                                        m.userId === user?.id ? "transition hover:bg-neutral-300" : "cursor-default"
+                                      className={`rounded-full bg-ui-border px-2 py-0.5 text-[10px] font-medium text-ui-muted ${
+                                        m.userId === user?.id ? "transition hover:bg-ui-border-strong" : "cursor-default"
                                       }`}
                                     >
                                       Out: {m.userName ?? "member"}
@@ -1243,17 +1244,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                               {slotPlans.map((plan) => (
                                 <div
                                   key={plan.id}
-                                  className="group flex items-center gap-2 rounded-md bg-white px-2.5 py-2 text-xs shadow-sm"
+                                  className="group flex items-center gap-2 py-1 text-xs"
                                 >
                                   <div className="min-w-0 flex-1">
-                                    <span className={`block truncate text-neutral-800 ${plan.cookedAt ? "line-through decoration-neutral-300" : ""}`}>
+                                    <span className={`block truncate text-ui-text ${plan.cookedAt ? "line-through decoration-ui-muted" : ""}`}>
                                       {planTitle(plan)}
                                     </span>
                                     {recipesById.get(plan.recipeId)?.dishTypes?.length ? (
                                       <DishTypeBadges types={recipesById.get(plan.recipeId)!.dishTypes!} />
                                     ) : null}
                                     {plan.cookedAt && (
-                                      <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                                      <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-ui-success">
                                         <CheckCircle2 className="h-3 w-3" />
                                         {plan.loggedAttempt ? "Logged" : "Cooked"}
                                       </span>
@@ -1262,7 +1263,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                       const servingLabel = getServingLabel(plan, date, mealType);
                                       if (!plan.addedByName && !servingLabel) return null;
                                       return (
-                                        <span className="mt-0.5 block text-[10px] text-neutral-400">
+                                        <span className="mt-0.5 block text-[10px] text-ui-muted">
                                           {[
                                             plan.addedByName ? `added by ${plan.addedByName}` : null,
                                             servingLabel,
@@ -1275,7 +1276,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                     <button
                                       type="button"
                                       onClick={() => onCookMeal(plan.recipeId, plan.id)}
-                                      className="flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-white opacity-100 transition hover:bg-ui-accent sm:opacity-0 sm:group-hover:opacity-100"
+                                      className="flex min-h-11 items-center gap-1 rounded-lg bg-ui-action px-2.5 text-[10px] font-semibold text-ui-action-text opacity-100 transition hover:bg-ui-accent sm:opacity-0 sm:group-hover:opacity-100"
                                       aria-label={`Cook ${plan.recipe?.title || "planned meal"}`}
                                     >
                                       <ChefHat className="h-3 w-3" />
@@ -1301,7 +1302,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   onClick={() => openAddDialog(date, mealType)}
                                   aria-label={`Add a recipe to ${mealType}`}
                                   title="Add a recipe"
-                                  className="flex min-h-8 flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 text-[10px] text-ui-muted transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
+                                  className="flex min-h-8 flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-ui-border text-[10px] text-ui-muted transition-colors hover:border-ui-border-strong hover:text-ui-accent"
                                 >
                                   <Plus className="h-3 w-3" />
                                 </button>
@@ -1310,7 +1311,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   onClick={() => pilot.openComposer({ purpose: "create", date, mealType, meal: null })}
                                   aria-label={`Plan ${mealType} with several dishes or ready food`}
                                   title="Plan a meal: several dishes, ready food, diners and serving time"
-                                  className="flex min-h-8 flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-neutral-200 text-[10px] font-medium text-ui-muted transition-colors hover:border-ui-accent/30 hover:text-ui-accent"
+                                  className="flex min-h-8 flex-1 items-center justify-center gap-1 rounded-md border border-dashed border-ui-border text-[10px] font-medium text-ui-muted transition-colors hover:border-ui-border-strong hover:text-ui-accent"
                                 >
                                   <UtensilsCrossed className="h-3 w-3" aria-hidden="true" />
                                   Meal
@@ -1328,12 +1329,12 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
           </div>
         ) : (
           /* Month View */
-          <div className="rounded-2xl border border-neutral-200 bg-white">
+          <div className="rounded-2xl border border-ui-border bg-ui-surface-raised">
             {/* Calendar header */}
-            <div className="grid grid-cols-7 border-b border-neutral-100 bg-neutral-50">
+            <div className="grid grid-cols-7 border-b border-ui-border bg-ui-surface-subtle">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <div key={day} className="p-2 text-center">
-                  <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  <span className="text-xs font-medium text-ui-muted">
                     {day}
                   </span>
                 </div>
@@ -1342,7 +1343,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
 
             {/* Calendar grid */}
             {currentDateRange.weeks?.map((week, weekIndex) => (
-              <div key={weekIndex} className="grid grid-cols-7 border-b border-neutral-100 last:border-b-0">
+              <div key={weekIndex} className="grid grid-cols-7 border-b border-ui-border last:border-b-0">
                 {week.map((date) => {
                   const { date: num, isToday, month } = formatDate(date, todayKey);
                   const dayPlans = getPlansForDate(date);
@@ -1360,22 +1361,22 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                     <button
                       key={date}
                       onClick={() => setSelectedDayDate(date)}
-                      className={`min-h-[80px] p-2 text-left transition-colors hover:bg-neutral-50 ${
+                      className={`min-h-[80px] p-2 text-left transition-colors hover:bg-ui-surface-subtle ${
                         isToday
-                          ? "bg-ui-accent/5"
+                          ? "bg-ui-accent-muted"
                           : !isCurrentMonth
-                            ? "bg-neutral-50/50 text-neutral-400"
+                            ? "bg-ui-surface-raised text-ui-muted"
                             : ""
-                      } ${isToday ? "ring-1 ring-amber-200" : ""} border-r border-neutral-100 last:border-r-0`}
+                      } ${isToday ? "ring-1 ring-ui-border" : ""} border-r border-ui-border last:border-r-0`}
                     >
                       <div className="flex flex-col h-full">
                         <span
                           className={`mb-1 text-sm font-medium ${
                             isToday
-                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-ui-action text-white"
+                              ? "flex h-6 w-6 items-center justify-center rounded-full bg-ui-action text-ui-action-text"
                               : isCurrentMonth
-                                ? "text-neutral-900"
-                                : "text-neutral-400"
+                                ? "text-ui-text"
+                                : "text-ui-muted"
                           }`}
                         >
                           {num}
@@ -1391,12 +1392,12 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                           {dayBlocks.slice(0, Math.max(0, 3 - dayPlans.length)).map((block) => (
                             <div
                               key={block.id}
-                              className="h-1.5 rounded-full bg-neutral-300 opacity-80"
+                              className="h-1.5 rounded-full bg-ui-border-strong opacity-80"
                               title={`${MEAL_LABELS[block.mealType]}: blocked — eating something else`}
                             />
                           ))}
                           {dotCount > 3 && (
-                            <div className="text-[9px] text-neutral-500">
+                            <div className="text-[9px] text-ui-muted">
                               +{dotCount - 3} more
                             </div>
                           )}
@@ -1414,16 +1415,16 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         {selectedDayDate && !addingSlot && (
           <>
             <div
-              className="fixed inset-0 z-30 bg-neutral-950/30 backdrop-blur-sm"
+              className="fixed inset-0 z-30 bg-ui-scrim"
               onClick={() => setSelectedDayDate(null)}
             />
-            <div className="fixed inset-x-4 bottom-20 z-40 mx-auto max-w-lg rounded-xl bg-white p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
+            <div className="fixed inset-x-4 bottom-20 z-40 mx-auto max-w-lg rounded-xl bg-ui-surface-raised p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-neutral-900">
+                  <h3 className="text-sm font-semibold text-ui-text">
                     Plan {formatDate(selectedDayDate, todayKey).full}
                   </h3>
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs text-ui-muted">
                     Add meals without leaving month view.
                   </p>
                 </div>
@@ -1437,7 +1438,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                       )
                     }
                     disabled={recipes.length === 0}
-                    className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent disabled:opacity-40"
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-ui-border px-2 text-[11px] font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent disabled:opacity-40"
                   >
                     <Dices className="h-3 w-3" />
                     Randomize day
@@ -1460,10 +1461,10 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                   return (
                     <div
                       key={mealType}
-                      className="rounded-lg border border-neutral-100 bg-neutral-50/70 p-3"
+                      className="rounded-lg border border-ui-border bg-ui-surface-raised p-3"
                     >
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+                        <p className="text-xs font-medium text-ui-muted">
                           {MEAL_LABELS[mealType]}
                         </p>
                         <div className="flex items-center gap-2">
@@ -1477,7 +1478,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                     .map((plan) => ({ recipeId: plan.recipeId, mealPlanId: plan.id }))
                                 )
                               }
-                              className="inline-flex h-7 items-center gap-1 rounded-md bg-ui-action px-2.5 text-[11px] font-semibold text-white transition hover:bg-ui-accent"
+                              className="inline-flex h-7 items-center gap-1 rounded-md bg-ui-action px-2.5 text-[11px] font-semibold text-ui-action-text transition hover:bg-ui-accent"
                             >
                               <ChefHat className="h-3 w-3" />
                               Cook together
@@ -1490,7 +1491,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 data-comfort-hide
                                 onClick={() => randomizeSlot(selectedDayDate, mealType)}
                                 disabled={recipes.length === 0}
-                                className="inline-flex h-7 items-center gap-1 rounded-md border border-neutral-200 px-2 text-[11px] font-medium text-neutral-500 transition hover:border-ui-accent/40 hover:text-ui-accent disabled:opacity-40"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-ui-border px-2 text-[11px] font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent disabled:opacity-40"
                               >
                                 <Dices className="h-3 w-3" />
                                 Random
@@ -1498,7 +1499,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                               <button
                                 type="button"
                                 onClick={() => openAddDialog(selectedDayDate, mealType)}
-                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-ui-border-strong px-2.5 text-[11px] font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent"
                               >
                                 <Plus className="h-3 w-3" aria-hidden="true" />
                                 Add recipe
@@ -1507,7 +1508,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 type="button"
                                 onClick={() => pilot.openComposer({ purpose: "create", date: selectedDayDate, mealType, meal: null })}
                                 aria-label={`Plan ${mealType} with several dishes or ready food`}
-                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2.5 text-[11px] font-medium text-neutral-600 transition hover:border-ui-accent/40 hover:text-ui-accent"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-dashed border-ui-border-strong px-2.5 text-[11px] font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent"
                               >
                                 <UtensilsCrossed className="h-3 w-3" aria-hidden="true" />
                                 Plan a meal
@@ -1515,7 +1516,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                               <button
                                 type="button"
                                 onClick={() => household ? setBlockMenuSlot({ date: selectedDayDate, mealType }) : blockSlot(selectedDayDate, mealType)}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ui-muted transition hover:bg-ui-surface-subtle hover:text-ui-text"
                                 aria-label={household ? `Mark me as not eating ${mealType}` : `Block ${mealType} — eating something else`}
                                 title={household ? "I'm not eating" : "Block — eating something else"}
                               >
@@ -1527,14 +1528,14 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                       </div>
 
                       {slotBlock ? (
-                        <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-neutral-300 bg-neutral-100/60 px-3 py-2">
-                          <span className="text-xs italic text-neutral-500">
+                        <div className="flex items-center justify-between gap-2 rounded-md border border-dashed border-ui-border-strong bg-ui-surface-raised px-3 py-2">
+                          <span className="text-xs text-ui-muted">
                             {slotBlock.note || "Eating something else"}
                           </span>
                           <button
                             type="button"
                             onClick={() => unblockSlot(selectedDayDate, mealType)}
-                            className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-neutral-500 transition hover:bg-white hover:text-neutral-700"
+                            className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-ui-muted transition hover:bg-ui-surface-raised hover:text-ui-text"
                           >
                             <Undo2 className="h-3 w-3" />
                             Unblock
@@ -1551,8 +1552,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   disabled={m.userId !== user?.id}
                                   onClick={() => unblockSlotForMe(selectedDayDate, mealType)}
                                   title={m.userId === user?.id ? "Tap to mark yourself back in" : undefined}
-                                  className={`rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-600 ${
-                                    m.userId === user?.id ? "transition hover:bg-neutral-300" : "cursor-default"
+                                  className={`rounded-full bg-ui-border px-2 py-0.5 text-[10px] font-medium text-ui-muted ${
+                                    m.userId === user?.id ? "transition hover:bg-ui-border-strong" : "cursor-default"
                                   }`}
                                 >
                                   Out: {m.userName ?? "member"}
@@ -1560,7 +1561,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                               ))}
                             </div>
                           )}
-                          <p className="rounded-md bg-white px-3 py-2 text-xs text-neutral-400">
+                          <p className="rounded-md bg-ui-surface-raised px-3 py-2 text-xs text-ui-muted">
                             No meal planned.
                           </p>
                         </>
@@ -1575,8 +1576,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   disabled={m.userId !== user?.id}
                                   onClick={() => unblockSlotForMe(selectedDayDate, mealType)}
                                   title={m.userId === user?.id ? "Tap to mark yourself back in" : undefined}
-                                  className={`rounded-full bg-neutral-200/70 px-2 py-0.5 text-[10px] font-medium text-neutral-600 ${
-                                    m.userId === user?.id ? "transition hover:bg-neutral-300" : "cursor-default"
+                                  className={`rounded-full bg-ui-border px-2 py-0.5 text-[10px] font-medium text-ui-muted ${
+                                    m.userId === user?.id ? "transition hover:bg-ui-border-strong" : "cursor-default"
                                   }`}
                                 >
                                   Out: {m.userName ?? "member"}
@@ -1588,14 +1589,14 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                           {slotPlans.map((plan) => (
                             <div
                               key={plan.id}
-                              className="group flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs shadow-sm"
+                              className="group flex items-center gap-2 rounded-md bg-ui-surface-raised px-3 py-2 text-xs shadow-sm"
                             >
                               <div className="min-w-0 flex-1">
                                 <span
                                   className={
-                                    "block truncate text-neutral-800 " +
+                                    "block truncate text-ui-text " +
                                     (plan.cookedAt
-                                      ? "line-through decoration-neutral-300"
+                                      ? "line-through decoration-ui-muted"
                                       : "")
                                   }
                                 >
@@ -1605,7 +1606,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   <DishTypeBadges variant="icon" types={recipesById.get(plan.recipeId)!.dishTypes!} />
                                 ) : null}
                                 {plan.cookedAt && (
-                                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-ui-success">
                                     <CheckCircle2 className="h-3 w-3" />
                                     {plan.loggedAttempt ? "Logged" : "Cooked"}
                                   </span>
@@ -1614,7 +1615,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                   const servingLabel = getServingLabel(plan, selectedDayDate, mealType);
                                   if (!plan.addedByName && !servingLabel) return null;
                                   return (
-                                    <span className="mt-0.5 block text-[10px] text-neutral-400">
+                                    <span className="mt-0.5 block text-[10px] text-ui-muted">
                                       {[
                                         plan.addedByName ? `added by ${plan.addedByName}` : null,
                                         servingLabel,
@@ -1627,7 +1628,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                                 <button
                                   type="button"
                                   onClick={() => onCookMeal(plan.recipeId, plan.id)}
-                                  className="flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-white transition hover:bg-ui-accent"
+                                  className="flex h-7 items-center gap-1 rounded-full bg-ui-action px-2.5 text-[10px] font-semibold text-ui-action-text transition hover:bg-ui-accent"
                                   aria-label={
                                     "Cook " + (plan.recipe?.title || "planned meal")
                                   }
@@ -1662,15 +1663,15 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         {addingSlot && (
           <>
             <div
-              className="fixed inset-0 z-40 bg-neutral-950/40 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-ui-scrim"
               onClick={closeAddDialog}
             />
-            <div className="fixed inset-x-3 bottom-16 z-50 mx-auto max-h-[82vh] max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
-              <div className="border-b border-neutral-100 p-5 pb-4">
-                <h3 className="mb-1 text-sm font-semibold text-neutral-900">
+            <div className="fixed inset-x-3 bottom-16 z-50 mx-auto max-h-[82vh] max-w-2xl overflow-hidden rounded-xl bg-ui-surface-raised shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
+              <div className="border-b border-ui-border p-5 pb-4">
+                <h3 className="mb-1 text-sm font-semibold text-ui-text">
                   Add to meal plan
                 </h3>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-ui-muted">
                   {formatDate(addingSlot.date, todayKey).full} - {MEAL_LABELS[addingSlot.mealType]}
                 </p>
               </div>
@@ -1690,11 +1691,11 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                 />
 
                 {selectedRecipe && (
-                  <div className="rounded-lg border border-ui-accent/15 bg-ui-accent/5 px-3 py-2">
-                    <p className="text-xs font-semibold text-[#521224]">
+                  <div className="rounded-lg border border-ui-border bg-ui-accent-muted px-3 py-2">
+                    <p className="text-xs font-semibold text-ui-text">
                       {selectedRecipe.title}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-[#6b3b45]">
+                    <p className="mt-0.5 text-[11px] text-ui-muted">
                       {[...getRecipeFlagBadges(selectedRecipe), getLastCookedLabel(selectedRecipe.lastCookedAt)].join(" · ")}
                     </p>
                   </div>
@@ -1723,11 +1724,11 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                             ];
                           if (random) setSelectedRecipeId(random.id);
                         }}
-                        className="inline-flex min-h-11 max-w-full flex-wrap items-center gap-1 self-start text-left text-xs font-medium text-ui-muted underline-offset-2 transition-colors hover:text-ui-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+                        className="inline-flex min-h-11 max-w-full flex-wrap items-center gap-1 self-start text-left text-xs font-medium text-ui-muted underline-offset-2 transition-colors hover:text-ui-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus focus-visible:ring-offset-2"
                       >
                         <Dices className="h-3.5 w-3.5" aria-hidden="true" />
                         <span>Surprise me from these results</span>
-                        <span className="text-[11px] text-[var(--ui-muted)]">
+                        <span className="text-[11px] text-ui-muted">
                           Flags first, then least recent
                         </span>
                       </button>
@@ -1750,7 +1751,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-[var(--ui-border)] p-5 pt-4">
+              <div className="flex gap-2 border-t border-ui-border p-5 pt-4">
                 <Button
                   disabled={!selectedRecipeId}
                   onClick={addPlan}
@@ -1781,14 +1782,14 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         {blockMenuSlot && (
           <>
             <div
-              className="fixed inset-0 z-40 bg-neutral-950/40 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-ui-scrim"
               onClick={() => setBlockMenuSlot(null)}
             />
-            <div className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-sm rounded-xl bg-white p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
-              <h3 className="text-sm font-semibold text-neutral-900">
+            <div className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-sm rounded-xl bg-ui-surface-raised p-5 shadow-xl md:bottom-auto md:top-1/2 md:-translate-y-1/2">
+              <h3 className="text-sm font-semibold text-ui-text">
                 I&rsquo;m not eating
               </h3>
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-ui-muted">
                 {formatDate(blockMenuSlot.date, todayKey).full} · {MEAL_LABELS[blockMenuSlot.mealType]} — the plan stays for everyone else; you&rsquo;re just not counted in servings.
               </p>
               <div className="mt-4 space-y-2">
@@ -1805,17 +1806,17 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                       void blockForMe(blockMenuSlot.date, blockMenuSlot.mealType, scope);
                       setBlockMenuSlot(null);
                     }}
-                    className="flex w-full items-center justify-between rounded-lg border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:border-ui-accent/40 hover:text-ui-accent"
+                    className="flex w-full items-center justify-between rounded-lg border border-ui-border px-3 py-2.5 text-sm font-medium text-ui-text transition hover:border-ui-border-strong hover:text-ui-accent"
                   >
                     {label}
-                    <Ban className="h-3.5 w-3.5 text-neutral-300" />
+                    <Ban className="h-3.5 w-3.5 text-ui-muted" />
                   </button>
                 ))}
               </div>
               <button
                 type="button"
                 onClick={() => setBlockMenuSlot(null)}
-                className="mt-3 w-full rounded-lg py-2 text-center text-xs font-medium text-neutral-500 transition hover:bg-neutral-50"
+                className="mt-3 w-full rounded-lg py-2 text-center text-xs font-medium text-ui-muted transition hover:bg-ui-surface-subtle"
               >
                 Cancel
               </button>

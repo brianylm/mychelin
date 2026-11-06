@@ -29,7 +29,7 @@ function StarRating({
 
   return (
     <div className="flex items-center gap-3">
-      <span className="min-w-[70px] text-xs font-medium text-neutral-600">
+      <span className="min-w-[70px] text-xs font-medium text-ui-muted">
         {label}
       </span>
       <div className="flex gap-0.5">
@@ -40,8 +40,8 @@ function StarRating({
             title={`${star} star${star !== 1 ? "s" : ""}`}
             className={`rounded-md p-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ui-focus ${
               star <= (hovered ?? value ?? 0)
-                ? "text-ui-accent/70 hover:text-ui-accent"
-                : "text-neutral-300 hover:text-ui-accent/50"
+                ? "text-ui-accent hover:text-ui-accent"
+                : "text-ui-muted hover:text-ui-accent"
             }`}
             onMouseEnter={() => setHovered(star)}
             onMouseLeave={() => setHovered(null)}
@@ -58,7 +58,7 @@ function StarRating({
         ))}
       </div>
       {value && (
-        <span className="text-xs text-neutral-500">({value}/5)</span>
+        <span className="text-xs text-ui-muted">({value}/5)</span>
       )}
       <SaveIndicator isSaving={isSaving} />
     </div>
@@ -89,8 +89,8 @@ export function RatingSection({
   );
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-      <h3 className="mb-3 text-sm font-semibold text-neutral-800">
+    <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
+      <h3 className="mb-3 text-sm font-semibold text-ui-text">
         Ratings
       </h3>
       <div className="space-y-2">

@@ -9,7 +9,7 @@ This is the comparison point for the staged Mychelin UI uplift. It records the r
 - Preserve the existing DM Sans, Newsreader, and Libre Baskerville roles.
 - Preserve rounded branded navigation and dark active-tab pills.
 - Preserve the warm paper, white surface, burgundy accent, and restrained shadow language.
-- Keep cards for real objects and dialogs; use spacing and dividers for sections.
+- Keep cards for real objects and dialogs; use whitespace for sections, and a hairline only where whitespace can't separate them.
 - Make desktop layouts use their width without adding a permanent sidebar outside Library.
 - Preserve the landing hero composition and use minimal, fast motion.
 

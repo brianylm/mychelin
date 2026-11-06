@@ -55,13 +55,13 @@ interface IngredientListProps {
 }
 
 const fieldBase =
-  "rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none transition focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 focus:bg-white placeholder:text-neutral-400";
+  "rounded-lg border border-ui-border-strong bg-ui-surface-subtle px-2 py-1.5 text-sm outline-none transition focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft focus:bg-ui-surface-raised placeholder:text-ui-muted";
 const editNameFieldBase =
-  "h-11 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-3 text-[15px] font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 sm:h-10 sm:text-sm";
+  "h-11 w-full min-w-0 rounded-lg border border-ui-border bg-ui-surface-raised px-3 text-[15px] font-medium text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft sm:h-10 sm:text-sm";
 const editAmountFieldBase =
-  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10";
+  "h-10 w-full rounded-lg border border-ui-border bg-ui-surface-raised px-2.5 text-sm text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft";
 const editDetailFieldBase =
-  "h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10";
+  "h-10 w-full rounded-lg border border-ui-border bg-ui-surface-raised px-3 text-sm text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft";
 
 type IngredientDraft = {
   name: string;
@@ -412,33 +412,28 @@ export function IngredientList({
 
   if (readOnly) {
     return (
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
-              {ingredients.length}
-            </span>
-          </div>
+      <section>
+        <div className="mb-3">
+          <h3 className="text-sm font-semibold text-ui-text">Ingredients</h3>
         </div>
 
         {ingredients.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-ui-muted">
+          <p className="text-sm text-ui-muted">
             No ingredients yet
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-4">
             {ingredients.map((ing) => {
               const amount = formatReadOnlyIngredientAmount(ing, scale);
               return (
-                <li key={ing.id} className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-3 py-2.5">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-ui-accent/45" />
+                <li key={ing.id} className="flex items-start gap-3">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-ui-accent" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                      <span className="font-medium text-neutral-800">{ing.name}</span>
-                      {amount && <span className="text-sm text-[#521224]">{amount}</span>}
+                      <span className="font-medium text-ui-text">{ing.name}</span>
+                      {amount && <span className="text-sm text-ui-text">{amount}</span>}
                     </div>
-                    {ing.notes && <p className="mt-0.5 text-xs text-neutral-500">{ing.notes}</p>}
+                    {ing.notes && <p className="mt-0.5 text-xs text-ui-muted">{ing.notes}</p>}
                   </div>
                 </li>
               );
@@ -450,13 +445,11 @@ export function IngredientList({
   }
 
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+    <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-neutral-800">Ingredients</h3>
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-ui-accent/10 px-1.5 text-xs font-medium text-ui-accent">
-            {ingredients.length}
-          </span>
+          <h3 className="text-sm font-semibold text-ui-text">Ingredients</h3>
+          <span className="text-sm text-ui-muted">· {ingredients.length}</span>
         </div>
         {!isBulkAdding && (
           <button
@@ -465,7 +458,7 @@ export function IngredientList({
               setIsAdding(false);
               setIsBulkAdding(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 transition hover:border-ui-accent/30 hover:text-ui-accent"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-ui-border bg-ui-surface-raised px-2.5 py-1 text-xs font-medium text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent"
           >
             <ClipboardList className="h-3.5 w-3.5" />
             Paste list
@@ -484,8 +477,8 @@ export function IngredientList({
                   type="button"
                   className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border text-base font-semibold transition ${
                     ing.approximate
-                      ? "border-ui-accent/25 bg-ui-accent/10 text-ui-accent"
-                      : "border-neutral-200 bg-white text-neutral-500 hover:border-ui-accent/20 hover:text-ui-accent"
+                      ? "border-ui-border bg-ui-accent-muted text-ui-accent"
+                      : "border-ui-border bg-ui-surface-raised text-ui-muted hover:border-ui-border-strong hover:text-ui-accent"
                   }`}
                   onClick={() => toggleApproximate(ing)}
                   aria-label={
@@ -504,7 +497,7 @@ export function IngredientList({
 
                 <button
                   type="button"
-                  className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-red-100 bg-white text-red-600 transition hover:border-red-200 hover:bg-red-50"
+                  className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-ui-border bg-ui-surface-raised text-ui-danger transition hover:border-ui-border hover:bg-ui-danger-soft"
                   onClick={() => onDelete(recipeId, ing.id)}
                   aria-label="Remove ingredient"
                   title="Remove ingredient"
@@ -528,7 +521,7 @@ export function IngredientList({
             return (
               <li
                 key={ing.id}
-                className="group rounded-xl border border-neutral-100 bg-neutral-50/50 p-3"
+                className="group rounded-xl border border-ui-border bg-ui-surface-raised p-3"
               >
                 {ing.approximate ? (
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.8fr)_auto] sm:items-center">
@@ -544,7 +537,7 @@ export function IngredientList({
                             e.target.value || null
                           )
                         }
-                        className={`${editAmountFieldBase} italic text-neutral-700`}
+                        className={`${editAmountFieldBase} text-ui-text`}
                         placeholder="a handful, agak-agak, to taste"
                       />
                       <div className="flex shrink-0 items-center justify-end gap-1.5">
@@ -557,7 +550,7 @@ export function IngredientList({
                     {nameInput}
                     <div className="grid grid-cols-[64px_minmax(82px,1fr)_auto] items-center gap-2 sm:contents">
                       {scale !== 1 && ing.quantity ? (
-                        <span className="flex h-10 w-full items-center justify-center rounded-lg border border-ui-accent/10 bg-white px-2 text-center text-sm font-medium tabular-nums text-ui-accent">
+                        <span className="flex h-10 w-full items-center justify-center rounded-lg border border-ui-border bg-ui-surface-raised px-2 text-center text-sm font-medium tabular-nums text-ui-accent">
                           {formatScaledQuantity(ing.quantity, scale)}
                         </span>
                       ) : (
@@ -579,7 +572,7 @@ export function IngredientList({
                         onChange={(e) =>
                           handleFieldBlur(ing, "unit", e.target.value || null)
                         }
-                        className={`${editAmountFieldBase} text-neutral-700`}
+                        className={`${editAmountFieldBase} text-ui-text`}
                       >
                         <option value="">unit</option>
                         {UNIT_OPTIONS.filter(Boolean).map((u) => (
@@ -597,7 +590,7 @@ export function IngredientList({
                 <div className={`mt-2 grid gap-2 ${!ing.approximate && ing.quantityText ? "sm:grid-cols-2" : ""}`}>
                   {!ing.approximate && ing.quantityText && (
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted">
+                      <span className="mb-1 block text-xs font-semibold text-ui-muted">
                         Amount text
                       </span>
                       <input
@@ -615,7 +608,7 @@ export function IngredientList({
                     </label>
                   )}
                   <label className="block">
-                    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-ui-muted">
+                    <span className="mb-1 block text-xs font-semibold text-ui-muted">
                       Prep note
                     </span>
                     <input
@@ -639,7 +632,7 @@ export function IngredientList({
       )}
 
       {isBulkAdding && (
-        <div className="mb-3 rounded-lg border border-ui-accent/15 bg-ui-accent/5 p-3">
+        <div className="mb-3 rounded-lg border border-ui-border bg-ui-accent-muted p-3">
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
@@ -647,7 +640,7 @@ export function IngredientList({
 2 tbsp light soy sauce, 300 g yellow noodles
 a handful coriander`}
             rows={5}
-            className="w-full resize-y rounded-lg border border-ui-accent/15 bg-white px-3 py-2 text-sm leading-relaxed text-neutral-800 outline-none transition focus:border-ui-accent/45 focus:ring-1 focus:ring-ui-accent/10 placeholder:text-neutral-400"
+            className="w-full resize-y rounded-lg border border-ui-border bg-ui-surface-raised px-3 py-2 text-sm leading-relaxed text-ui-text outline-none transition focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft placeholder:text-ui-muted"
             autoFocus
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -673,7 +666,7 @@ a handful coriander`}
               Cancel
             </Button>
             {parsedBulkIngredients.length > 0 && (
-              <span className="text-xs text-[#521224]">
+              <span className="text-xs text-ui-text">
                 Preview: {parsedBulkIngredients.slice(0, 3).map(formatIngredientDraftPreview).join(", ")}
                 {parsedBulkIngredients.length > 3 ? "..." : ""}
               </span>
@@ -686,7 +679,7 @@ a handful coriander`}
         <div
           ref={formRef}
           onBlur={handleFormBlur}
-          className="rounded-lg border border-neutral-200 bg-neutral-50 p-3"
+          className="rounded-lg border border-ui-border bg-ui-surface-subtle p-3"
         >
           {/* Name first, full width — with typeahead */}
           <div className="mb-2">
@@ -719,7 +712,7 @@ a handful coriander`}
                 setDraft((d) => ({ ...d, quantityText: e.target.value }))
               }
               placeholder="e.g. a handful, agak-agak, to taste"
-              className={`mb-3 w-full italic ${fieldBase}`}
+              className={`mb-3 w-full ${fieldBase}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleAdd();
                 if (e.key === "Escape") setIsAdding(false);
@@ -744,11 +737,11 @@ a handful coriander`}
                 onChange={(e) =>
                   setDraft((d) => ({ ...d, unit: e.target.value }))
                 }
-                className={`flex-1 ${fieldBase} ${!draft.unit ? "text-ui-muted" : "text-neutral-900"}`}
+                className={`flex-1 ${fieldBase} ${!draft.unit ? "text-ui-muted" : "text-ui-text"}`}
               >
                 <option value="">Select unit...</option>
                 {UNIT_OPTIONS.filter(Boolean).map((u) => (
-                  <option key={u} value={u} className="text-neutral-900">
+                  <option key={u} value={u} className="text-ui-text">
                     {u}
                   </option>
                 ))}
@@ -764,8 +757,8 @@ a handful coriander`}
             }
             className={`mb-3 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${
               draft.approximate
-                ? "border-ui-accent/30 bg-ui-accent/5 text-ui-accent"
-                : "border-neutral-200 bg-white text-ui-muted hover:border-neutral-300 hover:text-neutral-500"
+                ? "border-ui-accent bg-ui-accent-muted text-ui-accent"
+                : "border-ui-border bg-ui-surface-raised text-ui-muted hover:border-ui-border-strong hover:text-ui-muted"
             }`}
           >
             <span className="text-xs leading-none">≈</span>

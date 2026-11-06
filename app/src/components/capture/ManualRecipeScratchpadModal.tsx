@@ -151,20 +151,20 @@ export function ManualRecipeScratchpadModal({
       {phase === "capture" ? (
         <div className="grid gap-4">
           <label className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-muted">
+            <span className="text-xs font-semibold text-ui-muted">
               Recipe name
             </span>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="e.g. Ah Ma's tau yu bak"
-              className="h-12 rounded-xl border border-ui-border-strong bg-ui-surface px-4 text-base font-semibold text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-focus-soft"
+              className="h-12 rounded-xl border border-ui-border-strong bg-ui-surface-raised px-4 text-base font-semibold text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
               autoFocus
             />
           </label>
 
           <label className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ui-muted">
+            <span className="text-xs font-semibold text-ui-muted">
               Recipe notes
             </span>
             <textarea
@@ -172,7 +172,7 @@ export function ManualRecipeScratchpadModal({
               onChange={(event) => setScratchpad(event.target.value)}
               placeholder="Type or paste ingredients, steps, timings, heat, rough notes..."
               rows={12}
-              className="min-h-[300px] resize-y rounded-2xl border border-ui-border-strong bg-ui-surface px-4 py-3 text-base leading-7 text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent/45 focus:ring-2 focus:ring-ui-focus-soft"
+              className="min-h-[300px] resize-y rounded-2xl border border-ui-border-strong bg-ui-surface-raised px-4 py-3 text-base leading-7 text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
             />
           </label>
 
@@ -180,7 +180,7 @@ export function ManualRecipeScratchpadModal({
             <button
               type="button"
               onClick={() => setScratchpad(EXAMPLE_TEXT)}
-              className="rounded-full border border-ui-border bg-ui-surface px-3 py-2 text-xs font-semibold text-ui-muted transition hover:border-ui-accent/25 hover:text-ui-accent"
+              className="rounded-full border border-ui-border bg-ui-surface-raised px-3 py-2 text-xs font-semibold text-ui-muted transition hover:border-ui-border-strong hover:text-ui-accent"
             >
               Use example
             </button>
@@ -191,15 +191,15 @@ export function ManualRecipeScratchpadModal({
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <section className="rounded-2xl border border-ui-border bg-ui-surface p-4">
+          <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-ui-text">Ingredients</h3>
-              <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-xs font-semibold text-ui-accent">
+              <span className="rounded-full bg-ui-accent-muted px-2 py-0.5 text-xs font-semibold text-ui-accent">
                 {parsed.ingredients.length}
               </span>
             </div>
             {parsed.ingredients.length === 0 ? (
-              <div className="rounded-xl border border-ui-warning/25 bg-ui-warning-soft px-3 py-3 text-sm leading-6 text-ui-warning-text">
+              <div className="rounded-xl border border-ui-border bg-ui-warning-soft px-3 py-3 text-sm leading-6 text-ui-warning-text">
                 No ingredients detected yet. You can still create the recipe, but shopping lists and scaling work better once ingredients are added.
               </div>
             ) : (
@@ -214,10 +214,10 @@ export function ManualRecipeScratchpadModal({
             )}
           </section>
 
-          <section className="rounded-2xl border border-ui-border bg-ui-surface p-4">
+          <section className="rounded-2xl border border-ui-border bg-ui-surface-raised p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-ui-text">Steps</h3>
-              <span className="rounded-full bg-ui-accent/10 px-2 py-0.5 text-xs font-semibold text-ui-accent">
+              <span className="rounded-full bg-ui-accent-muted px-2 py-0.5 text-xs font-semibold text-ui-accent">
                 {parsed.instructions.length}
               </span>
             </div>
@@ -237,7 +237,7 @@ export function ManualRecipeScratchpadModal({
                         </span>
                       )}
                       {instruction.timerText && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-ui-warning/25 bg-ui-warning-soft px-2 py-0.5 text-[11px] font-semibold text-ui-warning-text">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-ui-border bg-ui-warning-soft px-2 py-0.5 text-[11px] font-semibold text-ui-warning-text">
                           <Timer className="h-3 w-3" />
                           {instruction.timerText}
                         </span>
@@ -257,7 +257,7 @@ export function ManualRecipeScratchpadModal({
               </div>
               <div className="flex flex-wrap gap-2">
                 {parsed.unclassified.map((item, index) => (
-                  <span key={index} className="rounded-full bg-ui-surface px-2.5 py-1 text-xs text-ui-muted ring-1 ring-ui-border">
+                  <span key={index} className="rounded-full bg-ui-surface-raised px-2.5 py-1 text-xs text-ui-muted ring-1 ring-ui-border">
                     {item}
                   </span>
                 ))}
@@ -268,7 +268,7 @@ export function ManualRecipeScratchpadModal({
       )}
 
       {error && (
-        <p className="mt-4 rounded-xl border border-ui-danger/20 bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger">
+        <p className="mt-4 rounded-xl border border-ui-border bg-ui-danger-soft px-3 py-2 text-sm text-ui-danger">
           {error}
         </p>
       )}

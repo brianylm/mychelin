@@ -16,13 +16,13 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<IconButtonVariant, string> = {
   secondary:
-    "border border-ui-border-strong bg-ui-surface-raised text-ui-text hover:border-ui-accent/40 hover:bg-ui-accent-muted",
+    "border border-ui-border-strong bg-ui-surface-raised text-ui-text hover:border-ui-border-strong hover:bg-ui-accent-muted",
   tertiary:
     "border border-transparent bg-transparent text-ui-accent hover:bg-ui-accent-muted",
   quiet:
     "border border-transparent bg-transparent text-ui-muted hover:bg-ui-surface-subtle hover:text-ui-text",
   danger:
-    "border border-ui-danger/20 bg-ui-danger-soft text-ui-danger hover:bg-ui-danger/15",
+    "border border-ui-border bg-ui-danger-soft text-ui-danger hover:bg-ui-danger-soft",
 };
 
 // sm/md keep 44px touch targets per the design system; xs is intentionally
