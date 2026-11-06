@@ -1,22 +1,8 @@
 "use client";
 
-import { Libre_Baskerville, Newsreader } from "next/font/google";
+import { brandSerif, logoSerif } from "@/app/fonts";
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
-
-const brandSerif = Newsreader({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal"],
-  variable: "--font-brand-serif",
-});
-
-const logoSerif = Libre_Baskerville({
-  subsets: ["latin"],
-  weight: ["700"],
-  style: ["normal"],
-  variable: "--font-logo-serif",
-});
 
 const features = [
   {
