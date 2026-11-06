@@ -300,13 +300,13 @@ test.describe("meal pilot slice 1", () => {
       .getByRole("button", { name: /^(Meal )?Plan$/ })
       .first()
       .click();
-    await expect(page.getByText("E2E MP Rice").first()).toBeVisible({
+    await expect(page.getByText("E2E MP Rice", { exact: true }).first()).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText("E2E MP Greens")).toBeVisible({
+    await expect(page.getByText("E2E MP Greens", { exact: true }).first()).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText("E2E MP Frozen Soup")).toBeVisible({
+    await expect(page.getByText("E2E MP Frozen Soup", { exact: true }).first()).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByText("Ready — frozen").first()).toBeVisible();
