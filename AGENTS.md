@@ -95,6 +95,14 @@ vercel --prod
 
 For user-facing fixes, prefer a Vercel Preview deployment from the repo root after lint/build so B can test without replacing production. If deployment is skipped or blocked, say why.
 
+## Feature map and verification
+
+- Read `FEATURES.md` first for any bug or change; read its traps and set up the described state.
+- Reproduce bugs with a failing spec before fixing them.
+- Run `bash scripts/verify.sh fast` for every change and `bash scripts/verify.sh ui` for anything visible. UI verification uses a throwaway local `turso dev` DB and a read-only staging schema dump; never write to prod or shared staging.
+- Screenshots are in `.verify/shots/`; verification evidence is in `.verify/last.json`.
+- Update `FEATURES.md` when adding a page, API route or component.
+
 ## Runtime, Auth, AI, and DB Rules
 
 - Live site: `https://mychelin-sg.vercel.app`.
@@ -142,7 +150,7 @@ Mychelin may handle private family recipes, stories, photos, voice recordings, t
 - Active production app is `app/`; root is the deploy wrapper. Do not deploy from `app/`.
 - Root `drizzle/`, root `package.json`, archived/root prototype code, and `app/DATABASE_MIGRATION_NOTE.md` may be historical. Verify before using.
 - Old paths mentioning `/home/cluser/projects/mychelin/mychelin-1` are stale.
-- There are few/no first-party automated tests; do not claim full coverage from lint/build alone.
+- Vitest unit/scenario tests and Playwright E2E suites exist; do not claim full behavior coverage from lint/build alone.
 - Service worker changes can stale-cache UI; bump cache version in `app/public/sw.js` when needed.
 
 ## Memory Updates

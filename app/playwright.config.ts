@@ -31,6 +31,12 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3100",
     trace: "retain-on-failure",
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+      ? { launchOptions: {
+          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
+          args: ["--disable-dev-shm-usage"],
+        } }
+      : {}),
   },
   webServer: {
     command: "npx next dev -p 3100",

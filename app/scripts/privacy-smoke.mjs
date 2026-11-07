@@ -38,8 +38,10 @@ function loadEnvFile(path) {
   }
 }
 
-loadEnvFile(".env.local");
-loadEnvFile(".env");
+if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+  loadEnvFile(".env.local");
+  loadEnvFile(".env");
+}
 
 const BASE_URL = (process.env.MYCHELIN_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 const PASSWORD = "PrivacySmoke123!";

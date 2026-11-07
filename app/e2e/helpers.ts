@@ -6,6 +6,8 @@ import type { Page } from "@playwright/test";
 // and cleanup against the e2e Turso database (set by playwright.config.ts).
 
 export function loadDevEnv(): void {
+  // Explicit test credentials need no dotenv fallback (verify never reads prod env).
+  if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) return;
   for (const file of [".env.local", ".env"]) {
     if (!existsSync(file)) continue;
     for (const line of readFileSync(file, "utf8").split("\n")) {
