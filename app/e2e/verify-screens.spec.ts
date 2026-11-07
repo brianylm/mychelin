@@ -70,12 +70,16 @@ test("verification screenshots of the home cooking loop", async ({ page }, testI
     // squeeze the reading/grid viewport. Today is in both default date ranges.
     const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
     const plan = await page.request.post("/api/meal-plans", {
-      data: { date, mealType: "dinner", recipeId: recipe.id, servings: 2 },
+      // servings is a multiplier of the recipe's yield, not a head count:
+      // 1 = one batch, as the planner UI creates it.
+      data: { date, mealType: "dinner", recipeId: recipe.id, servings: 1 },
     });
     expect(plan.status()).toBe(201);
     const list = await page.request.get(`/api/shopping-list?startDate=${date}&endDate=${date}`);
     expect(list.ok()).toBe(true);
-    expect((await list.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ name: "garlic" })]));
+    expect((await list.json()).items).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "garlic", quantityNeeded: 3 })])
+    );
 
     await page.getByRole("button", { name: /^(Meal )?Plan$/ }).first().click();
     await page.getByRole("button", { name: "Week", exact: true }).click();

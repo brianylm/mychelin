@@ -133,7 +133,7 @@ All app taps below start at `/app` with a signed-in, onboarded user unless state
 - **Code:** `app/src/components/planner/MealPlanView.tsx`, `app/src/components/planner/RandomizeReviewDialog.tsx`, `app/src/app/api/meal-plans/`, `app/src/lib/planner-randomize.ts`, `app/src/lib/planner-logged-meals.ts`, `app/src/components/CalendarExport.tsx`
 - **API / tables:** `/api/meal-plans`, `/api/meal-plans/<id>`, `/api/meal-plans/blocks`; meal_plans, meal_plan_blocks, recipe_attempts, household_members.
 - **Tests:** `app/e2e/planner-nav.spec.ts`, `app/e2e/planner-randomize.spec.ts`, `app/e2e/verify-screens.spec.ts`, `app/src/lib/planner-randomize.test.ts`, `app/src/lib/planner-logged-meals.test.ts`
-- **Traps:** Seed dates relative to SGT now so meals fall in the visible week. Household blocks apply to individuals, not the whole household. Logged cook entries are read-only calendar entries. Randomization should preserve blocked/occupied slots. The planner scrolls internally.
+- **Traps:** servings on a plan is a recipe multiplier (1 = one batch), not diners; portion targets live in targetPortions and are converted to the multiplier. Seed dates relative to SGT now so meals fall in the visible week. Household blocks apply to individuals, not the whole household. Logged cook entries are read-only calendar entries. Randomization should preserve blocked/occupied slots. The planner scrolls internally.
 
 ### Next meal home card {#next-meal}
 - **B calls it:** next meal, tonight dinner, start prep, upcoming meal, home meal card
@@ -171,7 +171,7 @@ All app taps below start at `/app` with a signed-in, onboarded user unless state
 - **Code:** `app/src/components/shopping/`, `app/src/app/api/shopping-list/`, `app/src/lib/household-shopping.ts`
 - **API / tables:** `/api/shopping-list`, `/api/shopping-list/items`, `/api/shopping-list/tick`, `/api/shopping-list/move-to-inventory`; shopping_list_items, meal_plans, ingredients, inventory, households.
 - **Tests:** `app/src/lib/household-shopping.test.ts`, `app/e2e/households-slice2.spec.ts`, `app/e2e/verify-screens.spec.ts`
-- **Traps:** Generated recipe demand differs from manually persisted shared items. Dates, portions, unit compatibility and already-stocked ingredients affect quantities. Do not confuse ticking with completed transfer. Verify solo and household isolation separately.
+- **Traps:** meal_plans.servings is a multiplier of the recipe's yield, not a head count: the planner creates plans with 1 (one batch), so planning servings 2 for a 2-serving recipe correctly doubles every quantity. Don't report that as a bug. Generated recipe demand differs from manually persisted shared items. Dates, portions, unit compatibility and already-stocked ingredients affect quantities. Do not confuse ticking with completed transfer. Verify solo and household isolation separately.
 
 ### Ingredient inventory {#inventory}
 - **B calls it:** fridge, inventory, pantry, freezer, expiry, stock
