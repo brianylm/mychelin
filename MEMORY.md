@@ -2913,3 +2913,9 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Routing: F1 client fns, F2 day view, F3 PreparedBatchList (+1 correction: it had transiently installed @testing-library/react; pruned, test rewritten with renderToStaticMarkup), F4 e2e spec (+2 corrections: substring role-name matches; FK-safe cleanup) on the DeepSeek Flash worker; controller hook, week grid, review controller, Inventory mount, purge fix on the main thread.
 - Validation: tsc, lint, 249 unit tests, full e2e on mychelin-staging (47 pass before the cleanup fix; meal-pilot + households 22/22 after). Still not mounted: stations (slice 2), Google Calendar status/connect (slice 3). Day-view header buttons are 28px (pre-existing, below the 44px rule).
 
+## 2026-11-08 - Retry stale libsql HTTP connections in Node
+
+- Added `app/src/db/resilient-fetch.ts`: cross-fetch with exactly one retry for thrown ECONNRESET/EPIPE/UND_ERR_SOCKET or socket-close messages; Request bodies are cloned before the first attempt. HTTP responses and unrelated errors are never retried. `VERCEL=1` omits the fetch override.
+- Wired the option into `app/src/db/index.ts`, `app/src/db/ensure-schema.ts`, `app/src/app/api/admin/migrate-versions/route.ts`, and `app/e2e/helpers.ts`; added `app/src/db/resilient-fetch.test.ts` (22 cases, including native/cross-fetch Request bodies).
+- Validation: `tsc --noEmit -p .` passed; `VITEST_MAX_WORKERS=2 vitest run` passed (50 files, 418 tests); `git diff --check` passed. No build, Playwright, env-file reads, remote DB access, commit, push, or deployment. Transport behavior verified with injected fetches; no live Turso verification performed.
+

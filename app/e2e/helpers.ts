@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import type { Page } from "@playwright/test";
+import { libsqlFetchOption } from "../src/db/resilient-fetch";
 
 // Shared helpers for E2E specs: synthetic users, API-level fixtures,
 // and cleanup against the e2e Turso database (set by playwright.config.ts).
@@ -26,6 +27,7 @@ function turso() {
   return createClient({
     url: process.env.TURSO_DATABASE_URL!,
     authToken: process.env.TURSO_AUTH_TOKEN!,
+    ...libsqlFetchOption(),
   });
 }
 

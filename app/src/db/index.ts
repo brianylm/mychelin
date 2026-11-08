@@ -4,6 +4,7 @@ import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 // and on this Vercel deployment the Node serverless runtime is also broken
 // for POST requests — edge is the only working path.
 import { createClient, type Client } from "@libsql/client/web";
+import { libsqlFetchOption } from "./resilient-fetch";
 import * as schema from "./schema";
 
 // Lazy initialization - client is only created on first access.
@@ -22,7 +23,7 @@ function getClient(): Client {
     throw new Error("TURSO_DATABASE_URL environment variable is not set");
   }
 
-  _client = createClient({ url, authToken });
+  _client = createClient({ url, authToken, ...libsqlFetchOption() });
   return _client;
 }
 
