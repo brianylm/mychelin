@@ -2913,6 +2913,16 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Routing: F1 client fns, F2 day view, F3 PreparedBatchList (+1 correction: it had transiently installed @testing-library/react; pruned, test rewritten with renderToStaticMarkup), F4 e2e spec (+2 corrections: substring role-name matches; FK-safe cleanup) on the DeepSeek Flash worker; controller hook, week grid, review controller, Inventory mount, purge fix on the main thread.
 - Validation: tsc, lint, 249 unit tests, full e2e on mychelin-staging (47 pass before the cleanup fix; meal-pilot + households 22/22 after). Still not mounted: stations (slice 2), Google Calendar status/connect (slice 3). Day-view header buttons are 28px (pre-existing, below the 44px rule).
 
+
+## 2026-11-21 — Scratchpad prose fix shipped (release-2026-11-21)
+
+- Bug: a one-paragraph method in the natural-text scratchpad gave "Add at least one cooking step." The parser cut the line at commas, read the last fragment as a name-only ingredient, and dropped the rest.
+- Fix: `app/src/lib/manual-recipe-parser.ts` splits prose into sentences, rejects long name-only ingredients, adds verbs (blanch, emulsify, thicken, sear, sprinkle, drizzle, deglaze, poach). 3 tests in `manual-recipe-parser.test.ts`.
+- Release branch based on the live commit c278f7a (prod-2026-11-06b), not on release-2026-11-06, which lacks the local-fonts commit.
+- Checks: tsc, eslint, vitest 399/399, Vercel remote build, prod regression smoke all passed. Local Playwright e2e and local next build skipped (memory on the VPS; remote build is the build gate).
+- Deployed dpl_2Pgka2G7pHYh15seFa8LhnMYNQky; rollback target dpl_GU24xjXrUboUNJ76Pm8YDKQLL9pt. Tag prod-2026-11-21.
+- Trap: the smoke script on meal-pilot predates the age gate (no ageConfirmed) and fails signup with 400. Run the release branch's copy.
+
 ## 2026-11-07 - Local UI verification production server and retry evidence
 
 - Updated `scripts/verify.sh` to finish an offline/local-only production build before starting Turso and `next start`; build/server heaps are 1280/512 MB, build and Playwright use one worker, and the local Chromium launch uses `--disable-dev-shm-usage` (`app/playwright.config.ts`). Existing CI behavior/config and application/auth code are unchanged.
