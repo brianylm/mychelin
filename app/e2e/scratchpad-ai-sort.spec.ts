@@ -15,7 +15,10 @@ test.describe("scratchpad AI ingredient sorting", () => {
     await signup(page, uniqueEmail(PREFIX), PASSWORD, "Scratchpad Sort Test");
     await page.goto("/app");
 
-    await page.getByRole("button", { name: "Library", exact: true }).click();
+    // A new user already lands on Library. Don't tap the bottom-nav tab:
+    // under `next dev` (CI) the Next dev indicator in the bottom-left corner
+    // sits over it and intercepts the click.
+    await expect(page.getByRole("button", { name: "Library", exact: true })).toHaveAttribute("aria-current", "page");
     await page.getByRole("button", { name: "New recipe" }).click();
     await page.getByRole("button", { name: "Write or paste recipe" }).click();
 
