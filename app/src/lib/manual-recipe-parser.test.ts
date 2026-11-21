@@ -143,3 +143,30 @@ describe("formatManualIngredientPreview", () => {
     expect(formatManualIngredientPreview(parsed!)).toBe("0.5 kg Pork Twee Bah/ Streaky Pork");
   });
 });
+
+describe("parseManualRecipeScratchpad prose paragraphs", () => {
+  const duckPasta = `First boil pasta in a pot of water and salt. Then separately, add olive oil into a pan and start adding your sliced duck breast and chili. Patty into the mix. Ensure you have enough olive oil. Then add four tablespoons of diced garlic and once everything is nice and mixed, you can add in your al dente pasta into the pan. Then add your washed and cut leafy greens bracket. We use Shanghai greens into the pasta water and blanch it until cooked. Once the greens are done, you can add them into the pan with the rest of the dish and show you add pasta water to kind of emulsify the entire sauce into the pasta to kind of thicken up a bit. Also add some pepper, salt and Italian herbs into the pasta for some flavoring.`;
+
+  it("splits a one-paragraph method into steps without dropping text", () => {
+    const result = parseManualRecipeScratchpad(duckPasta);
+    expect(result.ingredients).toHaveLength(0);
+    expect(result.instructions.length).toBeGreaterThanOrEqual(5);
+    expect(result.instructions[0].content).toMatch(/^First boil pasta/);
+    expect(result.instructions.at(-1)!.content).toMatch(/Italian herbs into the pasta for some flavoring\.$/);
+    const joined = result.instructions.map((i) => i.content).join(" ") + " " + result.unclassified.join(" ");
+    for (const phrase of ["Patty into the mix", "enough olive oil", "Shanghai greens", "emulsify"]) {
+      expect(joined).toContain(phrase);
+    }
+  });
+
+  it("never turns a long sentence into a name-only ingredient", () => {
+    const result = parseManualRecipeScratchpad("Season with pepper, salt and herbs into the pasta for flavour.");
+    expect(result.ingredients).toHaveLength(0);
+    expect(result.instructions).toHaveLength(1);
+  });
+
+  it("still splits short comma lists into ingredients", () => {
+    const result = parseManualRecipeScratchpad("Salt, pepper, 2 tbsp olive oil");
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Salt", "Pepper", "Olive oil"]);
+  });
+});

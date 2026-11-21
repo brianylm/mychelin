@@ -73,7 +73,7 @@ const UNIT_ALIASES = new Map([
   ["heads", "head"],
 ]);
 
-const STEP_VERBS = /\b(add|bake|beat|blend|boil|braise|bring|caramelise|caramelize|chop|combine|cook|cover|dice|drain|flip|fold|fry|grill|heat|knead|lower|marinate|mix|pan[- ]?fry|pour|preheat|reduce|remove|rest|rinse|roast|saute|sautee|season|serve|simmer|slice|steam|stir|stir[- ]?fry|taste|toss|turn|whisk)\b/i;
+const STEP_VERBS = /\b(add|bake|beat|blanch|blend|boil|braise|bring|caramelise|caramelize|chop|combine|cook|cover|dice|deglaze|drain|drizzle|emulsify|flip|fold|fry|grill|heat|knead|lower|marinate|mix|pan[- ]?fry|poach|pour|preheat|reduce|remove|rest|rinse|roast|saute|sautee|season|sear|serve|simmer|slice|sprinkle|steam|stir|stir[- ]?fry|taste|thicken|toss|turn|whisk)\b/i;
 const TIME_RE = /\b\d+(?:\.\d+)?\s*(?:-|to)?\s*\d*\s*(?:seconds?|secs?|sec|minutes?|mins?|min|hours?|hrs?|hr)\b/i;
 
 function stripLinePrefix(line: string): string {
@@ -321,6 +321,22 @@ function splitIngredientCandidates(line: string): string[] {
   return items.length ? items : [line];
 }
 
+// A typed or dictated method often arrives as one paragraph. Split it into
+// sentences so each becomes a step instead of being read as one ingredient.
+function splitProseSentences(line: string): string[] {
+  const sentences = line
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  return sentences.length >= 2 ? sentences : [line];
+}
+
+// A name-only ingredient longer than a few words is prose, not an ingredient.
+function isConfidentIngredient(ingredient: ManualParsedIngredient): boolean {
+  if (ingredient.quantity !== undefined || ingredient.quantityText !== undefined) return true;
+  return ingredient.name.split(/\s+/).filter(Boolean).length <= 4 && !/[.!?]$/.test(ingredient.name);
+}
+
 function headingMode(line: string): ParseMode | null {
   const clean = line.replace(/[:：]$/, "").trim().toLowerCase();
   if (["ingredient", "ingredients", "what goes in"].includes(clean)) return "ingredients";
@@ -350,52 +366,56 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
   let mode: ParseMode = "auto";
 
   for (const raw of text.split(/\r?\n/)) {
-    const line = stripLinePrefix(raw);
-    if (!line) continue;
-
-    const nextMode = headingMode(line);
-    if (nextMode) {
-      mode = nextMode;
-      continue;
-    }
-    if (mode === "auto" && isLikelySectionHeading(line)) {
-      continue;
-    }
-    if (mode === "notes") {
-      unclassified.push(line);
-      continue;
-    }
-
-    if (mode === "ingredients") {
-      for (const candidate of splitIngredientCandidates(line)) {
-        const ingredient = parseManualIngredientLine(candidate);
-        if (ingredient) ingredients.push(ingredient);
-        else unclassified.push(candidate);
+    const stripped = stripLinePrefix(raw);
+    if (!stripped) continue;
+    const sentences = mode === "auto" || mode === "steps" ? splitProseSentences(stripped) : [stripped];
+    const fromProse = sentences.length > 1;
+    for (const line of sentences) {
+      const nextMode = headingMode(line);
+      if (nextMode) {
+        mode = nextMode;
+        continue;
       }
-      continue;
-    }
+      if (mode === "auto" && isLikelySectionHeading(line)) {
+        continue;
+      }
+      if (mode === "notes") {
+        unclassified.push(line);
+        continue;
+      }
 
-    if (mode === "steps") {
-      const instruction = parseInstructionLine(line);
-      if (instruction) instructions.push(instruction);
-      continue;
-    }
+      if (mode === "ingredients") {
+        for (const candidate of splitIngredientCandidates(line)) {
+          const ingredient = parseManualIngredientLine(candidate);
+          if (ingredient) ingredients.push(ingredient);
+          else unclassified.push(candidate);
+        }
+        continue;
+      }
 
-    const candidateIngredients = splitIngredientCandidates(line)
-      .map(parseManualIngredientLine)
-      .filter((item): item is ManualParsedIngredient => Boolean(item));
-    if (candidateIngredients.length > 0) {
-      ingredients.push(...candidateIngredients);
-      continue;
-    }
+      if (mode === "steps") {
+        const instruction = parseInstructionLine(line);
+        if (instruction) instructions.push(instruction);
+        continue;
+      }
 
-    if (STEP_VERBS.test(line) || TIME_RE.test(line)) {
-      const instruction = parseInstructionLine(line);
-      if (instruction) instructions.push(instruction);
-      continue;
-    }
+      const parsedCandidates = splitIngredientCandidates(line).map(parseManualIngredientLine);
+      const allConfident = parsedCandidates.every(
+        (item): item is ManualParsedIngredient => item !== null && isConfidentIngredient(item),
+      );
+      if (allConfident) {
+        ingredients.push(...parsedCandidates);
+        continue;
+      }
 
-    unclassified.push(line);
+      if (fromProse || STEP_VERBS.test(line) || TIME_RE.test(line)) {
+        const instruction = parseInstructionLine(line);
+        if (instruction) instructions.push(instruction);
+        continue;
+      }
+
+      unclassified.push(line);
+    }
   }
 
   return { ingredients, instructions, unclassified };
