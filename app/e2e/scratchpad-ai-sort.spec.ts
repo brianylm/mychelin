@@ -11,7 +11,10 @@ test.afterAll(async () => {
 test.describe("scratchpad AI ingredient sorting", () => {
   test.describe.configure({ timeout: 90_000 });
 
-  test("sorts ingredients found in dictated steps and can undo", async ({ page }) => {
+  test("sorts ingredients found in dictated steps and can undo", async ({ page }, testInfo) => {
+    // The "New recipe" button is the mobile floating action button; the
+    // parser and AI sort under test do not depend on layout.
+    test.skip(testInfo.project.name !== "mobile", "Uses the mobile New recipe button.");
     await signup(page, uniqueEmail(PREFIX), PASSWORD, "Scratchpad Sort Test");
     await page.goto("/app");
 
