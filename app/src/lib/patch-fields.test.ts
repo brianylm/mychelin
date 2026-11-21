@@ -20,3 +20,26 @@ describe("pickPatchFields", () => {
     expect(pickPatchFields([1, 2], INSTRUCTION_PATCH_FIELDS)).toEqual({});
   });
 });
+
+describe("RECIPE_PATCH_FIELDS", () => {
+  it("drops ownership, sharing and version pointers", async () => {
+    const { RECIPE_PATCH_FIELDS } = await import("./patch-fields");
+    const picked = pickPatchFields(
+      {
+        id: 1,
+        userId: 99,
+        activeVersionId: 7,
+        forkedFrom: 3,
+        sharedToHouseholdAt: "2026-01-01",
+        sharedToHouseholdBy: 99,
+        isPublic: true,
+        createdAt: "x",
+        title: "Laksa",
+        bookId: 4,
+        status: "active",
+      },
+      RECIPE_PATCH_FIELDS
+    );
+    expect(picked).toEqual({ title: "Laksa", bookId: 4, status: "active" });
+  });
+});

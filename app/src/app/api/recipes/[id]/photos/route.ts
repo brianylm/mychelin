@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import { validateUpload } from "@/lib/upload-validation";
 import { db } from "@/db";
 import { recipePhotos, recipes } from "@/db/schema";
 import { and, eq, max } from "drizzle-orm";
@@ -117,10 +118,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Upload to Vercel Blob
-    const blob = await put(`recipes/${recipeId}/photos/${Date.now()}-${file.name}`, file, {
-      access: "public",
-    });
+    const check = await validateUpload(file, "image");
+    if (!check.ok) {
+      return NextResponse.json({ error: check.error }, { status: check.status });
+    }
+
+    // Upload to Vercel Blob (server-chosen name and content type)
+    const blob = await put(
+      `recipes/${recipeId}/photos/${crypto.randomUUID()}.${check.ext}`,
+      file,
+      { access: "public", contentType: check.mime, addRandomSuffix: true }
+    );
 
     // Get next sort order
     const [maxOrder] = await db

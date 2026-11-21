@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { callDeepSeekJson, isDeepSeekConfigured } from "@/lib/deepseek";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { generateGeminiText } from "@/lib/gemini-free";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -66,6 +67,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await enforceAiLimit(user.id);
+    if (limited) return limited;
 
     const body = (await request.json()) as {
       messages?: ConversationAssistMessage[];

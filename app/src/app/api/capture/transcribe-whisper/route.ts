@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { CONVERSATION_OPENAI_FALLBACK_ENABLED } from "@/lib/feature-flags";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { paidProviderKey } from "@/lib/ai-cost-policy";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -71,6 +72,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await enforceAiLimit(user.id, "transcribe");
+    if (limited) return limited;
 
     if (!CONVERSATION_OPENAI_FALLBACK_ENABLED) {
       return NextResponse.json(

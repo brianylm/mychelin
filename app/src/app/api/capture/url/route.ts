@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { extractRecipeText } from "@/lib/ai-extract";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -97,6 +98,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await enforceAiLimit(user.id);
+    if (limited) return limited;
 
     const body = (await request.json()) as { url?: string };
     const rawUrl = body.url?.trim() ?? "";

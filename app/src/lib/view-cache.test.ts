@@ -16,9 +16,13 @@ describe("currentWeekRange", () => {
     });
   });
 
-  // Matches the planner's getWeekDates(0) and the shopping list's
-  // getWeekRange(), which both treat Sunday as the day before next week.
-  it("matches the planner's Sunday behaviour", () => {
-    expect(currentWeekRange(new Date(2026, 9, 18)).start).toBe("2026-10-19");
+  // Matches the planner's getWeekDates(0): Sunday belongs to the week that
+  // started the Monday before (it used to jump to next week on Sundays, so
+  // Shopping hid Sunday's own meals).
+  it("keeps Sunday in the current week, like the planner", () => {
+    expect(currentWeekRange(new Date(2026, 9, 18))).toEqual({
+      start: "2026-10-12",
+      end: "2026-10-18",
+    });
   });
 });

@@ -7,6 +7,7 @@ import {
   transcribeWithModelChain,
   type ModelAttempt,
 } from "@/lib/gemini-transcribe";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await enforceAiLimit(user.id, "transcribe");
+    if (limited) return limited;
 
     const apiKey =
       process.env.GOOGLE_API_KEY ||

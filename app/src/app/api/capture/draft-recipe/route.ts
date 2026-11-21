@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { paidProviderKey } from "@/lib/ai-cost-policy";
 import { generateGeminiText, geminiApiKey } from "@/lib/gemini-free";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -175,6 +176,9 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const limited = await enforceAiLimit(user.id);
+    if (limited) return limited;
 
     const body = await request.json() as { prompt?: string };
     const userPrompt = body.prompt?.trim();

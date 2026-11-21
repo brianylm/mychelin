@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { getSharedRecipeDTO, isRecipeInSharedBook } from "@/lib/shared-recipe";
 import { coverPhoto, generatedVariantOf } from "@/lib/recipe-photo-display";
 import { beautifyRecipePhoto } from "@/lib/photo-beautify";
+import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rateLimit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -60,6 +61,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (existing) {
       return NextResponse.json({ status: "ready", photoUrl: existing.blobUrl });
     }
+
+    // Generation costs money and this route is public: cap per token and IP.
+    const [tokenLimit, ipLimit] = await Promise.all([
+      checkRateLimit(RATE_LIMITS.shareBeautifyToken, token),
+      checkRateLimit(RATE_LIMITS.shareBeautifyIp, getClientIp(request)),
+    ]);
+    if (!tokenLimit.allowed || !ipLimit.allowed) return unavailable();
 
     const result = await beautifyRecipePhoto(recipeId, cover.id);
     if (result.status !== "ready") return unavailable();

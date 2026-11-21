@@ -32,3 +32,29 @@ export const INGREDIENT_PATCH_FIELDS = [
 ] as const;
 
 export const INSTRUCTION_PATCH_FIELDS = ["stepNumber", "content", "tip", "imageUrl"] as const;
+
+// Recipe-level fields a caller with edit access may change. Excluded on
+// purpose: id, userId, activeVersionId, forkedFrom, sharedToHousehold*,
+// isPublic, createdAt, updatedAt. bookId is allowed but the route checks
+// the caller may add recipes to that book.
+export const RECIPE_PATCH_FIELDS = [
+  "title",
+  "status",
+  "description",
+  "cuisine",
+  "yield",
+  "prepTime",
+  "cookTime",
+  "story",
+  "imageUrl",
+  "origin",
+  "dialect",
+  "occasion",
+  "familyMember",
+  "generation",
+  "authenticityRating",
+  "tasteRating",
+  "nostalgiaRating",
+  "sourceUrl",
+  "bookId",
+] as const;

@@ -163,4 +163,35 @@ export const RATE_LIMITS = {
     limit: 5,
     windowSeconds: 60 * 60,
   },
+
+  // AI routes (extract/paste/url/draft-recipe/conversation-assist/etc.), per
+  // user. 40/hour: a heavy cooking session does a handful of imports and a few
+  // dozen assist turns; 40 is well above that but caps a scripted drain.
+  ai: { name: "ai", limit: 40, windowSeconds: 60 * 60 },
+
+  // Daily ceiling across all non-transcription AI routes, per user.
+  aiDaily: { name: "ai_daily", limit: 400, windowSeconds: 24 * 60 * 60 },
+
+  // Live transcription chunks arrive every ~10 s (360/hour if continuous;
+  // a 10-minute conversation is ~60). 240/hour allows 40 minutes nonstop.
+  aiTranscribe: { name: "ai_transcribe", limit: 240, windowSeconds: 60 * 60 },
+
+  // Daily transcription ceiling: about 2.5 hours of live capture.
+  aiTranscribeDaily: {
+    name: "ai_transcribe_daily",
+    limit: 900,
+    windowSeconds: 24 * 60 * 60,
+  },
+
+  // Public share-page beautify (token-gated image generation).
+  shareBeautifyToken: {
+    name: "share_beautify_token",
+    limit: 10,
+    windowSeconds: 60 * 60,
+  },
+  shareBeautifyIp: {
+    name: "share_beautify_ip",
+    limit: 20,
+    windowSeconds: 60 * 60,
+  },
 } as const;

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { mondayOf } from "@/lib/week-start";
 
 // Tab views (Inventory, Plan, Shopping, Activity) unmount when you switch
 // away, so they used to start every visit with a spinner and a fresh
@@ -43,8 +44,7 @@ function toDateKey(date: Date): string {
 
 // Same Monday-start week the planner (offset 0) and shopping list default to.
 export function currentWeekRange(now = new Date()): { start: string; end: string } {
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  monday.setDate(monday.getDate() - monday.getDay() + 1);
+  const monday = mondayOf(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   return { start: toDateKey(monday), end: toDateKey(sunday) };

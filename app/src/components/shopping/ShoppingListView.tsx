@@ -6,6 +6,7 @@ import { Button } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { SharedHouseholdChip } from "@/components/household/SharedHouseholdChip";
+import { mondayOf } from "@/lib/week-start";
 import { readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
 
 interface ShoppingItem {
@@ -70,8 +71,7 @@ function toDateKey(date: Date): string {
 
 function getWeekRange(): DateRange {
   const now = new Date();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - now.getDay() + 1);
+  const monday = mondayOf(now);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   return {

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import {
+  bookMembers,
   recipes,
   ingredients,
   instructions,
   voiceRecordings,
   recipePhotos,
 } from "@/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
+import { pickPatchFields, RECIPE_PATCH_FIELDS } from "@/lib/patch-fields";
 import { maybePromoteDraftToActive } from "@/lib/recipe-promotion";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureHouseholdSlice3Columns } from "@/db/ensure-schema";
@@ -155,8 +157,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       ingredients: ingredientsList,
       instructions: instructionsList,
       recipeFlags: recipeFlagsInput,
-      ...recipeFields
     } = body;
+    // Only editable columns: never userId, id, activeVersionId, sharing
+    // stamps or timestamps from the client.
+    const recipeFields = pickPatchFields(body, RECIPE_PATCH_FIELDS) as Partial<
+      typeof recipes.$inferInsert
+    >;
+
+    // Moving the recipe into a book needs owner/editor rights in that book.
+    if (recipeFields.bookId !== undefined && recipeFields.bookId !== null) {
+      const targetBookId = Number(recipeFields.bookId);
+      if (!Number.isSafeInteger(targetBookId) || targetBookId <= 0) {
+        return NextResponse.json({ error: "Invalid bookId" }, { status: 400 });
+      }
+      const [membership] = await db
+        .select({ role: bookMembers.role })
+        .from(bookMembers)
+        .where(and(eq(bookMembers.bookId, targetBookId), eq(bookMembers.userId, currentUser.id)))
+        .limit(1);
+      if (!membership || (membership.role !== "owner" && membership.role !== "editor")) {
+        return NextResponse.json({ error: "You cannot add recipes to that book" }, { status: 403 });
+      }
+      recipeFields.bookId = targetBookId;
+    }
 
     // Validate status if included in the update.
     if (

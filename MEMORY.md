@@ -2975,3 +2975,15 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Wired the option into `app/src/db/index.ts`, `app/src/db/ensure-schema.ts`, `app/src/app/api/admin/migrate-versions/route.ts`, and `app/e2e/helpers.ts`; added `app/src/db/resilient-fetch.test.ts` (22 cases, including native/cross-fetch Request bodies).
 - Validation: `tsc --noEmit -p .` passed; `VITEST_MAX_WORKERS=2 vitest run` passed (50 files, 418 tests); `git diff --check` passed. No build, Playwright, env-file reads, remote DB access, commit, push, or deployment. Transport behavior verified with injected fetches; no live Turso verification performed.
 
+
+## 2026-11-22 — Security batch 1 + Sunday week fix (release-2026-11-21e)
+
+- Source: three read-only security reviews (authorization, auth/uploads/AI, deps/ops) on 21 Nov.
+- Recipe PATCH (`api/recipes/[id]`) spread the body into `.set()`: any user could set `userId`/`bookId` to plant or steal recipes. Now `RECIPE_PATCH_FIELDS` whitelist (`lib/patch-fields.ts`); a non-null `bookId` needs owner/editor membership of that book.
+- next 16.1.6 → 16.4.6 (critical: request smuggling, Server Actions CSRF bypass, DoS); drizzle-orm ^0.45.4; `cross-fetch` declared; `npm audit --omit=dev` = 0. `eslint-plugin-react-hooks` pinned to 7.0.1 via overrides (7.1.1 adds React Compiler lint errors repo-wide; revisit separately).
+- Admin (`lib/admin-auth.ts`) now also requires `users.emailVerified` read from the DB. If B is locked out: sign in with Google once with the admin address.
+- Per-user AI limits (`lib/ai-rate-limit.ts`): `ai` 40/h + 400/day, transcription 240/h + 900/day, share beautify 10/h per token + 20/h per IP. Fails open if the limiter DB errors.
+- Uploads (`lib/upload-validation.ts`): magic-byte allowlist (jpeg/png/webp/heic/heif; webm/ogg/mp4/mpeg/aac/wav), 10 MB / 25 MB caps, server-built names, explicit contentType, `addRandomSuffix`.
+- Bug found by verify on a Sunday: Shopping list and view-cache week range jumped to NEXT week on Sundays (`getDay()` 0). Fixed with `lib/week-start.ts`; planner was already correct.
+- Checks: verify ui PASS on Sunday (38 Playwright).
+- Batch 2 (not done): account pre-hijack via Google linking, session revocation, SSRF in capture/url, household join codes, security headers, Google consent copy.

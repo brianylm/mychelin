@@ -845,10 +845,15 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
       formData.append("file", blob, `recording-${Date.now()}.webm`);
       formData.append("duration", String(duration));
       try {
-        await fetch(`/api/recipes/${selectedRecipe.id}/voice`, {
+        const res = await fetch(`/api/recipes/${selectedRecipe.id}/voice`, {
           method: "POST",
           body: formData,
         });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          addToast(body.error || "Failed to save recording", "error");
+          return;
+        }
         addToast("Voice recording saved", "success");
         // Refresh recipe data
         qc.invalidateQueries({ queryKey: ["recipe", selectedRecipe.id] });

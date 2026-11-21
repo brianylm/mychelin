@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { CONVERSATION_REALTIME_ENABLED } from "@/lib/feature-flags";
 import { paidProviderKey } from "@/lib/ai-cost-policy";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await enforceAiLimit(user.id);
+    if (limited) return limited;
 
     if (!CONVERSATION_REALTIME_ENABLED) {
       return NextResponse.json(

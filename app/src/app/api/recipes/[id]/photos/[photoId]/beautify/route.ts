@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 import { AiImageError } from "@/lib/ai-image";
 import { beautifyRecipePhoto } from "@/lib/photo-beautify";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -32,6 +33,9 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         { status: 403 }
       );
     }
+
+    const limited = await enforceAiLimit(currentUser.id);
+    if (limited) return limited;
 
     const result = await beautifyRecipePhoto(recipeId, sourcePhotoId);
     if (result.status === "not_found") {

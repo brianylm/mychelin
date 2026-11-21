@@ -4,6 +4,7 @@ import { books, bookMembers, bookRecipes, recipes, ingredients, instructions } f
 import { getCurrentUser } from "@/lib/auth";
 import { and, eq, inArray } from "drizzle-orm";
 import { generateGeminiText, geminiApiKey } from "@/lib/gemini-free";
+import { enforceAiLimit } from "@/lib/ai-rate-limit";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -30,6 +31,9 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await enforceAiLimit(user.id);
+    if (limited) return limited;
 
     const apiKey = geminiApiKey();
     if (!apiKey) {
