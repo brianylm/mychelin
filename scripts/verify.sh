@@ -137,7 +137,10 @@ step schema schema
 if [[ ! -e app/.next && ! -L app/.next ]]; then remove_next=1; fi
 # Next derives its static worker count from CIRCLE_NODE_TOTAL minus one.
 # Constrain both JS workers and Turbopack's native threads on the small VPS.
-step build in_app env NODE_ENV=production CIRCLE_NODE_TOTAL=2 RAYON_NUM_THREADS=1 \
+# capped runs the build in its own memory-capped scope outside claude-rc, and
+# refuses (exit 75) when the box is short of memory. An uncapped build here
+# froze Remote Control on 2026-11-21.
+step build in_app capped env NODE_ENV=production CIRCLE_NODE_TOTAL=2 RAYON_NUM_THREADS=1 \
   NODE_OPTIONS="--max-old-space-size=1280 $local_preload" npx next build
 verify_tmp="$(mktemp -d /tmp/mychelin-verify-XXXXXXXX)"
 start_db() {
