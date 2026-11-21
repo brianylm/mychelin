@@ -116,6 +116,42 @@ See [`ROADMAP.md`](./ROADMAP.md) for more detail.
 
 Contributions are welcome, especially around accessibility, privacy, localisation, PWA reliability, and tests. Start with [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
+From the repository root, run `bash scripts/verify.sh fast` for typecheck,
+changed-file lint, unit tests, and the feature-map guard when available. Run
+`bash scripts/verify.sh ui` to also exercise mobile Playwright, privacy and pilot
+smokes against a fresh local libSQL database. UI verification needs the authenticated
+`turso` CLI and the cached Playwright browser; it never installs dependencies or
+browsers. Ports 3100 and 8317 must be free.
+
+The runner overrides database credentials, hides dotenv files from Node, and blocks
+outbound Node connections. Its sole remote operation dumps staging DDL; if that
+fails, a previously cached schema can be used. Next's font test hook uses system
+fallbacks offline. UI verification builds first, then starts a production server
+and the temporary database with one Playwright worker. The local servers and
+temporary database are removed on exit; `app/.next` is removed only if it did not
+exist before the run.
+Evidence lives in `.verify/last.json`, `.verify/logs/`, `.verify/playwright/`, and
+seven mobile screenshots in `.verify/shots/`.
+Playwright's JSON results are in `.verify/playwright/results.json`; tests that
+pass on retry appear in the summary and the `flaky` array in `.verify/last.json`.
+Typecheck/lint diagnostics are
+excused only when an untouched archive of `LINT_BASE` reproduces them (default:
+the merge-base with `origin/main`); logs label these `PRE-EXISTING`.
+
+Known failures must be reproduced on a clean `origin/release-2026-11-06` archive
+before classification. All mobile specs currently run. The local server's
+privacy/pilot signup failures are an artifact of Next's LOCAL Edge emulation:
+`EDGE_UNSUPPORTED_NODE_APIS` in next/dist/shared/lib/constants.js includes
+`setImmediate`, for which the sandbox defines a throwing stub. bcryptjs's
+`typeof setImmediate === "function"` check selects it and throws (reproduced
+2026-11-07 on release SHA `33969a43175fe7de856fc3838c96449244ec6480`).
+On Vercel's real Edge runtime `setImmediate` is undefined and bcryptjs falls back
+to scheduler/setTimeout, so production signup is not implicated by this artifact
+(not yet confirmed against prod). The runner still attempts both smokes: only
+that exact assertion plus a new matching server error is classified as
+`known-failing`, with evidence in `last.json`; other failures fail verification.
+The remaining local smoke assertions are blocked by this emulation artifact.
+
 Because Mychelin handles family stories, photos, voices, and recipes, please treat test data and screenshots as potentially sensitive. Do not include real family data in issues, PRs, fixtures, or demos without consent.
 
 ## License
