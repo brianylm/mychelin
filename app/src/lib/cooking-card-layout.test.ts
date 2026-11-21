@@ -29,6 +29,12 @@ describe("formatCardAmount", () => {
     ).toBe("a pinch");
   });
 
+  it("shows no unit word for a bare quantity", () => {
+    expect(formatCardAmount({ name: "onion", quantity: 1 }, 1)).toBe("1");
+    expect(formatCardAmount({ name: "egg", quantity: 2 }, 1)).toBe("2");
+    expect(formatCardAmount({ name: "egg", quantity: 1, approximate: true }, 1)).toBe("agak-agak 1");
+  });
+
   it("handles missing quantity", () => {
     expect(formatCardAmount({ name: "salt" }, 1)).toBe("");
     expect(formatCardAmount({ name: "salt", unit: "tsp" }, 1)).toBe("tsp");
@@ -41,6 +47,8 @@ describe("explicitTimerText", () => {
     expect(explicitTimerText("bake for 1.5 hrs")).toBe("1.5 hrs");
     expect(explicitTimerText("rest 10-15 min")).toBe("10-15 min");
     expect(explicitTimerText("sear 30 seconds each side")).toBe("30 seconds");
+    expect(explicitTimerText("Simmer 10 min, then rest 5 min")).toBe("10 min, 5 min");
+    expect(explicitTimerText("boil 1 hr then 10-15 min")).toBe("1 hr, 10-15 min");
   });
 
   it("returns null when no duration is stated", () => {

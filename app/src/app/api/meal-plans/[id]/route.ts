@@ -5,7 +5,8 @@ import { mealPlans, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureHouseholdTables, ensureMealPilotTables, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns } from "@/db/ensure-schema";
 import { canUserAccessRecipe } from "@/lib/recipe-access";
-import { isHouseholdMember, logHouseholdActivity } from "@/lib/households";
+import { logHouseholdActivity } from "@/lib/households";
+import { findAuthorizedPlan } from "@/lib/meal-plan-access";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -14,22 +15,6 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 const VALID_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-// A plan row is accessible to the user when they own it (personal plan)
-// OR when it belongs to a household they are a member of (shared plan).
-// Everything in this route goes through this gate — household scoping
-// must never rely on a client-supplied id alone.
-async function findAuthorizedPlan(planId: number, userId: number) {
-  const plan = await db.query.mealPlans.findFirst({
-    where: eq(mealPlans.id, planId),
-  });
-  if (!plan) return null;
-  if (plan.userId === userId) return plan;
-  if (plan.householdId != null && (await isHouseholdMember(userId, plan.householdId))) {
-    return plan;
-  }
-  return null;
-}
 
 // ─── GET /api/meal-plans/:id ───────────────────────────────
 export async function GET(_request: NextRequest, context: RouteContext) {

@@ -134,19 +134,22 @@ export async function buildDeductionProposal(
 
   const { items, untracked } = computeDeductionItems(source, plan.servings, scale);
 
+  const proposalItems = items.map((item) => {
+    const match = matchInventoryRow(item, inventoryRows);
+    return { ...item, onHand: match ? match.quantity : null };
+  });
+  // Nothing this recipe uses is tracked in shared inventory, so there is
+  // nothing to deduct — skip the confirm step entirely.
+  if (!proposalItems.some((item) => item.onHand != null)) return null;
+
   return {
     mealPlanId,
-    items: items.map((item) => {
-      const match = matchInventoryRow(item, inventoryRows);
-      return { ...item, onHand: match ? match.quantity : null };
-    }),
+    items: proposalItems,
     // Approximate quantities can't be deducted; anything unmatched
     // against shared inventory joins them as "not tracked".
     notTracked: [
       ...untracked,
-      ...items
-        .filter((item) => !matchInventoryRow(item, inventoryRows))
-        .map((item) => item.name),
+      ...proposalItems.filter((item) => item.onHand == null).map((item) => item.name),
     ],
   };
 }

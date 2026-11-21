@@ -25,3 +25,20 @@ describe("IngredientList loading", () => {
     expect(html).toContain("No ingredients yet");
   });
 });
+
+describe("IngredientList amounts", () => {
+  it("shows no unit word for a bare quantity", () => {
+    const html = renderToStaticMarkup(
+      <IngredientList
+        ingredients={[
+          { id: 1, recipeId: 1, name: "Onion", quantity: 1, unit: null },
+          { id: 2, recipeId: 1, name: "Egg", quantity: 2, unit: null },
+        ] as never}
+        readOnly
+        {...handlers}
+      />,
+    );
+    expect(html).not.toContain("units");
+    expect(html).toContain("Onion");
+  });
+});

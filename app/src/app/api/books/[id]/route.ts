@@ -245,21 +245,30 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const bookId = parseInt(id);
+    const bookId = Number(id);
+    if (!Number.isInteger(bookId) || bookId <= 0) {
+      return NextResponse.json(
+        { error: "Invalid book id" },
+        { status: 400 }
+      );
+    }
 
-    // Check if user is the owner
-    const book = await db
-      .select()
+    const [book] = await db
+      .select({ id: books.id, createdBy: books.createdBy })
       .from(books)
-      .where(and(
-        eq(books.id, bookId),
-        eq(books.createdBy, currentUser.id)
-      ))
+      .where(eq(books.id, bookId))
       .limit(1);
 
-    if (!book.length) {
+    if (!book) {
       return NextResponse.json(
-        { error: "Access denied or book not found" },
+        { error: "Book not found" },
+        { status: 404 }
+      );
+    }
+
+    if (book.createdBy !== currentUser.id) {
+      return NextResponse.json(
+        { error: "Only the book owner can delete it" },
         { status: 403 }
       );
     }

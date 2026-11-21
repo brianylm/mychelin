@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { EmptyState, FilterBar, RecipeResultRow } from "@/components/ui";
+import { useRecipeStore } from "@/store/RecipeStore";
+import { searchRecipes, type SearchableRecipe } from "@/lib/recipe-search";
 
 interface MatchedRecipe {
   recipe: {
@@ -30,7 +32,9 @@ interface RecipeSearchModalProps {
 
 export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<MatchedRecipe[]>([]);
+  const { recipes: storeRecipes } = useRecipeStore();
+  // Server results: only used for recipes missing from the local list.
+  const [serverResults, setServerResults] = useState<MatchedRecipe[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +84,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
   useEffect(() => {
     const trimmed = query.trim();
     if (!trimmed) {
-      setResults([]);
+      setServerResults([]);
       setHasSearched(false);
       setLoading(false);
       setError(null);
@@ -98,11 +102,11 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
         );
         if (!response.ok) throw new Error("Search failed");
         const data = (await response.json()) as { results: MatchedRecipe[] };
-        setResults(data.results ?? []);
+        setServerResults(data.results ?? []);
         setHasSearched(true);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        setResults([]);
+        setServerResults([]);
         setHasSearched(true);
         setError("Recipe search is temporarily unavailable. Please try again.");
       } finally {
@@ -115,6 +119,21 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
       controller.abort();
     };
   }, [query]);
+
+  const localResults = useMemo<MatchedRecipe[]>(
+    () =>
+      searchRecipes(storeRecipes as unknown as SearchableRecipe[], query).map((hit) => ({
+        recipe: hit.recipe as unknown as MatchedRecipe["recipe"],
+        matchedIngredient: hit.matchedIngredient,
+      })),
+    [storeRecipes, query]
+  );
+
+  // Local hits first (instant), then server-only recipes, de-duplicated.
+  const results = useMemo<MatchedRecipe[]>(() => {
+    const seen = new Set(localResults.map((result) => result.recipe.id));
+    return [...localResults, ...serverResults.filter((result) => !seen.has(result.recipe.id))];
+  }, [localResults, serverResults]);
 
   const handlePick = (recipeId: number) => {
     onPickRecipe(recipeId);
@@ -161,7 +180,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
             query={query}
             onQueryChange={setQuery}
             placeholder="Recipe, ingredient, cuisine, or notes"
-            resultCount={hasSearched || query.trim() ? results.length : undefined}
+            resultCount={(!loading || results.length > 0) && (hasSearched || query.trim()) ? results.length : undefined}
             resultLabel={results.length === 1 ? "recipe" : "recipes"}
             autoFocus
             className="[&_input]:h-11"
@@ -169,7 +188,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5">
-          {loading && (
+          {loading && results.length === 0 && (
             <div className="space-y-2" aria-label="Searching recipes">
               {[0, 1, 2].map((item) => (
                 <div
@@ -180,11 +199,11 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
             </div>
           )}
 
-          {!loading && error && (
+          {!loading && error && results.length === 0 && (
             <EmptyState title="Search unavailable" description={error} />
           )}
 
-          {!loading && !error && !query.trim() && (
+          {!query.trim() && (
             <EmptyState
               title="Search your recipes"
               description="Try an ingredient such as chicken, belacan, or galangal, or search by dish name."
@@ -198,7 +217,7 @@ export function RecipeSearchModal({ onClose, onPickRecipe }: RecipeSearchModalPr
             />
           )}
 
-          {!loading && !error && results.length > 0 && (
+          {query.trim() && results.length > 0 && (
             <div className="space-y-2">
               {results.map((result) => (
                 <RecipeResultRow

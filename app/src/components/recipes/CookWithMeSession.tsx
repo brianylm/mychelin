@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { RecipeWithRelations } from "@/store/RecipeStore";
 import { playTimerAlarm, primeTimerAlarm } from "@/lib/timer-alarm";
-import { detectStepTimerSeconds } from "@/lib/step-timers";
+import { detectAllStepTimerSeconds, detectStepTimerSeconds } from "@/lib/step-timers";
 import { encodeHeatInTip, HEAT_CONFIG, HEAT_LEVELS, parseHeatFromTip, type HeatLevel } from "@/lib/instruction-heat";
 import { HeatChip } from "./HeatChip";
 import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
@@ -158,6 +158,10 @@ export function CookWithMeSession({
   const progress = totalSteps > 0 ? ((stepIndex + 1) / totalSteps) * 100 : 0;
 
   const currentTimer = timers[stepIndex];
+  const stepTimerOptions = useMemo(
+    () => detectAllStepTimerSeconds(currentInstruction?.content ?? ""),
+    [currentInstruction?.content]
+  );
   const hasContent = totalSteps > 0;
 
   const sessionSummary = useMemo(() => {
@@ -255,6 +259,13 @@ export function CookWithMeSession({
       };
     });
   }, [currentInstruction, stepIndex]);
+
+  const setTimerDuration = useCallback((seconds: number) => {
+    setTimers((current) => ({
+      ...current,
+      [stepIndex]: { duration: seconds, remaining: seconds, running: false },
+    }));
+  }, [stepIndex]);
 
   const resetTimer = useCallback(() => {
     if (!currentInstruction) return;
@@ -410,7 +421,9 @@ export function CookWithMeSession({
       if (
         proposal &&
         Array.isArray(proposal.items) &&
-        (proposal.items.length > 0 || (proposal.notTracked ?? []).length > 0)
+        // Only worth a confirm step when something is tracked in shared
+        // inventory; the server already returns null otherwise.
+        proposal.items.some((item: { onHand: number | null }) => item.onHand != null)
       ) {
         // Household deduction proposal — hand off to the confirm sheet;
         // it closes the session after confirm/skip.
@@ -441,20 +454,24 @@ export function CookWithMeSession({
       if (confirm) {
         setDeducting(true);
         try {
+          // Untracked lines have no shared row to deduct from; zero
+          // amounts are no-ops. Send neither.
           const items = deduction.items
             .map((item, index) => ({
               name: item.name,
               unit: item.unit,
               catalogIngredientId: item.catalogIngredientId,
-              quantity: parseFloat(deductionDrafts[index] ?? "") || 0,
+              quantity: item.onHand == null ? 0 : parseFloat(deductionDrafts[index] ?? "") || 0,
             }))
             .filter((item) => item.quantity > 0);
-          const response = await fetch("/api/households/inventory/deduct", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mealPlanId: deduction.mealPlanId, items }),
-          });
-          if (!response.ok) {
+          const response = items.length > 0
+            ? await fetch("/api/households/inventory/deduct", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mealPlanId: deduction.mealPlanId, items }),
+              })
+            : null;
+          if (response && !response.ok) {
             // Best-effort: the attempt is already saved; a failed
             // deduction must not trap the cook in the session.
             console.warn("inventory deduction failed", await response.text().catch(() => ""));
@@ -740,6 +757,21 @@ export function CookWithMeSession({
                       {currentTimer?.running ? "Pause" : "Start"}
                     </button>
                   </div>
+                  {stepTimerOptions.length > 1 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold text-ui-muted">This step has</span>
+                      {stepTimerOptions.map((seconds, optionIndex) => (
+                        <button
+                          key={`${optionIndex}-${seconds}`}
+                          type="button"
+                          onClick={() => setTimerDuration(seconds)}
+                          className="min-h-11 rounded-xl px-3 font-mono text-sm font-medium text-ui-muted transition-colors hover:bg-ui-surface-subtle hover:text-ui-text"
+                        >
+                          {formatTime(seconds)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <button
                       type="button"

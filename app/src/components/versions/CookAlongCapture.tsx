@@ -72,6 +72,7 @@ function buildAttemptNotes(closenessRating: number, closenessNotes: string) {
 export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }: CookAlongCaptureProps) {
   const [step, setStep] = useState(0);
   const [versions, setVersions] = useState<Version[]>([]);
+  const [activeVersionId, setActiveVersionId] = useState<number | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
   const [adjustedIngredients, setAdjustedIngredients] = useState<AdjustedIngredient[]>([]);
   const [closenessRating, setClosenessRating] = useState(0);
@@ -88,9 +89,9 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
         if (res.ok) {
           const data = await res.json();
           setVersions(data.versions);
+          setActiveVersionId(data.activeVersionId);
           if (data.versions.length > 0) {
-            const active = data.versions.find((v: Version) => v.id === data.activeVersionId) ?? data.versions[0];
-            setSelectedVersion(active);
+            setSelectedVersion(data.versions[0]);
           }
         }
       } catch { /* silent */ } finally {
@@ -253,6 +254,9 @@ export function CookAlongCapture({ recipeId, recipeTitle, onClose, onComplete }:
                           <div>
                             <div className="text-sm font-medium text-ui-text">Version {labelOf(v)}</div>
                             <div className="text-[11px] text-ui-muted">{v.ingredients.length} ingredients</div>
+                            {v.id === activeVersionId && (
+                              <div className="text-[11px] text-ui-accent">Definitive</div>
+                            )}
                           </div>
                           {selectedVersion?.id === v.id && <Check className="ml-auto h-4 w-4 text-ui-accent" aria-hidden="true" />}
                         </button>

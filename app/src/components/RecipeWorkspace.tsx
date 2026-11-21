@@ -15,7 +15,8 @@ import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
 import { FIRST_COOK_MISSION_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
-import { prefetchViewData, viewCacheKey, viewUrls } from "@/lib/view-cache";
+import { invalidatePlanCaches, prefetchViewData, viewCacheKey, viewUrls } from "@/lib/view-cache";
+import { parseView, serializeView } from "@/lib/view-url";
 import { afterLeftovers } from "@/lib/leftovers-prompt";
 import { MealReviewController } from "@/components/planner/MealReviewController";
 import { LeftoversPrompt } from "@/components/planner/LeftoversPrompt";
@@ -144,7 +145,34 @@ type PilotFeedbackStage = "first_capture" | "first_cook" | "first_version" | "pi
 export function RecipeWorkspace() {
   const { user, loading } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<AppView>("recipes");
+  const [currentView, setCurrentViewState] = useState<AppView>("recipes");
+
+  // Keep ?view= in the URL so a refresh keeps the tab and Back steps
+  // through tabs. Other query params and the hash are preserved. Skips the
+  // history write when the URL would not change (e.g. "recipes" while a
+  // recipe is open: RecipeStore owns that entry).
+  const setCurrentView = useCallback(
+    (view: AppView, opts?: { replace?: boolean }) => {
+      setCurrentViewState(view);
+      if (typeof window === "undefined") return;
+      const next = serializeView(view, window.location);
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (next === current) return;
+      if (opts?.replace) window.history.replaceState(window.history.state, "", next);
+      else window.history.pushState(window.history.state, "", next);
+    },
+    []
+  );
+
+  // Read the URL after mount (not in the initial state) to avoid a
+  // hydration mismatch, and follow Back/Forward.
+  useEffect(() => {
+    const sync = () => setCurrentViewState(parseView(window.location.search));
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [onboardingStart, setOnboardingStart] = useState<OnboardingStart>(null);
@@ -230,7 +258,7 @@ function RecipeWorkspaceContent({
   onShowStartOptions
 }: {
   currentView: AppView;
-  setCurrentView: (view: AppView) => void;
+  setCurrentView: (view: AppView, opts?: { replace?: boolean }) => void;
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   onboardingCompleted: boolean;
@@ -258,7 +286,7 @@ function RecipeWorkspaceContent({
       selectedRecipeId !== previousId &&
       currentView !== "recipes"
     ) {
-      setCurrentView("recipes");
+      setCurrentView("recipes", { replace: true });
     }
   }, [selectedRecipeId, currentView, setCurrentView]);
 
@@ -353,7 +381,7 @@ function RecipeWorkspaceContent({
     // from elsewhere in the app, and the sidebar list is cached.
     qc.invalidateQueries({ queryKey: ["recipes"] });
     selectRecipe(recipeId);
-    setCurrentView("recipes");
+    setCurrentView("recipes", { replace: true });
   }, [qc, selectRecipe, setCurrentView]);
 
   const handleViewChange = useCallback((view: AppView) => {
@@ -372,7 +400,7 @@ function RecipeWorkspaceContent({
     async (recipeId: number, mealPlanId?: number, keepCurrentView = false) => {
       if (!keepCurrentView) {
         selectRecipe(recipeId);
-        setCurrentView("recipes");
+        setCurrentView("recipes", { replace: true });
       }
       try {
         const response = await fetch(`/api/recipes/${recipeId}`);
@@ -447,7 +475,7 @@ function RecipeWorkspaceContent({
       if (meal?.toCook.length) {
         void handleCookMealBatch(meal.toCook);
       } else {
-        setCurrentView("plan");
+        setCurrentView("plan", { replace: true });
       }
     });
   }, [handleCookMealBatch, setCurrentView]);
@@ -499,6 +527,9 @@ function RecipeWorkspaceContent({
       throw new Error(body.error || "Cooking session saved, but meal was not marked cooked");
     }
 
+    // The planner cell and the Next meal card read this plan row.
+    invalidatePlanCaches(qc, userId);
+
     addToast(
       ephemeral
         ? "Practice cook finished — meal marked cooked"
@@ -518,16 +549,21 @@ function RecipeWorkspaceContent({
     const userId = user?.id;
     if (userId) qc.removeQueries({ queryKey: viewCacheKey(userId, viewUrls.activity) });
 
-    for (const mealPlanId of mealPlanIds) {
-      const response = await fetch("/api/meal-plans/" + mealPlanId, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cookedAt: new Date().toISOString() }),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error || "Attempts saved, but one meal was not marked cooked");
+    try {
+      for (const mealPlanId of mealPlanIds) {
+        const response = await fetch("/api/meal-plans/" + mealPlanId, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cookedAt: new Date().toISOString() }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || "Attempts saved, but one meal was not marked cooked");
+        }
       }
+    } finally {
+      // Some rows may be marked cooked even if a later PATCH failed.
+      invalidatePlanCaches(qc, userId);
     }
 
     addToast("Batch cooking attempts saved", "success");
@@ -569,7 +605,7 @@ function RecipeWorkspaceContent({
   const handleFromScratch = useCallback(() => {
     setFabOpen(false);
     setSidebarOpen(false);
-    setCurrentView("recipes");
+    setCurrentView("recipes", { replace: true });
     setManualScratchpadOpen(true);
   }, [setCurrentView, setSidebarOpen]);
 
@@ -678,7 +714,7 @@ function RecipeWorkspaceContent({
       const recipe = await res.json();
       qc.invalidateQueries({ queryKey: ["recipes"] });
       selectRecipe(recipe.id);
-      setCurrentView("recipes");
+      setCurrentView("recipes", { replace: true });
       setSidebarOpen(false);
       conversationCommittedRef.current = false;
       setConversationRecipeId(recipe.id);
@@ -737,7 +773,7 @@ function RecipeWorkspaceContent({
     qc.invalidateQueries({ queryKey: ["recipes"] });
     qc.invalidateQueries({ queryKey: ["recipe", recipe.id] });
     selectRecipe(recipe.id);
-    setCurrentView("recipes");
+    setCurrentView("recipes", { replace: true });
     setSidebarOpen(false);
     setManualScratchpadOpen(false);
     addToast("Recipe created", "success");
@@ -774,7 +810,7 @@ function RecipeWorkspaceContent({
     const recipe = await response.json();
     qc.invalidateQueries({ queryKey: ["recipes"] });
     selectRecipe(recipe.id);
-    setCurrentView("recipes");
+    setCurrentView("recipes", { replace: true });
     setSidebarOpen(false);
     setFabOpen(false);
     addToast("Draft recipe created", "success");

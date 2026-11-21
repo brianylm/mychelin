@@ -2,15 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ChefHat } from "lucide-react";
-import { describeWhen, findNextMeal, type LoosePlan, type NextMeal } from "@/lib/next-meal";
+import { describeWhen, findNextMeal, localDateKey, type LoosePlan, type NextMeal } from "@/lib/next-meal";
 import { listMealGroups } from "@/lib/meal-pilot/client";
-
-function localDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export async function loadNextMeal(now = new Date()): Promise<NextMeal | null> {
   const today = localDateKey(now);
@@ -63,13 +56,12 @@ export function NextMealCard({
 
   if (isLoading || isError || !meal) return null;
 
-  const mealType = meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1);
   const titles = meal.titles.slice(0, 3).join(" · ") + (meal.titles.length > 3 ? ` +${meal.titles.length - 3} more` : "");
 
   return (
     <section aria-label="Next meal" className="mx-4 mt-4 w-auto rounded-xl border border-ui-border bg-ui-surface-raised p-4 md:mx-auto md:w-full md:max-w-3xl">
       <p className="text-xs font-semibold text-ui-accent">
-        {describeWhen(meal.serveAt)} · {mealType}{meal.dinerCount ? ` for ${meal.dinerCount}` : ""}
+        {describeWhen(meal)}{meal.dinerCount ? ` for ${meal.dinerCount}` : ""}
       </p>
       <p className="mt-1 text-base font-semibold text-ui-text">{titles}</p>
       {meal.readyCount > 0 && meal.toCook.length > 0 && (

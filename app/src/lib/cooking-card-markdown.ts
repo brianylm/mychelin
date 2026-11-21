@@ -37,7 +37,7 @@ export function recipeToMarkdown(input: {
       const isTruncatedTitle = step.text.startsWith(titleCore);
       const body = !isTruncatedTitle && step.text ? ` — ${step.text}` : "";
       const timer =
-        step.timerText && !step.text.includes(step.timerText)
+        step.timerText && !step.timerText.split(", ").every((part) => step.text.includes(part))
           ? ` (${step.timerText})`
           : "";
       lines.push(`${index + 1}. ${isTruncatedTitle ? step.text : step.title}${body}${timer}`);

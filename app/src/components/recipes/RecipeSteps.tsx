@@ -11,6 +11,12 @@ import {
   parseHeatFromTip,
 } from "@/lib/instruction-heat";
 import { matchIngredientsForStep } from "@/lib/step-ingredient-amounts";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  createStepAutosave,
+  type StepAutosaveSnapshot,
+  type StepSaveRequest,
+} from "@/lib/step-autosave";
 
 interface RecipeStepsProps {
   instructions: Instruction[];
@@ -28,6 +34,24 @@ interface RecipeStepsProps {
   onDelete: (recipeId: number, instructionId: number) => Promise<void>;
   readOnly?: boolean;
   loading?: boolean;
+  /** Called with the number of step saves pending (debounced or in flight). */
+  onPendingSavesChange?: (count: number) => void;
+}
+
+async function patchStepContent({
+  recipeId,
+  stepId,
+  content,
+  keepalive,
+}: StepSaveRequest): Promise<void> {
+  // sendBeacon cannot PATCH; keepalive fetch survives reload/pagehide.
+  const res = await fetch(`/api/recipes/${recipeId}/instructions/${stepId}`, {
+    method: "PATCH",
+    keepalive,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error(`Step save failed: ${res.status}`);
 }
 
 const fieldBase =
@@ -47,11 +71,13 @@ function autoResize(el: HTMLTextAreaElement) {
 function AutoTextarea({
   defaultValue,
   onBlur,
+  onChangeValue,
   className,
   placeholder,
 }: {
   defaultValue: string;
   onBlur: (value: string) => void;
+  onChangeValue?: (value: string) => void;
   className: string;
   placeholder?: string;
 }) {
@@ -64,7 +90,10 @@ function AutoTextarea({
       ref={ref}
       defaultValue={defaultValue}
       onBlur={(e) => onBlur(e.target.value.trim())}
-      onInput={(e) => autoResize(e.currentTarget)}
+      onInput={(e) => {
+        autoResize(e.currentTarget);
+        onChangeValue?.(e.currentTarget.value.trim());
+      }}
       className={className}
       placeholder={placeholder}
       rows={1}
@@ -101,8 +130,63 @@ export function RecipeSteps({
   onDelete,
   readOnly = false,
   loading = false,
+  onPendingSavesChange,
 }: RecipeStepsProps) {
   const [newStep, setNewStep] = useState("");
+  const queryClient = useQueryClient();
+  const [saveState, setSaveState] = useState<StepAutosaveSnapshot>({
+    pending: 0,
+    hasUnsaved: false,
+    errorIds: [],
+  });
+  // Step text autosave: debounced + blur saves, serialized per step, flushed
+  // with keepalive on pagehide / hidden / unmount. See lib/step-autosave.
+  const [autosave] = useState(() =>
+    createStepAutosave({
+      send: async (req) => {
+        await patchStepContent(req);
+        void queryClient.invalidateQueries({ queryKey: ["recipe", req.recipeId] });
+      },
+      onChange: setSaveState,
+    })
+  );
+
+  useEffect(() => {
+    onPendingSavesChange?.(saveState.pending);
+    return () => onPendingSavesChange?.(0);
+  }, [saveState.pending, onPendingSavesChange]);
+
+  useEffect(() => {
+    const flush = () => void autosave.flush();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [autosave]);
+
+  // Flush when switching recipes or unmounting (e.g. leaving edit mode).
+  useEffect(() => {
+    return () => {
+      void autosave.flush();
+    };
+  }, [autosave, recipeId, readOnly]);
+
+  // Warn before leaving only while a step is unsaved or a save is in flight.
+  useEffect(() => {
+    if (!saveState.hasUnsaved) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      void autosave.flush();
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [saveState.hasUnsaved, autosave]);
   const addingRef = useRef(false);
 
   // Drag state
@@ -342,17 +426,35 @@ export function RecipeSteps({
                 <div className="flex-1 min-w-0">
                   <AutoTextarea
                     defaultValue={step.content}
+                    onChangeValue={(value) => {
+                      autosave.track(step.id, recipeId, step.content);
+                      autosave.edit(step.id, recipeId, capitalize(value));
+                    }}
                     onBlur={(value) => {
                       const capitalized = capitalize(value);
-                      if (capitalized === step.content) return;
                       if (capitalized === "") {
+                        // Explicit user path: clearing a step deletes it.
+                        autosave.discard(step.id);
                         onDelete(recipeId, step.id);
                         return;
                       }
-                      onUpdate(recipeId, step.id, { content: capitalized });
+                      autosave.track(step.id, recipeId, step.content);
+                      void autosave.blur(step.id, recipeId, capitalized);
                     }}
                     className="w-full resize-none rounded border border-transparent bg-transparent px-2 py-1 text-sm text-ui-text outline-none transition hover:border-ui-border focus:border-ui-accent focus:ring-1 focus:ring-ui-focus-soft"
                   />
+                  {saveState.errorIds.includes(step.id) && (
+                    <p className="ml-2 mt-1 text-xs text-ui-danger" role="alert">
+                      Not saved —{" "}
+                      <button
+                        type="button"
+                        className="font-semibold underline"
+                        onClick={() => void autosave.retry(step.id)}
+                      >
+                        retry
+                      </button>
+                    </p>
+                  )}
                   {amountHints.length > 0 && (
                     <div className="mt-2 ml-2 flex flex-wrap gap-1.5" aria-label="Ingredient amounts mentioned in this step">
                       {amountHints.map((hint) => (
@@ -388,7 +490,10 @@ export function RecipeSteps({
                 <button
                   type="button"
                   className="mt-1 flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-ui-border bg-ui-surface-raised text-ui-danger transition hover:border-ui-border hover:bg-ui-danger-soft"
-                  onClick={() => onDelete(recipeId, step.id)}
+                  onClick={() => {
+                    autosave.discard(step.id);
+                    onDelete(recipeId, step.id);
+                  }}
                   aria-label="Remove step"
                   title="Remove step"
                 >

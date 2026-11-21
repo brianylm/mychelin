@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { currentWeekRange, readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
+import { currentWeekRange, onPlansChangedElsewhere, readViewCache, useViewCacheMirror, viewUrls, writeViewCache } from "@/lib/view-cache";
 import { useToast } from "@/context/ToastContext";
 import { CalendarExport } from "@/components/CalendarExport";
 import { SharedHouseholdChip } from "@/components/household/SharedHouseholdChip";
@@ -324,6 +324,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
   const [randomizing, setRandomizing] = useState(false);
   const [review, setReview] = useState<{ slots: SlotRef[]; label: string } | null>(null);
   const [lastRandomized, setLastRandomized] = useState<{ planIds: number[]; label: string } | null>(null);
+  const [undoing, setUndoing] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>(
     () => readViewCache<Recipe[]>(qc, userId, viewUrls.plannerRecipes) ?? []
   );
@@ -401,6 +402,15 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
   const planUrl = viewUrls.mealPlans(currentDateRange.startDate, currentDateRange.endDate);
 
   const reloadPlans = useCallback(() => setPlanReload((n) => n + 1), []);
+  // The Next meal card reads the same plan rows; refresh it after any
+  // plan change made here.
+  const refreshNextMeal = useCallback(() => {
+    void qc.invalidateQueries({ queryKey: ["meal-pilot", "next-meal"] });
+  }, [qc]);
+
+  // Changes made outside the planner (e.g. a cook marking meals cooked)
+  // drop the cached plan ranges; reload the rows this view holds.
+  useEffect(() => onPlansChangedElsewhere(reloadPlans), [reloadPlans]);
   const pilot = useMealPilotPlanner({
     startDate: currentDateRange.startDate,
     endDate: currentDateRange.endDate,
@@ -569,24 +579,27 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
           )
         );
         closeAddDialog();
+        refreshNextMeal();
         addToast("Meal added", "success");
       }
     } catch {
       addToast("Failed to add meal", "error");
     }
-  }, [addingSlot, selectedRecipeId, closeAddDialog, addToast, user]);
+  }, [addingSlot, selectedRecipeId, closeAddDialog, addToast, user, refreshNextMeal]);
 
   const removePlan = useCallback(
     async (id: number) => {
       try {
-        await fetch(`/api/meal-plans/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/meal-plans/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to remove meal");
         setPlans((prev) => prev.filter((p) => p.id !== id));
+        refreshNextMeal();
         addToast("Meal removed", "success");
       } catch {
         addToast("Failed to remove meal", "error");
       }
     },
-    [addToast]
+    [addToast, refreshNextMeal]
   );
 
   const getBlockForSlot = useCallback(
@@ -722,9 +735,11 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         addToast(`${MEAL_LABELS[mealType]}: ${pick.title}`, "success");
       } catch {
         addToast("Failed to randomize meal", "error");
+      } finally {
+        refreshNextMeal();
       }
     },
-    [recipes, plans, addToast]
+    [recipes, plans, addToast, refreshNextMeal]
   );
 
   const blockSlot = useCallback(
@@ -743,12 +758,13 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         ]);
         // Blocking clears the slot's plans server-side too.
         setPlans((prev) => prev.filter((p) => !(p.date === date && p.mealType === mealType)));
+        refreshNextMeal();
         addToast("Meal blocked — eating something else", "success");
       } catch {
         addToast("Failed to block meal", "error");
       }
     },
-    [addToast]
+    [addToast, refreshNextMeal]
   );
 
   const unblockSlot = useCallback(
@@ -823,21 +839,31 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
           }
         }
 
-        const newPlans: MealPlan[] = [];
-        for (let i = 0; i < fillSlots.length; i++) {
-          const res = await fetch("/api/meal-plans", {
+        // One batch request: the server applies the same per-slot rules as
+        // a manual add and logs a single "randomized" entry to the
+        // household feed instead of one per meal.
+        let newPlans: MealPlan[] = [];
+        if (fillSlots.length > 0) {
+          const res = await fetch("/api/meal-plans/randomise", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              date: fillSlots[i].date,
-              mealType: fillSlots[i].mealType,
-              recipeId: picks[i].id,
-              servings: 1,
+              slots: fillSlots.map((slot, i) => ({
+                date: slot.date,
+                mealType: slot.mealType,
+                recipeId: picks[i].id,
+                servings: 1,
+              })),
             }),
           });
-          if (res.ok) newPlans.push(await res.json());
+          const data = await res.json().catch(() => null);
+          newPlans = Array.isArray(data?.plans) ? data.plans : [];
+          if (!res.ok && newPlans.length === 0) {
+            throw new Error(data?.error || "Randomize failed");
+          }
         }
         setPlans((prev) => [...prev, ...newPlans]);
+        refreshNextMeal();
         setReview(null);
         if (newPlans.length > 0) {
           setLastRandomized({ planIds: newPlans.map((p) => p.id), label });
@@ -851,25 +877,56 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         setRandomizing(false);
       }
     },
-    [review, recipes, addToast, household]
+    [review, recipes, addToast, household, refreshNextMeal]
   );
 
-  // One-step undo for the last randomize roll.
+  // One-step undo for the last randomize roll. Optimistic: the rolled
+  // meals leave the calendar at once; rows the server could not delete
+  // come back.
   const undoRandomize = useCallback(async () => {
-    if (!lastRandomized) return;
+    if (!lastRandomized || undoing) return;
     const { planIds } = lastRandomized;
-    setLastRandomized(null);
+    const removedIds = new Set(planIds);
+    const snapshot = plans.filter((p) => removedIds.has(p.id));
+    setUndoing(true);
+    setPlans((prev) => prev.filter((p) => !removedIds.has(p.id)));
+
+    const restore = (ids: Set<number>) => {
+      const back = snapshot.filter((p) => ids.has(p.id));
+      if (back.length === 0) return;
+      setPlans((prev) => {
+        const present = new Set(prev.map((p) => p.id));
+        return [...prev, ...back.filter((p) => !present.has(p.id))];
+      });
+    };
+
     try {
-      await Promise.all(
-        planIds.map((id) => fetch(`/api/meal-plans/${id}`, { method: "DELETE" }))
-      );
-      const removed = new Set(planIds);
-      setPlans((prev) => prev.filter((p) => !removed.has(p.id)));
-      addToast("Randomize undone", "success");
+      const res = await fetch("/api/meal-plans/randomise/undo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: planIds }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !Array.isArray(data?.deleted)) throw new Error(data?.error || "Undo failed");
+      const deleted = new Set<number>(data.deleted);
+      const failed = new Set(planIds.filter((id) => !deleted.has(id)));
+      restore(failed);
+      if (failed.size === 0) {
+        setLastRandomized(null);
+        addToast("Randomize undone", "success");
+      } else {
+        // Keep the banner for whatever is left so Undo can be retried.
+        setLastRandomized({ ...lastRandomized, planIds: [...failed] });
+        addToast(`Undid ${deleted.size} of ${planIds.length}`, "error");
+      }
     } catch {
-      addToast("Undo failed partway — some meals may remain", "error");
+      restore(removedIds);
+      addToast("Undo failed — your meals are still planned", "error");
+    } finally {
+      setUndoing(false);
+      refreshNextMeal();
     }
-  }, [lastRandomized, addToast]);
+  }, [lastRandomized, undoing, plans, addToast, refreshNextMeal]);
 
   // The undo banner is only meaningful for the scope it was created in.
   useEffect(() => {
@@ -1088,13 +1145,16 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
 
           {lastRandomized && (
             <div data-comfort-hide className="mt-3 flex items-center justify-center gap-3 rounded-xl border border-ui-border bg-ui-accent-muted px-3 py-2 text-xs text-ui-text">
-              <span>
-                Planned {lastRandomized.planIds.length} meal{lastRandomized.planIds.length === 1 ? "" : "s"} for {lastRandomized.label}
+              <span role="status">
+                {undoing
+                  ? "Undoing…"
+                  : `Planned ${lastRandomized.planIds.length} meal${lastRandomized.planIds.length === 1 ? "" : "s"} for ${lastRandomized.label}`}
               </span>
               <button
                 type="button"
                 onClick={undoRandomize}
-                className="inline-flex items-center gap-1 font-semibold text-ui-accent hover:underline"
+                disabled={undoing}
+                className="inline-flex items-center gap-1 font-semibold text-ui-accent hover:underline disabled:opacity-50"
               >
                 <Undo2 className="h-3.5 w-3.5" />
                 Undo
@@ -1102,6 +1162,7 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
               <button
                 type="button"
                 onClick={() => setLastRandomized(null)}
+                disabled={undoing}
                 className="text-ui-muted hover:text-ui-muted"
                 aria-label="Dismiss undo banner"
               >

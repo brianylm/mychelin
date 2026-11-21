@@ -24,7 +24,7 @@ import {
   GET as listBookRecipes,
   POST as addBookRecipe,
 } from "./[id]/recipes/route";
-import { GET as getBookDetail } from "./[id]/route";
+import { DELETE as deleteBook, GET as getBookDetail } from "./[id]/route";
 
 let client: Client;
 
@@ -218,5 +218,36 @@ describe("book recipe membership reads", () => {
       bookId: Number(row.book_id),
       recipeId: Number(row.recipe_id),
     }))).toEqual([{ bookId: 2, recipeId: 102 }]);
+  });
+});
+
+describe("DELETE /api/books/[id]", () => {
+  const removeBook = (id: string) =>
+    deleteBook(
+      new Request(`http://localhost/api/books/${id}`, { method: "DELETE" }) as never,
+      { params: Promise.resolve({ id }) }
+    );
+
+  it("lets the owner delete a book and keeps its recipes", async () => {
+    const response = await removeBook("1");
+    expect(response.status).toBe(200);
+
+    const bookRows = await client.execute("SELECT id FROM books WHERE id = 1");
+    expect(bookRows.rows).toHaveLength(0);
+    const recipeRows = await client.execute("SELECT id FROM recipes WHERE id IN (101, 102)");
+    expect(recipeRows.rows).toHaveLength(2);
+  });
+
+  it("returns 403 for a non-owner", async () => {
+    const response = await removeBook("3");
+    expect(response.status).toBe(403);
+    const rows = await client.execute("SELECT id FROM books WHERE id = 3");
+    expect(rows.rows).toHaveLength(1);
+  });
+
+  it("returns 404 for a missing book and 400 for a bad id", async () => {
+    expect((await removeBook("999")).status).toBe(404);
+    expect((await removeBook("abc")).status).toBe(400);
+    expect((await removeBook("0")).status).toBe(400);
   });
 });

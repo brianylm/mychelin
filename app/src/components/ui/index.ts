@@ -1,5 +1,6 @@
 export { Alert } from "./Alert";
 export { Button } from "./Button";
+export { ConfirmDialog } from "./ConfirmDialog";
 export { Dialog } from "./Dialog";
 export { EmptyState } from "./EmptyState";
 export { Field, fieldDescriptionIds } from "./Field";

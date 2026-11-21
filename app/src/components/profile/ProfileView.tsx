@@ -178,6 +178,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [isSavingWeeklyGoal, setIsSavingWeeklyGoal] = useState(false);
   const [isEnablingPush, setIsEnablingPush] = useState(false);
   const [openChangelogId, setOpenChangelogId] = useState<string | null>(null);
   const [showAllChangelog, setShowAllChangelog] = useState(false);
@@ -426,6 +427,29 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
     setNotificationPrefs((current) => ({ ...current, [key]: value }));
   }, []);
 
+  const saveWeeklyCookingGoal = useCallback(async (goal: number) => {
+    const previousGoal = notificationPrefs.weeklyCookingGoal;
+    setNotificationToggle("weeklyCookingGoal", goal);
+    setIsSavingWeeklyGoal(true);
+
+    try {
+      const response = await fetch("/api/notifications/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weeklyCookingGoal: goal }),
+      });
+      if (!response.ok) throw new Error("Failed to update weekly dish goal");
+    } catch {
+      setNotificationToggle("weeklyCookingGoal", previousGoal);
+      addToast("Failed to update weekly dish goal", "error");
+      return;
+    } finally {
+      setIsSavingWeeklyGoal(false);
+    }
+
+    await loadRhythm();
+  }, [addToast, loadRhythm, notificationPrefs.weeklyCookingGoal, setNotificationToggle]);
+
   if (isLoading) {
     return <ProfileSkeleton />;
   }
@@ -528,7 +552,8 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                     <button
                       key={goal}
                       type="button"
-                      onClick={() => setNotificationToggle("weeklyCookingGoal", goal)}
+                      onClick={() => saveWeeklyCookingGoal(goal)}
+                      disabled={isSavingWeeklyGoal}
                       className={
                         "h-10 rounded-lg border text-sm font-semibold transition " +
                         (notificationPrefs.weeklyCookingGoal === goal

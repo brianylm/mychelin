@@ -191,10 +191,29 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
       fetchJson(`/api/recipes/${id}`, { method: "DELETE" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["recipes"] });
+    // Optimistic removal: drop the row immediately, restore it if the
+    // server refuses, and refetch either way.
+    onMutate: async (id: number) => {
+      await qc.cancelQueries({ queryKey: ["recipes"] });
+      const previousRecipes = qc.getQueryData<RecipeWithFlags[]>(["recipes"]);
+      qc.setQueryData<RecipeWithFlags[]>(["recipes"], (current) =>
+        current?.filter((recipe) => recipe.id !== id)
+      );
+      return { previousRecipes };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousRecipes) {
+        qc.setQueryData(["recipes"], context.previousRecipes);
+      }
+    },
+    onSuccess: (_data, id) => {
+      // Deselect first so the detail query is not observed when removed.
+      setSelectedRecipeId((current) => (current === id ? null : current));
+      qc.removeQueries({ queryKey: ["recipe", id] });
       qc.invalidateQueries({ queryKey: ["books"] });
-      setSelectedRecipeId(null);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["recipes"] });
     },
   });
 

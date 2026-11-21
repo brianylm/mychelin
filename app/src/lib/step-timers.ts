@@ -53,3 +53,23 @@ export function detectStepTimerSeconds(text: string): number {
 
   return DEFAULT_TIMER_SECONDS;
 }
+
+// Every explicit duration in a step, in order ("Simmer 10 min, then rest 5
+// min" -> [600, 300]). detectStepTimerSeconds still returns the first as the
+// default; these let Cook with me offer the others.
+export function detectAllStepTimerSeconds(text: string): number[] {
+  const normalized = text.toLowerCase().replace(/–|—/g, "-");
+  const pattern = /\b(\d+(?:\.\d+)?)(?:\s*-\s*(\d+(?:\.\d+)?))?\s*(seconds?|secs?|sec|minutes?|mins?|min|hours?|hrs?|hr)\b/gi;
+  const found: number[] = [];
+  for (const match of normalized.matchAll(pattern)) {
+    const amount = averageRange(numberFrom(match[1]), match[2] ? numberFrom(match[2]) : undefined);
+    const unit = match[3].toLowerCase();
+    const seconds = unit.startsWith("hour") || unit.startsWith("hr")
+      ? amount * 3600
+      : unit.startsWith("sec")
+        ? amount
+        : amount * 60;
+    found.push(Math.max(30, Math.round(seconds)));
+  }
+  return found;
+}

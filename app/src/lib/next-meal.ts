@@ -83,13 +83,36 @@ export function findNextMeal(
   return candidates[0] ?? null;
 }
 
-// "Tonight", "This afternoon", "Tomorrow morning", or a weekday + time.
-export function describeWhen(serveAt: Date, now: Date = new Date()): string {
-  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diffDays = Math.round((day(serveAt) - day(now)) / 86_400_000);
-  const hour = serveAt.getHours();
-  const part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-  if (diffDays === 0) return hour >= 17 ? "Tonight" : `This ${part}`;
-  if (diffDays === 1) return `Tomorrow ${part}`;
-  return serveAt.toLocaleDateString(undefined, { weekday: "long" });
+// Same local YYYY-MM-DD key the planner uses for its calendar cells.
+export function localDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function mealLabel(mealType: string): string {
+  return mealType.charAt(0).toUpperCase() + mealType.slice(1);
+}
+
+// "Tonight · Dinner", "Today · Lunch", "Tomorrow · Breakfast" or
+// "Saturday · Lunch". The day comes from the slot's plan date (not the
+// serving time), so the card always agrees with the planner cell; only a
+// dinner planned for today reads "Tonight".
+export function describeWhen(
+  meal: Pick<NextMeal, "date" | "mealType">,
+  now: Date = new Date()
+): string {
+  const label = mealLabel(meal.mealType);
+  const today = localDateKey(now);
+  const tomorrow = localDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  const yesterday = localDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  if (meal.date === today) {
+    return meal.mealType === "dinner" ? `Tonight · ${label}` : `Today · ${label}`;
+  }
+  if (meal.date === tomorrow) return `Tomorrow · ${label}`;
+  // A late meal still inside its grace window just after midnight.
+  if (meal.date === yesterday) return `Yesterday · ${label}`;
+  const weekday = new Date(`${meal.date}T00:00:00`).toLocaleDateString(undefined, { weekday: "long" });
+  return `${weekday} · ${label}`;
 }

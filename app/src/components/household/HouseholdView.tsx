@@ -59,6 +59,10 @@ function describeActivity(item: HouseholdActivityRow): string {
       return `${item.userName} added${target} to the plan`;
     case "removed_meal":
       return `${item.userName} removed${target} from the plan`;
+    case "randomized_plan":
+      return `${item.userName} randomized${target} into the plan`;
+    case "undid_randomize":
+      return `${item.userName} undid a randomize of${target}`;
     case "blocked_slot":
       return `${item.userName} is out for${target}`;
     case "added_item":

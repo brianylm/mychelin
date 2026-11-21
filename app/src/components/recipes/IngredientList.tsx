@@ -269,7 +269,7 @@ function formatReadOnlyIngredientAmount(ingredient: Ingredient, scale: number): 
   const hasQuantity = quantity !== null && quantity !== undefined && String(quantity) !== "";
   const unit = ingredient.unit
     ? displayUnit(ingredient.unit, ingredient.quantity ?? undefined)
-    : hasQuantity ? "units" : undefined;
+    : undefined;
 
   if (ingredient.approximate) {
     const quantityText = ingredient.quantityText?.trim();

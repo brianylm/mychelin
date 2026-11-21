@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useRecipeStore } from "@/store/RecipeStore";
+import { searchRecipes, type SearchableRecipe } from "@/lib/recipe-search";
 import { RecipeSearchHeader } from "./sidebar/RecipeSearchHeader";
 import { RecipeListItem } from "./sidebar/RecipeListItem";
 import { SidebarToolbar } from "./sidebar/SidebarToolbar";
@@ -10,6 +11,8 @@ import { ShareModal } from "@/components/sharing/ShareModal";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { bookTitlesForRecipe, booksQueryKey, fetchBooks } from "@/lib/books-client";
 
 interface BookRecipe {
@@ -49,6 +52,29 @@ export function RecipeSidebar({
     selectRecipe,
     deleteRecipe,
   } = useRecipeStore();
+
+  const { addToast } = useToast();
+  const confirm = useConfirm();
+
+  const handleDeleteRecipe = useCallback(
+    async (id: number) => {
+      const recipe = recipes.find((r) => r.id === id);
+      const confirmed = await confirm({
+        title: `Delete ${recipe?.title || "this recipe"}?`,
+        message: "This cannot be undone.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!confirmed) return;
+      try {
+        await deleteRecipe(id);
+        addToast("Recipe deleted", "success");
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to delete recipe", "error");
+      }
+    },
+    [recipes, confirm, deleteRecipe, addToast]
+  );
 
   const [query, setQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -145,28 +171,30 @@ export function RecipeSidebar({
     for (const bookId of expandedBooks) fetchBookRecipes(bookId);
   }, [booksMembershipSignature, expandedBooks, fetchBookRecipes]);
 
-  // When the user types in the search box we hit /api/recipes/search,
-  // which matches against both recipe titles AND ingredient names —
-  // so "chilli" returns Arrabiata (because it has chilli in the
-  // ingredient list) as well as anything called "Chilli Crab".
-  // When the query is empty we fall back to the full recipe list.
-  const [searchResults, setSearchResults] = useState<
+  // Local, typo-tolerant matches from the store show instantly. The server
+  // search is a secondary source for recipes not in the local list; stale
+  // responses are dropped via AbortController plus a request-id guard.
+  const [serverResults, setServerResults] = useState<
     Array<{ recipe: typeof recipes[number]; matchedIngredient: string | null }>
   >([]);
   const [searching, setSearching] = useState(false);
+  const searchRequestIdRef = useRef(0);
 
   useEffect(() => {
     const trimmed = query.trim();
+    const requestId = ++searchRequestIdRef.current;
     if (!trimmed) {
-      setSearchResults([]);
+      setServerResults([]);
       setSearching(false);
       return;
     }
+    const controller = new AbortController();
     setSearching(true);
     const t = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/recipes/search?q=${encodeURIComponent(trimmed)}`
+          `/api/recipes/search?q=${encodeURIComponent(trimmed)}`,
+          { signal: controller.signal }
         );
         if (!res.ok) throw new Error("Search failed");
         const data = (await res.json()) as {
@@ -175,15 +203,32 @@ export function RecipeSidebar({
             matchedIngredient: string | null;
           }>;
         };
-        setSearchResults(data.results ?? []);
+        if (requestId !== searchRequestIdRef.current) return;
+        setServerResults(data.results ?? []);
       } catch {
-        setSearchResults([]);
+        if (requestId !== searchRequestIdRef.current) return;
+        setServerResults([]);
       } finally {
-        setSearching(false);
+        if (requestId === searchRequestIdRef.current) setSearching(false);
       }
     }, 200);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
   }, [query]);
+
+  const searchResults = useMemo(() => {
+    const local = searchRecipes(
+      recipes as unknown as SearchableRecipe[],
+      query
+    ).map((hit) => ({
+      recipe: hit.recipe as unknown as typeof recipes[number],
+      matchedIngredient: hit.matchedIngredient,
+    }));
+    const seen = new Set(local.map((r) => r.recipe.id));
+    return [...local, ...serverResults.filter((r) => !seen.has(r.recipe.id))];
+  }, [recipes, query, serverResults]);
 
   const hasQuery = query.trim().length > 0;
 
@@ -309,7 +354,7 @@ export function RecipeSidebar({
                         onClose();
                       }}
                       onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
-                      onDelete={deleteRecipe}
+                      onDelete={handleDeleteRecipe}
                       onCook={onCookRecipe}
                       matchedIngredient={matchedIngredientById.get(recipe.id)}
                       bookTitles={bookTitlesForRecipe(books, recipe.id)}
@@ -339,7 +384,7 @@ export function RecipeSidebar({
                       onClose();
                     }}
                     onShare={(r) => setShareTarget({ id: r.id, name: r.title })}
-                    onDelete={deleteRecipe}
+                    onDelete={handleDeleteRecipe}
                     onCook={onCookRecipe}
                     matchedIngredient={matchedIngredientById.get(recipe.id)}
                     bookTitles={bookTitlesForRecipe(books, recipe.id)}

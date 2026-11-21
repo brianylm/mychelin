@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 import { Menu } from "@/components/ui/Menu";
-import { ArrowLeft, BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Plus, Share2, Shuffle, Target, Users, Utensils } from "lucide-react";
+import { ArrowLeft, BookOpen, ChefHat, Check, ChevronRight, Clock3, Flag, Link2, Mic2, PencilLine, Plus, Share2, Shuffle, Target, Trash2, Users, Utensils } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRecipeStore } from "@/store/RecipeStore";
 import { useToast } from "@/context/ToastContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { useAuth } from "@/context/AuthContext";
 import { RecipeTitleCard } from "./RecipeTitleCard";
 import { RecipeDetailsCard } from "./RecipeDetailsCard";
@@ -47,7 +48,7 @@ import { CookingPrinciples } from "@/components/books/CookingPrinciples";
 import { PilotFeedbackPrompt } from "@/components/pilot/PilotFeedbackPrompt";
 import type { Recipe } from "@/db/schema";
 import { RECIPE_FLAG_OPTIONS, recipeFlagShortLabel, type RecipeFlag } from "@/lib/recipe-flags";
-import { bookTitlesForRecipe, booksQueryKey, fetchBooks } from "@/lib/books-client";
+import { bookTitlesForRecipe, booksQueryKey, fetchBooks, type BookSummary } from "@/lib/books-client";
 import { fetchViewJson, viewCacheKey, viewUrls } from "@/lib/view-cache";
 import { HouseholdSharedRecipes } from "@/components/household/HouseholdSharedRecipes";
 
@@ -386,6 +387,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
     clearJustCreated,
   } = useRecipeStore();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const { user } = useAuth();
   // Household-shared recipes show in the Library (not the personal list)
   // while the user is in a household. Reads the warmed tab cache entry.
@@ -409,6 +411,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
   const [savingPrepTime, setSavingPrepTime] = useState(false);
   const [savingCookTime, setSavingCookTime] = useState(false);
   const [savingYield, setSavingYield] = useState(false);
+  const [pendingStepSaves, setPendingStepSaves] = useState(0);
   const [ingredientScale, setIngredientScale] = useState(1);
   // Recipe vs Cooking Card view. Remembered per user; the card is a
   // read-only transformation of the same data behind a kill switch.
@@ -559,6 +562,32 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
     setActiveBookId(null);
     setActiveBookRecipes([]);
   }, []);
+
+  const handleDeleteBook = useCallback(
+    async (book: BookSummary) => {
+      const shared = (book.memberCount ?? 1) > 1;
+      const confirmed = await confirm({
+        title: `Delete ${book.title}?`,
+        message: `Its recipes stay in your library.${shared ? " Members will lose access." : ""}`,
+        confirmLabel: "Delete book",
+        destructive: true,
+      });
+      if (!confirmed) return;
+      try {
+        const response = await fetch(`/api/books/${book.id}`, { method: "DELETE" });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || "Failed to delete book");
+        }
+        handleCloseBook();
+        await qc.invalidateQueries({ queryKey: booksQueryKey(user?.id ?? 0) });
+        addToast("Book deleted", "success");
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : "Failed to delete book", "error");
+      }
+    },
+    [addToast, confirm, handleCloseBook, qc, user?.id]
+  );
 
   // Sync local state with selected recipe
   useEffect(() => {
@@ -949,10 +978,20 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
 
   const handleDelete = useCallback(async () => {
     if (!selectedRecipe) return;
-    if (!confirm("Delete this recipe? This cannot be undone.")) return;
-    await deleteRecipe(selectedRecipe.id);
-    addToast("Recipe deleted", "success");
-  }, [selectedRecipe, deleteRecipe, addToast]);
+    const confirmed = await confirm({
+      title: `Delete ${selectedRecipe.title || "this recipe"}?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!confirmed) return;
+    try {
+      await deleteRecipe(selectedRecipe.id);
+      addToast("Recipe deleted", "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Failed to delete recipe", "error");
+    }
+  }, [selectedRecipe, deleteRecipe, addToast, confirm]);
 
   // ── Household share toggle (Slice 3) ─────────────────────
   // Reset the local override whenever the selected recipe changes.
@@ -1291,6 +1330,17 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
                           <Share2 className="h-4 w-4" aria-hidden="true" />
                         </button>
                       )}
+                      {activeBook?.isOwner && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBook(activeBook)}
+                          className="flex h-11 w-11 items-center justify-center rounded-lg border border-ui-border-strong bg-ui-surface-raised text-ui-muted transition-colors duration-150 hover:bg-ui-danger-soft hover:text-ui-danger"
+                          aria-label={`Delete ${activeBook.title}`}
+                          title="Delete book"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={async () => {
@@ -1534,7 +1584,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
     savingCuisine ||
     savingPrepTime ||
     savingCookTime ||
-    savingYield;
+    savingYield ||
+    pendingStepSaves > 0;
 
   // Progressive disclosure — badges show how many fields in each collapsed
   // tier have content. Helps users see at a glance that there's data tucked
@@ -1847,6 +1898,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
               ingredients={selectedRecipe.ingredients ?? []}
               readOnly={!recipeEditMode}
               loading={selectedRecipeLoading}
+              onPendingSavesChange={setPendingStepSaves}
             />
           </>
         )}

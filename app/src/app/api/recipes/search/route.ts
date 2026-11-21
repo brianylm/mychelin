@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     let debugPayload: Record<string, unknown> | undefined;
-    if (debug || allIds.size === 0) {
+    if (debug) {
       // Collect diagnostic info so we can tell whether the search is
       // broken or the underlying tables are actually empty / shaped
       // differently than we expect.

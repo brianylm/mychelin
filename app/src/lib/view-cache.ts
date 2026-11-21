@@ -59,6 +59,40 @@ export const viewUrls = {
   shoppingList: (start: string, end: string) => `/api/shopping-list?startDate=${start}&endDate=${end}`,
 };
 
+// Planner cache keys cover every week/month range the user has visited.
+const MEAL_PLANS_URL_PREFIX = "/api/meal-plans?";
+
+export function isMealPlansViewKey(key: readonly unknown[], userId: number): boolean {
+  return (
+    key[0] === "view" &&
+    key[1] === userId &&
+    typeof key[2] === "string" &&
+    key[2].startsWith(MEAL_PLANS_URL_PREFIX)
+  );
+}
+
+// A mounted planner keeps plan rows in component state, so dropping the
+// cache alone would not repaint it; it subscribes here instead.
+const planChangeListeners = new Set<() => void>();
+
+export function onPlansChangedElsewhere(listener: () => void): () => void {
+  planChangeListeners.add(listener);
+  return () => {
+    planChangeListeners.delete(listener);
+  };
+}
+
+// Drops every cached planner range plus the meal-pilot queries (Next meal
+// card, meal groups) after something outside the planner changed plan rows,
+// e.g. a cook marking meals cooked, and tells a mounted planner to reload.
+export function invalidatePlanCaches(qc: QueryClient, userId: number | undefined): void {
+  if (userId) {
+    qc.removeQueries({ predicate: (query) => isMealPlansViewKey(query.queryKey, userId) });
+  }
+  void qc.invalidateQueries({ queryKey: ["meal-pilot"] });
+  for (const listener of planChangeListeners) listener();
+}
+
 // Shared GET for the warm-up and for components that read a tab URL with
 // useQuery (e.g. Profile's household status).
 export async function fetchViewJson(url: string): Promise<unknown> {

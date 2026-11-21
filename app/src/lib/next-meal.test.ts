@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MealGroupView } from "@/lib/meal-pilot/types";
-import { describeWhen, findNextMeal, type LoosePlan } from "./next-meal";
+import { describeWhen, findNextMeal, localDateKey, type LoosePlan } from "./next-meal";
 
 const now = new Date("2026-10-18T17:00:00"); // local time
 
@@ -86,8 +86,33 @@ describe("findNextMeal", () => {
 });
 
 describe("describeWhen", () => {
-  it("names today and tomorrow plainly", () => {
-    expect(describeWhen(new Date("2026-10-18T19:00:00"), now)).toBe("Tonight");
-    expect(describeWhen(new Date("2026-10-19T12:30:00"), now)).toBe("Tomorrow afternoon");
+  it("says Tonight only for today's dinner", () => {
+    expect(describeWhen({ date: "2026-10-18", mealType: "dinner" }, now)).toBe("Tonight · Dinner");
+  });
+
+  it("uses the meal type for other meals today, even late in the day", () => {
+    expect(describeWhen({ date: "2026-10-18", mealType: "lunch" }, now)).toBe("Today · Lunch");
+    expect(describeWhen({ date: "2026-10-18", mealType: "snack" }, new Date("2026-10-18T21:00:00"))).toBe("Today · Snack");
+  });
+
+  it("names tomorrow by meal type, including tomorrow's dinner", () => {
+    expect(describeWhen({ date: "2026-10-19", mealType: "lunch" }, now)).toBe("Tomorrow · Lunch");
+    expect(describeWhen({ date: "2026-10-19", mealType: "dinner" }, now)).toBe("Tomorrow · Dinner");
+  });
+
+  it("keys the day off the plan date, not the clock time", () => {
+    // Just after midnight a late dinner from yesterday is still in grace.
+    expect(describeWhen({ date: "2026-10-18", mealType: "dinner" }, new Date("2026-10-19T00:30:00"))).toBe("Yesterday · Dinner");
+  });
+
+  it("uses the weekday further out", () => {
+    const weekday = new Date("2026-10-21T00:00:00").toLocaleDateString(undefined, { weekday: "long" });
+    expect(describeWhen({ date: "2026-10-21", mealType: "breakfast" }, now)).toBe(`${weekday} · Breakfast`);
+  });
+});
+
+describe("localDateKey", () => {
+  it("formats the local calendar day", () => {
+    expect(localDateKey(new Date("2026-01-05T23:59:00"))).toBe("2026-01-05");
   });
 });

@@ -81,7 +81,7 @@ export function formatCardAmount(ingredient: CardIngredientInput, scale: number)
   const hasQuantity = quantity !== null && quantity !== undefined && String(quantity) !== "";
   const unit = ingredient.unit
     ? displayUnit(ingredient.unit, ingredient.quantity ?? undefined)
-    : hasQuantity ? "units" : undefined;
+    : undefined;
 
   if (ingredient.approximate) {
     const quantityText = ingredient.quantityText?.trim();
@@ -100,13 +100,14 @@ export function formatCardAmount(ingredient: CardIngredientInput, scale: number)
   return unit ?? "";
 }
 
-// First explicit duration stated in the text ("20 min", "1.5 hrs",
-// "10-15 min"), or null. Strict on purpose — no inferred times.
+// Every explicit duration stated in the text ("20 min", "1.5 hrs",
+// "10-15 min"), joined with ", " ("10 min, 5 min"), or null. Strict on
+// purpose — no inferred times.
 export function explicitTimerText(text: string): string | null {
-  const match = text.match(
-    /\b(\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?\s*(?:secs?|seconds?|mins?|minutes?|hrs?|hours?))\b/i
+  const matches = text.match(
+    /\b\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?\s*(?:secs?|seconds?|mins?|minutes?|hrs?|hours?)\b/gi
   );
-  return match ? match[1].replace(/\s+/g, " ") : null;
+  return matches ? matches.map((m) => m.replace(/\s+/g, " ")).join(", ") : null;
 }
 
 function normalizeName(name: string): string {

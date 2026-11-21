@@ -12,15 +12,14 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureHouseholdTables, ensureMealPilotTables, ensureMealPlanBlocksTable, ensureMealPlanCookedAtColumn, ensurePlanningOwnershipColumns, ensureRecipeAttemptsTable } from "@/db/ensure-schema";
-import { canUserAccessRecipe } from "@/lib/recipe-access";
-import { getUserHousehold, logHouseholdActivity } from "@/lib/households";
+import { getUserHousehold } from "@/lib/households";
+import { createMealPlanForUser } from "@/lib/meal-plan-writes";
 import { shiftDateKey } from "@/lib/planner-logged-meals";
-import { requestPath, trackUsageEvent } from "@/lib/usage-events";
+import { requestPath } from "@/lib/usage-events";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
-const VALID_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ─── GET /api/meal-plans ───────────────────────────────────
@@ -211,126 +210,21 @@ export async function POST(request: NextRequest) {
     ]);
 
     const body = await request.json();
-    const { date, mealType, recipeId, servings, notes } = body;
-
-    if (!date) {
-      return NextResponse.json({ error: "Date is required" }, { status: 400 });
-    }
-    if (!DATE_RE.test(date)) {
-      return NextResponse.json(
-        { error: "Invalid date format. Use YYYY-MM-DD" },
-        { status: 400 }
-      );
-    }
-    if (!mealType) {
-      return NextResponse.json(
-        { error: "Meal type is required" },
-        { status: 400 }
-      );
-    }
-    if (!VALID_MEAL_TYPES.includes(mealType)) {
-      return NextResponse.json(
-        { error: "Invalid meal type. Must be one of: breakfast, lunch, dinner, snack" },
-        { status: 400 }
-      );
-    }
-    if (!recipeId) {
-      return NextResponse.json(
-        { error: "Recipe ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Planner pickers stay scoped to the user's own library (plus book
-    // access) — household recipes enter someone else's plan via import,
-    // not direct selection (Slice 2).
-    const recipeIdNumber = Number(recipeId);
-    if (!(await canUserAccessRecipe(currentUser.id, recipeIdNumber))) {
-      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
-    }
-
     const membership = await getUserHousehold(currentUser.id);
 
-    const [newPlan] = await db
-      .insert(mealPlans)
-      .values({
-        userId: currentUser.id,
-        householdId: membership?.household.id ?? null,
-        date,
-        mealType,
-        recipeId: recipeIdNumber,
-        servings: servings || 1,
-        notes,
-      })
-      .returning();
-
-    const [recipeSummary] = await db
-      .select({ id: recipes.id, title: recipes.title, yield: recipes.yield })
-      .from(recipes)
-      .where(eq(recipes.id, recipeIdNumber))
-      .limit(1);
-
-    if (membership) {
-      // Planning a meal lifts the member's own slot-scope block, if any.
-      // Day/week/month blocks stay — they are deliberate absences.
-      await db
-        .delete(householdMemberBlocks)
-        .where(
-          and(
-            eq(householdMemberBlocks.householdId, membership.household.id),
-            eq(householdMemberBlocks.userId, currentUser.id),
-            eq(householdMemberBlocks.scope, "slot"),
-            eq(householdMemberBlocks.date, date),
-            eq(householdMemberBlocks.mealType, mealType)
-          )
-        );
-
-      await logHouseholdActivity(
-        membership.household.id,
-        currentUser.id,
-        "added_meal",
-        recipeSummary?.title ?? null
-      );
-    } else {
-      // Planning a meal in a blocked slot lifts the block.
-      await db
-        .delete(mealPlanBlocks)
-        .where(
-          and(
-            eq(mealPlanBlocks.userId, currentUser.id),
-            eq(mealPlanBlocks.date, date),
-            eq(mealPlanBlocks.mealType, mealType)
-          )
-        );
+    const result = await createMealPlanForUser({
+      user: currentUser,
+      householdId: membership?.household.id ?? null,
+      input: body,
+      path: requestPath(request),
+      source: "meal_plan",
+      logActivity: true,
+    });
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
-    // Build the response from the inserted row instead of immediately
-    // re-reading it. A just-written row can occasionally be absent from a
-    // follow-up remote read, and serializing that undefined value turns an
-    // otherwise successful insert into a 500 response.
-    const fullPlan = { ...newPlan, recipe: recipeSummary ?? null };
-
-    await trackUsageEvent({
-      userId: currentUser.id,
-      eventName: "meal_planned",
-      source: "meal_plan",
-      recipeId: recipeIdNumber,
-      mealPlanId: newPlan.id,
-      properties: {
-        meal_type: mealType,
-        servings: Number(servings || 1),
-        has_notes: Boolean(notes),
-        household: membership ? true : false,
-      },
-      path: requestPath(request),
-    });
-
-    return NextResponse.json(
-      membership
-        ? { ...fullPlan, addedByName: currentUser.name }
-        : fullPlan,
-      { status: 201 }
-    );
+    return NextResponse.json(result.plan, { status: 201 });
   } catch (error) {
     console.error("POST /api/meal-plans error:", error);
     return NextResponse.json(

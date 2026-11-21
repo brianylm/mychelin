@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui";
+import { useConfirm } from "@/context/ConfirmContext";
 import { AlertCircle, ChevronDown, ClipboardCheck, Languages, MessageCircleQuestion, Mic2, RadioTower, Square, WandSparkles, X } from "lucide-react";
 import { ChatBubble } from "./ChatBubble";
 import { RecipeCaptureReview } from "./RecipeCaptureReview";
@@ -386,6 +387,7 @@ export function ConversationCapture({
   onClose,
   onRecipeUpdated,
 }: ConversationCaptureProps) {
+  const confirm = useConfirm();
   const [step, setStep] = useState<ModalStep>("recording");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -1283,12 +1285,18 @@ export function ConversationCapture({
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     // Saving closes via onClose() directly, so reaching here means unsaved.
     const hasContent = messages.length > 0 || reviewTranscript.length > 0;
     if (
       hasContent &&
-      !window.confirm("Close without saving? The conversation so far will be lost.")
+      !(await confirm({
+        title: "Close without saving?",
+        message: "The conversation so far will be lost.",
+        confirmLabel: "Close without saving",
+        cancelLabel: "Keep editing",
+        destructive: true,
+      }))
     ) {
       return;
     }

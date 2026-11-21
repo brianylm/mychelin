@@ -31,16 +31,23 @@ test.describe("planner randomize, block, and undo", () => {
     await expect(page.getByRole("dialog").getByText(/Review the open slots/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Randomize \d+ meals?/i })).toBeVisible();
 
-    // Roll. The roll fills every open slot in the week (up to ~21) with
-    // serial POSTs, each doing schema-ensure checks + queries on the
-    // remote dev Turso DB — give it room to finish.
+    // Roll. The roll fills every open slot in the week (up to ~21) in one
+    // batch request that still inserts serially on the remote dev Turso DB
+    // — give it room to finish.
     await page.getByRole("button", { name: /Randomize \d+ meals?/i }).click();
     await expect(page.getByText(/Planned \d+ meals? for this week/)).toBeVisible({ timeout: 60_000 });
     // exact: true — a plain name match would also catch "Dismiss undo banner".
     await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeVisible();
 
-    // Undo clears the plans again.
+    // The roll put the only recipe into the calendar cells.
+    const rolledMeals = page.getByRole("button", { name: /^Remove E2E Rand Dish$/ });
+    expect(await rolledMeals.count()).toBeGreaterThan(0);
+
+    // Undo is optimistic: the cells empty at once (before the server
+    // answers), then the banner clears and a toast confirms.
     await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect(rolledMeals).toHaveCount(0, { timeout: 2_000 });
+    await expect(page.getByText("Randomize undone").first()).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/Planned \d+ meals? for this week/)).not.toBeVisible();
   });
 
