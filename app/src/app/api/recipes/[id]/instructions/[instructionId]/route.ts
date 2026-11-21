@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { instructions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
+import { INSTRUCTION_PATCH_FIELDS, pickPatchFields } from "@/lib/patch-fields";
 import { canUserAccessRecipe, canUserEditRecipe } from "@/lib/recipe-access";
 
 export const runtime = "edge";
@@ -35,11 +36,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const body = await request.json();
+    const updates = pickPatchFields(await request.json(), INSTRUCTION_PATCH_FIELDS);
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "No editable fields provided" }, { status: 400 });
+    }
 
     const [updated] = await db
       .update(instructions)
-      .set(body)
+      .set(updates as Partial<typeof instructions.$inferInsert>)
       .where(
         and(
           eq(instructions.id, Number(instructionId)),

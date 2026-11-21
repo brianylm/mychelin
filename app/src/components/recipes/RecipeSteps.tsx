@@ -27,6 +27,7 @@ interface RecipeStepsProps {
   ) => Promise<void>;
   onDelete: (recipeId: number, instructionId: number) => Promise<void>;
   readOnly?: boolean;
+  loading?: boolean;
 }
 
 const fieldBase =
@@ -99,6 +100,7 @@ export function RecipeSteps({
   onUpdate,
   onDelete,
   readOnly = false,
+  loading = false,
 }: RecipeStepsProps) {
   const [newStep, setNewStep] = useState("");
   const addingRef = useRef(false);
@@ -230,7 +232,12 @@ export function RecipeSteps({
           <h3 className="text-sm font-semibold text-ui-text">Steps</h3>
         </div>
 
-        {sorted.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3" role="status" aria-label="Loading steps">
+            <div className="h-12 animate-pulse rounded-xl bg-ui-surface-subtle" />
+            <div className="h-12 animate-pulse rounded-xl bg-ui-surface-subtle" />
+          </div>
+        ) : sorted.length === 0 ? (
           <p className="rounded-xl border border-dashed border-ui-border bg-ui-surface-subtle px-3 py-3 text-sm text-ui-muted">
             No steps yet
           </p>

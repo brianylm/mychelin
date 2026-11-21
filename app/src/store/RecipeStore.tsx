@@ -37,6 +37,7 @@ interface RecipeStoreValue {
   error: string | null;
   selectedRecipeId: number | null;
   selectedRecipe: RecipeWithRelations | null;
+  selectedRecipeLoading: boolean;
   // Id of the recipe that was just created via createRecipe(). RecipeView
   // reads this to auto-focus the title input so the user can immediately
   // rename a freshly created recipe inline. Caller clears it once consumed.
@@ -127,6 +128,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       placeholderData: undefined,
     }
   );
+  const selectedRecipeLoading = selectedRecipeId !== null && !(fetchedRecipe && fetchedRecipe.id === selectedRecipeId);
 
   // Optimistic: use list data as placeholder while full recipe loads
   // Only use fetchedRecipe if it matches the currently selected ID
@@ -459,6 +461,7 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
         error: recipesError ? String(recipesError) : null,
         selectedRecipeId,
         selectedRecipe,
+        selectedRecipeLoading,
         justCreatedRecipeId,
         clearJustCreated,
         selectRecipe,

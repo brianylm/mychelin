@@ -115,6 +115,7 @@ const EVENT_LABELS: Record<string, string> = {
   cook_attempt_created: "Cook attempt",
   meal_planned: "Meal planned",
   onboarding_completed: "Onboarding",
+  weekly_goal_set: "Weekly goal",
   onboarding_viewed: "Onboarding viewed",
   onboarding_option_picked: "Onboarding option picked",
   onboarding_skipped: "Onboarding skipped",

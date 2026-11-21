@@ -1,21 +1,36 @@
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, min } from "drizzle-orm";
 import { db } from "@/db";
-import { pilotFeedback, usageEvents } from "@/db/schema";
+import { pilotFeedback, recipes, usageEvents } from "@/db/schema";
 import { ensurePilotFeedbackTable, ensureUsageEventsTable } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
+import {
+  GOAL_EVENT_NAMES,
+  SHOPPING_EVENT_NAMES,
+  isGoalEvent,
+  isShoppingEvent,
+  type ChecklistEvent,
+} from "@/lib/pilot-checklist";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
-const CHECKS = [
-  { id: "onboarding", label: "Set cooking goals", eventNames: ["onboarding_completed"] },
-  { id: "capture", label: "Capture or create first recipe", eventNames: ["recipe_capture_completed", "ai_draft_completed", "recipe_created"] },
-  { id: "plan", label: "Plan one meal", eventNames: ["meal_planned"] },
-  { id: "shopping", label: "Generate shopping list", eventNames: ["shopping_list_generated"] },
-  { id: "cook", label: "Finish cook-with-me and save an attempt", eventNames: ["cook_attempt_created"] },
-  { id: "version", label: "Promote an attempt to a version", eventNames: ["attempt_promoted_to_version"] },
+type Check =
+  | { id: string; label: string; kind: "activeRecipe" }
+  | { id: string; label: string; kind: "events"; eventNames: string[]; matches?: (event: ChecklistEvent) => boolean };
+
+const CHECKS: Check[] = [
+  { id: "onboarding", label: "Set cooking goals", kind: "events", eventNames: GOAL_EVENT_NAMES, matches: isGoalEvent },
+  { id: "capture", label: "Capture or create first recipe", kind: "activeRecipe" },
+  { id: "plan", label: "Plan one meal", kind: "events", eventNames: ["meal_planned"] },
+  { id: "shopping", label: "Generate shopping list", kind: "events", eventNames: SHOPPING_EVENT_NAMES, matches: isShoppingEvent },
+  { id: "cook", label: "Finish cook-with-me and save an attempt", kind: "events", eventNames: ["cook_attempt_created"] },
+  { id: "version", label: "Promote an attempt to a version", kind: "events", eventNames: ["attempt_promoted_to_version"] },
 ];
+
+const CHECK_EVENT_NAMES = Array.from(
+  new Set(CHECKS.flatMap((check) => (check.kind === "events" ? check.eventNames : [])))
+);
 
 export async function GET() {
   try {
@@ -25,13 +40,17 @@ export async function GET() {
     await ensureUsageEventsTable();
     await ensurePilotFeedbackTable();
 
-    const [events, feedback] = await Promise.all([
+    const [events, activeRecipeRows, feedback] = await Promise.all([
+      // Only the events the checklist reads, so busy event types cannot
+      // push an old tick out of a row limit.
       db
-        .select({ eventName: usageEvents.eventName, createdAt: usageEvents.createdAt })
+        .select({ eventName: usageEvents.eventName, properties: usageEvents.properties, createdAt: usageEvents.createdAt })
         .from(usageEvents)
-        .where(eq(usageEvents.userId, currentUser.id))
-        .orderBy(desc(usageEvents.createdAt))
-        .limit(200),
+        .where(and(eq(usageEvents.userId, currentUser.id), inArray(usageEvents.eventName, CHECK_EVENT_NAMES))),
+      db
+        .select({ firstActiveAt: min(recipes.createdAt) })
+        .from(recipes)
+        .where(and(eq(recipes.userId, currentUser.id), eq(recipes.status, "active"))),
       db
         .select({ stage: pilotFeedback.stage, rating: pilotFeedback.rating, createdAt: pilotFeedback.createdAt })
         .from(pilotFeedback)
@@ -40,17 +59,20 @@ export async function GET() {
         .limit(50),
     ]);
 
-    const firstEventByName = new Map<string, string>();
-    for (const event of events) {
-      if (!firstEventByName.has(event.eventName)) firstEventByName.set(event.eventName, event.createdAt);
-    }
+    const firstActiveAt = activeRecipeRows[0]?.firstActiveAt ?? null;
 
     const checklist = CHECKS.map((check) => {
-      const completedAt = check.eventNames
-        .map((name) => firstEventByName.get(name))
-        .filter((value): value is string => Boolean(value))
-        .sort()
-        .at(0) ?? null;
+      let completedAt: string | null;
+      if (check.kind === "activeRecipe") {
+        completedAt = firstActiveAt;
+      } else {
+        completedAt = events
+          .filter((event) => check.eventNames.includes(event.eventName))
+          .filter((event) => (check.matches ? check.matches(event) : true))
+          .map((event) => event.createdAt)
+          .sort()
+          .at(0) ?? null;
+      }
       return { id: check.id, label: check.label, completed: Boolean(completedAt), completedAt };
     });
 

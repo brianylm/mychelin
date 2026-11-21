@@ -15,7 +15,8 @@ import { BottomNav, type AppView } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { useToast } from "@/context/ToastContext";
 import { FIRST_COOK_MISSION_ENABLED, HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
-import { prefetchViewData } from "@/lib/view-cache";
+import { prefetchViewData, viewCacheKey, viewUrls } from "@/lib/view-cache";
+import { afterLeftovers } from "@/lib/leftovers-prompt";
 import { MealReviewController } from "@/components/planner/MealReviewController";
 import { LeftoversPrompt } from "@/components/planner/LeftoversPrompt";
 import { NextMealCard, loadNextMeal } from "@/components/planner/NextMealCard";
@@ -209,6 +210,11 @@ export function RecipeWorkspace() {
         setSidebarOpen={setSidebarOpen}
         onboardingCompleted={onboardingCompleted}
         onboardingStart={onboardingStart}
+        onShowStartOptions={() => {
+          // A fresh pick must run again, so clear the previous one.
+          setOnboardingStart(null);
+          setShowOnboarding(true);
+        }}
       />
     </RecipeStoreProvider>
   );
@@ -220,7 +226,8 @@ function RecipeWorkspaceContent({
   isSidebarOpen,
   setSidebarOpen,
   onboardingCompleted,
-  onboardingStart
+  onboardingStart,
+  onShowStartOptions
 }: {
   currentView: AppView;
   setCurrentView: (view: AppView) => void;
@@ -228,6 +235,7 @@ function RecipeWorkspaceContent({
   setSidebarOpen: (open: boolean) => void;
   onboardingCompleted: boolean;
   onboardingStart: OnboardingStart;
+  onShowStartOptions: () => void;
 }) {
   const { recipes, selectRecipe, selectedRecipeId } = useRecipeStore();
   const qc = useQueryClient();
@@ -323,7 +331,7 @@ function RecipeWorkspaceContent({
     const showPrompt = () => {
       if (window.localStorage.getItem(key) === "1") return;
       window.localStorage.setItem(key, "1");
-      setPilotFeedbackStage(stage);
+      afterLeftovers(() => setPilotFeedbackStage(stage));
     };
 
     if (stage === "first_capture") {
@@ -455,6 +463,8 @@ function RecipeWorkspaceContent({
     if (!activeCookMeal) return;
 
     qc.invalidateQueries({ queryKey: ["recipe", activeCookMeal.recipe.id] });
+    const userId = user?.id;
+    if (userId) qc.removeQueries({ queryKey: viewCacheKey(userId, viewUrls.activity) });
 
     // If this cook came from the First Recipe Guided Mission, reopen it at
     // the completion screen now that the first attempt is recorded.
@@ -462,7 +472,7 @@ function RecipeWorkspaceContent({
       missionActiveRef.current = false;
       fetchMissionState();
       setMissionPhase("completion");
-      setMissionOpen(true);
+      afterLeftovers(() => setMissionOpen(true));
     }
 
     const ephemeral = Boolean(activeCookMeal.ephemeral);
@@ -496,7 +506,7 @@ function RecipeWorkspaceContent({
       "success"
     );
     if (!ephemeral) promptPilotFeedback("first_cook");
-  }, [activeCookMeal, addToast, fetchMissionState, promptPilotFeedback, qc]);
+  }, [activeCookMeal, addToast, fetchMissionState, promptPilotFeedback, qc, user?.id]);
 
 
   const handleCookBatchComplete = useCallback(async (mealPlanIds: number[]) => {
@@ -505,6 +515,8 @@ function RecipeWorkspaceContent({
     for (const meal of activeCookBatch) {
       qc.invalidateQueries({ queryKey: ["recipe", meal.recipe.id] });
     }
+    const userId = user?.id;
+    if (userId) qc.removeQueries({ queryKey: viewCacheKey(userId, viewUrls.activity) });
 
     for (const mealPlanId of mealPlanIds) {
       const response = await fetch("/api/meal-plans/" + mealPlanId, {
@@ -520,7 +532,7 @@ function RecipeWorkspaceContent({
 
     addToast("Batch cooking attempts saved", "success");
     promptPilotFeedback("first_cook");
-  }, [activeCookBatch, addToast, promptPilotFeedback, qc]);
+  }, [activeCookBatch, addToast, promptPilotFeedback, qc, user?.id]);
 
   // ── FAB speed-dial state ─────────────────────────────────
   const [fabOpen, setFabOpen] = useState(false);
@@ -584,12 +596,25 @@ function RecipeWorkspaceContent({
   }, [missionPhase]);
 
   const startMissionCook = useCallback(
-    (recipeId: number, recipeTitle: string) => {
+    (recipeId: number, recipeTitle: string, mealPlanId?: number) => {
       missionActiveRef.current = true;
       setMissionRecipeId(recipeId);
       setMissionRecipeTitle(recipeTitle);
       setMissionOpen(false);
-      void startCookSession(recipeId);
+      void (async () => {
+        // The wizard's saved plan may have been deleted in the planner since;
+        // a stale id would make the attempt save point at a missing meal.
+        let planId = mealPlanId;
+        if (planId != null) {
+          try {
+            const response = await fetch(`/api/meal-plans/${planId}`);
+            if (!response.ok) planId = undefined;
+          } catch {
+            planId = undefined;
+          }
+        }
+        await startCookSession(recipeId, planId);
+      })();
     },
     [startCookSession]
   );
@@ -647,7 +672,7 @@ function RecipeWorkspaceContent({
       const res = await fetch("/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "Conversation recipe", status: "draft" }),
+        body: JSON.stringify({ title: "Untitled recipe", status: "draft" }),
       });
       if (!res.ok) throw new Error("Failed to create recipe");
       const recipe = await res.json();
@@ -669,14 +694,12 @@ function RecipeWorkspaceContent({
 
     if (!abandonedRecipeId || conversationCommittedRef.current) return;
 
-    try {
-      await fetch(`/api/recipes/${abandonedRecipeId}`, { method: "DELETE" });
-      selectRecipe(null);
-      qc.invalidateQueries({ queryKey: ["recipes"] });
-    } catch (err) {
-      console.error("Failed to clean up abandoned conversation draft:", err);
-    }
-  }, [conversationRecipeId, qc, selectRecipe]);
+    // Keep the empty recipe as a draft (F1 draft model): it stays in the
+    // sidebar so the user can come back to it.
+    selectRecipe(abandonedRecipeId);
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    addToast("Saved as a draft", "info");
+  }, [addToast, conversationRecipeId, qc, selectRecipe]);
 
   const handleConversationDone = useCallback(() => {
     conversationCommittedRef.current = true;
@@ -764,14 +787,11 @@ function RecipeWorkspaceContent({
 
     if (!abandonedRecipeId || captureCommittedRef.current) return;
 
-    try {
-      await fetch(`/api/recipes/${abandonedRecipeId}`, { method: "DELETE" });
-      selectRecipe(null);
-      qc.invalidateQueries({ queryKey: ["recipes"] });
-    } catch (err) {
-      console.error("Failed to clean up abandoned capture draft:", err);
-    }
-  }, [pasteRecipeId, qc, selectRecipe]);
+    // Keep the empty recipe as a draft (F1 draft model).
+    selectRecipe(abandonedRecipeId);
+    qc.invalidateQueries({ queryKey: ["recipes"] });
+    addToast("Saved as a draft", "info");
+  }, [addToast, pasteRecipeId, qc, selectRecipe]);
 
   const handlePasteModalDone = useCallback(() => {
     captureCommittedRef.current = true;
@@ -787,7 +807,12 @@ function RecipeWorkspaceContent({
   // the choice only exists for the session that just finished onboarding.
   const onboardingStartHandledRef = useRef(false);
   useEffect(() => {
-    if (!onboardingStart || onboardingStartHandledRef.current) return;
+    if (!onboardingStart) {
+      // Cleared when the welcome choices are re-opened: allow the next pick.
+      onboardingStartHandledRef.current = false;
+      return;
+    }
+    if (onboardingStartHandledRef.current) return;
     onboardingStartHandledRef.current = true;
     // The starter dish was saved before this workspace existed.
     qc.invalidateQueries({ queryKey: ["recipes"] });
@@ -881,6 +906,7 @@ function RecipeWorkspaceContent({
               <RecipeView
                 onOpenSidebar={() => setSidebarOpen(true)}
                 onCookRecipe={handleCookRecipe}
+                onShowStartOptions={onShowStartOptions}
               />
             </div>
           </>

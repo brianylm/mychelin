@@ -379,19 +379,22 @@ export async function GET(request: NextRequest) {
       return a.name.localeCompare(b.name);
     });
 
-    await trackUsageEvent({
-      userId: currentUser.id,
-      eventName: "shopping_list_generated",
-      source: "shopping_list",
-      properties: {
-        meal_count: mealPlansInRange.length,
-        recipe_count: new Set(mealPlansInRange.map((plan) => plan.recipeId)).size,
-        item_count: shoppingList.length,
-        approximate_item_count: shoppingList.filter((item) => item.approximate).length,
-        household: membership ? true : false,
-      },
-      path: requestPath(request),
-    });
+    // The app-load prefetch of an empty list is not a generated list.
+    if (shoppingList.length > 0) {
+      await trackUsageEvent({
+        userId: currentUser.id,
+        eventName: "shopping_list_generated",
+        source: "shopping_list",
+        properties: {
+          meal_count: mealPlansInRange.length,
+          recipe_count: new Set(mealPlansInRange.map((plan) => plan.recipeId)).size,
+          item_count: shoppingList.length,
+          approximate_item_count: shoppingList.filter((item) => item.approximate).length,
+          household: membership ? true : false,
+        },
+        path: requestPath(request),
+      });
+    }
 
     return NextResponse.json({
       items: shoppingList,

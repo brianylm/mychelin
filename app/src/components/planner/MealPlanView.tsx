@@ -327,6 +327,9 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
   const [recipes, setRecipes] = useState<Recipe[]>(
     () => readViewCache<Recipe[]>(qc, userId, viewUrls.plannerRecipes) ?? []
   );
+  const [recipesLoaded, setRecipesLoaded] = useState(
+    () => readViewCache(qc, userId, viewUrls.plannerRecipes) !== undefined
+  );
   const recipesById = useMemo(
     () => new Map(recipes.map((recipe) => [recipe.id, recipe])),
     [recipes],
@@ -468,7 +471,8 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
         writeViewCache(qc, userId, viewUrls.plannerRecipes, list);
         setRecipes(list);
       })
-      .catch(() => setRecipes([]));
+      .catch(() => setRecipes([]))
+      .finally(() => setRecipesLoaded(true));
   }, [qc, userId]);
 
   const cuisineOptions = useMemo(() => {
@@ -1702,7 +1706,12 @@ export function MealPlanView({ onCookMeal, onCookMeals, onOpenShoppingList, onOp
                 )}
 
                 <div className="max-h-[42vh] space-y-2 overflow-y-auto pr-1">
-                  {recipes.length === 0 ? (
+                  {!recipesLoaded ? (
+                    <div className="space-y-3 p-3" role="status" aria-label="Loading recipes">
+                      <div className="h-5 animate-pulse rounded bg-ui-surface-subtle" />
+                      <div className="h-5 animate-pulse rounded bg-ui-surface-subtle" />
+                    </div>
+                  ) : recipes.length === 0 ? (
                     <EmptyState
                       title="No recipes yet"
                       description="Create or capture a recipe first, then come back to add it to your plan."

@@ -4,6 +4,7 @@ import { notificationPreferences } from "@/db/schema";
 import { ensureNotificationTables } from "@/db/ensure-schema";
 import { getCurrentUser } from "@/lib/auth";
 import { clampWeeklyGoal } from "@/lib/rhythm";
+import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { eq } from "drizzle-orm";
 
 export const runtime = "edge";
@@ -57,7 +58,7 @@ export async function PATCH(request: NextRequest) {
     const currentUser = await getCurrentUser();
     if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await ensureNotificationTables();
-    await getOrCreatePreferences(currentUser.id);
+    const existing = await getOrCreatePreferences(currentUser.id);
 
     const body = await request.json();
     const updates: Partial<typeof notificationPreferences.$inferInsert> = {
@@ -82,6 +83,22 @@ export async function PATCH(request: NextRequest) {
       .set(updates)
       .where(eq(notificationPreferences.userId, currentUser.id))
       .returning();
+
+    // Profile's Save sends every preference, so only count a goal the user
+    // changed, or one picked on its own (the first-cook mission goal step).
+    const goalOnlyRequest = Object.keys(body).every((key) => key === "weeklyCookingGoal");
+    if (
+      updates.weeklyCookingGoal !== undefined &&
+      (goalOnlyRequest || updates.weeklyCookingGoal !== existing?.weeklyCookingGoal)
+    ) {
+      await trackUsageEvent({
+        userId: currentUser.id,
+        eventName: "weekly_goal_set",
+        source: "notification_preferences",
+        properties: { weekly_cooking_goal: updates.weeklyCookingGoal ?? null },
+        path: requestPath(request),
+      });
+    }
 
     return NextResponse.json(serialize(saved));
   } catch (error) {

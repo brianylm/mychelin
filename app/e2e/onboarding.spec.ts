@@ -38,6 +38,35 @@ test.describe("one-question onboarding", () => {
     await expect(page.getByRole("heading", { name: "What do you have to start with?" })).not.toBeVisible();
   });
 
+  test("closing an empty family-dish capture keeps the draft", async ({ page }) => {
+    await newUser(page);
+    await page.getByRole("button", { name: /^A dish my family makes/ }).click();
+    await expect(page.getByRole("dialog")).toBeVisible({ timeout: 30_000 });
+
+    // Nothing was said yet, so closing does not ask for confirmation.
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Saved as a draft")).toBeVisible({ timeout: 30_000 });
+
+    await page.reload();
+    const recipes = (await (await page.request.get("/api/recipes")).json()) as Array<{ title: string; status: string }>;
+    expect(recipes).toEqual(
+      expect.arrayContaining([expect.objectContaining({ title: "Untitled recipe", status: "draft" })])
+    );
+  });
+
+  test("the empty library re-opens the start options", async ({ page }) => {
+    await newUser(page);
+    await page.getByRole("button", { name: "Skip" }).click();
+    await expect(page.getByText("Start your recipe library")).toBeVisible({ timeout: 60_000 });
+
+    await page.getByRole("button", { name: "Show start options" }).click();
+    await expect(page.getByRole("heading", { name: "What do you have to start with?" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.getByRole("button", { name: /^A link/ }).click();
+    await expect(page.getByRole("dialog").getByPlaceholder(/https?:/i)).toBeVisible({ timeout: 30_000 });
+  });
+
   test("nothing yet adds the dish first, then starts the mission", async ({ page }) => {
     await newUser(page);
     await page.getByRole("button", { name: /^Nothing yet/ }).click();

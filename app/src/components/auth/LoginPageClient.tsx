@@ -16,7 +16,7 @@ export function LoginPageClient({
   defaultMode,
   ageGateVariant,
 }: LoginPageClientProps) {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -24,7 +24,7 @@ export function LoginPageClient({
     }
   }, [authenticatedDestination, user]);
 
-  if (loading || user) {
+  if (user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ui-bg">
         <LoadingAnimation />

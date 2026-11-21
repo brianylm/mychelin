@@ -223,7 +223,7 @@ export const changelogEntries: ChangelogEntry[] = [
     date: "2026-06-17",
     title: "Starter recipes and cooking activity",
     items: [
-      "Onboarding can now start a new user with editable sample recipes for tau yu bak, garlicky xiao bai cai, and onion omelette.",
+      "Choosing \"Nothing yet\" in onboarding now lets you start from one of three editable local dishes: tau yu bak, garlicky xiao bai cai, or onion omelette.",
       "Heat labels now render as readable heat chips in step editing and cook-with-me instead of exposing raw heat tags.",
       "Cook-with-me now asks for cooking-session ease at completion; dish ratings are handled later from Activity after eating.",
       "The new Activity tab groups completed cook attempts by day and meal so users can rate dishes and review next-time notes.",

@@ -52,6 +52,7 @@ interface IngredientListProps {
   onDelete: (recipeId: number, ingredientId: number) => Promise<void>;
   scale?: number;
   readOnly?: boolean;
+  loading?: boolean;
 }
 
 const fieldBase =
@@ -304,6 +305,7 @@ export function IngredientList({
   onDelete,
   scale = 1,
   readOnly = false,
+  loading = false,
 }: IngredientListProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [isBulkAdding, setIsBulkAdding] = useState(false);
@@ -417,7 +419,12 @@ export function IngredientList({
           <h3 className="text-sm font-semibold text-ui-text">Ingredients</h3>
         </div>
 
-        {ingredients.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3" role="status" aria-label="Loading ingredients">
+            <div className="h-4 w-2/3 animate-pulse rounded bg-ui-surface-subtle" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-ui-surface-subtle" />
+          </div>
+        ) : ingredients.length === 0 ? (
           <p className="text-sm text-ui-muted">
             No ingredients yet
           </p>

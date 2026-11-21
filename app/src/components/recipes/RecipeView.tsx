@@ -18,6 +18,7 @@ import { StorySection } from "./StorySection";
 import { RatingSection } from "./RatingSection";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { Dialog } from "@/components/ui/Dialog";
+import { afterLeftovers } from "@/lib/leftovers-prompt";
 
 import { PhotoUploadSection } from "./PhotoUploadSection";
 import { CulturalContextCard } from "@/components/heritage/CulturalContextCard";
@@ -53,6 +54,8 @@ import { HouseholdSharedRecipes } from "@/components/household/HouseholdSharedRe
 interface RecipeViewProps {
   onOpenSidebar: () => void;
   onCookRecipe?: (recipeId: number) => void;
+  /** Re-opens the onboarding welcome choices from the empty library. */
+  onShowStartOptions?: () => void;
 }
 
 type RecipeCard = Pick<Recipe, "id" | "title" | "description" | "imageUrl" | "cuisine" | "prepTime" | "cookTime" | "status"> & {
@@ -364,11 +367,12 @@ function NextTryPanel({
   );
 }
 
-export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
+export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: RecipeViewProps) {
   const {
     recipes,
     loading,
     selectedRecipe,
+    selectedRecipeLoading,
     updateRecipe,
     deleteRecipe,
     addIngredient,
@@ -466,7 +470,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
     const key = "mychelin_pilot_feedback_prompted_first_version";
     if (window.localStorage.getItem(key) === "1") return;
     window.localStorage.setItem(key, "1");
-    window.setTimeout(() => setShowVersionFeedback(true), 500);
+    afterLeftovers(() => window.setTimeout(() => setShowVersionFeedback(true), 500));
   }, []);
 
   // Cache recipes after a book is opened.
@@ -1219,6 +1223,15 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               <Plus className="h-4 w-4" aria-hidden="true" />
               Add your first recipe
             </button>
+            {onShowStartOptions && (
+              <button
+                type="button"
+                onClick={onShowStartOptions}
+                className="mx-auto mt-3 flex min-h-11 items-center justify-center px-4 text-sm font-semibold text-ui-accent transition-colors duration-150 hover:text-ui-text"
+              >
+                Show start options
+              </button>
+            )}
           </div>
           {inHousehold && (
             <div className="mx-auto mt-10 w-full max-w-2xl text-left">
@@ -1372,6 +1385,15 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
                     <p className="mt-1.5 text-sm text-ui-muted">
                       {recipes.length} recipe{recipes.length === 1 ? "" : "s"} in your collection
                     </p>
+                    {onShowStartOptions && recipes.every((recipe) => recipe.status === "draft") && (
+                      <button
+                        type="button"
+                        onClick={onShowStartOptions}
+                        className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-ui-accent transition-colors duration-150 hover:text-ui-text"
+                      >
+                        Show start options
+                      </button>
+                    )}
                   </div>
                   <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
                     <Menu.Root>
@@ -1666,7 +1688,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
         )}
 
         {/* Empty-state CTAs keep the three creation routes one tap away. */}
-        {(selectedRecipe.ingredients?.length ?? 0) === 0 &&
+        {!selectedRecipeLoading &&
+          (selectedRecipe.ingredients?.length ?? 0) === 0 &&
           (selectedRecipe.instructions?.length ?? 0) === 0 && (
             <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3 sm:gap-3">
               <button
@@ -1811,6 +1834,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               onDelete={deleteIngredient}
               scale={ingredientScale}
               readOnly={!recipeEditMode}
+              loading={selectedRecipeLoading}
             />
 
             {/* Steps */}
@@ -1822,6 +1846,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe }: RecipeViewProps) {
               onDelete={deleteInstruction}
               ingredients={selectedRecipe.ingredients ?? []}
               readOnly={!recipeEditMode}
+              loading={selectedRecipeLoading}
             />
           </>
         )}

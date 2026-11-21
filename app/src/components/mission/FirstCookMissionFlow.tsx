@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarClock,
   Check,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Dialog } from "@/components/ui/Dialog";
 import { LoadingAnimation } from "@/components/ui/LoadingAnimation";
+import { buildMissionSlots, firstFreeSlotDate, type MissionSlot } from "@/lib/mission-slots";
 
 interface MissionRecipe {
   id: number;
@@ -25,7 +26,7 @@ interface FirstCookMissionFlowProps {
   recipeTitle?: string | null;
   recipeId?: number | null;
   onClose: () => void;
-  onStartCook: (recipeId: number, recipeTitle: string) => void;
+  onStartCook: (recipeId: number, recipeTitle: string, mealPlanId?: number) => void;
   onOpenPlanner: () => void;
   onOpenShopping: () => void;
   onOpenCreate: () => void;
@@ -37,6 +38,46 @@ const STEP_LABELS = ["Pick a dish", "Plan it", "What to buy", "Cook with Me"];
 const GOAL_CHOICES = [1, 2, 3, 4, 5];
 
 const RECIPE_KEY = "mychelin:first-cook-recipe-id";
+// Wizard progress, so coming back from the shopping handoff resumes in place.
+const PROGRESS_KEY = "mychelin:first-cook-progress";
+
+interface MissionProgress {
+  step: number;
+  recipeId: number;
+  mealPlanId: number | null;
+}
+
+function readProgress(): MissionProgress | null {
+  try {
+    const raw = window.localStorage.getItem(PROGRESS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<MissionProgress>;
+    if (
+      typeof parsed.step === "number" &&
+      parsed.step >= 1 &&
+      parsed.step <= 3 &&
+      typeof parsed.recipeId === "number"
+    ) {
+      return {
+        step: parsed.step,
+        recipeId: parsed.recipeId,
+        mealPlanId: typeof parsed.mealPlanId === "number" ? parsed.mealPlanId : null,
+      };
+    }
+  } catch {
+    /* private mode or corrupt value — start from the top */
+  }
+  return null;
+}
+
+function writeProgress(progress: MissionProgress | null) {
+  try {
+    if (progress) window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    else window.localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    /* private mode — progress just doesn't persist */
+  }
+}
 
 // Guides a first-time cook from an existing recipe through the loop:
 // pick → optional plan → optional shopping → Cook With Me. Cooking and the
@@ -61,6 +102,12 @@ export function FirstCookMissionFlow({
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [goal, setGoal] = useState(2);
   const [cookedThisWeek, setCookedThisWeek] = useState(1);
+  const [mealPlanId, setMealPlanId] = useState<number | null>(null);
+  const [slots, setSlots] = useState<MissionSlot[] | null>(null);
+  const [slotDate, setSlotDate] = useState<string | null>(null);
+  const [planning, setPlanning] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const restoredRef = useRef(false);
 
   // Load the user's recipes for the picker when the flow opens.
   useEffect(() => {
@@ -81,6 +128,16 @@ export function FirstCookMissionFlow({
           : [];
         setRecipes(list);
         setRecipesLoading(false);
+        if (!restoredRef.current) {
+          restoredRef.current = true;
+          const saved = readProgress();
+          if (saved && list.some((recipe) => recipe.id === saved.recipeId)) {
+            setSelectedId(saved.recipeId);
+            setMealPlanId(saved.mealPlanId);
+            setStep(saved.step);
+            return;
+          }
+        }
         setSelectedId((prev) => {
           if (prev != null && list.some((recipe) => recipe.id === prev)) return prev;
           try {
@@ -101,6 +158,50 @@ export function FirstCookMissionFlow({
       cancelled = true;
     };
   }, [phase]);
+
+  // Persist progress once past the recipe pick.
+  useEffect(() => {
+    if (phase !== "flow" || !restoredRef.current) return;
+    if (step >= 1 && selectedId != null) {
+      writeProgress({ step, recipeId: selectedId, mealPlanId });
+    } else if (step === 0) {
+      writeProgress(null);
+    }
+  }, [phase, step, selectedId, mealPlanId]);
+
+  // Completion means the loop is done — the next mission starts fresh.
+  useEffect(() => {
+    if (phase === "completion") writeProgress(null);
+  }, [phase]);
+
+  // Load tonight and tomorrow's dinner slots when the plan step opens.
+  useEffect(() => {
+    if (phase !== "flow" || step !== 1 || slots) return;
+    let cancelled = false;
+    const now = new Date();
+    const range = buildMissionSlots([], [], now);
+    fetch(`/api/meal-plans?startDate=${range[0].date}&endDate=${range[1].date}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const plans = Array.isArray(data?.plans) ? data.plans : [];
+        const blocks = Array.isArray(data?.blocks) ? data.blocks : [];
+        const memberBlocks = Array.isArray(data?.memberBlocks) ? data.memberBlocks : [];
+        const next = buildMissionSlots(plans, [...blocks, ...memberBlocks], now);
+        setSlots(next);
+        setSlotDate(firstFreeSlotDate(next));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Offer both slots; the server still validates on confirm.
+        const next = buildMissionSlots([], [], now);
+        setSlots(next);
+        setSlotDate(next[0].date);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, step, slots]);
 
   // Load live rhythm numbers for the completion screen.
   useEffect(() => {
@@ -138,6 +239,35 @@ export function FirstCookMissionFlow({
       window.localStorage.setItem(RECIPE_KEY, String(id));
     } catch {
       /* private mode — pick just doesn't persist */
+    }
+  };
+
+  const confirmPlan = async () => {
+    if (!slotDate || selectedId == null) return;
+    setPlanning(true);
+    setPlanError(null);
+    try {
+      const res = await fetch("/api/meal-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: slotDate,
+          mealType: "dinner",
+          recipeId: selectedId,
+          servings: 1,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPlanError(body.error || "Couldn't add it to your plan");
+        return;
+      }
+      setMealPlanId(typeof body.id === "number" ? body.id : null);
+      setStep(2);
+    } catch {
+      setPlanError("Couldn't add it to your plan");
+    } finally {
+      setPlanning(false);
     }
   };
 
@@ -257,11 +387,12 @@ export function FirstCookMissionFlow({
           </button>
           <button
             type="button"
-            onClick={onOpenPlanner}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover"
+            onClick={confirmPlan}
+            disabled={!slotDate || planning}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-ui-action px-5 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover disabled:opacity-50"
           >
             <CalendarClock className="h-4 w-4" aria-hidden="true" />
-            Plan it in my week
+            {planning ? "Adding…" : "Plan it in my week"}
           </button>
         </div>
       </div>
@@ -303,7 +434,11 @@ export function FirstCookMissionFlow({
         </button>
         <button
           type="button"
-          onClick={() => selected && onStartCook(selected.id, selected.title)}
+          onClick={() => {
+            if (!selected) return;
+            writeProgress(null);
+            onStartCook(selected.id, selected.title, mealPlanId ?? undefined);
+          }}
           disabled={!selected}
           className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-ui-action px-6 text-sm font-semibold text-ui-action-text transition-colors hover:bg-ui-action-hover disabled:opacity-50"
         >
@@ -422,10 +557,56 @@ export function FirstCookMissionFlow({
             Add <span className="font-semibold">{selected?.title ?? "this dish"}</span> to a week
             slot so Mychelin knows what to cook and what to buy.
           </p>
-          <p className="mt-3 text-xs leading-5 text-ui-muted">
-            You can skip this and go straight to cooking — the planner stays available whenever
-            you&rsquo;re ready.
-          </p>
+          <div className="mt-4 flex flex-col gap-2" role="radiogroup" aria-label="Dinner slot">
+            {slots === null ? (
+              <div className="flex h-24 items-center justify-center">
+                <LoadingAnimation />
+              </div>
+            ) : (
+              slots.map((slot) => {
+                const isSelected = slot.date === slotDate;
+                return (
+                  <button
+                    key={slot.date}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    disabled={slot.taken}
+                    onClick={() => {
+                      setSlotDate(slot.date);
+                      setPlanError(null);
+                    }}
+                    className={
+                      "flex min-h-12 items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition disabled:opacity-60 " +
+                      (isSelected
+                        ? "border-ui-accent bg-ui-accent-muted shadow-sm"
+                        : "border-ui-border bg-ui-surface-raised hover:border-ui-border-strong")
+                    }
+                  >
+                    <span className="text-sm font-semibold text-ui-text">{slot.label}</span>
+                    {slot.taken && <span className="text-xs text-ui-muted">Already taken</span>}
+                  </button>
+                );
+              })
+            )}
+          </div>
+          {slots !== null && !slotDate && (
+            <p className="mt-3 text-xs leading-5 text-ui-muted">
+              Both dinners are taken. Skip this, or pick another day in the full planner.
+            </p>
+          )}
+          {planError && (
+            <p role="alert" className="mt-3 text-xs leading-5 text-ui-danger">
+              {planError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={onOpenPlanner}
+            className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-ui-accent underline-offset-2 hover:underline"
+          >
+            Open full planner
+          </button>
         </div>
       )}
 

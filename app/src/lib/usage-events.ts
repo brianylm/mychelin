@@ -9,6 +9,7 @@ export type UsageEventName =
   | "onboarding_option_picked"
   | "onboarding_skipped"
   | "onboarding_tool_opened"
+  | "weekly_goal_set"
   | "recipe_created"
   | "recipe_capture_completed"
   | "ai_draft_completed"

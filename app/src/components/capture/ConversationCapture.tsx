@@ -1284,6 +1284,14 @@ export function ConversationCapture({
   };
 
   const handleClose = () => {
+    // Saving closes via onClose() directly, so reaching here means unsaved.
+    const hasContent = messages.length > 0 || reviewTranscript.length > 0;
+    if (
+      hasContent &&
+      !window.confirm("Close without saving? The conversation so far will be lost.")
+    ) {
+      return;
+    }
     hardStopInternal();
     onClose();
   };

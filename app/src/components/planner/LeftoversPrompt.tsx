@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Dialog } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
 import { createPreparedBatch, MealPilotClientError } from "@/lib/meal-pilot/client";
-import { LEFTOVERS_EVENT, type LeftoversRequest } from "@/lib/leftovers-prompt";
+import { LEFTOVERS_EVENT, settleLeftovers, type LeftoversRequest } from "@/lib/leftovers-prompt";
 import { PortionStepper, effectivePortions } from "./PortionStepper";
 
 // A planned multi-dish meal records its own leftovers when it is
@@ -33,27 +33,51 @@ export function LeftoversPrompt() {
   const [error, setError] = useState<string | null>(null);
   const current = queue[0] ?? null;
 
-  useEffect(() => {
-    const onRequest = (event: Event) => {
-      const request = (event as CustomEvent<LeftoversRequest>).detail;
-      void belongsToMealGroup(request.mealPlanId).then((grouped) => {
-        if (grouped) return;
-        // A multi-dish cook asks about each dish in turn.
-        setQueue((items) =>
-          items.some((item) => item.recipeId === request.recipeId) ? items : [...items, request]
-        );
-      });
-    };
-    window.addEventListener(LEFTOVERS_EVENT, onRequest);
-    return () => window.removeEventListener(LEFTOVERS_EVENT, onRequest);
+  // Mirrors the queue so duplicate checks and unmount cleanup stay outside
+  // state updaters, which must be pure.
+  const queueRef = useRef<LeftoversRequest[]>([]);
+
+  const updateQueue = useCallback((items: LeftoversRequest[]) => {
+    queueRef.current = items;
+    setQueue(items);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const onRequest = (event: Event) => {
+      const request = (event as CustomEvent<LeftoversRequest>).detail;
+      void belongsToMealGroup(request.mealPlanId)
+        .then((grouped) => {
+          if (cancelled || grouped) {
+            settleLeftovers();
+            return;
+          }
+          // A multi-dish cook asks about each dish in turn.
+          if (queueRef.current.some((item) => item.recipeId === request.recipeId)) {
+            settleLeftovers();
+            return;
+          }
+          updateQueue([...queueRef.current, request]);
+        })
+        .catch(() => settleLeftovers());
+    };
+    window.addEventListener(LEFTOVERS_EVENT, onRequest);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(LEFTOVERS_EVENT, onRequest);
+      const stillQueued = queueRef.current.length;
+      queueRef.current = [];
+      for (let i = 0; i < stillQueued; i += 1) settleLeftovers();
+    };
+  }, [updateQueue]);
+
   const next = useCallback(() => {
-    setQueue((items) => items.slice(1));
+    settleLeftovers();
+    updateQueue(queueRef.current.slice(1));
     setTotal("");
     setFreezer("");
     setError(null);
-  }, []);
+  }, [updateQueue]);
 
   const totalPortions = Math.max(0, effectivePortions(total, 2));
   const freezerPortions = Math.min(Math.max(0, effectivePortions(freezer, 0)), totalPortions);

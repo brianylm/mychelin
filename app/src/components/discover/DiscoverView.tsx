@@ -18,7 +18,7 @@ interface DiscoverViewProps {
 //    picks from Italian recipes; "soup" picks from anything with
 //    "soup" in the title/cuisine.
 export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
-  const { recipes } = useRecipeStore();
+  const { recipes, loading } = useRecipeStore();
   const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
@@ -74,6 +74,17 @@ export function DiscoverView({ onNavigateToRecipe }: DiscoverViewProps) {
     }
   }, [randomRecipe, onNavigateToRecipe]);
 
+  if (loading) {
+    return (
+      <div
+        className="flex flex-1 items-center justify-center bg-ui-bg px-6 py-8"
+        role="status"
+        aria-label="Loading recipes"
+      >
+        <div className="h-6 w-40 animate-pulse rounded bg-ui-surface-subtle" />
+      </div>
+    );
+  }
   if (recipes.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-ui-bg px-6 py-8">

@@ -62,4 +62,34 @@ test.describe("first cook guided mission", () => {
     await page.getByRole("button", { name: "Not now — keep the mission for later" }).click();
     await expect(page.getByText("Cook your first dish")).not.toBeVisible();
   });
+
+  test("plan step pre-selects a slot and keeps the wizard open after confirming", async ({
+    page,
+  }) => {
+    await signup(page, uniqueEmail(PREFIX), PASSWORD);
+    await createRecipe(page, { title: "E2E Mission Congee" });
+
+    await page.goto("/app");
+    await expect(page.getByText("Cook your first dish")).toBeVisible({ timeout: 60_000 });
+    await page.getByRole("button", { name: "Cook with me" }).click();
+
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Continue" }).click();
+
+    // A new cook has an empty plan, so tonight's dinner is pre-selected.
+    await expect(dialog.getByRole("radio", { name: /Tonight's dinner/ })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    );
+
+    const planRequest = page.waitForRequest(
+      (request) => request.url().includes("/api/meal-plans") && request.method() === "POST"
+    );
+    await dialog.getByRole("button", { name: "Plan it in my week" }).click();
+    await planRequest;
+
+    // The wizard stays open and moves on to the shopping step.
+    await expect(dialog.getByText("What to buy", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Open shopping list" })).toBeVisible();
+  });
 });

@@ -1,19 +1,27 @@
 import { NextResponse } from "next/server";
-import { desc, gte } from "drizzle-orm";
+import { desc, eq, gte } from "drizzle-orm";
 import { db } from "@/db";
-import { pilotFeedback, usageEvents, users } from "@/db/schema";
+import { pilotFeedback, recipes, usageEvents, users } from "@/db/schema";
 import { ensurePilotFeedbackTable, ensureUsageEventsTable } from "@/db/ensure-schema";
 import { requireAdminUser } from "@/lib/admin-auth";
+import { isShoppingEvent, type ChecklistEvent } from "@/lib/pilot-checklist";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
-const FUNNEL_STEPS = [
+// Same rules as /api/pilot/status: capture counts users with an active
+// recipe (not draft events); shopping counts only non-empty lists.
+const FUNNEL_STEPS: Array<{
+  id: string;
+  label: string;
+  eventNames: string[];
+  matches?: (event: ChecklistEvent) => boolean;
+}> = [
   { id: "signup", label: "Signed up", eventNames: ["user_signed_up"] },
   { id: "onboarding", label: "Onboarded", eventNames: ["onboarding_completed"] },
-  { id: "capture", label: "First recipe", eventNames: ["recipe_capture_completed", "ai_draft_completed", "recipe_created"] },
+  { id: "capture", label: "First recipe", eventNames: [] }, // counted from active recipe rows
   { id: "plan", label: "Meal planned", eventNames: ["meal_planned"] },
-  { id: "shopping", label: "Shopping list", eventNames: ["shopping_list_generated"] },
+  { id: "shopping", label: "Shopping list", eventNames: ["shopping_list_generated"], matches: isShoppingEvent },
   { id: "cook", label: "Cook attempt", eventNames: ["cook_attempt_created"] },
   { id: "version", label: "Promoted version", eventNames: ["attempt_promoted_to_version"] },
 ];
@@ -53,13 +61,14 @@ function countBy<T extends string>(items: T[]): Array<{ key: T; count: number }>
 }
 
 function uniqueUsersForEvents(
-  rows: Array<{ userId: number | null; eventName: string }>,
-  eventNames: string[]
+  rows: Array<{ userId: number | null; eventName: string; properties: string | null }>,
+  eventNames: string[],
+  matches?: (event: ChecklistEvent) => boolean
 ): number {
   const wanted = new Set(eventNames);
   const userIds = new Set<number>();
   for (const row of rows) {
-    if (row.userId != null && wanted.has(row.eventName)) userIds.add(row.userId);
+    if (row.userId != null && wanted.has(row.eventName) && (!matches || matches(row))) userIds.add(row.userId);
   }
   return userIds.size;
 }
@@ -81,7 +90,7 @@ export async function GET() {
     const since30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const since7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [eventRows, userRows, feedbackRows] = await Promise.all([
+    const [eventRows, userRows, feedbackRows, activeRecipeOwners] = await Promise.all([
       db
         .select({
           id: usageEvents.id,
@@ -123,6 +132,10 @@ export async function GET() {
         .from(pilotFeedback)
         .orderBy(desc(pilotFeedback.createdAt))
         .limit(500),
+      db
+        .selectDistinct({ userId: recipes.userId })
+        .from(recipes)
+        .where(eq(recipes.status, "active")),
     ]);
 
     const activeUserIds30 = new Set(eventRows.map((event) => event.userId).filter((id): id is number => id != null));
@@ -150,7 +163,12 @@ export async function GET() {
 
     const funnelBase = Math.max(userRows.length, uniqueUsersForEvents(eventRows, ["user_signed_up"]));
     const funnel = FUNNEL_STEPS.map((step) => {
-      const usersForStep = step.id === "signup" ? funnelBase : uniqueUsersForEvents(eventRows, step.eventNames);
+      const usersForStep =
+        step.id === "signup"
+          ? funnelBase
+          : step.id === "capture"
+            ? activeRecipeOwners.filter((row) => row.userId != null).length
+            : uniqueUsersForEvents(eventRows, step.eventNames, step.matches);
       return {
         id: step.id,
         label: step.label,
