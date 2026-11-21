@@ -22,6 +22,7 @@
 // The snapshot is dropped after any DDL so later probes see the change.
 
 import { createClient, type Client } from "@libsql/client/web";
+import { libsqlFetchOption } from "./resilient-fetch";
 
 let versionLabelEnsured = false;
 let planningOwnershipEnsured = false;
@@ -48,7 +49,7 @@ function getClient(): Client | null {
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
   if (!url) return null;
-  if (!_client) _client = createClient({ url, authToken });
+  if (!_client) _client = createClient({ url, authToken, ...libsqlFetchOption() });
   return _client;
 }
 

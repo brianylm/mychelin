@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@libsql/client/web";
+import { libsqlFetchOption } from "@/db/resilient-fetch";
 import { requireAdminUser } from "@/lib/admin-auth";
 
 export const runtime = "edge";
@@ -24,7 +25,7 @@ export async function POST() {
     return NextResponse.json({ error: "TURSO_DATABASE_URL missing" }, { status: 500 });
   }
 
-  const client = createClient({ url, authToken });
+  const client = createClient({ url, authToken, ...libsqlFetchOption() });
   const report: Record<string, unknown> = {};
 
   try {
