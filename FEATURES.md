@@ -81,10 +81,10 @@ All app taps below start at `/app` with a signed-in, onboarded user unless state
 - **B calls it:** import link, paste recipe, write recipe, scratchpad, ask Mychelin, AI draft
 - **Reach it:** “Library” → “New recipe” → “Import from link”, “Write or paste recipe”, or “Ask Mychelin”; review the structure before saving.
 - **Set up:** `signup`; API POST `/api/capture/url`, `/api/capture/paste` or `/api/capture/draft-recipe` for extraction, then `/api/recipes` for persistence. Use synthetic text; mock external AI/network responses for deterministic tests.
-- **Code:** `app/src/components/capture/`, `app/src/app/api/capture/url/`, `app/src/app/api/capture/paste/`, `app/src/app/api/capture/draft-recipe/`, `app/src/app/api/capture/extract/`, `app/src/lib/manual-recipe-parser.ts`, `app/src/lib/capture-draft-storage.ts`
+- **Code:** `app/src/components/capture/`, `app/src/app/api/capture/url/`, `app/src/app/api/capture/paste/`, `app/src/app/api/capture/draft-recipe/`, `app/src/app/api/capture/extract/`, `app/src/lib/manual-recipe-parser.ts`, `app/src/lib/ingredient-vocabulary.ts`, `app/src/lib/capture-draft-storage.ts`
 - **API / tables:** `/api/capture/url`, `/api/capture/paste`, `/api/capture/draft-recipe`, `/api/capture/extract`, `/api/recipes`; recipes, ingredients, instructions, usage_events.
-- **Tests:** `app/src/lib/manual-recipe-parser.test.ts`, `app/src/lib/capture-draft-storage.test.ts`, `app/e2e/onboarding.spec.ts`
-- **Traps:** Capture draft state and persisted recipe state differ. Extraction requires provider keys; local offline verification cannot establish live AI quality. URL imports can fail upstream. Preserve uncertain family quantities rather than inventing precise measurements.
+- **Tests:** `app/src/lib/manual-recipe-parser.test.ts`, `app/src/lib/ingredient-vocabulary.test.ts`, `app/src/lib/capture-draft-storage.test.ts`, `app/e2e/onboarding.spec.ts`, `app/e2e/scratchpad-ai-sort.spec.ts`
+- **Traps:** Capture draft state and persisted recipe state differ. Extraction requires provider keys; local offline verification cannot establish live AI quality. URL imports can fail upstream. Preserve uncertain family quantities rather than inventing precise measurements. The scratchpad parser is local and rule-based: with no ingredient list it builds one from the steps — measured mentions keep their amounts, and every name in app/src/lib/ingredient-vocabulary.ts (the ingredient_catalog seed plus common extras; a test keeps them in sync) is added without one; “Sort with AI” (POST /api/capture/paste) rewrites the notes as Ingredients/Steps text, with Undo.
 
 ### Voice capture and recordings {#voice-capture}
 - **B calls it:** voice capture, record conversation, transcription, dialect, microphone, voice clip

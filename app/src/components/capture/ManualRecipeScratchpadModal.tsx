@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, Flame, PencilLine, Timer } from "lucide-react";
+import { AlertCircle, CheckCircle2, Flame, PencilLine, Sparkles, Timer } from "lucide-react";
 import { Button } from "@/components/ui";
 import { WorkflowDialog } from "@/components/ui/WorkflowDialog";
 import {
   formatManualIngredientPreview,
   parseManualRecipeScratchpad,
+  recipeToScratchpadText,
   type ManualParsedIngredient,
   type ManualParsedInstruction,
+  type ScratchpadRecipeInput,
 } from "@/lib/manual-recipe-parser";
 import { HEAT_CONFIG } from "@/lib/instruction-heat";
 import {
@@ -50,6 +52,8 @@ export function ManualRecipeScratchpadModal({
   const [phase, setPhase] = useState<"capture" | "review">("capture");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiSorting, setAiSorting] = useState(false);
+  const [textBeforeAi, setTextBeforeAi] = useState<string | null>(null);
 
   const parsed = useMemo(() => parseManualRecipeScratchpad(scratchpad), [scratchpad]);
 
@@ -69,6 +73,44 @@ export function ManualRecipeScratchpadModal({
   const setScratchpad = (next: string) => {
     setScratchpadState(next);
     persist(title, next);
+  };
+
+  const sortWithAi = async () => {
+    if (!scratchpad.trim()) return;
+    setAiSorting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/capture/paste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: title.trim() ? `${title.trim()}\n\n${scratchpad}` : scratchpad }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setError(`AI sort failed: ${body.error || "try again"}. Your notes are unchanged.`);
+        return;
+      }
+      const data = await res.json() as { recipe?: ScratchpadRecipeInput & { title?: string } };
+      const nextText = recipeToScratchpadText(data.recipe ?? {});
+      if (!nextText) {
+        setError("AI could not find a recipe in these notes. Your notes are unchanged.");
+        return;
+      }
+      setTextBeforeAi(scratchpad);
+      setScratchpad(nextText);
+      if (!title.trim() && data.recipe?.title?.trim()) setTitle(data.recipe.title.trim());
+    } catch {
+      setError("AI sort failed: try again. Your notes are unchanged.");
+    } finally {
+      setAiSorting(false);
+    }
+  };
+
+  const undoAiSort = () => {
+    if (textBeforeAi !== null) {
+      setScratchpad(textBeforeAi);
+      setTextBeforeAi(null);
+    }
   };
 
   const validate = () => {
@@ -141,6 +183,7 @@ export function ManualRecipeScratchpadModal({
             className="flex-1"
             onClick={phase === "capture" ? reviewRecipe : createRecipe}
             loading={saving}
+            disabled={aiSorting}
             iconStart={<PencilLine className="h-4 w-4" />}
           >
             {saving ? "Saving..." : phase === "capture" ? "Structure recipe" : saveLabel}
@@ -169,7 +212,10 @@ export function ManualRecipeScratchpadModal({
             </span>
             <textarea
               value={scratchpad}
-              onChange={(event) => setScratchpad(event.target.value)}
+              onChange={(event) => {
+                setTextBeforeAi(null);
+                setScratchpad(event.target.value);
+              }}
               placeholder="Type or paste ingredients, steps, timings, heat, rough notes..."
               rows={12}
               className="min-h-[300px] resize-y rounded-2xl border border-ui-border-strong bg-ui-surface-raised px-4 py-3 text-base leading-7 text-ui-text outline-none transition placeholder:text-ui-muted focus:border-ui-accent focus:ring-2 focus:ring-ui-focus-soft"
@@ -185,7 +231,7 @@ export function ManualRecipeScratchpadModal({
               Use example
             </button>
             <span className="text-xs text-ui-muted">
-              Tip: headings like Ingredients and Steps make parsing more reliable, but plain paragraphs work too.
+              Tip: headings like Ingredients and Steps make parsing more reliable. Plain paragraphs work too; Sort with AI on the next screen fills in missing ingredients.
             </span>
           </div>
         </div>
@@ -200,7 +246,9 @@ export function ManualRecipeScratchpadModal({
             </div>
             {parsed.ingredients.length === 0 ? (
               <div className="rounded-xl border border-ui-border bg-ui-warning-soft px-3 py-3 text-sm leading-6 text-ui-warning-text">
-                No ingredients detected yet. You can still create the recipe, but shopping lists and scaling work better once ingredients are added.
+                {parsed.ingredientsFromSteps
+                  ? "No ingredient list found in your notes. Sort with AI to pull every ingredient out of the steps, or create the recipe and add them later."
+                  : "No ingredients detected yet. You can still create the recipe, but shopping lists and scaling work better once ingredients are added."}
               </div>
             ) : (
               <ul className="space-y-2">
@@ -211,6 +259,33 @@ export function ManualRecipeScratchpadModal({
                   </li>
                 ))}
               </ul>
+            )}
+            {parsed.ingredientsFromSteps && (
+              <>
+                {parsed.ingredients.length > 0 && (
+                  <p className="mt-3 text-xs text-ui-muted">
+                    Picked out of your steps. Check the list; Sort with AI catches anything unusual.
+                  </p>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={sortWithAi}
+                  loading={aiSorting}
+                  iconStart={<Sparkles className="h-4 w-4" />}
+                >
+                  {aiSorting ? "Sorting..." : "Sort with AI"}
+                </Button>
+              </>
+            )}
+            {textBeforeAi !== null && (
+              <p className="mt-3 text-xs text-ui-muted">
+                Sorted with AI.{" "}
+                <button type="button" className="font-semibold text-ui-accent underline-offset-2 hover:underline" onClick={undoAiSort}>
+                  Undo
+                </button>
+              </p>
             )}
           </section>
 

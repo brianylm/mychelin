@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  recipeToScratchpadText,
   formatManualIngredientPreview,
   parseManualIngredientLine,
   parseManualRecipeScratchpad,
@@ -149,7 +150,6 @@ describe("parseManualRecipeScratchpad prose paragraphs", () => {
 
   it("splits a one-paragraph method into steps without dropping text", () => {
     const result = parseManualRecipeScratchpad(duckPasta);
-    expect(result.ingredients).toHaveLength(0);
     expect(result.instructions.length).toBeGreaterThanOrEqual(5);
     expect(result.instructions[0].content).toMatch(/^First boil pasta/);
     expect(result.instructions.at(-1)!.content).toMatch(/Italian herbs into the pasta for some flavoring\.$/);
@@ -161,12 +161,126 @@ describe("parseManualRecipeScratchpad prose paragraphs", () => {
 
   it("never turns a long sentence into a name-only ingredient", () => {
     const result = parseManualRecipeScratchpad("Season with pepper, salt and herbs into the pasta for flavour.");
-    expect(result.ingredients).toHaveLength(0);
     expect(result.instructions).toHaveLength(1);
+    // Known names are picked out of the step; no sentence-length "ingredient".
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Pepper", "Salt", "Herbs", "Pasta"]);
   });
 
   it("still splits short comma lists into ingredients", () => {
     const result = parseManualRecipeScratchpad("Salt, pepper, 2 tbsp olive oil");
     expect(result.ingredients.map((i) => i.name)).toEqual(["Salt", "Pepper", "Olive oil"]);
+  });
+});
+
+describe("ingredients mentioned inside prose steps", () => {
+  const chickenRice = "Okay so this is my mum's chicken rice. First you take one whole chicken, about 1.5 kg, rub it all over with coarse salt, then rinse it. Bring a big pot of water to the boil with 4 slices of ginger and two stalks of spring onion. Poach it for about 35 minutes on a gentle simmer. For the rice, fry three cloves of chopped garlic and some shallots in chicken fat until fragrant. Add 2 cups of washed jasmine rice and cook with the stock and a pandan leaf.";
+
+  it("pulls measured ingredients out of a dictated paragraph (B's 21 Nov report)", () => {
+    const result = parseManualRecipeScratchpad(chickenRice);
+    expect(result.instructions.length).toBeGreaterThanOrEqual(5);
+    expect(result.ingredientsFromSteps).toBe(true);
+    expect(result.ingredients.map((i) => [i.quantity, i.unit, i.name, i.notes])).toEqual([
+      [undefined, undefined, "Whole chicken", undefined],
+      [undefined, undefined, "Salt", undefined],
+      [undefined, undefined, "Water", undefined],
+      [4, "slice", "Ginger", undefined],
+      [2, "stalk", "Spring onion", undefined],
+      [3, "clove", "Garlic", "chopped"],
+      [undefined, undefined, "Shallot", undefined],
+      [undefined, undefined, "Chicken fat", undefined],
+      [2, "cup", "Jasmine rice", "washed"],
+      [undefined, undefined, "Stock", undefined],
+      [undefined, undefined, "Pandan leaves", undefined],
+    ]);
+  });
+
+  it("finds the garlic in the duck pasta paragraph", () => {
+    const result = parseManualRecipeScratchpad(
+      "First boil pasta in a pot of water and salt. Then add four tablespoons of diced garlic and toss."
+    );
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Pasta", "Water", "Salt", "Garlic"]);
+    expect(result.ingredients[3]).toMatchObject({ quantity: 4, unit: "tbsp", notes: "diced" });
+  });
+
+  it("handles compact amounts and a/half", () => {
+    const result = parseManualRecipeScratchpad(
+      "Marinate 500g pork belly with a tablespoon of light soy. Then add half a cup of water."
+    );
+    expect(result.ingredients.map((i) => [i.quantity, i.unit, i.name])).toEqual([
+      [500, "g", "Pork belly"],
+      [1, "tbsp", "Light soy"],
+      [0.5, "cup", "Water"],
+    ]);
+  });
+
+  it("ignores durations, cut counts and units with no ingredient", () => {
+    const result = parseManualRecipeScratchpad(
+      "Simmer for 20 minutes. Cut the chicken into 4 pieces. Then slice into 2 slices, then serve."
+    );
+    // Only the named chicken, with no amount taken from "4 pieces".
+    expect(result.ingredients.map((i) => [i.name, i.quantity])).toEqual([["Chicken", undefined]]);
+  });
+
+  it("reads 'cloves of garlic' as garlic, not the spice, and skips the ice bath", () => {
+    const result = parseManualRecipeScratchpad(
+      "Fry 3 cloves of garlic until fragrant. Then plunge into an ice bath and add two cloves."
+    );
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Garlic"]);
+  });
+
+  it("keeps the spice when cloves are an ingredient", () => {
+    const result = parseManualRecipeScratchpad("Braise the pork with star anise and cloves for an hour.");
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Pork", "Star anise", "Cloves"]);
+  });
+
+  it("keeps chicken fat apart from chicken and drops generic repeats", () => {
+    const result = parseManualRecipeScratchpad(
+      "Fry the garlic in chicken fat. Add the chicken and the rice. Then add 2 cups jasmine rice."
+    );
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Garlic", "Chicken fat", "Chicken", "Jasmine rice"]);
+  });
+
+  it("maps spoken variants to one name", () => {
+    const result = parseManualRecipeScratchpad("Boil with a pandan leaf and some scallions. Serve with chilli sauce.");
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Pandan leaves", "Spring onion", "Chili sauce"]);
+  });
+
+  it("merges repeat mentions of the same ingredient", () => {
+    const result = parseManualRecipeScratchpad("Add 1 tbsp oil and fry. Then add 1 tbsp oil again.");
+    expect(result.ingredients).toHaveLength(1);
+  });
+
+  it("does not add step mentions when an ingredient list exists", () => {
+    const result = parseManualRecipeScratchpad("Ingredients\n3 garlic cloves\n\nSteps\nFry 3 cloves of garlic until fragrant.");
+    expect(result.ingredients).toHaveLength(1);
+    expect(result.ingredients[0].name).toBe("Garlic");
+    expect(result.ingredientsFromSteps).toBe(false);
+  });
+});
+
+describe("recipeToScratchpadText", () => {
+  it("writes an AI recipe back as text the parser reads losslessly", () => {
+    const text = recipeToScratchpadText({
+      ingredients: [
+        { name: "garlic", quantity: 3, unit: "cloves", notes: "chopped" },
+        { name: "coarse salt", quantity: null, unit: null, notes: "" },
+        { name: "jasmine rice", quantity: 2, unit: "cups", notes: "" },
+      ],
+      instructions: [
+        { stepNumber: 1, content: "Rub the chicken with salt." },
+        { stepNumber: 2, content: "Poach 35 minutes on a gentle simmer." },
+      ],
+    });
+    const parsed = parseManualRecipeScratchpad(text);
+    expect(parsed.ingredients.map((i) => i.name)).toEqual(["Garlic", "Coarse salt", "Jasmine rice"]);
+    expect(parsed.ingredients[0]).toMatchObject({ quantity: 3, unit: "clove", notes: "chopped" });
+    expect(parsed.instructions.map((i) => i.content)).toEqual([
+      "Rub the chicken with salt.",
+      "Poach 35 minutes on a gentle simmer.",
+    ]);
+  });
+
+  it("skips empty rows", () => {
+    expect(recipeToScratchpadText({ ingredients: [{ name: " " }], instructions: [{ content: "" }] })).toBe("");
   });
 });

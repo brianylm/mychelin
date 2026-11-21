@@ -1,4 +1,5 @@
 import { encodeHeatInTip, type HeatLevel } from "@/lib/instruction-heat";
+import { vocabularyTerms } from "@/lib/ingredient-vocabulary";
 
 export interface ManualParsedIngredient {
   name: string;
@@ -22,6 +23,9 @@ export interface ManualRecipeParseResult {
   ingredients: ManualParsedIngredient[];
   instructions: ManualParsedInstruction[];
   unclassified: string[];
+  // True when no ingredient list was written and ingredients (if any)
+  // were picked out of the steps — the list is likely incomplete.
+  ingredientsFromSteps: boolean;
 }
 
 type ParseMode = "auto" | "ingredients" | "steps" | "notes";
@@ -333,6 +337,9 @@ function splitProseSentences(line: string): string[] {
 
 // A name-only ingredient longer than a few words is prose, not an ingredient.
 function isConfidentIngredient(ingredient: ManualParsedIngredient): boolean {
+  // "Cut the chicken into 4 pieces" reads as name + amount; a name that
+  // ends in a preposition is half a sentence, not an ingredient.
+  if (/\s(into|in|to|with|for|on|onto|over|until)$/i.test(ingredient.name)) return false;
   if (ingredient.quantity !== undefined || ingredient.quantityText !== undefined) return true;
   return ingredient.name.split(/\s+/).filter(Boolean).length <= 4 && !/[.!?]$/.test(ingredient.name);
 }
@@ -357,6 +364,202 @@ function isLikelySectionHeading(line: string): boolean {
   if (words.length === 1 && normalizeUnit(words[0])) return false;
   if (/\d/.test(clean) && parseManualIngredientLine(clean)) return false;
   return /^[A-Z0-9]/.test(clean);
+}
+
+// ─── Ingredients mentioned inside prose steps ──────────────────────────
+// Dictated or typed paragraphs name ingredients inside the method ("fry
+// three cloves of chopped garlic"). Only measured mentions — a number and
+// a unit followed by a name — are taken, so "35 minutes" or "into 4
+// pieces" never become ingredients. Unmeasured items ("some shallots")
+// are left for the AI "Sort with AI" pass.
+const WORD_NUMBERS = new Map<string, number>([
+  ["a", 1], ["an", 1], ["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5],
+  ["six", 6], ["seven", 7], ["eight", 8], ["nine", 9], ["ten", 10], ["eleven", 11],
+  ["twelve", 12], ["half", 0.5], ["quarter", 0.25],
+]);
+const MENTION_STOP_WORDS = new Set([
+  "and", "or", "in", "into", "until", "with", "then", "for", "to", "on", "onto", "over",
+  "at", "from", "about", "so", "till", "while", "before", "after", "each", "per", "if",
+  "but", "as", "again", "together", "first", "next",
+]);
+const PREP_WORDS = new Set([
+  "chopped", "minced", "sliced", "diced", "crushed", "washed", "grated", "peeled",
+  "smashed", "julienned", "shredded", "pounded", "soaked", "rinsed", "cut", "fresh",
+  "dried", "finely", "roughly", "thinly", "cold", "warm", "hot",
+]);
+const MAX_MENTION_NAME_WORDS = 4;
+
+function mentionNumber(token: string): number | null {
+  return parseNumberToken(token) ?? WORD_NUMBERS.get(token.toLowerCase()) ?? null;
+}
+
+export function extractIngredientMentions(sentence: string): ManualParsedIngredient[] {
+  const tokens = sentence.split(/\s+/).filter(Boolean);
+  const found: ManualParsedIngredient[] = [];
+  for (let i = 0; i < tokens.length; i += 1) {
+    const clean = tokens[i].replace(/^[("]+/, "");
+    let quantity: number | null = null;
+    let unit: string | undefined;
+    let next = i + 1;
+
+    const compact = clean.replace(/[.,;:!?)]+$/, "").match(/^(\d+(?:\.\d+)?|\d+\/\d+)([a-zA-Z]+)$/);
+    if (compact && normalizeUnit(compact[2])) {
+      quantity = parseNumberToken(compact[1]);
+      unit = normalizeUnit(compact[2]);
+      if (/[.,;:!?)]$/.test(clean)) continue; // "about 1.5kg," — amount with no name after it
+    } else {
+      quantity = mentionNumber(clean);
+      if (quantity === null || /[.,;:!?)]$/.test(clean)) continue;
+      // "half a cup": the article after "half" is part of the amount.
+      if (quantity === 0.5 && /^(a|an)$/i.test(tokens[next] ?? "")) next += 1;
+      const unitToken = tokens[next] ?? "";
+      unit = normalizeUnit(unitToken.replace(/[.,;:!?)]+$/, ""));
+      if (!unit || /[.,;:!?)]$/.test(unitToken)) continue;
+      next += 1;
+    }
+    if (quantity === null || !unit) continue;
+
+    if ((tokens[next] ?? "").toLowerCase() === "of") next += 1;
+    if (/^(the|your|my)$/i.test(tokens[next] ?? "")) next += 1;
+
+    const notes: string[] = [];
+    const nameWords: string[] = [];
+    for (let j = next; j < tokens.length && nameWords.length < MAX_MENTION_NAME_WORDS; j += 1) {
+      const raw = tokens[j];
+      const word = raw.replace(/[.,;:!?)"]+$/, "");
+      const lower = word.toLowerCase();
+      if (!word || MENTION_STOP_WORDS.has(lower) || /^\d/.test(word)) break;
+      if (nameWords.length === 0 && PREP_WORDS.has(lower)) notes.push(lower);
+      else nameWords.push(word);
+      if (word !== raw) break; // punctuation ends the name
+    }
+    const name = nameWords.join(" ").trim();
+    if (!name || STEP_VERBS.test(name) || TIME_RE.test(`1 ${name}`)) continue;
+
+    found.push({
+      name: titleCase(name),
+      quantity,
+      unit,
+      notes: notes.length ? notes.join(", ") : undefined,
+      source: sentence,
+    });
+    i = next - 1;
+  }
+  return found;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const NUMBER_WORD_RE = /^(\d+(?:\.\d+)?|\d+\/\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|half|quarter|few|several|some)$/i;
+
+// Known ingredient names mentioned in a sentence, in order. Longest terms
+// claim text first ("jasmine rice" before "rice"). A term that is also a
+// unit ("cloves", "slices") is skipped when it is used as one: "three
+// cloves of garlic" names garlic, not the spice.
+export function vocabularyMentions(sentence: string): Array<{ name: string; index: number }> {
+  const lower = sentence.toLowerCase();
+  const taken: Array<[number, number]> = [];
+  const found: Array<{ name: string; index: number }> = [];
+  for (const { term, name } of vocabularyTerms()) {
+    if (!lower.includes(term)) continue;
+    const re = new RegExp("(?<![\\p{L}'])" + escapeRegExp(term) + "(?![\\p{L}])", "gu");
+    for (const match of lower.matchAll(re)) {
+      const start = match.index ?? 0;
+      const end = start + term.length;
+      if (taken.some(([s, e]) => start < e && end > s)) continue;
+      if (normalizeUnit(term)) {
+        const before = lower.slice(0, start).trim().split(/\s+/).at(-1) ?? "";
+        const after = lower.slice(end).trim().split(/\s+/)[0] ?? "";
+        if (NUMBER_WORD_RE.test(before) || after === "of") continue;
+      }
+      taken.push([start, end]);
+      found.push({ name, index: start });
+    }
+  }
+  return found.sort((a, b) => a.index - b.index);
+}
+
+function displayName(name: string): string {
+  return name.replace(/\s*\([^)]*\)/g, "").trim();
+}
+
+// No ingredient list was written: build one from the steps. Measured
+// mentions keep their amounts; every other known ingredient is added
+// without an amount. Order follows first mention in the text; repeats of
+// the same name merge, keeping the amount.
+function ingredientsFromSteps(instructions: ManualParsedInstruction[]): ManualParsedIngredient[] {
+  const ordered: Array<{ ingredient: ManualParsedIngredient; order: number }> = [];
+  instructions.forEach((instruction, stepIndex) => {
+    const base = stepIndex * 100000;
+    const lowerSource = instruction.source.toLowerCase();
+    const measuredSpans: Array<[number, number]> = [];
+    let searchFrom = 0;
+    for (const mention of extractIngredientMentions(instruction.source)) {
+      const at = lowerSource.indexOf(mention.name.toLowerCase(), searchFrom);
+      const start = at < 0 ? 0 : at;
+      if (at >= 0) {
+        measuredSpans.push([at, at + mention.name.length]);
+        searchFrom = at + mention.name.length;
+      }
+      ordered.push({ ingredient: mention, order: base + start });
+    }
+    for (const hit of vocabularyMentions(instruction.source)) {
+      if (measuredSpans.some(([s, e]) => hit.index >= s && hit.index < e)) continue;
+      ordered.push({
+        ingredient: { name: displayName(hit.name), source: instruction.source },
+        order: base + hit.index + 0.5,
+      });
+    }
+  });
+  ordered.sort((a, b) => a.order - b.order);
+
+  const result: ManualParsedIngredient[] = [];
+  for (const { ingredient } of ordered) {
+    const key = ingredient.name.toLowerCase();
+    const existing = result.findIndex((item) => item.name.toLowerCase() === key);
+    if (existing < 0) result.push(ingredient);
+    else if (result[existing].quantity === undefined && ingredient.quantity !== undefined) {
+      result[existing] = ingredient;
+    }
+  }
+  // Drop a bare generic name when a more specific one names the same
+  // thing: "Rice" beside "Jasmine rice", "Chicken" beside "Whole chicken".
+  return result.filter((item) => {
+    if (item.quantity !== undefined) return true;
+    const generic = " " + item.name.toLowerCase();
+    return !result.some((other) => other !== item && other.name.toLowerCase().endsWith(generic));
+  });
+}
+
+export interface ScratchpadRecipeInput {
+  ingredients?: Array<{ name?: string | null; quantity?: number | null; unit?: string | null; notes?: string | null }>;
+  instructions?: Array<{ content?: string | null; stepNumber?: number }>;
+}
+
+// Writes a structured (AI) recipe back as scratchpad text with explicit
+// Ingredients / Steps headings, so the user can keep editing and this
+// parser stays the single source of truth for the preview.
+export function recipeToScratchpadText(recipe: ScratchpadRecipeInput): string {
+  const ingredientLines = (recipe.ingredients ?? [])
+    .map((ingredient) => {
+      const name = (ingredient.name ?? "").trim();
+      if (!name) return "";
+      const notes = (ingredient.notes ?? "").trim();
+      const amount = [ingredient.quantity ?? "", (ingredient.unit ?? "").trim()].filter((p) => p !== "").join(" ");
+      // "Garlic (3 cloves) (chopped)": the parser reads a trailing amount
+      // paren as the quantity and any other paren as a note.
+      return [name, notes ? `(${notes})` : "", amount ? `(${amount})` : ""].filter(Boolean).join(" ");
+    })
+    .filter(Boolean);
+  const stepLines = (recipe.instructions ?? [])
+    .map((step) => (step.content ?? "").trim().replace(/\s+/g, " "))
+    .filter(Boolean);
+  const sections: string[] = [];
+  if (ingredientLines.length) sections.push(["Ingredients", ...ingredientLines].join("\n"));
+  if (stepLines.length) sections.push(["Steps", ...stepLines].join("\n"));
+  return sections.join("\n\n");
 }
 
 export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResult {
@@ -418,7 +621,11 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
     }
   }
 
-  return { ingredients, instructions, unclassified };
+  // Nothing listed as an ingredient: take measured mentions from the steps.
+  const fromSteps = ingredients.length === 0;
+  if (fromSteps) ingredients.push(...ingredientsFromSteps(instructions));
+
+  return { ingredients, instructions, unclassified, ingredientsFromSteps: fromSteps };
 }
 
 export function formatManualIngredientPreview(ingredient: ManualParsedIngredient): string {
