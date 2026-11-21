@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
+import { paidProviderKey } from "@/lib/ai-cost-policy";
+import { generateGeminiText, geminiApiKey } from "@/lib/gemini-free";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -76,10 +78,10 @@ function deepSeekModel(): string {
 
 function providerState() {
   return {
-    deepseekConfigured: Boolean(envValue("DEEPSEEK_API_KEY")),
+    deepseekConfigured: Boolean(paidProviderKey("DEEPSEEK_API_KEY")),
     deepseekModel: deepSeekModel(),
     geminiConfigured: Boolean(
-      envValue("GOOGLE_API_KEY") || envValue("GOOGLE_AI_API_KEY") || envValue("GEMINI_API_KEY")
+      geminiApiKey()
     ),
   };
 }
@@ -126,7 +128,7 @@ function normalizeRecipe(value: unknown): DraftRecipe {
 }
 
 async function generateWithDeepSeek(prompt: string): Promise<{ recipe: DraftRecipe; provider: string }> {
-  const apiKey = envValue("DEEPSEEK_API_KEY");
+  const apiKey = paidProviderKey("DEEPSEEK_API_KEY");
   if (!apiKey) throw new Error("DEEPSEEK_API_KEY missing");
 
   const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -164,34 +166,9 @@ async function generateWithDeepSeek(prompt: string): Promise<{ recipe: DraftReci
 }
 
 async function generateWithGemini(prompt: string): Promise<{ recipe: DraftRecipe; provider: string }> {
-  const apiKey = envValue("GOOGLE_API_KEY") || envValue("GOOGLE_AI_API_KEY") || envValue("GEMINI_API_KEY");
-  if (!apiKey) throw new Error("Gemini key missing");
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 2200,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error("Gemini failed: " + response.status + " " + text.slice(0, 160));
-  }
-
-  const data = await response.json();
-  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!content) throw new Error("Gemini returned no content");
-  return { recipe: normalizeRecipe(JSON.parse(cleanJson(content))), provider: "gemini-2.5-flash" };
+  const result = await generateGeminiText({ prompt, temperature: 0.3, maxOutputTokens: 2200 });
+  if (!result.ok) throw new Error("Gemini failed: " + result.status + " " + result.detail.slice(0, 160));
+  return { recipe: normalizeRecipe(JSON.parse(cleanJson(result.text))), provider: result.model };
 }
 
 export async function POST(request: NextRequest) {

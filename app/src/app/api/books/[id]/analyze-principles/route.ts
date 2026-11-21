@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { books, bookMembers, bookRecipes, recipes, ingredients, instructions } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { and, eq, inArray } from "drizzle-orm";
+import { generateGeminiText, geminiApiKey } from "@/lib/gemini-free";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -30,10 +31,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const apiKey =
-      process.env.GOOGLE_API_KEY ||
-      process.env.GOOGLE_AI_API_KEY ||
-      process.env.GEMINI_API_KEY;
+    const apiKey = geminiApiKey();
     if (!apiKey) {
       return NextResponse.json(
         {
@@ -180,37 +178,16 @@ RECIPES (${recipeBlocks.length}):
 
 ${recipeBlocks.join("\n\n---\n\n")}`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-            responseMimeType: "application/json",
-          },
-        }),
-      }
-    );
-
+    const geminiRes = await generateGeminiText({ prompt, temperature: 0.3, maxOutputTokens: 2048 });
     if (!geminiRes.ok) {
-      const body = await geminiRes.text();
-      console.error("Gemini analyze-principles error:", geminiRes.status, body);
+      console.error("Gemini analyze-principles error:", geminiRes.status, geminiRes.detail);
       return NextResponse.json(
         { error: "Analysis failed" },
         { status: 502 }
       );
     }
 
-    const data = await geminiRes.json();
-    const text: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-      return NextResponse.json({ principles: [] });
-    }
+    const text = geminiRes.text;
 
     let parsed: { principles?: unknown };
     try {

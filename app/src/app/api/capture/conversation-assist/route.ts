@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { callDeepSeekJson, isDeepSeekConfigured } from "@/lib/deepseek";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
+import { generateGeminiText } from "@/lib/gemini-free";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -53,34 +54,10 @@ function geminiKey(): string {
   return process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 }
 
-async function callGeminiAssist(apiKey: string, prompt: string): Promise<{ text: string; model: string }> {
-  const model = "gemini-2.5-flash";
-  const geminiRes = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1200,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
-
-  if (!geminiRes.ok) {
-    const text = await geminiRes.text();
-    throw new Error("Gemini failed: " + geminiRes.status + " " + text.slice(0, 240));
-  }
-
-  const geminiData = await geminiRes.json();
-  const generatedText: string | undefined =
-    geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!generatedText) throw new Error("Gemini returned no text");
-  return { text: generatedText, model };
+async function callGeminiAssist(_apiKey: string, prompt: string): Promise<{ text: string; model: string }> {
+  const r = await generateGeminiText({ prompt, temperature: 0.2, maxOutputTokens: 1200 });
+  if (!r.ok) throw new Error("Gemini failed: " + r.status + " " + r.detail.slice(0, 240));
+  return { text: r.text, model: r.model };
 }
 
 export async function POST(request: NextRequest) {
@@ -185,7 +162,7 @@ Rules:
         {
           error: isDeepSeekConfigured() || geminiKey()
             ? "Conversation assistance failed"
-            : "Conversation assistance is not configured. Add DEEPSEEK_API_KEY for DeepSeek text reasoning.",
+            : "Conversation assistance is not configured. Add GOOGLE_API_KEY (free-tier Gemini).",
           detail: lastError ? lastError.slice(0, 180) : undefined,
         },
         { status: isDeepSeekConfigured() || geminiKey() ? 502 : 503 }

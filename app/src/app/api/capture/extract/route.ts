@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { callDeepSeekJson, isDeepSeekConfigured } from "@/lib/deepseek";
+import { generateGeminiText } from "@/lib/gemini-free";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -29,33 +30,10 @@ function geminiKey(): string {
   return process.env.GOOGLE_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 }
 
-async function callGeminiExtract(apiKey: string, prompt: string): Promise<string> {
-  const model = "gemini-2.5-flash";
-  const geminiResponse = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
-
-  if (!geminiResponse.ok) {
-    const text = await geminiResponse.text();
-    throw new Error("Gemini failed: " + geminiResponse.status + " " + text.slice(0, 240));
-  }
-
-  const geminiData = await geminiResponse.json();
-  const generatedText: string | undefined = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!generatedText) throw new Error("Gemini returned no recipe data");
-  return generatedText;
+async function callGeminiExtract(_apiKey: string, prompt: string): Promise<string> {
+  const r = await generateGeminiText({ prompt, temperature: 0.2, maxOutputTokens: 4096 });
+  if (!r.ok) throw new Error("Gemini failed: " + r.status + " " + r.detail.slice(0, 240));
+  return r.text;
 }
 
 export async function POST(request: NextRequest) {
@@ -160,7 +138,7 @@ Return only the JSON object, no additional text.`;
         {
           error: isDeepSeekConfigured() || geminiKey()
             ? "Failed to process conversation"
-            : "AI extraction is not configured. Add DEEPSEEK_API_KEY for DeepSeek recipe extraction.",
+            : "AI extraction is not configured. Add GOOGLE_API_KEY (free-tier Gemini).",
           detail: lastError ? lastError.slice(0, 180) : undefined,
         },
         { status: isDeepSeekConfigured() || geminiKey() ? 502 : 503 }

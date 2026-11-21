@@ -1,4 +1,6 @@
 import { callDeepSeekJson, deepSeekModel, isDeepSeekConfigured } from "@/lib/deepseek";
+import { generateGeminiText } from "@/lib/gemini-free";
+import { paidProviderKey } from "@/lib/ai-cost-policy";
 
 // Shared extraction helper — tries DeepSeek first for low-cost text
 // reasoning, then falls back to Gemini/MiniMax if configured. All paths
@@ -16,49 +18,6 @@ export interface ExtractError {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-// ─── Gemini ─────────────────────────────────────────────
-async function callGemini(
-  apiKey: string,
-  model: string,
-  prompt: string
-): Promise<{ ok: true; text: string } | { ok: false; status: number; body: string }> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json",
-        },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    return { ok: false, status: res.status, body: await res.text() };
-  }
-
-  const data = await res.json();
-  // Gemini 2.5 may include a thinking part (with "thought": true) before
-  // the actual text part. Pick the last non-thinking text part.
-  const parts: Array<{ text?: string; thought?: boolean }> =
-    data?.candidates?.[0]?.content?.parts ?? [];
-  const responseParts = parts.filter(
-    (p) => typeof p.text === "string" && !p.thought
-  );
-  const text = responseParts.length > 0
-    ? responseParts[responseParts.length - 1].text
-    : parts.find((p) => typeof p.text === "string")?.text;
-  if (!text) {
-    return { ok: false, status: 502, body: "Gemini returned no text part" };
-  }
-  return { ok: true, text };
-}
 
 // ─── MiniMax (OpenAI-compatible chat completions) ──────
 async function callMiniMax(
@@ -115,7 +74,7 @@ export async function extractRecipeText(
     process.env.GOOGLE_API_KEY ||
     process.env.GOOGLE_AI_API_KEY ||
     process.env.GEMINI_API_KEY;
-  const minimaxKey = process.env.MINIMAX_API_KEY;
+  const minimaxKey = paidProviderKey("MINIMAX_API_KEY");
   const minimaxModel = process.env.MINIMAX_MODEL || "MiniMax-Text-01";
   const minimaxBase =
     process.env.MINIMAX_BASE_URL || "https://api.minimaxi.com";
@@ -146,23 +105,10 @@ export async function extractRecipeText(
   }
 
   if (geminiKey) {
-    for (const model of ["gemini-2.0-flash", "gemini-2.5-flash"]) {
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const r = await callGemini(geminiKey, model, prompt);
-        if (r.ok) {
-          return {
-            ok: true,
-            result: { text: r.text, provider: "gemini", model },
-          };
-        }
-        lastStatus = r.status;
-        lastBody = r.body;
-        console.error("Gemini " + model + " attempt " + (attempt + 1) + " failed:", r.status, r.body.slice(0, 200));
-        const isTransient = r.status === 429 || r.status >= 500;
-        if (!isTransient) break;
-        if (attempt === 0) await sleep(600);
-      }
-    }
+    const r = await generateGeminiText({ prompt, temperature: 0.1, maxOutputTokens: 4096 });
+    if (r.ok) return { ok: true, result: { text: r.text, provider: "gemini", model: r.model } };
+    lastStatus = r.status;
+    lastBody = r.detail;
   }
 
   if (minimaxKey) {
@@ -188,7 +134,7 @@ export async function extractRecipeText(
       ok: false,
       error: {
         message:
-          "No AI text provider is configured. Set DEEPSEEK_API_KEY for DeepSeek, or GOOGLE_API_KEY/GEMINI_API_KEY for Gemini.",
+          "No AI provider is configured. Set GOOGLE_API_KEY (free-tier Gemini).",
         status: 503,
       },
     };

@@ -3,6 +3,7 @@ import {
   mergeTranscriptSegments,
   pickCanonicalTranscript,
   nameTranscript,
+  transcriptWeight,
 } from "./conversation-transcript";
 
 describe("mergeTranscriptSegments", () => {
@@ -38,6 +39,34 @@ describe("pickCanonicalTranscript", () => {
 
   it("falls back to live captions when backup is empty", () => {
     expect(pickCanonicalTranscript({ backup: [], live })[0].text).toBe("rough caption");
+  });
+});
+
+describe("pickCanonicalTranscript when the AI backup is thin", () => {
+  const englishCaptions = [
+    {
+      speaker: "Live transcript",
+      text: "Okay so this is my mum's chicken rice. First you take one whole chicken, rub it with coarse salt, then poach it for thirty five minutes.",
+    },
+  ];
+
+  it("uses full live captions over a few stray backup characters (B's 21 Nov report)", () => {
+    const backup = [{ speaker: "Speaker 1", text: "雞 鹽 水" }];
+    expect(pickCanonicalTranscript({ backup, live: englishCaptions })[0].speaker).toBe("Live transcript");
+  });
+
+  it("keeps a full dialect backup over mangled English captions of similar length", () => {
+    const backup = [{ speaker: "Speaker 1", text: "先把五花肉切塊用醬油和老抽醃一下然後鍋裡放油炒香蒜頭和紅蔥頭" }];
+    const live = [{ speaker: "Live transcript", text: "see in a high fa you cut quiet young jail and lousy soy" }];
+    expect(pickCanonicalTranscript({ backup, live })[0].speaker).toBe("Speaker 1");
+  });
+});
+
+describe("transcriptWeight", () => {
+  it("counts English words and Chinese characters", () => {
+    expect(transcriptWeight([{ speaker: "a", text: "two cloves, garlic!" }])).toBe(3);
+    expect(transcriptWeight([{ speaker: "a", text: "五花肉 pork belly" }])).toBe(5);
+    expect(transcriptWeight([{ speaker: "a", text: " ... " }])).toBe(0);
   });
 });
 

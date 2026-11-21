@@ -6,7 +6,7 @@ import { AlertCircle, ChevronDown, ClipboardCheck, Languages, MessageCircleQuest
 import { ChatBubble } from "./ChatBubble";
 import { RecipeCaptureReview } from "./RecipeCaptureReview";
 import { WorkflowDialog } from "@/components/ui/WorkflowDialog";
-import { CONVERSATION_REALTIME_ENABLED } from "@/lib/feature-flags";
+import { CONVERSATION_OPENAI_FALLBACK_ENABLED, CONVERSATION_REALTIME_ENABLED } from "@/lib/feature-flags";
 import {
   mergeTranscriptSegments,
   pickCanonicalTranscript,
@@ -71,8 +71,11 @@ interface ConversationCaptureProps {
 type ModalStep = "recording" | "naming" | "processing" | "review";
 type TranscriptionMode = "idle" | "realtime" | "browser" | "chunked";
 
-const CHUNK_DURATION_MS = 4500;
-const SPEECH_RMS_THRESHOLD = 0.012;
+// Longer chunks cut fewer words and keep the request rate under free-tier Gemini limits.
+const CHUNK_DURATION_MS = 10000;
+// Each call spends free-tier Gemini quota that transcription needs.
+const ASSIST_MIN_INTERVAL_MS = 20000;
+const SPEECH_RMS_THRESHOLD = 0.006;
 
 interface BrowserSpeechRecognitionResult {
   isFinal: boolean;
@@ -133,9 +136,8 @@ function ErrorBanner({ message }: { message: string }) {
           <span>AI capture needs speech and text keys</span>
         </div>
         <p className="leading-relaxed text-ui-text">
-          Add <code className="rounded bg-ui-accent-muted px-1">OPENAI_API_KEY</code>{" "}
-          for speech-to-text and <code className="rounded bg-ui-accent-muted px-1">DEEPSEEK_API_KEY</code>{" "}
-          for conversation gist, prompts, and recipe extraction.
+          Transcription needs a <code className="rounded bg-ui-accent-muted px-1">GOOGLE_API_KEY</code>{" "}
+          free-tier Gemini key from https://aistudio.google.com/apikey.
         </p>
       </div>
     );
@@ -419,10 +421,13 @@ export function ConversationCapture({
   const recordingActiveRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const assistRequestSignatureRef = useRef<string>("");
+  const lastAssistStartedAtRef = useRef(0);
   const transcriptionModeRef = useRef<TranscriptionMode>("idle");
   const lastChunkFailureNoticeAtRef = useRef(0);
   const chunkFailureCountRef = useRef(0);
   const currentChunkHasSpeechRef = useRef(false);
+  const audioMeterLiveRef = useRef(false);
+  const aiQuotaHitRef = useRef(false);
   // Dialect-strong Gemini chunk segments accumulate here for the whole
   // session — the canonical transcript at extraction time. Live captions
   // (realtime/browser) drive the live view; this is the accurate record.
@@ -459,7 +464,9 @@ export function ConversationCapture({
     if (assistRequestSignatureRef.current === transcriptSignature) return;
 
     const controller = new AbortController();
+    const wait = Math.max(900, lastAssistStartedAtRef.current + ASSIST_MIN_INTERVAL_MS - Date.now());
     const timeout = window.setTimeout(async () => {
+      lastAssistStartedAtRef.current = Date.now();
       setIsAssisting(true);
       try {
         const res = await fetch("/api/capture/conversation-assist", {
@@ -489,7 +496,7 @@ export function ConversationCapture({
       } finally {
         if (!controller.signal.aborted) setIsAssisting(false);
       }
-    }, 900);
+    }, wait);
 
     return () => {
       controller.abort();
@@ -635,11 +642,12 @@ export function ConversationCapture({
           body: JSON.stringify({
             audioBase64,
             mimeType,
-            language: "hokkien",
+            language: "auto",
           }),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
+          if (body.code === "quota") aiQuotaHitRef.current = true;
           throw new Error(body.error || "Transcription failed");
         }
         return (await res.json()) as {
@@ -651,6 +659,7 @@ export function ConversationCapture({
       try {
         data = await transcribeWithGemini();
       } catch (geminiError) {
+        if (!CONVERSATION_OPENAI_FALLBACK_ENABLED) throw geminiError;
         console.warn("Gemini dialect transcription unavailable, trying OpenAI fallback:", geminiError);
         try {
           data = await transcribeWithOpenAI();
@@ -712,7 +721,9 @@ export function ConversationCapture({
       if (now - lastChunkFailureNoticeAtRef.current > 20000) {
         lastChunkFailureNoticeAtRef.current = now;
         setAssistError(
-          chunkFailureCountRef.current >= 2
+          aiQuotaHitRef.current
+            ? "Recording is still running, but AI transcription has hit its usage limit for now. Live captions, if shown, will be used for the recipe."
+            : chunkFailureCountRef.current >= 2
             ? "Recording is still running, but AI transcription is currently unavailable. You can stop and save the captured transcript if any text appears."
             : "Recording is still running. Mychelin is retrying AI transcription in the background."
         );
@@ -791,6 +802,7 @@ export function ConversationCapture({
   }, [appendBrowserFinal, stopBrowserSpeechInternal, updateBrowserInterim]);
 
   const stopAudioMeter = useCallback(() => {
+    audioMeterLiveRef.current = false;
     if (audioLevelRafRef.current != null) {
       window.cancelAnimationFrame(audioLevelRafRef.current);
       audioLevelRafRef.current = null;
@@ -810,6 +822,7 @@ export function ConversationCapture({
 
     try {
       const audioContext = new AudioContextConstructor();
+      if (audioContext.state === "suspended") void audioContext.resume().catch(() => undefined);
       audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
@@ -818,6 +831,7 @@ export function ConversationCapture({
       const samples = new Uint8Array(analyser.frequencyBinCount);
 
       const tick = () => {
+        audioMeterLiveRef.current = audioContext.state === "running";
         analyser.getByteTimeDomainData(samples);
         let sum = 0;
         for (const sample of samples) {
@@ -986,7 +1000,7 @@ export function ConversationCapture({
       const blob = new Blob(chunks, { type: mimeType });
       const hadSpeech = currentChunkHasSpeechRef.current;
       currentChunkHasSpeechRef.current = false;
-      if (hadSpeech) {
+      if (hadSpeech || !audioMeterLiveRef.current) {
         void uploadChunk(blob, mimeType);
       }
       if (recordingActiveRef.current && chunkBackupActiveRef.current) {
@@ -1043,6 +1057,7 @@ export function ConversationCapture({
       lastLiveTranscriptAtRef.current = 0;
       lastChunkFailureNoticeAtRef.current = 0;
       chunkFailureCountRef.current = 0;
+      aiQuotaHitRef.current = false;
       currentChunkHasSpeechRef.current = false;
       setIsRecording(true);
       setConnecting(false);
@@ -1110,18 +1125,26 @@ export function ConversationCapture({
     hardStopInternal();
   }, [hardStopInternal]);
 
-  // The canonical transcript: dialect-strong Gemini backup segments when
-  // available, else the live caption messages.
+  const liveTranscriptSegments = useCallback((): TranscriptSegment[] => {
+    const captions = messages.filter(
+      (m) => m.id.startsWith("browser-") || m.id.startsWith("realtime-")
+    );
+    const source = captions.length > 0 ? captions : messages;
+    return source.map((m) => ({
+      speaker: m.speakerLabel,
+      text: m.text,
+      timestamp: m.timestamp,
+    }));
+  }, [messages]);
+
+  // The canonical transcript: dialect-strong Gemini backup segments, unless
+  // they are far thinner than the live captions (AI path failing).
   const canonicalSegments = useCallback((): TranscriptSegment[] => {
     return pickCanonicalTranscript({
       backup: backupSegmentsRef.current,
-      live: messages.map((m) => ({
-        speaker: m.speakerLabel,
-        text: m.text,
-        timestamp: m.timestamp,
-      })),
+      live: liveTranscriptSegments(),
     });
-  }, [messages]);
+  }, [liveTranscriptSegments]);
 
   // Unique speaker labels in first-spoken order, from the canonical
   // transcript — the naming step names these. backupSegmentCount is a
@@ -1129,10 +1152,10 @@ export function ConversationCapture({
   const uniqueSpeakerLabels = useMemo(() => {
     const seen = new Set<string>();
     const order: string[] = [];
-    const source =
-      backupSegmentsRef.current.length > 0
-        ? backupSegmentsRef.current
-        : messages.map((m) => ({ speaker: m.speakerLabel, text: m.text }));
+    const source = pickCanonicalTranscript({
+      backup: backupSegmentsRef.current,
+      live: liveTranscriptSegments(),
+    });
     for (const s of source) {
       if (!seen.has(s.speaker)) {
         seen.add(s.speaker);
@@ -1141,7 +1164,7 @@ export function ConversationCapture({
     }
     return order;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, backupSegmentCount]);
+  }, [messages, backupSegmentCount, liveTranscriptSegments]);
 
   // When moving to the naming step, seed the map with sensible defaults
   // so the user only has to adjust.

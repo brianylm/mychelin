@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { CONVERSATION_REALTIME_ENABLED } from "@/lib/feature-flags";
+import { paidProviderKey } from "@/lib/ai-cost-policy";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -20,7 +22,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    if (!CONVERSATION_REALTIME_ENABLED) {
+      return NextResponse.json(
+        { error: "This transcription provider is turned off." },
+        { status: 404 }
+      );
+    }
+
+    const apiKey = paidProviderKey("OPENAI_API_KEY");
     if (!apiKey) {
       return NextResponse.json(
         { error: "OpenAI Realtime transcription is not configured. Add OPENAI_API_KEY." },

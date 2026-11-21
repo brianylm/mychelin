@@ -27,7 +27,7 @@ From the global kanban and recent repo context:
 
 - Mobile landing hero/scrim readability.
 - Onboarding goal flow and first-run habit loop.
-- Whisper/OpenAI transcription fallback reliability in conversation capture.
+- Conversation transcription reliability on free-tier Gemini (OpenAI fallback is off by policy).
 - Feature screenshots/demo assets later; do not let screenshot work displace core product fixes.
 
 For broader prioritization, read `/home/cluser/.openclaw/workspace/memory/task-kanban.md` plus this repo’s `MEMORY.md`.
@@ -118,7 +118,7 @@ export const preferredRegion = "hnd1";
 - DB access in routes should import from `@/db`, which uses `@libsql/client/web` and lazy initialization for Edge compatibility.
 - Auth uses JWT cookie `mychelin_token`, `jose`, bcrypt password hashing, and 30-day expiry. Auth helpers live in `app/src/lib/auth.ts`.
 - Recipe access should flow through `app/src/lib/recipe-access.ts` when possible. Multi-user isolation is high risk.
-- AI capture currently uses OpenAI/Whisper or Realtime speech-to-text paths, browser live captions where available, Gemini as optional audio fallback, and DeepSeek for lower-cost text reasoning/extraction where configured. Treat transcripts, recordings, and prompts as sensitive.
+- AI must not run up a bill (B, 2026-11-21). `FREE_AI_ONLY` in `app/src/lib/ai-cost-policy.ts` blocks MiniMax and OpenAI even when their keys are set; DeepSeek is allowed because it runs on prepaid credits. Read paid keys only through `paidProviderKey()` (a test enforces it). Gemini calls go through `app/src/lib/gemini-free.ts` (text) and `app/src/lib/gemini-transcribe.ts` (audio); the Gemini key's Google project must never have billing enabled. Treat transcripts, recordings, and prompts as sensitive.
 - Migrations are not guaranteed to auto-run on deploy. For schema changes, add a Drizzle migration under `app/drizzle/`, explain data impact, and verify with app-level checks/scripts. Do not rely on stale Turso migration docs that point to `mychelin-1/`.
 
 ## Work Packet Execution Rule

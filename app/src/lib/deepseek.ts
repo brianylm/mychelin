@@ -1,3 +1,5 @@
+import { paidProviderKey } from "@/lib/ai-cost-policy";
+
 export interface DeepSeekJsonResult {
   text: string;
   model: string;
@@ -23,7 +25,7 @@ export function deepSeekModel(): string {
 }
 
 export function isDeepSeekConfigured(): boolean {
-  return Boolean(envValue("DEEPSEEK_API_KEY"));
+  return Boolean(paidProviderKey("DEEPSEEK_API_KEY"));
 }
 
 export async function callDeepSeekJson({
@@ -32,7 +34,7 @@ export async function callDeepSeekJson({
   temperature = 0.2,
   maxTokens = 2200,
 }: DeepSeekCallOptions): Promise<DeepSeekJsonResult> {
-  const apiKey = envValue("DEEPSEEK_API_KEY");
+  const apiKey = paidProviderKey("DEEPSEEK_API_KEY");
   if (!apiKey) throw new Error("DEEPSEEK_API_KEY missing");
 
   const response = await fetch(deepSeekBaseUrl() + "/chat/completions", {

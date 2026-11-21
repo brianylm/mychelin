@@ -14,6 +14,13 @@ export const SHARED_RECIPE_CARD_ENABLED = true;
 // straight to the chunked+-browser path and OpenAI is never called.
 export const CONVERSATION_REALTIME_ENABLED = false;
 
+// OpenAI (Whisper / gpt-4o-transcribe) fallback for chunked conversation
+// transcription. OFF: B wants transcription to stay free. With both
+// OpenAI flags false, conversation capture uses only free-tier Gemini and
+// the browser's own speech recognition, and the OpenAI transcription
+// routes refuse requests server-side, so no client can trigger spend.
+export const CONVERSATION_OPENAI_FALLBACK_ENABLED = false;
+
 // First Recipe Guided Mission (post-onboarding dashboard card + flow).
 // Rollback: flip to false and the mission card and flow disappear; the
 // modules become unreachable and nothing else changes. Preview-first —
