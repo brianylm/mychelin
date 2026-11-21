@@ -2968,6 +2968,7 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Stress test: in-app ConfirmDialog/useConfirm; recipe delete optimistic with toasts; owner-only book delete. Batch randomise + undo routes (one household activity entry; undo only deletes the caller's own rows). Plan caches invalidated after cooking; "Tonight" only for today's dinner; deduction sheet skipped when nothing tracked. Step autosave (`lib/step-autosave.ts`: debounce, per-step order, keepalive flush on pagehide, beforeunload). Goal saves on tap. Log cook defaults to newest version. Local typo-tolerant search (`lib/recipe-search.ts`); debug queries only with ?debug=1. `?view=` URL sync (`lib/view-url.ts`). No "units" word without a unit; all step times kept.
 - Checks: verify ui PASS (38 Playwright, privacy/pilot known-failing local Edge setImmediate artifact).
 - Follow-ups: ingredient edits are still blur-only (docket mychelin-ingredient-autosave); parser duplicate/comma fixes wait on the uncommitted manual-recipe-parser WIP in the main checkout; login returnTo does not allow /app?view=; async capture packet docs/work-packets/async-capture.md needs B's decisions.
+
 ## 2026-11-08 - Retry stale libsql HTTP connections in Node
 
 - Added `app/src/db/resilient-fetch.ts`: cross-fetch with exactly one retry for thrown ECONNRESET/EPIPE/UND_ERR_SOCKET or socket-close messages; Request bodies are cloned before the first attempt. HTTP responses and unrelated errors are never retried. `VERCEL=1` omits the fetch override.
