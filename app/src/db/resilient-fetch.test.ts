@@ -127,3 +127,50 @@ describe("libsqlFetchOption", () => {
     expect(libsqlFetchOption()).toEqual({ fetch: resilientFetch });
   });
 });
+
+describe("default base fetch", () => {
+  it("accepts a native Request object (no 'Only absolute URLs' error)", async () => {
+    const seen: unknown[] = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      seen.push(input);
+      return new Response("ok");
+    }) as typeof fetch;
+    try {
+      const { createResilientFetch } = await import("./resilient-fetch");
+      const request = new Request("http://127.0.0.1:8317/v2/pipeline", { method: "POST", body: "{}" });
+      const response = await createResilientFetch()(request);
+      expect(await response.text()).toBe("ok");
+      expect(seen[0]).toBe("http://127.0.0.1:8317/v2/pipeline");
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+});
+
+describe("default base fetch with a cross-fetch Request", () => {
+  it("unpacks a cross-fetch Request into url + init for native fetch", async () => {
+    const original = globalThis.fetch;
+    const calls: Array<{ input: unknown; init?: RequestInit }> = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ input, init });
+      return new Response("native");
+    }) as typeof fetch;
+    try {
+      const { createResilientFetch } = await import("./resilient-fetch");
+      const request = new CrossFetchRequest("http://127.0.0.1:8317/v2/pipeline", {
+        method: "POST",
+        headers: { authorization: "Bearer t" },
+        body: '{"a":1}',
+      });
+      const response = await createResilientFetch()(request as unknown as Request);
+      expect(await response.text()).toBe("native");
+      expect(calls[0].input).toBe("http://127.0.0.1:8317/v2/pipeline");
+      expect(calls[0].init?.method).toBe("POST");
+      expect((calls[0].init?.headers as Record<string, string>).authorization).toBe("Bearer t");
+      expect(new TextDecoder().decode(calls[0].init?.body as ArrayBuffer)).toBe('{"a":1}');
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+});

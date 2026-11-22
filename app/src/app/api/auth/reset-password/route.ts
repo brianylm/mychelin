@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { passwordResetTokens, users } from "@/db/schema";
 import { hashPassword } from "@/lib/auth";
+import { ensureUserTokenVersionColumn } from "@/db/ensure-schema";
 import { hashToken } from "@/lib/tokens";
 import {
   checkRateLimit,
@@ -86,9 +87,12 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
+    // Bumping token_version signs out every existing session (including
+    // one an attacker may hold). This flow does not sign the user in.
+    await ensureUserTokenVersionColumn();
     await db
       .update(users)
-      .set({ passwordHash })
+      .set({ passwordHash, tokenVersion: sql`${users.tokenVersion} + 1` })
       .where(eq(users.id, status.userId));
 
     // Mark the token as consumed so it can't be reused.

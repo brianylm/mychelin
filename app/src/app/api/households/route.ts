@@ -233,6 +233,9 @@ export async function DELETE() {
       membership.household.name
     );
 
+    // The join code is deliberately not rotated here: it is the only way
+    // a former admin can reactivate the household, and the join route
+    // refuses reactivation to anyone who was not an admin at deletion.
     await db
       .update(households)
       .set({ deletedAt: new Date().toISOString() })

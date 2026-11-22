@@ -197,6 +197,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
 
   const loadRhythm = useCallback(async () => {
     const response = await fetch("/api/notifications/rhythm");
@@ -254,6 +255,20 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
     },
     [currentPassword, newPassword, confirmPassword, addToast, resetPasswordForm]
   );
+
+  const handleSignOutOtherDevices = useCallback(async () => {
+    if (!window.confirm("Sign out of Mychelin on every other phone and computer? This device stays signed in.")) return;
+    setIsSigningOutOthers(true);
+    try {
+      const res = await fetch("/api/auth/logout-all", { method: "POST" });
+      if (!res.ok) throw new Error("logout-all failed");
+      addToast("Signed out of all other devices", "success");
+    } catch {
+      addToast("Couldn't sign out other devices. Please try again.", "error");
+    } finally {
+      setIsSigningOutOthers(false);
+    }
+  }, [addToast]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -763,6 +778,17 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
                 </Button>
               </div>
             </form>
+          )}
+
+          {!showPasswordForm && (
+            <button
+              type="button"
+              onClick={handleSignOutOtherDevices}
+              disabled={isSigningOutOthers}
+              className="inline-flex min-h-11 items-center text-sm font-medium text-ui-accent hover:underline disabled:opacity-60"
+            >
+              {isSigningOutOthers ? "Signing out other devices..." : "Sign out of all other devices"}
+            </button>
           )}
         </div>
 

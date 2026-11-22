@@ -6,15 +6,23 @@ import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { ensureHouseholdTables } from "@/db/ensure-schema";
 import {
   getUserHousehold,
+  isHouseholdAdmin,
   isHouseholdMember,
+  isWellFormedJoinCode,
   logHouseholdActivity,
   purgeHousehold,
 } from "@/lib/households";
 import {
+  checkRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  rateLimitHeaders,
+} from "@/lib/rateLimit";
+import {
   isPastRecoveryWindow,
   isWithinRecoveryWindow,
 } from "@/lib/household-lifecycle";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -24,12 +32,24 @@ export const preferredRegion = "hnd1";
 // join while the household is live. One household per user in the UI
 // (friendly 409); the schema allows many.
 //
+// Codes are 8 characters (6 for households that have not rotated since
+// the change). The code rotates whenever a member leaves or is removed,
+// and attempts are rate limited per user and per IP.
+//
 // Slice 2: the join code is also the reactivation path. A dead
 // household (deleted_at set) inside its 30-day window is restored
 // wholesale — deleted_at cleared, every plan/inventory/shopping/log row
-// intact — and the reactivating user (re)joins as admin. Past the
-// window the household is purged here (lazy purge on the join path) and
-// the code fails cleanly.
+// intact — but only for a caller who was an admin of it when it died
+// (their membership row survives the delete). Everyone else gets the
+// same response as a wrong code, so the code reveals nothing. Past the
+// window the household is purged here (lazy purge on the join path).
+function invalidCode() {
+  return NextResponse.json(
+    { error: "No household found for that code" },
+    { status: 404 }
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!HOUSEHOLDS_ENABLED) {
@@ -62,6 +82,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Every attempt counts (right or wrong), per user and per IP, before
+    // the code is looked up. Both checks run so each bucket advances.
+    const [byUser, byIp] = await Promise.all([
+      checkRateLimit(RATE_LIMITS.householdJoinUser, `user:${currentUser.id}`),
+      checkRateLimit(RATE_LIMITS.householdJoinIp, `ip:${getClientIp(request)}`),
+    ]);
+    const blocked = !byUser.allowed ? byUser : !byIp.allowed ? byIp : null;
+    if (blocked) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many join attempts. Please wait a while and try again, or ask your household for a fresh invite link.",
+        },
+        { status: 429, headers: rateLimitHeaders(blocked) }
+      );
+    }
+
+    if (!isWellFormedJoinCode(joinCode)) {
+      return invalidCode();
+    }
+
     // Look up by code regardless of deletion state — the state decides
     // whether this is a join, a reactivation, or a clean failure.
     const [household] = await db
@@ -71,20 +112,25 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!household) {
-      return NextResponse.json(
-        { error: "No household found for that code" },
-        { status: 404 }
-      );
+      return invalidCode();
     }
 
     if (household.deletedAt) {
+      // Only an admin at deletion time may learn the household exists.
+      const wasAdmin = await isHouseholdAdmin(currentUser.id, household.id);
+
       if (isPastRecoveryWindow(household.deletedAt)) {
         // Lazy purge on the join path, then fail cleanly.
         await purgeHousehold(household.id);
-        return NextResponse.json(
-          { error: "This household has been permanently deleted" },
-          { status: 410 }
-        );
+        return wasAdmin
+          ? NextResponse.json(
+              { error: "This household has been permanently deleted" },
+              { status: 410 }
+            )
+          : invalidCode();
+      }
+      if (!wasAdmin) {
+        return invalidCode();
       }
       if (!isWithinRecoveryWindow(household.deletedAt)) {
         return NextResponse.json(
@@ -93,30 +139,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Reactivate: restore the household wholesale and (re)join the
-      // reactivating user as admin.
+      // Reactivate: restore the household wholesale. The caller's admin
+      // membership row already exists (it survived the delete).
       await db
         .update(households)
         .set({ deletedAt: null })
         .where(eq(households.id, household.id));
-
-      if (await isHouseholdMember(currentUser.id, household.id)) {
-        await db
-          .update(householdMembers)
-          .set({ role: "admin" })
-          .where(
-            and(
-              eq(householdMembers.householdId, household.id),
-              eq(householdMembers.userId, currentUser.id)
-            )
-          );
-      } else {
-        await db.insert(householdMembers).values({
-          householdId: household.id,
-          userId: currentUser.id,
-          role: "admin",
-        });
-      }
 
       await logHouseholdActivity(
         household.id,

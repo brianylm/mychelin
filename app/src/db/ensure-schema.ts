@@ -470,7 +470,39 @@ export async function ensureNotificationTables(): Promise<void> {
   notificationsEnsured = true;
 }
 
+// users.token_version backs session revocation (lib/auth.ts). Every
+// authenticated request reads it, so this caches one in-flight promise per
+// isolate: a cold isolate pays the shared snapshot probe once, then nothing.
+// A failed probe clears the cache so the next request retries.
+let _userTokenVersion: Promise<void> | null = null;
+
+export function ensureUserTokenVersionColumn(): Promise<void> {
+  if (!_userTokenVersion) {
+    _userTokenVersion = (async () => {
+      const client = getClient();
+      if (!client) return;
+
+      let userCols: Set<string>;
+      try {
+        userCols = await tableColumns(client, "users");
+      } catch (e: unknown) {
+        console.warn("ensureUserTokenVersionColumn probe:", e instanceof Error ? e.message : String(e));
+        _userTokenVersion = null;
+        return;
+      }
+      if (userCols.has("token_version")) return;
+
+      await runDdl(client, [
+        `ALTER TABLE users ADD COLUMN token_version integer NOT NULL DEFAULT 0`,
+      ], "ensureUserTokenVersionColumn");
+    })();
+  }
+  return _userTokenVersion;
+}
+
 export async function ensureUserOAuthColumns(): Promise<void> {
+  // Full-row users reads (db.query.users) select token_version too.
+  await ensureUserTokenVersionColumn();
   if (userOAuthEnsured) return;
   const client = getClient();
   if (!client) return;

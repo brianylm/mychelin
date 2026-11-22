@@ -10,6 +10,7 @@ import {
   isHouseholdAdmin,
   isHouseholdMember,
   logHouseholdActivity,
+  rotateJoinCode,
 } from "@/lib/households";
 import { and, eq } from "drizzle-orm";
 
@@ -171,6 +172,12 @@ export async function DELETE(request: NextRequest) {
     // on-plan recipes, clean up their block rows, and start the 30-day
     // flow if the removal emptied the household.
     const emptied = await handleMemberDeparture(householdId, targetUserId);
+
+    // A removed member must not be able to rejoin with the code they
+    // already hold. Admins read the new code from GET /api/households.
+    if (!emptied) {
+      await rotateJoinCode(householdId);
+    }
 
     return NextResponse.json({ success: true, householdDeleted: emptied });
   } catch (error) {

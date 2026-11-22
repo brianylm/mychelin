@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeReturnTo } from "@/lib/return-to";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { ensureUserOAuthColumns } from "@/db/ensure-schema";
-import { hashPassword, setAuthCookie, type AuthUser } from "@/lib/auth";
+import { hashPassword, setAuthCookie, type TokenSubject } from "@/lib/auth";
 import { trackUsageEvent } from "@/lib/usage-events";
 
 export const runtime = "edge";
@@ -111,7 +111,7 @@ async function verifyGoogleIdToken(idToken: string, clientId: string): Promise<G
 class AgeConfirmationRequiredError extends Error {}
 class UnverifiedEmailError extends Error {}
 
-async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: boolean): Promise<AuthUser> {
+async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: boolean): Promise<TokenSubject> {
   await ensureUserOAuthColumns();
   const now = new Date().toISOString();
 
@@ -119,7 +119,12 @@ async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: bool
     where: eq(users.googleSub, profile.sub),
   });
   if (byGoogleSub) {
-    return { id: byGoogleSub.id, name: byGoogleSub.name, email: byGoogleSub.email };
+    return {
+      id: byGoogleSub.id,
+      name: byGoogleSub.name,
+      email: byGoogleSub.email,
+      tokenVersion: byGoogleSub.tokenVersion,
+    };
   }
 
   const byEmail = await db.query.users.findFirst({
@@ -129,6 +134,30 @@ async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: bool
     // Google has not proven this person controls the address, so it must not
     // unlock an existing account.
     if (!profile.email_verified) throw new UnverifiedEmailError();
+
+    if (!byEmail.emailVerified) {
+      // Nobody ever proved they own this address, so whoever set the password
+      // may not be the person Google just verified (account pre-hijack).
+      // Replace the password with an unusable random one and bump
+      // token_version so every session the pre-registrant holds dies. The
+      // owner can set a password again through "Forgot password".
+      const passwordHash = await hashPassword(crypto.randomUUID());
+      const [updated] = await db
+        .update(users)
+        .set({
+          googleSub: profile.sub,
+          authProvider: "google",
+          emailVerified: true,
+          passwordHash,
+          tokenVersion: sql`${users.tokenVersion} + 1`,
+          avatarUrl: byEmail.avatarUrl ?? profile.picture ?? null,
+        })
+        .where(eq(users.id, byEmail.id))
+        .returning({ tokenVersion: users.tokenVersion });
+      if (!updated) throw new Error("Google link: user vanished");
+      return { id: byEmail.id, name: byEmail.name, email: byEmail.email, tokenVersion: updated.tokenVersion };
+    }
+
     await db
       .update(users)
       .set({
@@ -138,7 +167,7 @@ async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: bool
         avatarUrl: byEmail.avatarUrl ?? profile.picture ?? null,
       })
       .where(eq(users.id, byEmail.id));
-    return { id: byEmail.id, name: byEmail.name, email: byEmail.email };
+    return { id: byEmail.id, name: byEmail.name, email: byEmail.email, tokenVersion: byEmail.tokenVersion };
   }
 
   // New account: only after the age confirmation on the signup form.
@@ -167,7 +196,7 @@ async function findOrCreateGoogleUser(profile: GoogleProfile, ageConfirmed: bool
     path: "/api/auth/google/callback",
   });
 
-  return { id: created.id, name: created.name, email: created.email };
+  return { id: created.id, name: created.name, email: created.email, tokenVersion: created.tokenVersion };
 }
 
 export async function GET(request: NextRequest) {

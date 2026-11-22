@@ -8,8 +8,9 @@ import {
   getUserHousehold,
   handleMemberDeparture,
   logHouseholdActivity,
+  rotateJoinCode,
 } from "@/lib/households";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -40,26 +41,48 @@ export async function POST() {
       );
     }
 
-    await db
-      .delete(householdMembers)
+    const householdId = membership.household.id;
+
+    // The last member out keeps their membership row (role intact), the
+    // same as every member's row survives an admin delete. Join-code
+    // reactivation is limited to former admins, and this row is how a
+    // last-out admin proves it. getUserHousehold ignores rows in dead
+    // households, so the user is solo again either way.
+    const [{ others }] = await db
+      .select({ others: sql<number>`count(*)` })
+      .from(householdMembers)
       .where(
         and(
-          eq(householdMembers.householdId, membership.household.id),
-          eq(householdMembers.userId, currentUser.id)
+          eq(householdMembers.householdId, householdId),
+          ne(householdMembers.userId, currentUser.id)
         )
       );
+    if (Number(others) > 0) {
+      await db
+        .delete(householdMembers)
+        .where(
+          and(
+            eq(householdMembers.householdId, householdId),
+            eq(householdMembers.userId, currentUser.id)
+          )
+        );
+    }
 
     await logHouseholdActivity(
-      membership.household.id,
+      householdId,
       currentUser.id,
       "left_household",
       currentUser.name
     );
 
-    const emptied = await handleMemberDeparture(
-      membership.household.id,
-      currentUser.id
-    );
+    const emptied = await handleMemberDeparture(householdId, currentUser.id);
+
+    // The departed member may still hold the code: rotate it while the
+    // household lives on. A dead household keeps its code so a former
+    // admin can reactivate it (the join route enforces the admin check).
+    if (!emptied) {
+      await rotateJoinCode(householdId);
+    }
 
     return NextResponse.json({ success: true, householdDeleted: emptied });
   } catch (error) {

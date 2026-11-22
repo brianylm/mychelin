@@ -269,6 +269,12 @@ test.describe("households slice 2", () => {
       pageA.getByText("E2E HH2 Ghost Noodles").first()
     ).toBeVisible({ timeout: 30_000 });
 
+    // B leaving rotated the join code; the admin reactivates with the
+    // current code (the old one was revoked with B's access).
+    const current = await (await pageA.request.get("/api/households")).json();
+    const currentJoinCode: string = current.household.joinCode;
+    expect(currentJoinCode).not.toBe(household.joinCode);
+
     // A (last member) leaves → the 30-day deletion flow starts.
     const leaveRes = await pageA.request.post("/api/households/leave");
     expect((await leaveRes.json()).householdDeleted).toBe(true);
@@ -279,7 +285,7 @@ test.describe("households slice 2", () => {
     // Within the window the join code reactivates the household wholesale,
     // with the reactivating user as admin.
     const rejoin = await pageA.request.post("/api/households/join", {
-      data: { joinCode: household.joinCode },
+      data: { joinCode: currentJoinCode },
     });
     expect(rejoin.status()).toBe(200);
     const rejoined = await rejoin.json();
@@ -302,6 +308,7 @@ test.describe("households slice 2", () => {
     ).toBeNull();
 
     // Past the window the join code fails cleanly and the row is purged.
+    // D was never an admin, so D gets the plain wrong-code answer.
     // (Time-travel the deleted_at directly — synthetic dev DB only.)
     const db = devDb();
     await db.execute({
@@ -312,10 +319,10 @@ test.describe("households slice 2", () => {
       ],
     });
     const lateJoin = await pageD.request.post("/api/households/join", {
-      data: { joinCode: household.joinCode },
+      data: { joinCode: currentJoinCode },
     });
-    expect(lateJoin.status()).toBe(410);
-    expect((await lateJoin.json()).error).toMatch(/permanently deleted/i);
+    expect(lateJoin.status()).toBe(404);
+    expect((await lateJoin.json()).error).toMatch(/no household found/i);
 
     const { rows } = await db.execute({
       sql: "SELECT id FROM households WHERE id = ?",

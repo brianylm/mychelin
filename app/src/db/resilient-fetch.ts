@@ -1,4 +1,3 @@
-import { fetch } from "cross-fetch";
 
 export function isConnectionReset(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
@@ -13,7 +12,53 @@ export function isConnectionReset(error: unknown): boolean {
   ) || (typeof message === "string" && /socket hang up|other side closed/i.test(message));
 }
 
-export function createResilientFetch(baseFetch: typeof fetch = fetch): typeof fetch {
+// libsql hands us whatever Request class its environment uses: Next's own
+// (from another realm, so `instanceof Request` is unreliable) or cross-fetch's
+// in plain Node (e2e helpers). cross-fetch rejects native Requests ("Only
+// absolute URLs are supported") and native fetch rejects cross-fetch ones
+// ("Failed to parse URL from [object Request]"). So never pass a Request
+// object across: unpack any Request-like into url + plain init and call the
+// runtime's native fetch.
+interface RequestLike {
+  url: string;
+  method: string;
+  headers: { forEach(callback: (value: string, key: string) => void): void };
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+function isRequestLike(input: unknown): input is RequestLike {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    !(input instanceof URL) &&
+    typeof (input as RequestLike).url === "string" &&
+    typeof (input as RequestLike).method === "string" &&
+    typeof (input as RequestLike).arrayBuffer === "function"
+  );
+}
+
+const nativeFetch: typeof fetch = async (input, init) => {
+  if (!isRequestLike(input)) return globalThis.fetch(input, init);
+  const headers: Record<string, string> = {};
+  input.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+  const method = (init?.method ?? input.method).toUpperCase();
+  const body =
+    init?.body !== undefined
+      ? init.body
+      : method === "GET" || method === "HEAD"
+        ? undefined
+        : await input.arrayBuffer();
+  return globalThis.fetch(input.url, {
+    ...init,
+    method,
+    headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+    body,
+  });
+};
+
+export function createResilientFetch(baseFetch: typeof fetch = nativeFetch): typeof fetch {
   return async (input, init) => {
     // Clone before fetch consumes the body. Both native and cross-fetch
     // Requests expose clone(), while strings and URLs do not.

@@ -243,6 +243,54 @@ describe("page(mode,tick) × account state → terminal", () => {
     expect(Number(row.email_verified)).toBe(1);
   });
 
+  // Account pre-hijack: someone registered the victim's email with a password
+  // (never verified). When the real owner arrives via verified Google, the
+  // pre-registrant's password and sessions must die.
+  it("linking an unverified password account replaces the hash and bumps token_version", async () => {
+    await seedAccount(client, "password_unverified", EMAIL, SUB);
+    const r = await roundTrip(clientStartUrl("login", false)!, verified());
+    expect(r.path).toBe("/");
+    const row = (
+      await client.execute("SELECT password_hash, token_version, google_sub, auth_provider, email_verified FROM users")
+    ).rows[0];
+    expect(row.password_hash).toBe("hashed-random");
+    expect(Number(row.token_version)).toBe(1);
+    expect(row.google_sub).toBe(SUB);
+    expect(row.auth_provider).toBe("google");
+    expect(Number(row.email_verified)).toBe(1);
+    expect(setAuthCookie).toHaveBeenCalledWith(
+      expect.objectContaining({ email: EMAIL, tokenVersion: 1 }),
+      "localhost:3000"
+    );
+  });
+
+  it("linking an already-verified password account keeps the password and sessions", async () => {
+    await seedAccount(client, "password_by_email", EMAIL, SUB);
+    await roundTrip(clientStartUrl("login", false)!, verified());
+    const row = (await client.execute("SELECT password_hash, token_version FROM users")).rows[0];
+    expect(row.password_hash).toBe("hashed:secret-123");
+    expect(Number(row.token_version)).toBe(0);
+    expect(setAuthCookie).toHaveBeenCalledWith(expect.objectContaining({ tokenVersion: 0 }), "localhost:3000");
+  });
+
+  it("Google email_verified=false never touches an unverified password account", async () => {
+    await seedAccount(client, "password_unverified", EMAIL, SUB);
+    const r = await roundTrip(clientStartUrl("login", false)!, { ...verified(), email_verified: false });
+    expect(r.error).toBe("google_email_unverified");
+    expect(setAuthCookie).not.toHaveBeenCalled();
+    const row = (await client.execute("SELECT password_hash, token_version, google_sub FROM users")).rows[0];
+    expect(row.password_hash).toBe("hashed:secret-123");
+    expect(Number(row.token_version)).toBe(0);
+    expect(row.google_sub).toBeNull();
+  });
+
+  it("returning Google user (by sub) gets a cookie for their current token_version", async () => {
+    await seedAccount(client, "google_by_sub", EMAIL, SUB);
+    await client.execute("UPDATE users SET token_version = 4");
+    await roundTrip(clientStartUrl("login", false)!, verified());
+    expect(setAuthCookie).toHaveBeenCalledWith(expect.objectContaining({ tokenVersion: 4 }), "localhost:3000");
+  });
+
   // EXPECTED TO FAIL (finding, pre-existing): when Google reports
   // email_verified=false the callback still signs the visitor into the
   // existing password account that owns that email (it only skips linking).

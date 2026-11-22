@@ -21,7 +21,7 @@ import {
   shoppingListItems,
   type Household,
 } from "@/db/schema";
-import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { ensureMealPilotTables } from "@/db/ensure-schema";
 import {
@@ -134,16 +134,61 @@ export async function logHouseholdActivity(
   });
 }
 
-// 6-char join code from an unambiguous alphabet (no 0/O, 1/I/L).
-// Edge-safe: uses the Web Crypto API available in both runtimes.
+// Join codes use an unambiguous alphabet (no 0/O, 1/I/L). New codes are
+// 8 characters (31^8 ≈ 2^39.6); households created before the change keep
+// their 6-character code until it next rotates, so both lengths are valid
+// input. Edge-safe: uses the Web Crypto API available in both runtimes.
+export const JOIN_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+export const JOIN_CODE_LENGTH = 8;
+export const LEGACY_JOIN_CODE_LENGTH = 6;
+
 export function generateJoinCode(): string {
-  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  const alphabet = JOIN_CODE_ALPHABET;
+  // Rejection sampling keeps every character equally likely: 256 is not a
+  // multiple of 31, so bytes at or above the largest multiple are skipped.
+  const ceiling = 256 - (256 % alphabet.length);
   let code = "";
-  for (const byte of bytes) {
-    code += alphabet[byte % alphabet.length];
+  while (code.length < JOIN_CODE_LENGTH) {
+    const bytes = crypto.getRandomValues(new Uint8Array(JOIN_CODE_LENGTH * 2));
+    for (const byte of bytes) {
+      if (byte >= ceiling) continue;
+      code += alphabet[byte % alphabet.length];
+      if (code.length === JOIN_CODE_LENGTH) break;
+    }
   }
   return code;
+}
+
+// Input check for the join route: an upper-cased code of either length,
+// made only of alphabet characters. Anything else cannot match a row.
+export function isWellFormedJoinCode(code: string): boolean {
+  if (code.length !== JOIN_CODE_LENGTH && code.length !== LEGACY_JOIN_CODE_LENGTH) {
+    return false;
+  }
+  for (const ch of code) {
+    if (!JOIN_CODE_ALPHABET.includes(ch)) return false;
+  }
+  return true;
+}
+
+// Replaces a household's join code with a fresh one, so a code held by a
+// departed or removed member stops working. join_code is UNIQUE; retry on
+// the (astronomically unlikely) collision exactly like creation does.
+export async function rotateJoinCode(householdId: number): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const joinCode = generateJoinCode();
+    try {
+      await db
+        .update(households)
+        .set({ joinCode })
+        .where(eq(households.id, householdId));
+      return joinCode;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (!message.toLowerCase().includes("unique")) throw e;
+    }
+  }
+  throw new Error("Could not generate a unique join code");
 }
 
 // ─── Slice 2: ghosts, departure cleanup, deletion ──────────
@@ -207,10 +252,18 @@ export async function handleMemberDeparture(
       )
     );
 
+  // Count everyone except the departing user: the last member to leave
+  // keeps their membership row (see the leave route) so a former admin can
+  // reactivate the dead household; that row must not count as "remaining".
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)` })
     .from(householdMembers)
-    .where(eq(householdMembers.householdId, householdId));
+    .where(
+      and(
+        eq(householdMembers.householdId, householdId),
+        ne(householdMembers.userId, userId)
+      )
+    );
 
   if (Number(count) === 0) {
     await db

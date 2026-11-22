@@ -44,6 +44,7 @@ beforeAll(async () => {
       auth_provider TEXT NOT NULL DEFAULT 'password',
       google_sub TEXT UNIQUE,
       email_verified INTEGER NOT NULL DEFAULT 0,
+      token_version INTEGER NOT NULL DEFAULT 0,
       cooking_skill_level TEXT,
       household_size INTEGER,
       favorite_cuisines TEXT,

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import {
   getCurrentUser,
   getUserFromDb,
   hashPassword,
+  setAuthCookie,
   verifyPassword,
 } from "@/lib/auth";
 import {
@@ -76,7 +77,22 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+    // Same statement bumps token_version: every other device is signed out.
+    const [updated] = await db
+      .update(users)
+      .set({ passwordHash, tokenVersion: sql`${users.tokenVersion} + 1` })
+      .where(eq(users.id, user.id))
+      .returning({ tokenVersion: users.tokenVersion });
+    if (!updated) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Keep this device signed in with a cookie for the new version.
+    const host = request.headers.get("host") || undefined;
+    await setAuthCookie(
+      { id: user.id, name: user.name, email: user.email, tokenVersion: updated.tokenVersion },
+      host
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

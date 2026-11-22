@@ -2,12 +2,51 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { extractRecipeText } from "@/lib/ai-extract";
 import { enforceAiLimit } from "@/lib/ai-rate-limit";
+import { isSafeFetchUrl } from "@/lib/safe-url";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MB
 const FETCH_TIMEOUT_MS = 10_000;
+const MAX_REDIRECTS = 5;
+const BLOCKED_MESSAGE = "That link can't be imported.";
+
+class BlockedUrlError extends Error {}
+
+// Follows redirects by hand so every hop is re-validated (SSRF guard).
+async function safeFetch(start: URL, signal: AbortSignal): Promise<Response> {
+  let current = start;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (!isSafeFetchUrl(current)) throw new BlockedUrlError();
+    const res = await fetch(current.href, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      redirect: "manual",
+      signal,
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get("location");
+      res.body?.cancel().catch(() => {});
+      if (!location) return res;
+      let next: URL;
+      try {
+        next = new URL(location, current);
+      } catch {
+        throw new BlockedUrlError();
+      }
+      current = next;
+      continue;
+    }
+    return res;
+  }
+  throw new BlockedUrlError(); // too many redirects
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -115,28 +154,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      return NextResponse.json(
-        { error: "Only http and https URLs are supported" },
-        { status: 400 }
-      );
+    if (!isSafeFetchUrl(parsed)) {
+      return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 400 });
     }
 
-    // Fetch with a browser-like UA so sites serve full content
     let response: Response;
     try {
-      response = await fetch(parsed.href, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-        redirect: "follow",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
+      response = await safeFetch(parsed, AbortSignal.timeout(FETCH_TIMEOUT_MS));
     } catch (err) {
+      if (err instanceof BlockedUrlError) {
+        return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 400 });
+      }
       if (
         err instanceof Error &&
         (err.name === "TimeoutError" || err.name === "AbortError")
@@ -167,6 +195,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "URL did not return an HTML page" },
         { status: 422 }
+      );
+    }
+
+    const declaredLength = Number(response.headers.get("content-length"));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+      response.body?.cancel().catch(() => {});
+      return NextResponse.json(
+        { error: "Page is too large (max 2 MB)" },
+        { status: 413 }
       );
     }
 

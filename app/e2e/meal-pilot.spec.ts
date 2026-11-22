@@ -429,11 +429,13 @@ test.describe("meal pilot slice 1", () => {
       ],
     });
 
+    // The last-out admin keeps a membership row, so loading their household
+    // runs the lazy purge first; the code then matches nothing.
     const lateJoin = await page.request.post("/api/households/join", {
       data: { joinCode: household.joinCode },
     });
-    expect(lateJoin.status()).toBe(410);
-    expect((await lateJoin.json()).error).toMatch(/permanently deleted/i);
+    expect(lateJoin.status()).toBe(404);
+    expect((await lateJoin.json()).error).toMatch(/no household found/i);
 
     const householdCount = await db.execute({
       sql: "SELECT count(*) AS count FROM households WHERE id = ?",

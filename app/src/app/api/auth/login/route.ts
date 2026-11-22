@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     };
 
     const host = request.headers.get("host") || undefined;
-    await setAuthCookie(authUser, host);
+    await setAuthCookie({ ...authUser, tokenVersion: user.tokenVersion }, host);
 
     return NextResponse.json({ user: authUser });
   } catch (error) {

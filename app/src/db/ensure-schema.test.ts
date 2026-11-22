@@ -110,4 +110,26 @@ describe("meal pilot production guard", () => {
     await schema.ensureMealPilotTables();
     expect(ddl().length).toBeGreaterThan(0);
   });
+
+  it("adds users.token_version once, then costs no round trips", async () => {
+    fake.columns.users = ["id", "email"];
+    const schema = await import("./ensure-schema");
+    await Promise.all([schema.ensureUserTokenVersionColumn(), schema.ensureUserTokenVersionColumn()]);
+
+    const sql = fake.execute.mock.calls.map(([stmt]) => (typeof stmt === "string" ? stmt : stmt.sql));
+    expect(sql.filter((s) => s.includes("ADD COLUMN token_version"))).toHaveLength(1);
+
+    fake.batch.mockClear();
+    fake.execute.mockClear();
+    await schema.ensureUserTokenVersionColumn();
+    expect(fake.batch).not.toHaveBeenCalled();
+    expect(fake.execute).not.toHaveBeenCalled();
+  });
+
+  it("skips DDL when users.token_version already exists", async () => {
+    fake.columns.users = ["id", "token_version"];
+    const schema = await import("./ensure-schema");
+    await schema.ensureUserTokenVersionColumn();
+    expect(fake.execute).not.toHaveBeenCalled();
+  });
 });

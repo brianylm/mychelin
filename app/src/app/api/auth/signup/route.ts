@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     };
 
     const host = request.headers.get("host") || undefined;
-    await setAuthCookie(authUser, host);
+    await setAuthCookie({ ...authUser, tokenVersion: newUser.tokenVersion }, host);
 
     await trackUsageEvent({
       userId: newUser.id,

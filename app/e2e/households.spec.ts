@@ -41,7 +41,7 @@ test.describe("households slice 1", () => {
     expect(createRes.status()).toBe(201);
     const created = await createRes.json();
     const joinCode = created.household.joinCode as string;
-    expect(joinCode).toMatch(/^[A-Z2-9]{6}$/);
+    expect(joinCode).toMatch(/^[A-Z2-9]{8}$/);
     expect(created.household.myRole).toBe("admin");
 
     expect(

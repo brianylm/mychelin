@@ -11,6 +11,8 @@ export const users = sqliteTable("users", {
   authProvider: text("auth_provider").notNull().default("password"),
   googleSub: text("google_sub").unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+  // Bumped to revoke every session (JWT "tv" claim must match). See lib/auth.ts.
+  tokenVersion: integer("token_version").notNull().default(0),
   // Profile fields
   cookingSkillLevel: text("cooking_skill_level"), // "beginner" | "intermediate" | "advanced"
   householdSize: integer("household_size"),

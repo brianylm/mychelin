@@ -183,6 +183,21 @@ export const RATE_LIMITS = {
     windowSeconds: 24 * 60 * 60,
   },
 
+  // Household join-code attempts. Every attempt counts, right or wrong:
+  // a person joins once or twice, so 10/hour per user and 30/hour per IP
+  // (a shared NAT or family wifi) leave headroom while making code guessing
+  // impractical.
+  householdJoinUser: {
+    name: "household_join_user",
+    limit: 10,
+    windowSeconds: 60 * 60,
+  },
+  householdJoinIp: {
+    name: "household_join_ip",
+    limit: 30,
+    windowSeconds: 60 * 60,
+  },
+
   // Public share-page beautify (token-gated image generation).
   shareBeautifyToken: {
     name: "share_beautify_token",

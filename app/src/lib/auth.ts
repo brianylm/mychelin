@@ -3,8 +3,8 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { ensureUserOAuthColumns } from "@/db/ensure-schema";
+import { eq, sql } from "drizzle-orm";
+import { ensureUserOAuthColumns, ensureUserTokenVersionColumn } from "@/db/ensure-schema";
 
 // Lazily resolve JWT_SECRET so a missing env var doesn't crash at module
 // import time (mirrors the db client lazy-init pattern). The check fires
@@ -32,6 +32,17 @@ export interface AuthUser {
   email: string;
 }
 
+// What a session cookie is minted for. tokenVersion must be the user's current
+// users.token_version; bumping that column revokes every older cookie.
+export interface TokenSubject extends AuthUser {
+  tokenVersion: number;
+}
+
+interface TokenClaims {
+  id: number;
+  tv: number;
+}
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }
@@ -47,22 +58,25 @@ export async function verifyPassword(
   }
 }
 
-export async function createToken(user: AuthUser): Promise<string> {
-  return new SignJWT({ id: user.id, name: user.name, email: user.email })
+export async function createToken(user: TokenSubject): Promise<string> {
+  return new SignJWT({ id: user.id, name: user.name, email: user.email, tv: user.tokenVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${TOKEN_EXPIRY_SECONDS}s`)
     .sign(getJwtSecret());
 }
 
-export async function verifyToken(token: string): Promise<AuthUser | null> {
+// Checks signature and expiry only. The token's name/email are not trusted;
+// getCurrentUser reads them (and the token version) from the users row.
+export async function verifyToken(token: string): Promise<TokenClaims | null> {
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
-    return {
-      id: payload.id as number,
-      name: payload.name as string,
-      email: payload.email as string,
-    };
+    const { payload } = await jwtVerify(token, getJwtSecret(), { algorithms: ["HS256"] });
+    const { id } = payload;
+    // Cookies issued before token_version existed carry no tv: treat as 0.
+    const tv = payload.tv === undefined ? 0 : payload.tv;
+    if (typeof id !== "number" || !Number.isSafeInteger(id) || id <= 0) return null;
+    if (typeof tv !== "number" || !Number.isSafeInteger(tv) || tv < 0) return null;
+    return { id, tv };
   } catch {
     return null;
   }
@@ -143,7 +157,7 @@ export function buildClearAuthCookieHeaders(host?: string): string[] {
 }
 
 export async function setAuthCookie(
-  user: AuthUser,
+  user: TokenSubject,
   host?: string
 ): Promise<void> {
   const token = await createToken(user);
@@ -179,7 +193,43 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifyToken(token);
+  const claims = await verifyToken(token);
+  if (!claims) return null;
+
+  try {
+    await ensureUserTokenVersionColumn();
+    const [row] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        tokenVersion: users.tokenVersion,
+      })
+      .from(users)
+      .where(eq(users.id, claims.id))
+      .limit(1);
+    // Deleted user, or the session was revoked (sign out everywhere,
+    // password change/reset, untrusted password replaced on Google link).
+    if (!row || row.tokenVersion !== claims.tv) return null;
+    return { id: row.id, name: row.name, email: row.email };
+  } catch (e: unknown) {
+    // Fail closed: an unverifiable session is not a session.
+    console.error("getCurrentUser:", e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+// Revokes every session for the user. Returns the new version so the caller
+// can re-issue a cookie for the device that asked.
+export async function bumpTokenVersion(userId: number): Promise<number> {
+  await ensureUserTokenVersionColumn();
+  const [row] = await db
+    .update(users)
+    .set({ tokenVersion: sql`${users.tokenVersion} + 1` })
+    .where(eq(users.id, userId))
+    .returning({ tokenVersion: users.tokenVersion });
+  if (!row) throw new Error("bumpTokenVersion: user not found");
+  return row.tokenVersion;
 }
 
 export async function getUserFromDb(

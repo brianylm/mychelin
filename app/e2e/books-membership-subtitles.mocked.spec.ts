@@ -1,5 +1,11 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { SignJWT } from "jose";
+import { cleanupUsers, signup, uniqueEmail } from "./helpers";
+
+const PREFIX = "e2e-books-subtitles-mocked";
+
+test.afterAll(async () => {
+  await cleanupUsers(PREFIX);
+});
 
 const recipes = [
   {
@@ -131,24 +137,11 @@ async function installApiMocks(page: Page) {
   return { getBookContentsRequests: () => bookContentsRequests };
 }
 
+// The /app page checks the session against the users table (token
+// version), so a hand-signed cookie for a user that does not exist is
+// rejected. Create a real synthetic user; API calls stay mocked below.
 async function installSignedSession(page: Page) {
-  const token = await new SignJWT({
-    id: 7,
-    name: "Mock Cook",
-    email: "mock@example.com",
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("1h")
-    .sign(new TextEncoder().encode("playwright-test-secret"));
-
-  await page.context().addCookies([
-    {
-      name: "mychelin_token",
-      value: token,
-      url: "http://localhost:3100",
-    },
-  ]);
+  await signup(page, uniqueEmail(PREFIX), "E2eMocked123!", "Mock Cook");
 }
 
 test("shows visible book subtitles and initial counts without eager book-content requests", async ({ page }) => {
