@@ -2987,3 +2987,13 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Bug found by verify on a Sunday: Shopping list and view-cache week range jumped to NEXT week on Sundays (`getDay()` 0). Fixed with `lib/week-start.ts`; planner was already correct.
 - Checks: verify ui PASS on Sunday (38 Playwright).
 - Batch 2 (not done): account pre-hijack via Google linking, session revocation, SSRF in capture/url, household join codes, security headers, Google consent copy.
+
+## 2026-11-22 — Security batch 2 (release-2026-11-22)
+
+- `users.token_version` (drizzle/0034, additive, created at runtime by `ensureUserTokenVersionColumn`): JWT carries `tv`; `getCurrentUser` reads the user row and rejects a mismatch (missing `tv` = 0, so old cookies stay valid). Bumped by password change/reset and POST /api/auth/logout-all ("Sign out of all other devices" in Profile). Fails closed: a DB error reads as signed out.
+- Google linking to an unverified password account replaces the password hash and bumps the version (pre-hijack fix). Password-only users lose their password on first Google sign-in (B accepted 2026-11-22). Follow-up: verify email at sign-up.
+- Join codes 8 chars, rotate on leave/remove (not on delete), rate-limited, reactivation only by a former admin.
+- capture/url SSRF guard (`lib/safe-url.ts`), manual redirects. DNS rebinding not blockable on the edge.
+- Security headers in next.config.ts; CSP Report-Only (enforcing needs nonces).
+- `db/resilient-fetch.ts` now unpacks any Request-like and calls native fetch: cross-fetch rejected Next's Requests ("Only absolute URLs") and native fetch rejects cross-fetch's ("[object Request]").
+- Checks: verify ui PASS (38), preview smoke 34/34, logout-all probe (other device 401, this device 200).
