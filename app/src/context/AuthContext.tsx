@@ -13,6 +13,8 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
+  // Optional: absent when the server couldn't read it. Only `false` means unverified.
+  emailVerified?: boolean;
 }
 
 interface AuthContextValue {

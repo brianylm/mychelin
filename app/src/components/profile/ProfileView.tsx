@@ -10,6 +10,7 @@ import { useToast } from "@/context/ToastContext";
 import { changelogEntries, changelogVersion } from "@/lib/changelog";
 import { readComfortMode, setComfortMode } from "@/lib/comfort-mode";
 import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
+import { EmailVerificationNotice } from "@/components/profile/EmailVerificationNotice";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { fetchViewJson, viewCacheKey, viewUrls } from "@/lib/view-cache";
 
@@ -480,6 +481,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           <div className="space-y-2 text-sm text-ui-muted">
             <p><span className="font-medium">Email:</span> {user?.email}</p>
           </div>
+          <EmailVerificationNotice />
         </div>
 
         {(onOpenActivity || (HOUSEHOLDS_ENABLED && onOpenHousehold)) && (

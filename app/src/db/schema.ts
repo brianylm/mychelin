@@ -41,6 +41,28 @@ export const passwordResetTokens = sqliteTable("password_reset_tokens", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+// ─── Email Verification Tokens ─────────────────────────────
+// One row per verification link sent. `email` is the address the link was
+// sent to: a token only verifies the account while users.email still equals
+// it. Raw tokens are never stored, only their SHA-256 hash.
+export const emailVerificationTokens = sqliteTable(
+  "email_verification_tokens",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    email: text("email").notNull(),
+    expiresAt: text("expires_at").notNull(), // ISO string
+    usedAt: text("used_at"), // ISO string, null until consumed or superseded
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => [index("email_verification_tokens_user_id_idx").on(table.userId)]
+);
+
 // ─── Auth Rate Limits ──────────────────────────────────────
 // Fixed-window rate limiter for auth endpoints. One row per rate-limit key
 // (e.g. "login:1.2.3.4"). On each check, we either start a new window or

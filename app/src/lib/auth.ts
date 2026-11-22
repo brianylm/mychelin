@@ -30,6 +30,8 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
+  // Present where a route reads it (me, login, signup, /app); never in the JWT.
+  emailVerified?: boolean;
 }
 
 // What a session cookie is minted for. tokenVersion must be the user's current

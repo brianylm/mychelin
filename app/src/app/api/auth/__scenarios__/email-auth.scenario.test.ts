@@ -53,12 +53,20 @@ vi.mock("@/lib/rateLimit", () => ({
   rateLimitHeaders: vi.fn(() => ({})),
   RATE_LIMITS: { signup: {}, login: {}, forgotPassword: {} },
 }));
-vi.mock("@/db/ensure-schema", () => ({ ensureUserOAuthColumns: vi.fn(async () => {}) }));
+vi.mock("@/db/ensure-schema", () => ({
+  ensureUserOAuthColumns: vi.fn(async () => {}),
+  ensureEmailVerificationTokensTable: vi.fn(async () => {}),
+}));
 vi.mock("@/lib/usage-events", () => ({
   requestPath: vi.fn(() => "/api/auth/signup"),
   trackUsageEvent: vi.fn(async () => {}),
 }));
-vi.mock("@/lib/email", () => ({ sendPasswordResetEmail: vi.fn(async () => {}) }));
+const emailDelivery = vi.hoisted(() => ({ ready: true }));
+vi.mock("@/lib/email", () => ({
+  canEmailAnyAddress: () => emailDelivery.ready,
+  sendPasswordResetEmail: vi.fn(async () => {}),
+  sendVerificationEmail: vi.fn(async () => true),
+}));
 vi.mock("@/lib/auth", async () => {
   const { db } = await import("@/db");
   const { users } = await import("@/db/schema");

@@ -500,6 +500,42 @@ export function ensureUserTokenVersionColumn(): Promise<void> {
   return _userTokenVersion;
 }
 
+let _emailVerificationTokens: Promise<void> | null = null;
+
+// Email verification links (signup, resend). Additive; mirrors
+// drizzle/0035_email_verification_tokens.sql.
+export function ensureEmailVerificationTokensTable(): Promise<void> {
+  if (!_emailVerificationTokens) {
+    _emailVerificationTokens = (async () => {
+      const client = getClient();
+      if (!client) return;
+
+      try {
+        if ((await existingObjects(client, ["email_verification_tokens"])).has("email_verification_tokens")) return;
+      } catch (e: unknown) {
+        console.warn("ensureEmailVerificationTokensTable probe:", e instanceof Error ? e.message : String(e));
+        _emailVerificationTokens = null;
+        return;
+      }
+
+      await runDdl(client, [
+        `CREATE TABLE IF NOT EXISTS email_verification_tokens (
+          id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+          user_id integer NOT NULL REFERENCES users(id) ON DELETE cascade,
+          token_hash text NOT NULL,
+          email text NOT NULL,
+          expires_at text NOT NULL,
+          used_at text,
+          created_at text NOT NULL
+        )`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS email_verification_tokens_token_hash_unique ON email_verification_tokens(token_hash)`,
+        `CREATE INDEX IF NOT EXISTS email_verification_tokens_user_id_idx ON email_verification_tokens(user_id)`,
+      ], "ensureEmailVerificationTokensTable");
+    })();
+  }
+  return _emailVerificationTokens;
+}
+
 export async function ensureUserOAuthColumns(): Promise<void> {
   // Full-row users reads (db.query.users) select token_version too.
   await ensureUserTokenVersionColumn();

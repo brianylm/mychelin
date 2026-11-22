@@ -65,7 +65,9 @@ export async function POST(request: NextRequest) {
     const host = request.headers.get("host") || undefined;
     await setAuthCookie({ ...authUser, tokenVersion: user.tokenVersion }, host);
 
-    return NextResponse.json({ user: authUser });
+    return NextResponse.json({
+      user: { ...authUser, emailVerified: Boolean(user.emailVerified) },
+    });
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

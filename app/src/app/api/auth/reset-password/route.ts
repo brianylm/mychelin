@@ -89,10 +89,16 @@ export async function POST(request: NextRequest) {
 
     // Bumping token_version signs out every existing session (including
     // one an attacker may hold). This flow does not sign the user in.
+    // The reset link reached the account's address, which proves ownership,
+    // so the email counts as verified too.
     await ensureUserTokenVersionColumn();
     await db
       .update(users)
-      .set({ passwordHash, tokenVersion: sql`${users.tokenVersion} + 1` })
+      .set({
+        passwordHash,
+        emailVerified: true,
+        tokenVersion: sql`${users.tokenVersion} + 1`,
+      })
       .where(eq(users.id, status.userId));
 
     // Mark the token as consumed so it can't be reused.

@@ -25,6 +25,10 @@ vi.mock("@/components/RecipeWorkspace", () => ({
   RecipeWorkspace: () => null,
 }));
 
+vi.mock("@/lib/email-verification", () => ({
+  getEmailVerified: vi.fn(async () => false),
+}));
+
 vi.mock("@/context/AuthContext", () => ({
   AuthProvider: ({ children }: { children: unknown }) => children,
 }));
@@ -70,13 +74,17 @@ describe("authenticated entry routing", () => {
     const page = await AppPage();
 
     expect(mocks.redirect).not.toHaveBeenCalled();
-    expect(page.props.initialUser).toMatchObject({ id: 7 });
+    expect(page.props.initialUser).toMatchObject({ id: 7, emailVerified: false });
   });
 
   it("sends missing or expired app sessions to login", async () => {
     mocks.getCurrentUser.mockResolvedValue(null);
+    // Like Next's redirect(), stop rendering here.
+    mocks.redirect.mockImplementation(() => {
+      throw new Error("NEXT_REDIRECT");
+    });
 
-    await AppPage();
+    await expect(AppPage()).rejects.toThrow("NEXT_REDIRECT");
 
     expect(mocks.redirect).toHaveBeenCalledWith("/login");
   });

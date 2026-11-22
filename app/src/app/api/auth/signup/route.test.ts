@@ -26,6 +26,11 @@ vi.mock("@/lib/auth", () => ({
   hashPassword: vi.fn(async () => "hashed"),
   setAuthCookie: vi.fn(async () => {}),
 }));
+// Verification email behavior is covered in __scenarios__/email-verification.
+vi.mock("@/lib/email-verification", () => ({
+  emailLinkBaseUrl: vi.fn(() => "http://localhost"),
+  issueEmailVerification: vi.fn(async () => true),
+}));
 
 import { POST as signup } from "./route";
 

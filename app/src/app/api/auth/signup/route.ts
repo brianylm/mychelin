@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { ensureUserOAuthColumns } from "@/db/ensure-schema";
 import { MINIMUM_AGE } from "@/lib/legal";
+import { emailLinkBaseUrl, issueEmailVerification } from "@/lib/email-verification";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -100,8 +101,20 @@ export async function POST(request: NextRequest) {
       path: requestPath(request),
     });
 
+    // Confirming the address must never block signup: log and carry on.
+    let verificationSent = false;
+    try {
+      verificationSent = await issueEmailVerification(newUser, emailLinkBaseUrl(request));
+    } catch (err) {
+      console.error("Signup verification email error:", err);
+    }
+
     return NextResponse.json(
-      { user: authUser, message: "Account created" },
+      {
+        user: { ...authUser, emailVerified: false },
+        message: "Account created",
+        verificationSent,
+      },
       { status: 201 }
     );
   } catch (error) {

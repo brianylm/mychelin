@@ -30,6 +30,15 @@ export const USERS_DDL = `
     used_at TEXT,
     created_at TEXT
   );
+  CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    created_at TEXT NOT NULL
+  );
 `;
 
 export type AccountState = "none" | "password_by_email" | "google_by_sub" | "password_unverified";
@@ -38,6 +47,7 @@ export async function resetUsers(client: Client) {
   await client.executeMultiple(USERS_DDL);
   await client.execute("DELETE FROM users");
   await client.execute("DELETE FROM password_reset_tokens");
+  await client.execute("DELETE FROM email_verification_tokens");
 }
 
 /** Seed one account in the requested state for `email` / Google `sub`. */

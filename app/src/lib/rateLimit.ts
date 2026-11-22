@@ -164,6 +164,24 @@ export const RATE_LIMITS = {
     windowSeconds: 60 * 60,
   },
 
+  // Email verification. Resend is per user (3/hour) and per IP (10/hour) so
+  // nobody can flood an inbox; using a link is per IP like reset-password.
+  verifyEmailSendUser: {
+    name: "verify_email_send_user",
+    limit: 3,
+    windowSeconds: 60 * 60,
+  },
+  verifyEmailSendIp: {
+    name: "verify_email_send_ip",
+    limit: 10,
+    windowSeconds: 60 * 60,
+  },
+  verifyEmail: {
+    name: "verify_email",
+    limit: 20,
+    windowSeconds: 60 * 60,
+  },
+
   // AI routes (extract/paste/url/draft-recipe/conversation-assist/etc.), per
   // user. 40/hour: a heavy cooking session does a handful of imports and a few
   // dozen assist turns; 40 is well above that but caps a scripted drain.
