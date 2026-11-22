@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm";
 import { requestPath, trackUsageEvent } from "@/lib/usage-events";
 import { ensureUserOAuthColumns } from "@/db/ensure-schema";
 import { MINIMUM_AGE } from "@/lib/legal";
-import { emailLinkBaseUrl, issueEmailVerification } from "@/lib/email-verification";
+import { clientEmailVerified, emailLinkBaseUrl, issueEmailVerification } from "@/lib/email-verification";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        user: { ...authUser, emailVerified: false },
+        user: { ...authUser, emailVerified: clientEmailVerified(false) },
         message: "Account created",
         verificationSent,
       },

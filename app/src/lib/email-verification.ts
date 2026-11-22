@@ -111,6 +111,16 @@ export async function verifyEmailToken(rawToken: string): Promise<VerifyEmailRes
   return { ok: true, email: user.email };
 }
 
+/**
+ * What to tell the client about verification. An unverified address is only
+ * reported as `false` when a real sender is configured; otherwise there is
+ * nothing the user can do, so it is `undefined` and the notice stays hidden.
+ */
+export function clientEmailVerified(verified: boolean): boolean | undefined {
+  if (verified) return true;
+  return canEmailAnyAddress() ? false : undefined;
+}
+
 /** The account's verified flag; undefined when unknown (missing user or DB error). */
 export async function getEmailVerified(userId: number): Promise<boolean | undefined> {
   try {
@@ -121,10 +131,7 @@ export async function getEmailVerified(userId: number): Promise<boolean | undefi
       .where(eq(users.id, userId))
       .limit(1);
     if (!row) return undefined;
-    // Until a real sender is configured there is nothing a user can do about
-    // an unverified address, so report "unknown" and keep the banner hidden.
-    if (!row.emailVerified && !canEmailAnyAddress()) return undefined;
-    return Boolean(row.emailVerified);
+    return clientEmailVerified(Boolean(row.emailVerified));
   } catch (e: unknown) {
     console.error("getEmailVerified:", e instanceof Error ? e.message : String(e));
     return undefined;

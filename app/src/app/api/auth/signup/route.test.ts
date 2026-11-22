@@ -30,6 +30,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/email-verification", () => ({
   emailLinkBaseUrl: vi.fn(() => "http://localhost"),
   issueEmailVerification: vi.fn(async () => true),
+  clientEmailVerified: (verified: boolean) => verified,
 }));
 
 import { POST as signup } from "./route";

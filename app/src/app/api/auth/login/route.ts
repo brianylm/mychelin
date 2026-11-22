@@ -5,6 +5,7 @@ import {
   setAuthCookie,
   type AuthUser,
 } from "@/lib/auth";
+import { clientEmailVerified } from "@/lib/email-verification";
 import {
   checkRateLimit,
   getClientIp,
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     await setAuthCookie({ ...authUser, tokenVersion: user.tokenVersion }, host);
 
     return NextResponse.json({
-      user: { ...authUser, emailVerified: Boolean(user.emailVerified) },
+      user: { ...authUser, emailVerified: clientEmailVerified(Boolean(user.emailVerified)) },
     });
   } catch (error) {
     console.error("Login error:", error);
