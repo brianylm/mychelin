@@ -17,3 +17,7 @@ export const COPYRIGHT_AGENT: {
   postalAddress: null,
   phone: null,
 };
+
+// Where users reach us. A Google Group (members only can read it), so it is a
+// contact address, not a sending domain: Resend cannot send from googlegroups.com.
+export const SUPPORT_EMAIL = "mychelin@googlegroups.com";

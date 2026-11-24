@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { safeReturnTo } from "@/lib/return-to";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
-import { MINIMUM_AGE } from "@/lib/legal";
+import { MINIMUM_AGE, SUPPORT_EMAIL } from "@/lib/legal";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -233,6 +233,13 @@ export function AuthScreen({
               <p className="rounded-2xl border border-ui-border bg-ui-accent-muted px-4 py-3 text-xs leading-5 text-ui-text">
                 If an account exists for <strong>{email}</strong>, we&apos;ve sent a
                 password reset link. Check your inbox (and spam folder).
+              </p>
+              <p className="text-xs leading-5 text-ui-muted">
+                Nothing arrived? Email{" "}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-ui-accent underline">
+                  {SUPPORT_EMAIL}
+                </a>{" "}
+                and we&apos;ll help you back in.
               </p>
               <Button
                 type="button"

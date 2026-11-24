@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { EditableField } from "@/components/ui/EditableField";
 import { useToast } from "@/context/ToastContext";
 import { changelogEntries, changelogVersion } from "@/lib/changelog";
+import { SUPPORT_EMAIL } from "@/lib/legal";
 import { readComfortMode, setComfortMode } from "@/lib/comfort-mode";
 import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
 import { EmailVerificationNotice } from "@/components/profile/EmailVerificationNotice";
@@ -792,6 +793,17 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
               {isSigningOutOthers ? "Signing out other devices..." : "Sign out of all other devices"}
             </button>
           )}
+        </div>
+
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-ui-text">Help</h2>
+          <p className="text-sm leading-6 text-ui-muted">
+            Questions, a problem, or a request about your data? Email{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-ui-accent underline">
+              {SUPPORT_EMAIL}
+            </a>
+            .
+          </p>
         </div>
 
         <div data-comfort-hide className="space-y-4">
