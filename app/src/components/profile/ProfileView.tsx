@@ -804,6 +804,15 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
             </a>
             .
           </p>
+          <p className="text-sm leading-6 text-ui-muted">
+            <a href="/privacy" className="text-ui-accent underline">
+              Privacy notice
+            </a>
+            {" · "}
+            <a href="/terms" className="text-ui-accent underline">
+              Terms
+            </a>
+          </p>
         </div>
 
         <div data-comfort-hide className="space-y-4">

@@ -3006,3 +3006,11 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Dark until a real sender exists: `canEmailAnyAddress()` needs RESEND_API_KEY and RESEND_FROM_EMAIL. Prod and preview have no RESEND_FROM_EMAIL, so mail goes from onboarding@resend.dev, which (per Resend, unconfirmed here) only delivers to the account owner — password-reset emails likely reach only B. Docket: mychelin-email-sender-domain.
 - `clientEmailVerified()` reports the flag the same way in signup, login and /me (undefined while dark).
 - Checks: verify ui PASS (38), preview smoke 34/34 on 0dac73e; signup/resend/verify probes on 95ee9a2.
+
+## 2026-11-24 — Legal pages, support contact, health endpoint (release-2026-11-24b)
+
+- `/privacy` and `/terms` (draft for B's review, not legal advice) linked from the landing footer, sign-up ("By creating an account you agree…") and Profile → Help. `SUPPORT_EMAIL` = mychelin@googlegroups.com in `lib/legal.ts` (members-only Google Group: a contact address, not a Resend sender). Bump `LEGAL_UPDATED` when either page changes. DMCA agent still unset (on hold).
+- The notice states what the code does: no delete-my-account or export (handled by email), AI processing by Google free-tier Gemini and DeepSeek (China), data in Japan/US, share links and blob URLs open to anyone with the address, deleted recipes leave blob files.
+- `GET /api/health` (edge, `select 1`, 503 on DB failure). VPS monitor `~/chief/alerts/mychelin-health.sh` every 5 min via `cron-alert.sh` (curl only; 11 MB, 0.1 s CPU); DOWN after 2 failures, reminder every 6 h, RECOVERED once. Depends on the VPS: B to add an external uptime monitor (docket mychelin-external-uptime).
+- Follow-ups: docket mychelin-deletion-gap (account delete, export, delete blobs on recipe delete, purge rate-limit/usage rows).
+- Checks: verify ui PASS (38).

@@ -378,6 +378,20 @@ export function AuthScreen({
                       : "Send reset link"}
               </Button>
 
+              {mode === "signup" && (
+                <p className="mt-3 text-center text-xs leading-5 text-ui-muted">
+                  By creating an account you agree to our{" "}
+                  <a href="/terms" className="text-ui-accent underline">
+                    Terms
+                  </a>{" "}
+                  and{" "}
+                  <a href="/privacy" className="text-ui-accent underline">
+                    Privacy notice
+                  </a>
+                  .
+                </p>
+              )}
+
               <p className="mt-4 text-center text-xs text-ui-muted">
                 {mode === "login" && (
                   <>

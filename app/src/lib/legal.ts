@@ -21,3 +21,6 @@ export const COPYRIGHT_AGENT: {
 // Where users reach us. A Google Group (members only can read it), so it is a
 // contact address, not a sending domain: Resend cannot send from googlegroups.com.
 export const SUPPORT_EMAIL = "mychelin@googlegroups.com";
+
+// Shown at the top of /privacy and /terms. Update when either page changes.
+export const LEGAL_UPDATED = "24 November 2026";

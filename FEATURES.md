@@ -263,15 +263,24 @@ All app taps below start at `/app` with a signed-in, onboarded user unless state
 - **Traps:** Admin routes require requireAdminUser; comments mentioning only logged-in users are insufficient. Migration writes/backfills data; migrations do not automatically run on deployment. Analytics may include user emails and comments: avoid private dumps/screenshots.
 
 ### Copyright and legal information {#compliance}
-- **B calls it:** copyright, takedown, legal, terms, privacy
-- **Reach it:** direct `/copyright` → “Copyright and takedown requests”; no primary signed-in nav tab. Age confirmation is mapped separately under age-gate.
-- **Set up:** no DB fixtures; signed-out or signed-in navigation to `/copyright`.
-- **Code:** `app/src/app/copyright/page.tsx`, `app/src/lib/legal.ts`
-- **API / tables:** none; copyright agent contact comes from configuration.
-- **Tests:** none
-- **Traps:** This is a notice/instructions page, not an automated takedown API. Missing configured contact fields render fallback text; do not claim a full privacy/terms portal exists.
+- **B calls it:** copyright, takedown, legal, terms, privacy, support email
+- **Reach it:** direct `/privacy` → “Privacy notice”, `/terms` → “Terms of use”, `/copyright` → “Copyright and takedown requests”. Linked from the landing footer, the sign-up form (“By creating an account you agree…”) and Profile → Help. Age confirmation is mapped separately under age-gate.
+- **Set up:** no DB fixtures; signed-out or signed-in navigation to those paths.
+- **Code:** `app/src/app/privacy/page.tsx`, `app/src/app/terms/page.tsx`, `app/src/app/copyright/page.tsx`, `app/src/components/legal/LegalPage.tsx`, `app/src/lib/legal.ts` (SUPPORT_EMAIL, LEGAL_UPDATED, COPYRIGHT_AGENT)
+- **API / tables:** none; the copyright agent contact comes from configuration.
+- **Tests:** `app/src/app/privacy/page.test.tsx`, `app/src/lib/legal.test.ts`
+- **Traps:** These are notices, not automated flows: there is no delete-my-account button and no data export, and the privacy notice says so. Keep the notice true to the code (AI providers, public blob URLs, overseas processing) and bump LEGAL_UPDATED when either page changes. Draft written 2026-11-24 for B to review; not legal advice.
 
 ## Platform/PWA/infra
+
+### Uptime health endpoint {#health}
+- **B calls it:** uptime, alerts, is it down
+- **Reach it:** `GET /api/health` (public, no sign-in) → `{ok, db, ms}`; the VPS runs the mychelin-health.sh check (in ~/chief/alerts) every 5 minutes through the cron-alert.sh wrapper, which pushes to the phone.
+- **Set up:** none.
+- **Code:** `app/src/app/api/health/route.ts`
+- **API / tables:** one `select 1`; no tables.
+- **Tests:** `app/src/app/api/health/route.test.ts`
+- **Traps:** 503 means the app cannot reach its database. Keep it read-only and free of user data; the monitor only uses public URLs and no credentials.
 
 ### App shell, offline cache, schema and verification {#platform}
 - **B calls it:** PWA, install, offline, stale app, cache, loading, deploy, database

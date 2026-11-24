@@ -278,9 +278,17 @@ export function LandingPage() {
         <p className="text-xs text-ui-muted">
           Cook like home, even in your new home.
         </p>
-        <Link href="/copyright" className="text-xs text-ui-muted underline-offset-4 hover:underline">
-          Copyright and takedowns
-        </Link>
+        <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal">
+          <Link href="/privacy" className="text-xs text-ui-muted underline-offset-4 hover:underline">
+            Privacy
+          </Link>
+          <Link href="/terms" className="text-xs text-ui-muted underline-offset-4 hover:underline">
+            Terms
+          </Link>
+          <Link href="/copyright" className="text-xs text-ui-muted underline-offset-4 hover:underline">
+            Copyright and takedowns
+          </Link>
+        </nav>
       </footer>
     </div>
   );
