@@ -3025,3 +3025,9 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Profile “Your data” (`AccountDataSection`), `/account-deleted`, privacy/terms rewritten to match, FEATURES.md entry account-data.
 - Tests use `src/test/full-schema-db.ts` (drizzle-kit generated schema, FKs on, prod book_tips quirk). The delete suite also passed once against `.verify/cache/schema.sql`.
 - Risk: prod book_tips points at a missing recipe_books table; a legacy tip by a user would block their deletion (none writable today).
+
+## 2026-11-25 — Session read survives one transient DB error (release-2026-11-25)
+
+- Prod smoke on 24 Nov saw /api/auth/me return 401 right after signup while pages accepted the same cookie. Vercel logs: `schemaSnapshot: SERVER_ERROR: Server returned HTTP status 502` on a cold instance. Not replica lag (single Turso instance, aws-ap-northeast-1).
+- `getCurrentUser` now queries users directly; `ensureUserTokenVersionColumn` runs only on a "no such column … token_version" error. One retry after 150 ms on other errors; two failures still fail closed. `schemaSnapshot` no longer caches a failed batch.
+- Tests: `app/src/lib/auth-transient.test.ts` (5). Logs: `vercel logs --project mychelin --environment production --no-branch --no-follow --query "<text>"` under `capped` works for searching prod runtime logs.
