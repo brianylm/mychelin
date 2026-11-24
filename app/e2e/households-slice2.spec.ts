@@ -1,12 +1,5 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
-import {
-  signup,
-  createRecipe,
-  cleanupUsers,
-  cleanupHouseholds,
-  uniqueEmail,
-  devDb,
-} from "./helpers";
+import { signup, createRecipe, cleanupUsers, cleanupHouseholds, uniqueEmail, devDb, resetHouseholdJoinLimits } from "./helpers";
 
 const PREFIX = "e2e-hh2";
 const HOUSEHOLD_PREFIX = "E2E HH2";
@@ -29,6 +22,10 @@ async function newUserPage(
   await signup(page, email, PASSWORD, name);
   return page;
 }
+
+test.beforeEach(async () => {
+  await resetHouseholdJoinLimits();
+});
 
 test.afterAll(async () => {
   await cleanupHouseholds(HOUSEHOLD_PREFIX);

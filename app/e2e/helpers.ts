@@ -132,6 +132,20 @@ async function ignoreMissingTable(fn: () => Promise<unknown>): Promise<void> {
   }
 }
 
+// The household join limit (10 per user and 30 per IP per hour) is real
+// product behaviour, but CI shares one staging database across runs, so
+// counters from earlier runs in the same hour would throttle these specs.
+// Clear only those counters before each test. turso() refuses to touch the
+// production database.
+export async function resetHouseholdJoinLimits(): Promise<void> {
+  await ignoreMissingTable(() =>
+    turso().execute({
+      sql: "DELETE FROM auth_rate_limits WHERE key LIKE 'household_join_%'",
+      args: [],
+    })
+  );
+}
+
 // Best-effort cleanup: deletes the synthetic user (cascades recipes,
 // plans, attempts, photos rows — blob storage is not touched).
 export async function cleanupUsers(prefix: string): Promise<void> {

@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
-import { openHousehold, signup, createRecipe, cleanupUsers, uniqueEmail } from "./helpers";
+import { openHousehold, signup, createRecipe, cleanupUsers, uniqueEmail, resetHouseholdJoinLimits } from "./helpers";
 
 const PREFIX = "e2e-households";
 const PASSWORD = "E2eHouseholds123!";
@@ -21,6 +21,10 @@ async function newUserPage(
   await signup(page, email, PASSWORD, name);
   return page;
 }
+
+test.beforeEach(async () => {
+  await resetHouseholdJoinLimits();
+});
 
 test.afterAll(async () => {
   await cleanupUsers(PREFIX);

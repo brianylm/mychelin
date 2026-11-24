@@ -5,14 +5,7 @@ import {
   type Browser,
   type Page,
 } from "@playwright/test";
-import {
-  cleanupHouseholds,
-  cleanupUsers,
-  createRecipe,
-  devDb,
-  signup,
-  uniqueEmail,
-} from "./helpers";
+import { cleanupHouseholds, cleanupUsers, createRecipe, devDb, signup, uniqueEmail, resetHouseholdJoinLimits } from "./helpers";
 import type {
   ApiErrorResponse,
   MealGroupResponse,
@@ -138,6 +131,10 @@ async function dismissPastMealReviewIfNeeded(
     .click({ timeout: 30_000 });
   await expect(page.getByText("Did you complete these meals?")).toBeHidden();
 }
+
+test.beforeEach(async () => {
+  await resetHouseholdJoinLimits();
+});
 
 test.afterAll(async () => {
   await cleanupHouseholds(HOUSEHOLD_PREFIX);
