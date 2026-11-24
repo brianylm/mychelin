@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { extractRecipeText } from "@/lib/ai-extract";
+import { dedupeRecipeIngredients } from "@/lib/ingredient-dedupe";
 import { enforceAiLimit } from "@/lib/ai-rate-limit";
 import { isSafeFetchUrl } from "@/lib/safe-url";
 
@@ -298,6 +299,9 @@ Guidelines:
 - Preserve the original language and script — if the recipe is in Chinese characters, keep it in Chinese.
 - Use null for missing numeric values, empty string for missing text.
 - Step numbers should start at 1 and increment.
+- Merge duplicate ingredients into one entry (add the quantities when the unit is the same; keep separate entries only for different units).
+- Put preparation words (chopped, diced, minced, grated, to taste, at room temperature) in the ingredient's "notes", never as separate ingredients or in the name.
+- Put serving suggestions, storage advice, remarks and sign-offs ("Note: ...", "Tip: ...", "Serve with rice.", "Enjoy!") in "story" or the step's "tip", never as instruction steps. Instructions are only actions to cook the dish.
 - If the text clearly isn't a recipe (random article, etc.), return the shape with empty fields.
 - Do NOT wrap the JSON in markdown code fences.`;
 
@@ -317,7 +321,7 @@ Guidelines:
       const cleaned = extracted.result.text
         .replace(/```json\n?|\n?```/g, "")
         .trim();
-      extractedRecipe = JSON.parse(cleaned);
+      extractedRecipe = dedupeRecipeIngredients(JSON.parse(cleaned));
     } catch {
       console.error(
         "Failed to parse URL-extract JSON:",

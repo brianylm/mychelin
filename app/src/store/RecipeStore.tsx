@@ -64,7 +64,8 @@ interface RecipeStoreValue {
   updateIngredient: (
     recipeId: number,
     ingredientId: number,
-    data: Partial<Ingredient>
+    data: Partial<Ingredient>,
+    options?: { keepalive?: boolean }
   ) => Promise<void>;
   deleteIngredient: (recipeId: number, ingredientId: number) => Promise<void>;
   addInstruction: (
@@ -251,13 +252,17 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
       recipeId,
       ingredientId,
       data,
+      keepalive,
     }: {
       recipeId: number;
       ingredientId: number;
       data: Partial<Ingredient>;
+      keepalive?: boolean;
     }) =>
       fetchJson(`/api/recipes/${recipeId}/ingredients/${ingredientId}`, {
         method: "PATCH",
+        // keepalive lets an autosave flush survive reload / pagehide.
+        keepalive,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
@@ -422,12 +427,14 @@ export function RecipeStoreProvider({ children }: { children: ReactNode }) {
     async (
       recipeId: number,
       ingredientId: number,
-      data: Partial<Ingredient>
+      data: Partial<Ingredient>,
+      options?: { keepalive?: boolean }
     ) => {
       await updateIngredientMutation.mutateAsync({
         recipeId,
         ingredientId,
         data,
+        keepalive: options?.keepalive,
       });
     },
     [updateIngredientMutation]

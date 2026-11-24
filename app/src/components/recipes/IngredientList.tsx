@@ -1,12 +1,18 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui";
 import { ClipboardList, Plus, Trash2 } from "lucide-react";
 import { SaveIndicator } from "@/components/ui/SaveIndicator";
 import { IngredientTypeahead } from "@/components/ui/IngredientTypeahead";
 import type { Ingredient } from "@/db/schema";
 import { formatScaledQuantity } from "./ServingScaler";
+import {
+  createIngredientAutosave,
+  ingredientAutosaveValues,
+  type IngredientAutosaveField,
+  type IngredientAutosaveSnapshot,
+} from "@/lib/ingredient-autosave";
 
 const UNIT_OPTIONS = [
   "",
@@ -47,12 +53,15 @@ interface IngredientListProps {
   onUpdate: (
     recipeId: number,
     ingredientId: number,
-    data: Partial<Ingredient>
+    data: Partial<Ingredient>,
+    options?: { keepalive?: boolean }
   ) => Promise<void>;
   onDelete: (recipeId: number, ingredientId: number) => Promise<void>;
   scale?: number;
   readOnly?: boolean;
   loading?: boolean;
+  /** Called with the number of ingredient saves pending (debounced or in flight). */
+  onPendingSavesChange?: (count: number) => void;
 }
 
 const fieldBase =
@@ -306,6 +315,7 @@ export function IngredientList({
   scale = 1,
   readOnly = false,
   loading = false,
+  onPendingSavesChange,
 }: IngredientListProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [isBulkAdding, setIsBulkAdding] = useState(false);
@@ -319,6 +329,95 @@ export function IngredientList({
     quantityText: "",
   });
   const [savingId, setSavingId] = useState<number | null>(null);
+  // "<ingredientId>:<field>" of the focused input, so a debounced save +
+  // refetch never swaps that input out from under the user's typing.
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<IngredientAutosaveSnapshot>({
+    pending: 0,
+    hasUnsaved: false,
+    errorIds: [],
+  });
+  const onUpdateRef = useRef(onUpdate);
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+  // Ingredient field autosave: debounced + blur saves, one merged PATCH per
+  // ingredient, serialized per ingredient, flushed with keepalive on
+  // pagehide / hidden / unmount. See lib/ingredient-autosave.
+  const [autosave] = useState(() =>
+    createIngredientAutosave({
+      send: ({ recipeId: rid, ingredientId, patch, keepalive }) =>
+        onUpdateRef.current(rid, ingredientId, patch as Partial<Ingredient>, {
+          keepalive,
+        }),
+      onChange: setSaveState,
+    })
+  );
+
+  useEffect(() => {
+    onPendingSavesChange?.(saveState.pending);
+    return () => onPendingSavesChange?.(0);
+  }, [saveState.pending, onPendingSavesChange]);
+
+  useEffect(() => {
+    const flush = () => void autosave.flush();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [autosave]);
+
+  // Flush when switching recipes, leaving edit mode or unmounting.
+  useEffect(() => {
+    return () => {
+      void autosave.flush();
+    };
+  }, [autosave, recipeId, readOnly]);
+
+  // Warn before leaving only while an ingredient is unsaved or saving.
+  useEffect(() => {
+    if (!saveState.hasUnsaved) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      void autosave.flush();
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [saveState.hasUnsaved, autosave]);
+
+  const editField = useCallback(
+    (
+      ingredient: Ingredient,
+      field: IngredientAutosaveField,
+      value: string | number | null,
+      immediate: boolean
+    ) => {
+      autosave.track(ingredient.id, recipeId, ingredientAutosaveValues(ingredient));
+      if (immediate) void autosave.blur(ingredient.id, recipeId, field, value);
+      else autosave.edit(ingredient.id, recipeId, field, value);
+    },
+    [autosave, recipeId]
+  );
+
+  const fieldHandlers = (
+    ingredient: Ingredient,
+    field: IngredientAutosaveField,
+    normalize: (raw: string) => string | number | null
+  ) => ({
+    onFocus: () => setFocusedField(`${ingredient.id}:${field}`),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      editField(ingredient, field, normalize(e.target.value), false),
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      setFocusedField(null);
+      editField(ingredient, field, normalize(e.target.value), true);
+    },
+  });
   const addingRef = useRef(false);
   const formRef = useRef<HTMLDivElement>(null);
   const parsedBulkIngredients = useMemo(
@@ -378,26 +477,6 @@ export function IngredientList({
       setBulkSaving(false);
     }
   }, [bulkSaving, bulkText, onAdd, recipeId]);
-
-  const handleFieldBlur = useCallback(
-    async (
-      ingredient: Ingredient,
-      field: keyof Ingredient,
-      value: string | number | boolean | null
-    ) => {
-      const current = ingredient[field];
-      if (String(current ?? "") === String(value ?? "")) return;
-      setSavingId(ingredient.id);
-      try {
-        await onUpdate(recipeId, ingredient.id, {
-          [field]: value,
-        } as Partial<Ingredient>);
-      } finally {
-        setSavingId(null);
-      }
-    },
-    [onUpdate, recipeId]
-  );
 
   const toggleApproximate = useCallback(
     async (ingredient: Ingredient) => {
@@ -478,7 +557,12 @@ export function IngredientList({
           {ingredients.map((ing) => {
             const actionControls = (
               <>
-                <SaveIndicator isSaving={savingId === ing.id} />
+                <SaveIndicator
+                  isSaving={
+                    savingId === ing.id ||
+                    (autosave.isDirty(ing.id) && !saveState.errorIds.includes(ing.id))
+                  }
+                />
 
                 <button
                   type="button"
@@ -505,7 +589,10 @@ export function IngredientList({
                 <button
                   type="button"
                   className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-ui-border bg-ui-surface-raised text-ui-danger transition hover:border-ui-border hover:bg-ui-danger-soft"
-                  onClick={() => onDelete(recipeId, ing.id)}
+                  onClick={() => {
+                    autosave.discard(ing.id);
+                    onDelete(recipeId, ing.id);
+                  }}
                   aria-label="Remove ingredient"
                   title="Remove ingredient"
                 >
@@ -517,13 +604,15 @@ export function IngredientList({
             const nameInput = (
               <input
                 defaultValue={ing.name}
-                onBlur={(e) =>
-                  handleFieldBlur(ing, "name", capitalize(e.target.value.trim()))
-                }
+                {...fieldHandlers(ing, "name", (v) => capitalize(v.trim()))}
                 className={editNameFieldBase}
                 placeholder="ingredient"
               />
             );
+
+            const showAmountText =
+              !ing.approximate &&
+              (!!ing.quantityText || focusedField === `${ing.id}:quantityText`);
 
             return (
               <li
@@ -535,15 +624,9 @@ export function IngredientList({
                     {nameInput}
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:contents">
                       <input
-                        key={`qt-${ing.id}-${ing.quantityText ?? ""}`}
+                        key={`qt-${ing.id}`}
                         defaultValue={ing.quantityText ?? ""}
-                        onBlur={(e) =>
-                          handleFieldBlur(
-                            ing,
-                            "quantityText",
-                            e.target.value || null
-                          )
-                        }
+                        {...fieldHandlers(ing, "quantityText", (v) => v || null)}
                         className={`${editAmountFieldBase} text-ui-text`}
                         placeholder="a handful, agak-agak, to taste"
                       />
@@ -556,20 +639,16 @@ export function IngredientList({
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_92px_auto] sm:items-center">
                     {nameInput}
                     <div className="grid grid-cols-[64px_minmax(82px,1fr)_auto] items-center gap-2 sm:contents">
-                      {scale !== 1 && ing.quantity ? (
+                      {scale !== 1 && ing.quantity && focusedField !== `${ing.id}:quantity` ? (
                         <span className="flex h-10 w-full items-center justify-center rounded-lg border border-ui-border bg-ui-surface-raised px-2 text-center text-sm font-medium tabular-nums text-ui-accent">
                           {formatScaledQuantity(ing.quantity, scale)}
                         </span>
                       ) : (
                         <input
                           defaultValue={ing.quantity ?? ""}
-                          onBlur={(e) =>
-                            handleFieldBlur(
-                              ing,
-                              "quantity",
-                              e.target.value ? parseFloat(e.target.value) : null
-                            )
-                          }
+                          {...fieldHandlers(ing, "quantity", (v) =>
+                            v ? parseFloat(v) : null
+                          )}
                           className={`${editAmountFieldBase} text-center tabular-nums`}
                           placeholder="qty"
                         />
@@ -577,7 +656,7 @@ export function IngredientList({
                       <select
                         defaultValue={ing.unit ?? ""}
                         onChange={(e) =>
-                          handleFieldBlur(ing, "unit", e.target.value || null)
+                          editField(ing, "unit", e.target.value || null, true)
                         }
                         className={`${editAmountFieldBase} text-ui-text`}
                       >
@@ -594,21 +673,15 @@ export function IngredientList({
                     </div>
                   </div>
                 )}
-                <div className={`mt-2 grid gap-2 ${!ing.approximate && ing.quantityText ? "sm:grid-cols-2" : ""}`}>
-                  {!ing.approximate && ing.quantityText && (
+                <div className={`mt-2 grid gap-2 ${showAmountText ? "sm:grid-cols-2" : ""}`}>
+                  {showAmountText && (
                     <label className="block">
                       <span className="mb-1 block text-xs font-semibold text-ui-muted">
                         Amount text
                       </span>
                       <input
                         defaultValue={ing.quantityText ?? ""}
-                        onBlur={(e) =>
-                          handleFieldBlur(
-                            ing,
-                            "quantityText",
-                            e.target.value.trim() || null
-                          )
-                        }
+                        {...fieldHandlers(ing, "quantityText", (v) => v.trim() || null)}
                         className={editDetailFieldBase}
                         placeholder="~100g, a handful, to taste"
                       />
@@ -620,18 +693,24 @@ export function IngredientList({
                     </span>
                     <input
                       defaultValue={ing.notes ?? ""}
-                      onBlur={(e) =>
-                        handleFieldBlur(
-                          ing,
-                          "notes",
-                          e.target.value.trim() || null
-                        )
-                      }
+                      {...fieldHandlers(ing, "notes", (v) => v.trim() || null)}
                       className={editDetailFieldBase}
                       placeholder="cut into quarters, minced, optional"
                     />
                   </label>
                 </div>
+                {saveState.errorIds.includes(ing.id) && (
+                  <p className="mt-2 text-xs text-ui-danger" role="alert">
+                    Not saved —{" "}
+                    <button
+                      type="button"
+                      className="font-semibold underline"
+                      onClick={() => void autosave.retry(ing.id)}
+                    >
+                      retry
+                    </button>
+                  </p>
+                )}
               </li>
             );
           })}

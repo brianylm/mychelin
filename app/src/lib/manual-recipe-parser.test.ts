@@ -284,3 +284,58 @@ describe("recipeToScratchpadText", () => {
     expect(recipeToScratchpadText({ ingredients: [{ name: " " }], instructions: [{ content: "" }] })).toBe("");
   });
 });
+
+describe("parseManualRecipeScratchpad cleanup rules", () => {
+  it("attaches prep words after a comma to the ingredient notes", () => {
+    const result = parseManualRecipeScratchpad("Ingredients\n1 onion, chopped\n2 cloves garlic, finely minced\n1 tsp salt, to taste");
+    expect(result.ingredients).toHaveLength(3);
+    expect(result.ingredients[0]).toMatchObject({ name: "Onion", quantity: 1, notes: "chopped" });
+    expect(result.ingredients[1].notes).toBe("finely minced");
+    expect(result.ingredients[2].notes).toBe("to taste");
+  });
+
+  it("handles prep words without a heading", () => {
+    const result = parseManualRecipeScratchpad("1 onion, chopped");
+    expect(result.ingredients.map((i) => i.name)).toEqual(["Onion"]);
+    expect(result.ingredients[0].notes).toBe("chopped");
+  });
+
+  it("keeps real comma lists as separate ingredients", () => {
+    expect(parseManualRecipeScratchpad("Ingredients\nsalt, pepper").ingredients).toHaveLength(2);
+    expect(parseManualRecipeScratchpad("Ingredients\ngarlic, ginger").ingredients).toHaveLength(2);
+  });
+
+  it("merges duplicate ingredients with the same unit", () => {
+    const result = parseManualRecipeScratchpad("Ingredients\n2 tbsp soy sauce\n1 tbsp soy sauce");
+    expect(result.ingredients).toHaveLength(1);
+    expect(result.ingredients[0]).toMatchObject({ name: "Soy sauce", quantity: 3, unit: "tbsp" });
+  });
+
+  it("keeps duplicates with different units", () => {
+    const result = parseManualRecipeScratchpad("Ingredients\n1 tsp sugar\n1 tbsp sugar");
+    expect(result.ingredients).toHaveLength(2);
+  });
+
+  it("moves Note/Tip/Enjoy lines out of the steps", () => {
+    const result = parseManualRecipeScratchpad(
+      "Ingredients\n1 egg\n\nSteps\nBoil the egg for 8 minutes.\nServe hot with rice.\nNote: Use fresh eggs.\nTip: add chilli.\nEnjoy!",
+    );
+    expect(result.instructions.map((i) => i.content)).toEqual(["Boil the egg for 8 minutes.", "Serve hot with rice."]);
+    expect(result.unclassified).toEqual(["Note: Use fresh eggs.", "Tip: add chilli.", "Enjoy!"]);
+  });
+
+  it("moves trailing notes out of auto-mode prose too", () => {
+    const result = parseManualRecipeScratchpad("Boil the pasta for 10 minutes. Drain and serve. Enjoy!");
+    expect(result.instructions).toHaveLength(2);
+    expect(result.unclassified).toEqual(["Enjoy!"]);
+  });
+
+  it("moves a final remark with no cooking verb or time, but keeps real last steps", () => {
+    const remark = parseManualRecipeScratchpad("Ingredients\n1 egg\n\nSteps\nBoil the egg for 8 minutes.\nPerfect for a light lunch.");
+    expect(remark.instructions).toHaveLength(1);
+    expect(remark.unclassified).toEqual(["Perfect for a light lunch."]);
+    const real = parseManualRecipeScratchpad("Ingredients\n1 egg\n\nSteps\nBoil the egg for 8 minutes.\nGarnish with coriander.");
+    expect(real.instructions).toHaveLength(2);
+  });
+});
+

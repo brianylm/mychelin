@@ -412,6 +412,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
   const [savingCookTime, setSavingCookTime] = useState(false);
   const [savingYield, setSavingYield] = useState(false);
   const [pendingStepSaves, setPendingStepSaves] = useState(0);
+  const [pendingIngredientSaves, setPendingIngredientSaves] = useState(0);
   const [ingredientScale, setIngredientScale] = useState(1);
   // Recipe vs Cooking Card view. Remembered per user; the card is a
   // read-only transformation of the same data behind a kill switch.
@@ -1590,7 +1591,8 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
     savingPrepTime ||
     savingCookTime ||
     savingYield ||
-    pendingStepSaves > 0;
+    pendingStepSaves > 0 ||
+    pendingIngredientSaves > 0;
 
   // Progressive disclosure — badges show how many fields in each collapsed
   // tier have content. Helps users see at a glance that there's data tucked
@@ -1891,6 +1893,7 @@ export function RecipeView({ onOpenSidebar, onCookRecipe, onShowStartOptions }: 
               scale={ingredientScale}
               readOnly={!recipeEditMode}
               loading={selectedRecipeLoading}
+              onPendingSavesChange={setPendingIngredientSaves}
             />
 
             {/* Steps */}

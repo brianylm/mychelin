@@ -1,5 +1,6 @@
 import { encodeHeatInTip, type HeatLevel } from "@/lib/instruction-heat";
 import { vocabularyTerms } from "@/lib/ingredient-vocabulary";
+import { dedupeIngredients } from "@/lib/ingredient-dedupe";
 
 export interface ManualParsedIngredient {
   name: string;
@@ -325,6 +326,61 @@ function splitIngredientCandidates(line: string): string[] {
   return items.length ? items : [line];
 }
 
+// ─── Prep fragments and trailing notes ─────────────────────────────────
+const PREP_ADVERBS = "(?:finely|roughly|coarsely|thinly|thickly|freshly|lightly|very|well)";
+const PREP_PARTICIPLES =
+  "(?:chopped|diced|minced|sliced|grated|peeled|crushed|softened|melted|beaten|julienned|halved|quartered|rinsed|drained|shredded|mashed|cubed|trimmed|deseeded|seeded|cored|sifted|toasted|smashed|pounded|washed|soaked|thawed|cooled|packed|ground|cut)";
+const PREP_PHRASE = `(?:${PREP_ADVERBS}\\s+)*${PREP_PARTICIPLES}`;
+const PREP_FRAGMENT_RE = new RegExp(
+  `^(?:${PREP_PHRASE}(?:\\s+(?:and|or|&)\\s+${PREP_PHRASE})*(?:\\s+into\\s+[\\p{L}\\s-]{1,30})?|to taste|optional|divided|at room temperature|room temperature|for (?:serving|garnish|garnishing|frying|dusting)|plus more(?: for [\\p{L}\\s]{1,20})?)$`,
+  "iu",
+);
+
+function isPrepFragment(fragment: string): boolean {
+  return PREP_FRAGMENT_RE.test(fragment.trim().replace(/[.;]+$/, ""));
+}
+
+function appendNote(existing: string | undefined, addition: string): string {
+  if (!existing) return addition;
+  const parts = existing.split(/\s*[;,]\s*/).map((part) => part.toLowerCase());
+  return parts.includes(addition.toLowerCase()) ? existing : `${existing}, ${addition}`;
+}
+
+// Splits a comma line into ingredients. A fragment that is only a prep
+// word ("1 onion, chopped") joins the previous ingredient's notes.
+function parseIngredientCandidates(
+  line: string,
+): Array<{ ingredient: ManualParsedIngredient | null; candidate: string }> {
+  const out: Array<{ ingredient: ManualParsedIngredient | null; candidate: string }> = [];
+  for (const candidate of splitIngredientCandidates(line)) {
+    const previous = out.at(-1)?.ingredient;
+    if (previous && isPrepFragment(candidate)) {
+      previous.notes = appendNote(previous.notes, candidate.trim().replace(/[.;]+$/, ""));
+      continue;
+    }
+    out.push({ ingredient: parseManualIngredientLine(candidate), candidate });
+  }
+  return out;
+}
+
+const TRAILING_NOTE_RE =
+  /^(?:(?:notes?|tips?|serving suggestions?|variations?|storage|storing|chef'?s tips?|pro tips?)\s*[:\-–—]|notes?\s*,|notes?\s+that\b|enjoy\b)/i;
+
+function isTrailingNoteLine(line: string): boolean {
+  return TRAILING_NOTE_RE.test(line.trim());
+}
+
+// Verbs that make a last sentence a real instruction even when the strict
+// STEP_VERBS list does not know them.
+const LOOSE_STEP_VERBS =
+  /\b(garnish|cut|place|transfer|put|top|spoon|ladle|divide|wrap|let|leave|allow|set|cool|chill|refrigerate|freeze|store|plate|arrange|finish|brush|spread|layer|press|squeeze|mash|shape|form|roll|fill|stuff|melt|soak|wash|peel|crush|grind|grate|mince|cream|sift|dust|glaze|check|reheat|warm|lift|drop|dip|coat|rub|wait|repeat|continue|return|discard|strain|skim|scoop|use|take|keep|cover|open|close|dress|assemble|build|finely|dissolve|stand|sit)\b/i;
+
+function isRemarkStep(instruction: ManualParsedInstruction): boolean {
+  const text = instruction.source.replace(/^[^A-Za-z0-9]+/, "").trim();
+  if (text.split(/\s+/).length > 10) return false;
+  return !STEP_VERBS.test(text) && !LOOSE_STEP_VERBS.test(text) && !TIME_RE.test(text) && !/\d/.test(text);
+}
+
 // A typed or dictated method often arrives as one paragraph. Split it into
 // sentences so each becomes a step instead of being read as one ingredient.
 function splitProseSentences(line: string): string[] {
@@ -582,14 +638,17 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
       if (mode === "auto" && isLikelySectionHeading(line)) {
         continue;
       }
+      if (mode !== "ingredients" && isTrailingNoteLine(line)) {
+        unclassified.push(line);
+        continue;
+      }
       if (mode === "notes") {
         unclassified.push(line);
         continue;
       }
 
       if (mode === "ingredients") {
-        for (const candidate of splitIngredientCandidates(line)) {
-          const ingredient = parseManualIngredientLine(candidate);
+        for (const { ingredient, candidate } of parseIngredientCandidates(line)) {
           if (ingredient) ingredients.push(ingredient);
           else unclassified.push(candidate);
         }
@@ -602,7 +661,7 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
         continue;
       }
 
-      const parsedCandidates = splitIngredientCandidates(line).map(parseManualIngredientLine);
+      const parsedCandidates = parseIngredientCandidates(line).map((c) => c.ingredient);
       const allConfident = parsedCandidates.every(
         (item): item is ManualParsedIngredient => item !== null && isConfidentIngredient(item),
       );
@@ -621,11 +680,19 @@ export function parseManualRecipeScratchpad(text: string): ManualRecipeParseResu
     }
   }
 
+  // A final short remark with no cooking verb or time ("Perfect for lunch.")
+  // is a note, not a step. "Serve hot with rice." has a verb and stays.
+  const last = instructions.at(-1);
+  if (instructions.length >= 2 && last && isRemarkStep(last)) {
+    instructions.pop();
+    unclassified.push(stripLinePrefix(last.source));
+  }
+
   // Nothing listed as an ingredient: take measured mentions from the steps.
   const fromSteps = ingredients.length === 0;
   if (fromSteps) ingredients.push(...ingredientsFromSteps(instructions));
 
-  return { ingredients, instructions, unclassified, ingredientsFromSteps: fromSteps };
+  return { ingredients: dedupeIngredients(ingredients), instructions, unclassified, ingredientsFromSteps: fromSteps };
 }
 
 export function formatManualIngredientPreview(ingredient: ManualParsedIngredient): string {
