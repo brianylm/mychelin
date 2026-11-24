@@ -85,6 +85,8 @@ function schemaSnapshot(client: Client): Promise<SchemaSnapshot | null> {
       })
       .catch((e: unknown) => {
         console.warn("schemaSnapshot:", e instanceof Error ? e.message : String(e));
+        // Don't cache a failure (e.g. a transient 502): the next call retries.
+        _snapshot = null;
         return null;
       });
   }

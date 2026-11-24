@@ -198,27 +198,63 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   const claims = await verifyToken(token);
   if (!claims) return null;
 
-  try {
-    await ensureUserTokenVersionColumn();
-    const [row] = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        tokenVersion: users.tokenVersion,
-      })
-      .from(users)
-      .where(eq(users.id, claims.id))
-      .limit(1);
-    // Deleted user, or the session was revoked (sign out everywhere,
-    // password change/reset, untrusted password replaced on Google link).
-    if (!row || row.tokenVersion !== claims.tv) return null;
-    return { id: row.id, name: row.name, email: row.email };
-  } catch (e: unknown) {
-    // Fail closed: an unverifiable session is not a session.
-    console.error("getCurrentUser:", e instanceof Error ? e.message : String(e));
-    return null;
+  const row = await readSessionUser(claims.id);
+  // Deleted user, or the session was revoked (sign out everywhere,
+  // password change/reset, untrusted password replaced on Google link).
+  if (!row || row.tokenVersion !== claims.tv) return null;
+  return { id: row.id, name: row.name, email: row.email };
+}
+
+const SESSION_READ_RETRY_MS = 150;
+
+function selectSessionUser(userId: number) {
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      tokenVersion: users.tokenVersion,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+}
+
+function isMissingTokenVersionColumn(e: unknown): boolean {
+  const message = e instanceof Error ? e.message : String(e);
+  return /no such column/i.test(message) && /token_version/i.test(message);
+}
+
+// Reads the session's user row. A single transient database error (Turso
+// has returned an HTTP 502 on a cold instance right after signup) must not
+// sign a valid session out, so the read is tried twice. The schema check
+// runs only when the token_version column is genuinely missing (a brand-new
+// database), keeping it off the hot path. Still fails closed: if both reads
+// fail, the caller treats the session as signed out.
+async function readSessionUser(userId: number) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const [row] = await selectSessionUser(userId);
+      return row ?? null;
+    } catch (e: unknown) {
+      if (isMissingTokenVersionColumn(e)) {
+        try {
+          await ensureUserTokenVersionColumn();
+          const [row] = await selectSessionUser(userId);
+          return row ?? null;
+        } catch (inner: unknown) {
+          console.error("getCurrentUser:", inner instanceof Error ? inner.message : String(inner));
+          return null;
+        }
+      }
+      console.error(
+        `getCurrentUser (attempt ${attempt}):`,
+        e instanceof Error ? e.message : String(e)
+      );
+      if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, SESSION_READ_RETRY_MS));
+    }
   }
+  return null;
 }
 
 // Revokes every session for the user. Returns the new version so the caller
