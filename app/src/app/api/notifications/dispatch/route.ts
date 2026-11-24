@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { notificationJobs, pushSubscriptions } from "@/db/schema";
 import { ensureNotificationTables } from "@/db/ensure-schema";
 import { purgeExpiredHouseholds } from "@/lib/households";
+import { runRetention, type RetentionResult } from "@/lib/retention";
 
 export const runtime = "nodejs";
 export const preferredRegion = "hnd1";
@@ -42,8 +43,17 @@ export async function GET(request: NextRequest) {
       console.warn("household purge sweep skipped:", error);
     }
 
+    // Daily retention clean-up (rate-limit rows, used/expired links, old
+    // usage events). Best-effort, like the purge.
+    let retention: RetentionResult | null = null;
+    try {
+      retention = await runRetention();
+    } catch (error) {
+      console.warn("retention sweep skipped:", error);
+    }
+
     if (!configureWebPush()) {
-      return NextResponse.json({ configured: false, sent: 0, householdsPurged, message: "VAPID keys not configured" });
+      return NextResponse.json({ configured: false, sent: 0, householdsPurged, retention, message: "VAPID keys not configured" });
     }
 
     await ensureNotificationTables();
@@ -129,7 +139,7 @@ export async function GET(request: NextRequest) {
       else skipped += 1;
     }
 
-    return NextResponse.json({ configured: true, sent, skipped, checked: jobs.length, householdsPurged });
+    return NextResponse.json({ configured: true, sent, skipped, checked: jobs.length, householdsPurged, retention });
   } catch (error) {
     console.error("GET /api/notifications/dispatch error:", error);
     return NextResponse.json({ error: "Failed to dispatch notifications" }, { status: 500 });

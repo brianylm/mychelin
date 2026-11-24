@@ -3014,3 +3014,14 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - `GET /api/health` (edge, `select 1`, 503 on DB failure). VPS monitor `~/chief/alerts/mychelin-health.sh` every 5 min via `cron-alert.sh` (curl only; 11 MB, 0.1 s CPU); DOWN after 2 failures, reminder every 6 h, RECOVERED once. Depends on the VPS: B to add an external uptime monitor (docket mychelin-external-uptime).
 - Follow-ups: docket mychelin-deletion-gap (account delete, export, delete blobs on recipe delete, purge rate-limit/usage rows).
 - Checks: verify ui PASS (38).
+
+## 2026-11-24 — Account deletion, data export, recipe blob clean-up, retention (branch deletion-gap, uncommitted)
+
+- POST `/api/account/delete` (edge; password, or exact email for authProvider "google"; 5/h per user) → `lib/account-deletion.ts`. Idempotent steps, users row last so a failed run can be retried. FK audit against the staging DDL is at the top of the file: NO ACTION refs (shared_to_household_by, changed_by, ticked_by/moved_by, book_recipes.added_by) are nulled/re-credited first; household rows that would cascade away from others are handed to a successor or set NULL; sole-member households are purged at once. usage_events kept with user_id NULL.
+- GET `/api/account/export` (edge, JSON attachment, one db.batch) → `lib/account-export.ts`; no hashes/tokens/googleSub/push keys/share tokens.
+- `lib/blob-cleanup.ts`: recipe DELETE collects blob URLs, deletes rows, then `del()`s files; URLs still used by another row (forks copy imageUrl) are kept; never throws.
+- `lib/retention.ts` runs in the dispatch cron: rate limits 2 d after window end, reset/verify links 7 d after use/expiry, usage_events > 12 months.
+- Leave now promotes the earliest-joined member when the last admin leaves (`promoteSuccessorAdmin`).
+- Profile “Your data” (`AccountDataSection`), `/account-deleted`, privacy/terms rewritten to match, FEATURES.md entry account-data.
+- Tests use `src/test/full-schema-db.ts` (drizzle-kit generated schema, FKs on, prod book_tips quirk). The delete suite also passed once against `.verify/cache/schema.sql`.
+- Risk: prod book_tips points at a missing recipe_books table; a legacy tip by a user would block their deletion (none writable today).

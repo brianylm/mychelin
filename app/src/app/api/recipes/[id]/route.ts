@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ensureHouseholdSlice3Columns } from "@/db/ensure-schema";
 import { canUserAccessRecipe, canUserEditRecipe, canUserReadRecipe } from "@/lib/recipe-access";
 import { getRecipeFlagsForRecipe, replaceRecipeFlagsForUser } from "@/lib/recipe-flags-db";
+import { collectRecipeBlobUrls, deleteRecipeBlobs } from "@/lib/blob-cleanup";
 
 export const runtime = "edge";
 export const preferredRegion = "hnd1";
@@ -477,8 +478,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Cascade delete handles ingredients & instructions
+    // Find the recipe's files first, delete the rows (cascades handle the
+    // child rows), then the files. A blob failure must never leave a recipe
+    // that cannot be deleted, so files go last and errors are only logged.
+    const blobUrls = await collectRecipeBlobUrls([recipeId]);
     await db.delete(recipes).where(eq(recipes.id, recipeId));
+    await deleteRecipeBlobs(blobUrls);
 
     return NextResponse.json({ message: "Recipe deleted successfully" });
   } catch (error) {

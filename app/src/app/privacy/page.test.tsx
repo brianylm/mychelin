@@ -19,9 +19,21 @@ describe("privacy notice", () => {
     expect(privacy).toMatch(/outside Singapore/);
   });
 
-  it("does not promise self-service deletion or export that does not exist", () => {
-    expect(privacy).toMatch(/no delete-my-account button or data export yet/);
-    expect(privacy).not.toMatch(/delete your account (in|from) (the app|settings)/i);
+  it("points to the self-serve export and account deletion in Profile", () => {
+    expect(privacy).toMatch(/Download my data<\/strong> in Profile/);
+    expect(privacy).toMatch(/Delete my account<\/strong> in Profile/);
+    expect(privacy).toMatch(/Books you own are deleted for everyone/);
+    expect(privacy).toMatch(/another member becomes admin/);
+    expect(privacy).not.toMatch(/no delete-my-account button/);
+  });
+
+  it("states what deletion removes and the retention periods", () => {
+    expect(privacy).toMatch(/When you delete a recipe, its photos and voice files are deleted/);
+    expect(privacy).toMatch(/kept for 12 months/);
+    expect(privacy).toMatch(/no longer carry your name, email or account/);
+    expect(privacy).toMatch(/about 2 days after they\s+expire/);
+    expect(privacy).toMatch(/7 days after they are\s+used or expire/);
+    expect(privacy).not.toMatch(/until we clean them\s+up/);
   });
 
   it("says share links and file addresses are open to anyone who has them", () => {
@@ -35,6 +47,11 @@ describe("terms of use", () => {
     expect(terms).toMatch(/beta and free to use for now/);
     expect(terms).toContain('href="/privacy"');
     expect(terms).toContain('href="/copyright"');
+  });
+
+  it("sends people to Delete my account in Profile to close their account", () => {
+    expect(terms).toMatch(/Delete my account in Profile/);
+    expect(terms).toMatch(/permanent/);
   });
 
   it("warns that AI recipes can be wrong and gives no medical advice", () => {

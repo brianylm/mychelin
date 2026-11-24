@@ -8,6 +8,7 @@ import {
   getUserHousehold,
   handleMemberDeparture,
   logHouseholdActivity,
+  promoteSuccessorAdmin,
   rotateJoinCode,
 } from "@/lib/households";
 import { and, eq, ne, sql } from "drizzle-orm";
@@ -16,7 +17,8 @@ export const runtime = "edge";
 export const preferredRegion = "hnd1";
 
 // ─── POST /api/households/leave ────────────────────────────
-// Any member can always remove themselves. Their shared-plan meals stay
+// Any member can always remove themselves. If they were the last admin, the
+// earliest-joined remaining member becomes admin. Their shared-plan meals stay
 // on the household plan as ghost copies (display data snapshotted at
 // departure); their activity attribution stays as-is; their per-member
 // blocks are cleaned up. When the last member leaves, the 30-day
@@ -58,6 +60,8 @@ export async function POST() {
         )
       );
     if (Number(others) > 0) {
+      // An admin leaving must not strand the household without one.
+      await promoteSuccessorAdmin(householdId, currentUser.id);
       await db
         .delete(householdMembers)
         .where(

@@ -48,6 +48,9 @@ export async function GET() {
     return NextResponse.json({
       name: user.name,
       email: user.email,
+      // "password" | "google" | "password_google". Lets Profile ask Google
+      // accounts for their email instead of a password before deletion.
+      authProvider: user.authProvider,
       cookingSkillLevel: user.cookingSkillLevel,
       householdSize: user.householdSize,
       favoriteCuisines,

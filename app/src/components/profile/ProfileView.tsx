@@ -12,6 +12,7 @@ import { SUPPORT_EMAIL } from "@/lib/legal";
 import { readComfortMode, setComfortMode } from "@/lib/comfort-mode";
 import { PilotChecklistPanel } from "@/components/pilot/PilotChecklistPanel";
 import { EmailVerificationNotice } from "@/components/profile/EmailVerificationNotice";
+import { AccountDataSection } from "@/components/profile/AccountDataSection";
 import { HOUSEHOLDS_ENABLED } from "@/lib/feature-flags";
 import { fetchViewJson, viewCacheKey, viewUrls } from "@/lib/view-cache";
 
@@ -200,6 +201,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
+  const [authProvider, setAuthProvider] = useState<string | null>(null);
 
   const loadRhythm = useCallback(async () => {
     const response = await fetch("/api/notifications/rhythm");
@@ -288,6 +290,7 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
           setPreferences({
             name: data.name || "",
           });
+          setAuthProvider(typeof data.authProvider === "string" ? data.authProvider : null);
         }
 
         if (notificationResponse.ok) {
@@ -814,6 +817,8 @@ export function ProfileView({ onOpenHousehold, onOpenActivity }: ProfileViewProp
             </a>
           </p>
         </div>
+
+        <AccountDataSection authProvider={authProvider} />
 
         <div data-comfort-hide className="space-y-4">
           <div className="mb-4 flex items-start justify-between gap-3">

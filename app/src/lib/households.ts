@@ -276,6 +276,47 @@ export async function handleMemberDeparture(
   return false;
 }
 
+// Remaining members of a household other than `userId`, earliest joined
+// first. Used to pick who takes over when a member leaves for good.
+export async function otherHouseholdMembers(
+  householdId: number,
+  userId: number
+): Promise<{ userId: number; role: string }[]> {
+  return db
+    .select({ userId: householdMembers.userId, role: householdMembers.role })
+    .from(householdMembers)
+    .where(
+      and(
+        eq(householdMembers.householdId, householdId),
+        ne(householdMembers.userId, userId)
+      )
+    )
+    .orderBy(householdMembers.joinedAt, householdMembers.id);
+}
+
+// Call before removing a departing member's row. If no other admin would
+// remain, the earliest-joined remaining member becomes admin so a live
+// household is never left without one. Returns that member's id, or null
+// when nobody was promoted (another admin remains, or nobody remains).
+export async function promoteSuccessorAdmin(
+  householdId: number,
+  departingUserId: number
+): Promise<number | null> {
+  const others = await otherHouseholdMembers(householdId, departingUserId);
+  if (others.length === 0 || others.some((m) => m.role === "admin")) return null;
+  const successor = others[0].userId;
+  await db
+    .update(householdMembers)
+    .set({ role: "admin" })
+    .where(
+      and(
+        eq(householdMembers.householdId, householdId),
+        eq(householdMembers.userId, successor)
+      )
+    );
+  return successor;
+}
+
 // Membership changes have already committed when these run, so a calendar
 // failure is logged rather than failing the request. The runner separately
 // pauses a connection whose owner is no longer a member.

@@ -80,7 +80,9 @@ export default function TermsPage() {
 
       <LegalSection title="Ending and changes">
         <p>
-          You can stop using Mychelin any time. To close your account and delete your data, email{" "}
+          You can stop using Mychelin any time. To close your account and delete your data, use
+          Delete my account in Profile; Download my data there gives you a copy first. Deleting is
+          permanent, and books you own are deleted for everyone in them. If you need help, email{" "}
           <a href={`mailto:${SUPPORT_EMAIL}`} className="text-ui-accent underline">
             {SUPPORT_EMAIL}
           </a>

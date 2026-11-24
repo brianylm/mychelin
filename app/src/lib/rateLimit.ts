@@ -216,6 +216,14 @@ export const RATE_LIMITS = {
     windowSeconds: 60 * 60,
   },
 
+  // Account deletion re-authentication, per user. Five password/email tries
+  // an hour is plenty for a person and stops guessing from a stolen session.
+  accountDelete: {
+    name: "account_delete",
+    limit: 5,
+    windowSeconds: 60 * 60,
+  },
+
   // Public share-page beautify (token-gated image generation).
   shareBeautifyToken: {
     name: "share_beautify_token",

@@ -123,22 +123,49 @@ export default function PrivacyPage() {
       </LegalSection>
 
       <LegalSection title="How long we keep it">
-        <p>
-          We keep your data while your account is open. When you delete a recipe it is removed from
-          the app, but copies of its photos or voice files may stay in storage until we clean them
-          up, and backups may keep deleted data for a limited time. A deleted household can be
-          restored for 30 days and is then removed. Security counters are kept to prevent abuse.
-        </p>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>We keep your data while your account is open.</li>
+          <li>
+            When you delete a recipe, its photos and voice files are deleted from storage too. If
+            someone saved a copy of your recipe from a share link, their copy keeps using the same
+            picture, so that picture stays until their copy is deleted.
+          </li>
+          <li>
+            When you delete your account, we delete it straight away, with your recipes, photos,
+            voice files, the books you own, your plans, lists, inventory, settings and feedback.
+          </li>
+          <li>
+            Records of which features were used are kept for 12 months. After you delete your
+            account they no longer carry your name, email or account.
+          </li>
+          <li>
+            Counters that limit repeated sign-in attempts are deleted about 2 days after they
+            expire. Password reset and email confirmation links are deleted 7 days after they are
+            used or expire.
+          </li>
+          <li>A deleted household can be restored for 30 days and is then removed.</li>
+          <li>Our providers&apos; backups may keep deleted data for a limited time.</li>
+        </ul>
       </LegalSection>
 
       <LegalSection title="Your choices">
         <ul className="list-disc space-y-2 pl-5">
           <li>You can view and edit your recipes and settings in the app.</li>
           <li>
-            You can ask us for a copy of your personal data, ask us to correct it, ask us to
-            delete your account and its data, or withdraw your consent to a use (for example the AI
-            features). Email {mail}. There is no delete-my-account button or data export yet, so we
-            do this by hand and may need to confirm it is you.
+            <strong>Download my data</strong> in Profile gives you a file with your account
+            details, recipes (with links to their photos and voice files), books, plans, lists,
+            inventory and feedback.
+          </li>
+          <li>
+            <strong>Delete my account</strong> in Profile deletes your account and its data
+            permanently. Books you own are deleted for everyone in them. If you are a household&apos;s
+            admin, another member becomes admin, and meals and stock you added to the household
+            stay for the others without your name.
+          </li>
+          <li>
+            You can also ask us for a copy of your personal data, ask us to correct it, or withdraw
+            your consent to a use (for example the AI features). Email {mail}. We may need to
+            confirm it is you.
           </li>
           <li>
             If you are unhappy with how we handle your data, tell us first. You can also contact
