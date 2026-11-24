@@ -1,0 +1,42 @@
+name: Uptime
+
+# Backstop for the hourly VPS check (~/chief/alerts/mychelin-health.sh): runs on
+# GitHub's servers, so it still alerts if the VPS is down. A failed run makes
+# GitHub email / push the repo owner. Free on a public repo; one curl, no
+# checkout. Scheduled workflows only run from the default branch (main).
+on:
+  schedule:
+    - cron: "47 * * * *" # hourly, 30 min after the VPS check at :17
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Health URL to check (leave empty for production)"
+        required: false
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check /api/health (3 tries, 30 s apart)
+        env:
+          URL: ${{ inputs.url || 'https://mychelin-sg.vercel.app/api/health' }}
+        run: |
+          set -u
+          for attempt in 1 2 3; do
+            body="$(curl -sS --max-time 20 "$URL" 2>&1 || true)"
+            case "$body" in
+              *'"ok":true'*) echo "healthy: $body"; exit 0 ;;
+            esac
+            echo "attempt $attempt failed: $(printf '%s' "${body:-no response}" | head -c 200)"
+            [ "$attempt" -lt 3 ] && sleep 30
+          done
+          echo "::error::Mychelin is down: $URL did not report ok after 3 tries"
+          exit 1
