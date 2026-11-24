@@ -2997,3 +2997,12 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Security headers in next.config.ts; CSP Report-Only (enforcing needs nonces).
 - `db/resilient-fetch.ts` now unpacks any Request-like and calls native fetch: cross-fetch rejected Next's Requests ("Only absolute URLs") and native fetch rejects cross-fetch's ("[object Request]").
 - Checks: verify ui PASS (38), preview smoke 34/34, logout-all probe (other device 401, this device 200).
+
+## 2026-11-24 — Email verification at sign-up (release-2026-11-24)
+
+- email_verification_tokens (drizzle/0035, runtime `ensureEmailVerificationTokensTable`): 24 h, single-use, SHA-256-hashed links (`lib/email-verification.ts`). Sign-up sends one; Profile shows a quiet notice with Resend (3/h per user, 10/h per IP).
+- `/verify-email` renders a "Confirm my email" button; only POST /api/auth/verify-email redeems the token (mail scanners that open links must not verify a squatter's account).
+- Password reset now also sets email_verified (keeps its token_version bump).
+- Dark until a real sender exists: `canEmailAnyAddress()` needs RESEND_API_KEY and RESEND_FROM_EMAIL. Prod and preview have no RESEND_FROM_EMAIL, so mail goes from onboarding@resend.dev, which (per Resend, unconfirmed here) only delivers to the account owner — password-reset emails likely reach only B. Docket: mychelin-email-sender-domain.
+- `clientEmailVerified()` reports the flag the same way in signup, login and /me (undefined while dark).
+- Checks: verify ui PASS (38), preview smoke 34/34 on 0dac73e; signup/resend/verify probes on 95ee9a2.
