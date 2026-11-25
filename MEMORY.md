@@ -3031,3 +3031,11 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Prod smoke on 24 Nov saw /api/auth/me return 401 right after signup while pages accepted the same cookie. Vercel logs: `schemaSnapshot: SERVER_ERROR: Server returned HTTP status 502` on a cold instance. Not replica lag (single Turso instance, aws-ap-northeast-1).
 - `getCurrentUser` now queries users directly; `ensureUserTokenVersionColumn` runs only on a "no such column … token_version" error. One retry after 150 ms on other errors; two failures still fail closed. `schemaSnapshot` no longer caches a failed batch.
 - Tests: `app/src/lib/auth-transient.test.ts` (5). Logs: `vercel logs --project mychelin --environment production --no-branch --no-follow --query "<text>"` under `capped` works for searching prod runtime logs.
+
+## 2026-11-25 — Ingredient autosave + paste-parser clean-up (release-2026-11-25b)
+
+- Shared autosave core `lib/autosave-queue.ts`; `lib/step-autosave.ts` is a wrapper (API unchanged); `lib/ingredient-autosave.ts` for name/quantity/unit/quantityText/notes. Debounce 800 ms, one PATCH per ingredient with only changed fields, ordered per row, keepalive flush on pagehide/hidden/unload/recipe switch/leaving edit mode, beforeunload warning, "Not saved — retry". Never saves an empty name.
+- Not covered: the add-ingredient form still saves on blur; the approximate toggle can double-send on fast taps.
+- Parser: prep fragments after a comma become notes ("1 onion, chopped"); `lib/ingredient-dedupe.ts` merges same name + same unit (no conversions) in the local parser and on AI paste/url results; Note:/Tip:/Enjoy lines go to unclassified; a final short verb-less, time-less, digit-less line moves to notes when there are 2+ steps.
+- The main checkout's uncommitted manual-recipe-parser draft (21 Nov) is superseded by what shipped; B may discard it.
+- Checks: verify ui PASS (38); 30 autosave + 41 parser tests.
