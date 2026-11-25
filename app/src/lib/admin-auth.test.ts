@@ -48,3 +48,16 @@ describe("requireAdminUser", () => {
     expect(result.response?.status).toBe(401);
   });
 });
+
+describe("adminEmails", () => {
+  it("combines ANALYTICS_ADMIN_EMAILS and ADMIN_EMAILS", async () => {
+    const { adminEmails } = await import("./admin-auth");
+    process.env.ANALYTICS_ADMIN_EMAILS = "first@example.com";
+    process.env.ADMIN_EMAILS = " Second@Example.com ,";
+    try {
+      expect([...adminEmails()].sort()).toEqual(["first@example.com", "second@example.com"]);
+    } finally {
+      delete process.env.ADMIN_EMAILS;
+    }
+  });
+});

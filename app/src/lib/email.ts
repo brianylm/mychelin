@@ -89,12 +89,17 @@ export async function sendPasswordResetEmail(
     return;
   }
   try {
-    await resend.emails.send({
+    // The Resend SDK reports a refused send (bad sender, testing-domain
+    // recipient limit, quota) as a returned `error`, not a thrown one.
+    const { error } = await resend.emails.send({
       from: fromAddress(),
       to,
       subject: "Reset your Mychelin password",
       html: buildResetEmailHtml(name, resetUrl),
     });
+    if (error) {
+      console.error("[email] Resend refused password reset email:", error.name, error.message);
+    }
   } catch (err) {
     console.error("[email] Failed to send password reset email:", err);
     // Intentionally don't rethrow — the calling route should still return 200

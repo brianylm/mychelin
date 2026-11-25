@@ -5,7 +5,9 @@ import { users } from "@/db/schema";
 import { getCurrentUser, type AuthUser } from "@/lib/auth";
 
 export function adminEmails(): Set<string> {
-  const raw = process.env.ANALYTICS_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "";
+  // Union of both lists, so an address can be added in ADMIN_EMAILS without
+  // rewriting ANALYTICS_ADMIN_EMAILS.
+  const raw = [process.env.ANALYTICS_ADMIN_EMAILS, process.env.ADMIN_EMAILS].filter(Boolean).join(",");
   return new Set(
     raw
       .split(",")
