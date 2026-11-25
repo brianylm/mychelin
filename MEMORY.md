@@ -3039,3 +3039,10 @@ Main thread (Claude Code) orchestrated; bounded subtasks ran on the DeepSeek Fla
 - Parser: prep fragments after a comma become notes ("1 onion, chopped"); `lib/ingredient-dedupe.ts` merges same name + same unit (no conversions) in the local parser and on AI paste/url results; Note:/Tip:/Enjoy lines go to unclassified; a final short verb-less, time-less, digit-less line moves to notes when there are 2+ steps.
 - The main checkout's uncommitted manual-recipe-parser draft (21 Nov) is superseded by what shipped; B may discard it.
 - Checks: verify ui PASS (38); 30 autosave + 41 parser tests.
+
+## 2026-11-26 — Reset-email error logging + combined admin lists (release-2026-11-26)
+
+- The Resend SDK returns a refused send as `{ error }` (no throw); `sendPasswordResetEmail` now logs `[email] Resend refused password reset email: <name> <message>` (never the link). `sendVerificationEmail` already handled it.
+- Prod sender is still the fallback `Mychelin <onboarding@resend.dev>` (no RESEND_FROM_EMAIL; B has no domain), which only delivers to the Resend account owner. B is fine keeping Resend meanwhile.
+- `adminEmails()` = union of ANALYTICS_ADMIN_EMAILS and ADMIN_EMAILS. B's address was added as ADMIN_EMAILS in Vercel on 2026-11-26 (it was already in ANALYTICS_ADMIN_EMAILS since June). Admin also needs email_verified: a completed password reset sets it.
+- Repo is public: never commit personal email addresses (older entries above already contain one).
