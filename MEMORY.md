@@ -1832,7 +1832,7 @@ Follow-ups:
 
 Changed/decided:
 
-- Added `brianyaplm@hotmail.com` to the production `ANALYTICS_ADMIN_EMAILS` Vercel environment variable.
+- Added B's admin address to the production `ANALYTICS_ADMIN_EMAILS` Vercel environment variable.
 - Redeployed production so the live `/admin/analytics` API can read the new env value.
 
 Checks:
@@ -1844,7 +1844,7 @@ Checks:
 
 Follow-ups:
 
-- Log in as `brianyaplm@hotmail.com` and open `/admin/analytics` to confirm the authenticated API path returns data instead of 403.
+- Log in as B's admin address and open `/admin/analytics` to confirm the authenticated API path returns data instead of 403.
 
 ### 2026-06-11 - Admin analytics registered-user outreach view
 
@@ -1874,14 +1874,14 @@ Checks:
 
 Follow-ups:
 
-- Log in as `brianyaplm@hotmail.com` and open `/admin/analytics`; the registered-users table should appear under the summary cards.
+- Log in as B's admin address and open `/admin/analytics`; the registered-users table should appear under the summary cards.
 - Consider CSV export later if outreach volume grows beyond manual pilot follow-up.
 
 ### 2026-06-12 - Pilot blocker pass and core-loop smoke test
 
 Changed/decided:
 
-- User confirmed admin analytics access works for `brianyaplm@hotmail.com`.
+- User confirmed admin analytics access works for B's admin address.
 - Kept feature progress paused and ran a pilot-blocker pass focused only on the MVP loop and privacy boundaries.
 - Added `app/scripts/pilot-smoke.mjs`, a single-user production smoke for signup, recipe creation, planner recipe discovery, meal planning, shopping-list generation, cook attempt creation, attempt promotion to version/definitive version, pilot checklist status, pilot feedback, and non-admin analytics denial.
 - Added `npm run smoke:pilot` and documented it in `PILOT_RUNBOOK.md` and `ANALYTICS.md` as a pre-pilot gate alongside `smoke:privacy`.
